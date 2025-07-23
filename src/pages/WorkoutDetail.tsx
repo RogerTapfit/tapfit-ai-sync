@@ -17,6 +17,7 @@ import {
   Activity
 } from "lucide-react";
 import { useWorkoutPlan } from "@/hooks/useWorkoutPlan";
+import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -33,6 +34,7 @@ interface WorkoutSet {
 const WorkoutDetail = () => {
   const navigate = useNavigate();
   const { workoutId } = useParams();
+  const { logExercise, currentWorkoutLog } = useWorkoutLogger();
   const [sets, setSets] = useState<WorkoutSet[]>([]);
   const [restTime, setRestTime] = useState(0);
   const [isResting, setIsResting] = useState(false);
@@ -195,25 +197,34 @@ const WorkoutDetail = () => {
     setSets(updatedSets);
   };
 
-  const completeWorkout = () => {
-    // Calculate total reps for coin calculation
+  const saveProgress = async () => {
+    if (!currentWorkoutLog || !workout) return;
+
     const totalReps = sets.reduce((sum, set) => sum + (set.actualReps || 0), 0);
-    const estimatedDuration = Math.ceil(sets.length * (workout.restTime / 60)) + 15; // Rest time + exercise time
+    const completedSets = sets.filter(s => s.completed).length;
     
-    toast.success('Workout completed!');
-    navigate('/workout-summary', { 
-      state: { 
-        workoutData: {
-          name: workout.name,
-          exercises: 1, // Single exercise
-          duration: estimatedDuration,
-          sets: sets.filter(s => s.completed).length,
-          totalSets: sets.length,
-          totalReps: totalReps,
-          notes: notes
-        }
-      }
-    });
+    if (completedSets > 0) {
+      await logExercise(
+        currentWorkoutLog.id,
+        workout.name,
+        workout.name,
+        completedSets,
+        totalReps,
+        sets[0]?.actualWeight
+      );
+    }
+  };
+
+  const completeWorkout = async () => {
+    await saveProgress();
+    toast.success('Exercise completed!');
+    // Auto-navigate back to workout list
+    navigate('/workout-list');
+  };
+
+  const handleBackToList = async () => {
+    await saveProgress();
+    navigate('/workout-list');
   };
 
   const formatTime = (seconds: number) => {
@@ -236,6 +247,16 @@ const WorkoutDetail = () => {
   const completedSets = sets.filter(s => s.completed).length;
   const totalSets = sets.length;
   const exerciseProgress = (completedSets / totalSets) * 100;
+
+  // Auto-complete when all sets are done
+  useEffect(() => {
+    if (completedSets === totalSets && totalSets > 0) {
+      const timer = setTimeout(() => {
+        completeWorkout();
+      }, 2000); // 2 second delay to show completion
+      return () => clearTimeout(timer);
+    }
+  }, [completedSets, totalSets]);
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
@@ -479,7 +500,7 @@ const WorkoutDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button 
           variant="outline" 
-          onClick={() => navigate('/workout-list')}
+          onClick={handleBackToList}
           className="h-12"
         >
           Back to List
