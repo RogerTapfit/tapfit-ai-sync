@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      machines: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          type: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          type: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
