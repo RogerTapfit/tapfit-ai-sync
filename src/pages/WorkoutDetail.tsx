@@ -106,7 +106,10 @@ const WorkoutDetail = () => {
       sets: 3,
       reps: 12,
       weight: "Body weight + assistance",
-      restTime: 90
+      restTime: 90,
+      image: "/lovable-uploads/2659df27-2ead-4acf-ace3-edd4b33cad78.png",
+      primaryMuscle: "Pectoralis Major (Lower portion)",
+      secondaryMuscles: "Triceps brachii, anterior deltoids"
     },
     "8": {
       name: "Assisted Chest Dips Machine",
