@@ -34,14 +34,19 @@ const WorkoutList = () => {
 
   // Load completed exercises from database
   const loadCompletedExercises = async () => {
+    console.log("Loading completed exercises...");
     const completedExercises = await getTodaysCompletedExercises();
+    console.log("Completed exercises from DB:", completedExercises);
     await refreshProgress(); // Also refresh the overall progress
-    setTodaysWorkouts(workouts => 
-      workouts.map(workout => ({
+    console.log("Progress refreshed, todaysProgress:", todaysProgress);
+    setTodaysWorkouts(workouts => {
+      const updatedWorkouts = workouts.map(workout => ({
         ...workout,
         completed: completedExercises.includes(workout.name)
-      }))
-    );
+      }));
+      console.log("Updated workouts:", updatedWorkouts);
+      return updatedWorkouts;
+    });
   };
 
   useEffect(() => {
@@ -50,8 +55,10 @@ const WorkoutList = () => {
 
   // Refresh data when returning from other pages
   useEffect(() => {
+    console.log("Location changed:", location);
     // Check if we're returning from a workout detail page
     if (location.state?.fromWorkoutDetail) {
+      console.log("Refreshing from workout detail page");
       loadCompletedExercises();
       // Clear the state to prevent unnecessary reloads
       window.history.replaceState({}, document.title);

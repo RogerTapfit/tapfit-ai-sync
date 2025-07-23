@@ -221,8 +221,12 @@ export const useWorkoutLogger = () => {
   // Get today's completed exercises by name (for checking if an exercise is completed)
   const getTodaysCompletedExercises = async (): Promise<string[]> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+    if (!user) {
+      console.log("No user found for getTodaysCompletedExercises");
+      return [];
+    }
 
+    console.log("Fetching today's completed exercises for user:", user.id);
     const { data, error } = await supabase
       .from('exercise_logs')
       .select('exercise_name')
@@ -235,6 +239,7 @@ export const useWorkoutLogger = () => {
       return [];
     }
 
+    console.log("Exercise logs data:", data);
     return data?.map(log => log.exercise_name) || [];
   };
 
