@@ -77,6 +77,7 @@ export type Database = {
           machine_id: string
           muscle_group: string
           reps: number
+          session_id: string | null
           sets: number
           timestamp: string
           user_id: string
@@ -90,6 +91,7 @@ export type Database = {
           machine_id: string
           muscle_group: string
           reps: number
+          session_id?: string | null
           sets: number
           timestamp?: string
           user_id: string
@@ -103,10 +105,46 @@ export type Database = {
           machine_id?: string
           muscle_group?: string
           reps?: number
+          session_id?: string | null
           sets?: number
           timestamp?: string
           user_id?: string
           weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_pin_data_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_sessions: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          start_time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string
+          user_id?: string
         }
         Relationships: []
       }
