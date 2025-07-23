@@ -150,7 +150,28 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_most_common_muscle_group: {
+        Row: {
+          exercise_count: number | null
+          most_common_muscle_group: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_workout_summary: {
+        Row: {
+          average_weight: number | null
+          first_workout: string | null
+          last_workout: string | null
+          muscle_group: string | null
+          total_exercises: number | null
+          total_reps: number | null
+          total_sets: number | null
+          total_volume: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
