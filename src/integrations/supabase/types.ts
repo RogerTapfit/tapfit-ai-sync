@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_nutrition_summary: {
+        Row: {
+          created_at: string
+          id: string
+          meals_count: number
+          metabolism_readings_count: number
+          summary_date: string
+          total_calories: number
+          total_carbs: number
+          total_fat: number
+          total_protein: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meals_count?: number
+          metabolism_readings_count?: number
+          summary_date: string
+          total_calories?: number
+          total_carbs?: number
+          total_fat?: number
+          total_protein?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meals_count?: number
+          metabolism_readings_count?: number
+          summary_date?: string
+          total_calories?: number
+          total_carbs?: number
+          total_fat?: number
+          total_protein?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      food_entries: {
+        Row: {
+          ai_analyzed: boolean
+          created_at: string
+          food_items: Json
+          id: string
+          logged_date: string
+          meal_type: string
+          notes: string | null
+          photo_url: string | null
+          total_calories: number
+          total_carbs: number
+          total_fat: number
+          total_protein: number
+          updated_at: string
+          user_confirmed: boolean
+          user_id: string
+        }
+        Insert: {
+          ai_analyzed?: boolean
+          created_at?: string
+          food_items: Json
+          id?: string
+          logged_date?: string
+          meal_type: string
+          notes?: string | null
+          photo_url?: string | null
+          total_calories: number
+          total_carbs?: number
+          total_fat?: number
+          total_protein?: number
+          updated_at?: string
+          user_confirmed?: boolean
+          user_id: string
+        }
+        Update: {
+          ai_analyzed?: boolean
+          created_at?: string
+          food_items?: Json
+          id?: string
+          logged_date?: string
+          meal_type?: string
+          notes?: string | null
+          photo_url?: string | null
+          total_calories?: number
+          total_carbs?: number
+          total_fat?: number
+          total_protein?: number
+          updated_at?: string
+          user_confirmed?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       gyms: {
         Row: {
           address: string | null
@@ -65,6 +161,75 @@ export type Database = {
           location?: string | null
           name?: string
           type?: string
+        }
+        Relationships: []
+      }
+      metabolism_readings: {
+        Row: {
+          created_at: string
+          device_source: string | null
+          id: string
+          reading_type: string
+          reading_value: number | null
+          recommendations: string[] | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_source?: string | null
+          id?: string
+          reading_type: string
+          reading_value?: number | null
+          recommendations?: string[] | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_source?: string | null
+          id?: string
+          reading_type?: string
+          reading_value?: number | null
+          recommendations?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nutrition_goals: {
+        Row: {
+          carbs_grams: number
+          created_at: string
+          daily_calories: number
+          fat_grams: number
+          goal_type: string
+          id: string
+          is_active: boolean
+          protein_grams: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carbs_grams: number
+          created_at?: string
+          daily_calories: number
+          fat_grams: number
+          goal_type: string
+          id?: string
+          is_active?: boolean
+          protein_grams: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carbs_grams?: number
+          created_at?: string
+          daily_calories?: number
+          fat_grams?: number
+          goal_type?: string
+          id?: string
+          is_active?: boolean
+          protein_grams?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
