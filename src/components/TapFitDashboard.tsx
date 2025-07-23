@@ -48,6 +48,9 @@ const TapFitDashboard = () => {
   const handleStartWorkout = async () => {
     // Award coins for starting a workout
     await awardCoins(10, 'earn_workout', 'Started a new workout session');
+    
+    // Navigate to workout list
+    window.location.href = '/workout-list';
   };
 
   const aiInsights = [
