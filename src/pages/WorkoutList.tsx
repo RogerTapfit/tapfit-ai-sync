@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,8 @@ interface WorkoutMachine {
 
 const WorkoutList = () => {
   const navigate = useNavigate();
-  const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, todaysProgress, currentWorkoutLog } = useWorkoutLogger();
+  const location = useLocation();
+  const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, todaysProgress, currentWorkoutLog, refreshProgress } = useWorkoutLogger();
   
   // Today's chest workout machines
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([
@@ -34,6 +35,7 @@ const WorkoutList = () => {
   // Load completed exercises from database
   const loadCompletedExercises = async () => {
     const completedExercises = await getTodaysCompletedExercises();
+    await refreshProgress(); // Also refresh the overall progress
     setTodaysWorkouts(workouts => 
       workouts.map(workout => ({
         ...workout,
@@ -46,24 +48,15 @@ const WorkoutList = () => {
     loadCompletedExercises();
   }, []);
 
-  // Refresh data when component receives focus (user returns from detail page)
+  // Refresh data when returning from other pages
   useEffect(() => {
-    const handleFocus = () => {
+    // Check if we're returning from a workout detail page
+    if (location.state?.fromWorkoutDetail) {
       loadCompletedExercises();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        loadCompletedExercises();
-      }
-    });
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, []);
+      // Clear the state to prevent unnecessary reloads
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // Start workout session if not already started
   useEffect(() => {

@@ -219,12 +219,12 @@ const WorkoutDetail = () => {
     await saveProgress();
     toast.success('Exercise completed!');
     // Auto-navigate back to workout list
-    navigate('/workout-list');
+    navigate('/workout-list', { state: { fromWorkoutDetail: true } });
   };
 
   const handleBackToList = async () => {
     await saveProgress();
-    navigate('/workout-list');
+    navigate('/workout-list', { state: { fromWorkoutDetail: true } });
   };
 
   const formatTime = (seconds: number) => {
