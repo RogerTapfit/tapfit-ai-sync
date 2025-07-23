@@ -49,9 +49,16 @@ const WorkoutList = () => {
     });
   };
 
+  // Initial load
   useEffect(() => {
     loadCompletedExercises();
   }, []);
+
+  // Refresh when progress updates
+  useEffect(() => {
+    console.log("todaysProgress changed:", todaysProgress);
+    loadCompletedExercises();
+  }, [todaysProgress]);
 
   // Refresh data when returning from other pages
   useEffect(() => {
@@ -68,13 +75,17 @@ const WorkoutList = () => {
   // Start workout session if not already started
   useEffect(() => {
     const initializeWorkout = async () => {
+      console.log("Initializing workout, currentWorkoutLog:", currentWorkoutLog);
       if (!currentWorkoutLog) {
+        console.log("No current workout log, starting new workout");
         await startWorkout("Daily Chest Workout", "Chest", todaysWorkouts.length);
+      } else {
+        console.log("Current workout log exists:", currentWorkoutLog);
       }
     };
 
     initializeWorkout();
-  }, []);
+  }, [currentWorkoutLog]);
 
   const handleWorkoutClick = (workoutId: string) => {
     navigate(`/workout/${workoutId}`);
@@ -84,9 +95,13 @@ const WorkoutList = () => {
     e.stopPropagation(); // Prevent navigation when clicking the status icon
     
     const workout = todaysWorkouts.find(w => w.id === workoutId);
-    if (!workout || !currentWorkoutLog) return;
+    if (!workout || !currentWorkoutLog) {
+      console.error("No workout or currentWorkoutLog found:", { workout, currentWorkoutLog });
+      return;
+    }
 
     if (!workout.completed) {
+      console.log("Marking workout as complete:", workout.name);
       // Log the exercise completion
       const success = await logExercise(
         currentWorkoutLog.id,
@@ -98,13 +113,17 @@ const WorkoutList = () => {
       );
 
       if (success) {
+        console.log("Exercise logged successfully, updating local state");
         setTodaysWorkouts(workouts => 
           workouts.map(w => 
             w.id === workoutId ? { ...w, completed: true } : w
           )
         );
+        // Refresh the data to ensure consistency
+        await loadCompletedExercises();
       }
     } else {
+      console.log("Trying to uncomplete workout - not implemented");
       // If trying to uncomplete, just update UI (could implement removal logic if needed)
       setTodaysWorkouts(workouts => 
         workouts.map(w => 

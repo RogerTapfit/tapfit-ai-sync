@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
@@ -45,11 +46,93 @@ export const useWorkoutLogger = () => {
   const { toast } = useToast();
   const { awardCoins } = useTapCoins();
 
+  // Persist workout log ID to survive page navigation
+  const saveWorkoutLogId = (workoutLogId: string) => {
+    sessionStorage.setItem('currentWorkoutLogId', workoutLogId);
+  };
+
+  const getWorkoutLogId = (): string | null => {
+    return sessionStorage.getItem('currentWorkoutLogId');
+  };
+
+  const clearWorkoutLogId = () => {
+    sessionStorage.removeItem('currentWorkoutLogId');
+  };
+
+  // Load existing workout log from storage
+  const loadExistingWorkoutLog = async () => {
+    const storedLogId = getWorkoutLogId();
+    if (!storedLogId) return null;
+
+    console.log("Loading existing workout log:", storedLogId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('workout_logs')
+        .select('*')
+        .eq('id', storedLogId)
+        .single();
+
+      if (error) {
+        console.error('Error loading existing workout log:', error);
+        clearWorkoutLogId();
+        return null;
+      }
+
+      if (data && !data.completed_at) {
+        console.log("Found active workout log:", data);
+        setCurrentWorkoutLog(data);
+        return data;
+      } else {
+        console.log("Workout log is completed, clearing storage");
+        clearWorkoutLogId();
+        return null;
+      }
+    } catch (error) {
+      console.error('Error loading workout log:', error);
+      clearWorkoutLogId();
+      return null;
+    }
+  };
+
+  // Get today's active workout log
+  const getTodaysActiveWorkoutLog = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    console.log("Checking for today's active workout log");
+    
+    const { data, error } = await supabase
+      .from('workout_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('started_at', new Date().toISOString().split('T')[0])
+      .lt('started_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      .is('completed_at', null)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching active workout log:', error);
+      return null;
+    }
+
+    if (data) {
+      console.log("Found today's active workout log:", data);
+      setCurrentWorkoutLog(data);
+      saveWorkoutLogId(data.id);
+      return data;
+    }
+
+    return null;
+  };
+
   // Fetch today's workout progress
   const fetchTodaysProgress = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    console.log("Fetching today's workout progress");
+    
     const { data, error } = await supabase.rpc('get_todays_workout_progress', {
       _user_id: user.id
     });
@@ -60,6 +143,7 @@ export const useWorkoutLogger = () => {
     }
 
     if (data && data.length > 0) {
+      console.log("Updated progress:", data[0]);
       setTodaysProgress(data[0]);
     }
   };
@@ -69,9 +153,17 @@ export const useWorkoutLogger = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    // Check if there's already an active workout log
+    const existingLog = await getTodaysActiveWorkoutLog();
+    if (existingLog) {
+      console.log("Using existing workout log instead of creating new one");
+      return existingLog;
+    }
+
     setLoading(true);
     
     try {
+      console.log("Creating new workout log");
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
@@ -87,7 +179,9 @@ export const useWorkoutLogger = () => {
 
       if (error) throw error;
 
+      console.log("Created new workout log:", data);
       setCurrentWorkoutLog(data);
+      saveWorkoutLogId(data.id);
       await fetchTodaysProgress();
       
       toast({
@@ -119,11 +213,23 @@ export const useWorkoutLogger = () => {
     weight?: number
   ) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+    if (!user) {
+      console.error('No user found for logExercise');
+      return false;
+    }
+
+    console.log("Logging exercise:", {
+      workoutLogId,
+      exerciseName,
+      machineName,
+      sets,
+      reps,
+      weight
+    });
 
     try {
       // Insert exercise log
-      const { error: exerciseError } = await supabase
+      const { data: exerciseData, error: exerciseError } = await supabase
         .from('exercise_logs')
         .insert({
           user_id: user.id,
@@ -133,9 +239,16 @@ export const useWorkoutLogger = () => {
           sets_completed: sets,
           reps_completed: reps,
           weight_used: weight
-        });
+        })
+        .select()
+        .single();
 
-      if (exerciseError) throw exerciseError;
+      if (exerciseError) {
+        console.error('Error inserting exercise log:', exerciseError);
+        throw exerciseError;
+      }
+
+      console.log("Exercise log inserted:", exerciseData);
 
       // Update workout log with new completion count and reps
       const { data: currentLog, error: fetchError } = await supabase
@@ -144,17 +257,38 @@ export const useWorkoutLogger = () => {
         .eq('id', workoutLogId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching current workout log:', fetchError);
+        throw fetchError;
+      }
+
+      const newCompletedExercises = currentLog.completed_exercises + 1;
+      const newTotalReps = currentLog.total_reps + reps;
+
+      console.log("Updating workout log:", {
+        completed_exercises: newCompletedExercises,
+        total_reps: newTotalReps
+      });
 
       const { error: updateError } = await supabase
         .from('workout_logs')
         .update({
-          completed_exercises: currentLog.completed_exercises + 1,
-          total_reps: currentLog.total_reps + reps
+          completed_exercises: newCompletedExercises,
+          total_reps: newTotalReps
         })
         .eq('id', workoutLogId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating workout log:', updateError);
+        throw updateError;
+      }
+
+      // Update local state
+      setCurrentWorkoutLog(prev => prev ? {
+        ...prev,
+        completed_exercises: newCompletedExercises,
+        total_reps: newTotalReps
+      } : null);
 
       // Award coins for completing exercise (100 reps = 1 tap coin)
       const coinAmount = Math.floor(reps / 100);
@@ -169,6 +303,7 @@ export const useWorkoutLogger = () => {
         description: `${exerciseName} - ${sets} sets × ${reps} reps${coinAmount > 0 ? ` (+${coinAmount} coins)` : ''}`,
       });
 
+      console.log("Exercise successfully logged and progress updated");
       return true;
     } catch (error) {
       console.error('Error logging exercise:', error);
@@ -200,6 +335,7 @@ export const useWorkoutLogger = () => {
 
       await fetchTodaysProgress();
       setCurrentWorkoutLog(null);
+      clearWorkoutLogId();
 
       toast({
         title: "Workout Completed! 🎉",
@@ -240,10 +376,34 @@ export const useWorkoutLogger = () => {
     }
 
     console.log("Exercise logs data:", data);
-    return data?.map(log => log.exercise_name) || [];
+    const exerciseNames = data?.map(log => log.exercise_name) || [];
+    console.log("Completed exercise names:", exerciseNames);
+    return exerciseNames;
   };
 
+  // Initialize workout log on component mount
   useEffect(() => {
+    const initializeWorkoutLog = async () => {
+      console.log("Initializing workout log...");
+      
+      // First try to load from storage
+      const existingLog = await loadExistingWorkoutLog();
+      if (existingLog) {
+        console.log("Loaded existing workout log from storage");
+        return;
+      }
+
+      // If not in storage, check database for today's active workout
+      const todaysLog = await getTodaysActiveWorkoutLog();
+      if (todaysLog) {
+        console.log("Found today's active workout log in database");
+        return;
+      }
+
+      console.log("No active workout log found");
+    };
+
+    initializeWorkoutLog();
     fetchTodaysProgress();
   }, []);
 
