@@ -12,7 +12,8 @@ import {
   Star,
   Home,
   Repeat,
-  Share2
+  Share2,
+  Coins
 } from "lucide-react";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
@@ -124,38 +125,100 @@ const WorkoutSummary = () => {
       {/* Achievement Badges */}
       <Card className="glow-card p-6">
         <h3 className="text-lg font-semibold mb-4">Today's Achievements</h3>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="default" className="bg-green-500">
-            <Trophy className="h-3 w-3 mr-1" />
-            Workout Completed
-          </Badge>
-          {workoutData.sets >= 15 && (
-            <Badge variant="secondary">
-              <Target className="h-3 w-3 mr-1" />
-              Volume King
-            </Badge>
-          )}
-          {workoutData.duration >= 45 && (
-            <Badge variant="secondary">
-              <Clock className="h-3 w-3 mr-1" />
-              Endurance Star
-            </Badge>
-          )}
-          {(workoutData.totalReps || 0) >= 100 && (
-            <Badge variant="secondary" className="bg-purple-500">
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="default" className="bg-green-500">
               <Trophy className="h-3 w-3 mr-1" />
-              Century Club
+              Workout Completed
             </Badge>
-          )}
-          {workoutData.exercises >= 5 && (
-            <Badge variant="secondary" className="bg-blue-500">
-              <Target className="h-3 w-3 mr-1" />
-              Multi-Exercise Master
-            </Badge>
-          )}
-          <Badge variant="outline" className="bg-yellow-500/10 border-yellow-500">
-            +{Math.floor((workoutData.totalReps || workoutData.sets * 10) / 100)} Tap Coins
-          </Badge>
+            {workoutData.sets >= 15 && (
+              <Badge variant="secondary">
+                <Target className="h-3 w-3 mr-1" />
+                Volume King
+              </Badge>
+            )}
+            {workoutData.duration >= 45 && (
+              <Badge variant="secondary">
+                <Clock className="h-3 w-3 mr-1" />
+                Endurance Star
+              </Badge>
+            )}
+            {(workoutData.totalReps || 0) >= 100 && (
+              <Badge variant="secondary" className="bg-purple-500">
+                <Trophy className="h-3 w-3 mr-1" />
+                Century Club
+              </Badge>
+            )}
+            {workoutData.exercises >= 5 && (
+              <Badge variant="secondary" className="bg-blue-500">
+                <Target className="h-3 w-3 mr-1" />
+                Multi-Exercise Master
+              </Badge>
+            )}
+          </div>
+          
+          {/* Detailed Coin Breakdown */}
+          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg p-4 border border-yellow-500/20">
+            <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+              <Coins className="h-4 w-4 text-yellow-500" />
+              Tap Coins Earned This Workout
+            </h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between items-center">
+                <span>Workout Completion</span>
+                <span className="font-medium text-yellow-600">+0.5 coins</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Reps Completed ({workoutData.totalReps || workoutData.sets * 10})</span>
+                <span className="font-medium text-yellow-600">+{((workoutData.totalReps || workoutData.sets * 10) * 0.01).toFixed(3)} coins</span>
+              </div>
+              {workoutData.duration >= 30 && (
+                <div className="flex justify-between items-center">
+                  <span>Duration Bonus (30+ mins)</span>
+                  <span className="font-medium text-yellow-600">+0.25 coins</span>
+                </div>
+              )}
+              {workoutData.sets >= 15 && (
+                <div className="flex justify-between items-center">
+                  <span>Volume King Bonus</span>
+                  <span className="font-medium text-yellow-600">+0.1 coins</span>
+                </div>
+              )}
+              {workoutData.duration >= 45 && (
+                <div className="flex justify-between items-center">
+                  <span>Endurance Star Bonus</span>
+                  <span className="font-medium text-yellow-600">+0.15 coins</span>
+                </div>
+              )}
+              {(workoutData.totalReps || 0) >= 100 && (
+                <div className="flex justify-between items-center">
+                  <span>Century Club Bonus</span>
+                  <span className="font-medium text-yellow-600">+0.2 coins</span>
+                </div>
+              )}
+              {workoutData.exercises >= 5 && (
+                <div className="flex justify-between items-center">
+                  <span>Multi-Exercise Bonus</span>
+                  <span className="font-medium text-yellow-600">+0.08 coins</span>
+                </div>
+              )}
+              <hr className="border-yellow-500/30" />
+              <div className="flex justify-between items-center font-bold text-base">
+                <span>Total Earned</span>
+                <span className="text-yellow-600">
+                  +{(
+                    0.5 + // Base completion
+                    ((workoutData.totalReps || workoutData.sets * 10) * 0.01) + // Reps
+                    (workoutData.duration >= 30 ? 0.25 : 0) + // Duration bonus
+                    (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
+                    (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
+                    ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
+                    (workoutData.exercises >= 5 ? 0.08 : 0) // Multi-exercise bonus
+                  ).toFixed(3)} coins
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
 
