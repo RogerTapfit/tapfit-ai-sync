@@ -43,18 +43,31 @@ const WorkoutSummary = () => {
     }
 
     try {
-      // Award coins based on total reps (100 reps = 1 tap coin)
-      const totalReps = workoutData.totalReps || (workoutData.sets * 10); // Fallback estimate
-      const totalCoins = Math.floor(totalReps / 100);
+      // Calculate total coins including review bonus
+      const baseSubtotal = 
+        0.5 + // Base completion
+        ((workoutData.totalReps || workoutData.sets * 10) * 0.01) + // Reps
+        (workoutData.duration >= 30 ? 0.25 : 0) + // Duration bonus
+        (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
+        (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
+        ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
+        (workoutData.exercises >= 5 ? 0.08 : 0); // Multi-exercise bonus
+
+      const reviewBonus = 0.1; // Review bonus
+      const subtotalWithReview = baseSubtotal + reviewBonus;
+      const finalTotal = subtotalWithReview * (workoutData.allWorkoutsCompleted ? 2 : 1);
+      
+      // Convert to integer for database (multiply by 1000 to store fractional coins)
+      const coinsToAward = Math.round(finalTotal * 1000);
 
       await awardCoins(
-        totalCoins, 
+        coinsToAward, 
         'earn_workout', 
-        `Completed ${workoutData.name} workout (${totalReps} reps)`
+        `Completed ${workoutData.name} workout and left review (${finalTotal.toFixed(3)} coins)`
       );
 
       setSubmitted(true);
-      toast.success(`Workout logged! Earned ${totalCoins} Tap Coins 🎉`);
+      toast.success(`Workout logged! Earned ${finalTotal.toFixed(3)} Tap Coins 🎉`);
     } catch (error) {
       console.error('Error submitting workout feedback:', error);
       toast.error('Failed to submit feedback');
@@ -208,7 +221,11 @@ const WorkoutSummary = () => {
                   <span>Multi-Exercise Bonus</span>
                   <span className="font-medium text-yellow-600">+0.08 coins</span>
                 </div>
-              )}
+               )}
+              <div className="flex justify-between items-center">
+                <span>Review Bonus (leave rating)</span>
+                <span className="font-medium text-yellow-600">+0.10 coins</span>
+              </div>
               <hr className="border-yellow-500/30" />
               <div className="flex justify-between items-center font-medium">
                 <span>Subtotal</span>
@@ -220,7 +237,8 @@ const WorkoutSummary = () => {
                     (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
                     (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
                     ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
-                    (workoutData.exercises >= 5 ? 0.08 : 0) // Multi-exercise bonus
+                    (workoutData.exercises >= 5 ? 0.08 : 0) + // Multi-exercise bonus
+                    0.1 // Review bonus
                   ).toFixed(3)} coins
                 </span>
               </div>
@@ -234,7 +252,8 @@ const WorkoutSummary = () => {
                     (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
                     (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
                     ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
-                    (workoutData.exercises >= 5 ? 0.08 : 0) // Multi-exercise bonus
+                    (workoutData.exercises >= 5 ? 0.08 : 0) + // Multi-exercise bonus
+                    0.1 // Review bonus
                   ).toFixed(3)} coins</span>
                 </div>
               )}
@@ -249,7 +268,8 @@ const WorkoutSummary = () => {
                     (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
                     (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
                     ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
-                    (workoutData.exercises >= 5 ? 0.08 : 0)) * // Multi-exercise bonus
+                    (workoutData.exercises >= 5 ? 0.08 : 0) + // Multi-exercise bonus
+                    0.1) * // Review bonus
                     (workoutData.allWorkoutsCompleted ? 2 : 1) // x2 multiplier if all workouts completed
                   ).toFixed(3)} coins
                 </span>
