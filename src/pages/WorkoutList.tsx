@@ -32,18 +32,37 @@ const WorkoutList = () => {
   ]);
 
   // Load completed exercises from database
+  const loadCompletedExercises = async () => {
+    const completedExercises = await getTodaysCompletedExercises();
+    setTodaysWorkouts(workouts => 
+      workouts.map(workout => ({
+        ...workout,
+        completed: completedExercises.includes(workout.name)
+      }))
+    );
+  };
+
   useEffect(() => {
-    const loadCompletedExercises = async () => {
-      const completedExercises = await getTodaysCompletedExercises();
-      setTodaysWorkouts(workouts => 
-        workouts.map(workout => ({
-          ...workout,
-          completed: completedExercises.includes(workout.name)
-        }))
-      );
+    loadCompletedExercises();
+  }, []);
+
+  // Refresh data when component receives focus (user returns from detail page)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadCompletedExercises();
     };
 
-    loadCompletedExercises();
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        loadCompletedExercises();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, []);
 
   // Start workout session if not already started
