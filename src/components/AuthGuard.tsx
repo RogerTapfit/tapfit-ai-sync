@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { OnboardingFlow } from './OnboardingFlow';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -11,6 +13,8 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  const { profile, loading: profileLoading, needsOnboarding, refetch } = useOnboarding(session?.user?.id);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -32,7 +36,7 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -40,7 +44,23 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     );
   }
 
-  return user ? <>{children}</> : <>{fallback}</>;
+  if (!user) {
+    return <>{fallback}</>;
+  }
+
+  // Show onboarding if user hasn't completed it
+  if (needsOnboarding) {
+    return (
+      <OnboardingFlow 
+        userId={user.id} 
+        onComplete={() => {
+          refetch();
+        }}
+      />
+    );
+  }
+
+  return <>{children}</>;
 };
 
 export const useAuth = () => {

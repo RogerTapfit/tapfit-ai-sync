@@ -357,32 +357,62 @@ export type Database = {
         Row: {
           avatar_data: Json | null
           avatar_url: string | null
+          calibration_completed: boolean | null
           created_at: string
+          diet_type: string | null
           email: string | null
           full_name: string | null
+          gender: string | null
           gym_id: string | null
+          height_cm: number | null
           id: string
+          onboarding_completed: boolean | null
           tap_coins_balance: number
+          target_carbs_grams: number | null
+          target_daily_calories: number | null
+          target_fat_grams: number | null
+          target_protein_grams: number | null
+          weight_kg: number | null
         }
         Insert: {
           avatar_data?: Json | null
           avatar_url?: string | null
+          calibration_completed?: boolean | null
           created_at?: string
+          diet_type?: string | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           gym_id?: string | null
+          height_cm?: number | null
           id: string
+          onboarding_completed?: boolean | null
           tap_coins_balance?: number
+          target_carbs_grams?: number | null
+          target_daily_calories?: number | null
+          target_fat_grams?: number | null
+          target_protein_grams?: number | null
+          weight_kg?: number | null
         }
         Update: {
           avatar_data?: Json | null
           avatar_url?: string | null
+          calibration_completed?: boolean | null
           created_at?: string
+          diet_type?: string | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           gym_id?: string | null
+          height_cm?: number | null
           id?: string
+          onboarding_completed?: boolean | null
           tap_coins_balance?: number
+          target_carbs_grams?: number | null
+          target_daily_calories?: number | null
+          target_fat_grams?: number | null
+          target_protein_grams?: number | null
+          weight_kg?: number | null
         }
         Relationships: []
       }
@@ -946,9 +976,31 @@ export type Database = {
         }
         Returns: boolean
       }
+      calculate_bmr: {
+        Args: {
+          _weight_kg: number
+          _height_cm: number
+          _age: number
+          _gender: string
+        }
+        Returns: number
+      }
+      calculate_nutrition_goals: {
+        Args: {
+          _weight_kg: number
+          _height_cm: number
+          _gender: string
+          _activity_level?: string
+        }
+        Returns: Json
+      }
       calculate_user_power_level: {
         Args: { _user_id: string }
         Returns: number
+      }
+      complete_user_calibration: {
+        Args: { _user_id: string }
+        Returns: boolean
       }
       get_power_level_tier: {
         Args: { _score: number }
