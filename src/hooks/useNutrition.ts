@@ -58,6 +58,53 @@ export interface DailyNutritionSummary {
   metabolism_readings_count: number;
 }
 
+// Type transformation functions
+const transformDatabaseToNutritionGoal = (data: any): NutritionGoal => ({
+  id: data.id,
+  goal_type: data.goal_type as 'fat_loss' | 'muscle_gain' | 'maintenance',
+  daily_calories: data.daily_calories,
+  protein_grams: data.protein_grams,
+  carbs_grams: data.carbs_grams,
+  fat_grams: data.fat_grams,
+  is_active: data.is_active
+});
+
+const transformDatabaseToMetabolismReading = (data: any): MetabolismReading => ({
+  id: data.id,
+  reading_type: data.reading_type as 'fat_burn' | 'carb_burn' | 'mixed',
+  reading_value: data.reading_value,
+  device_source: data.device_source,
+  recommendations: data.recommendations || [],
+  created_at: data.created_at
+});
+
+const transformDatabaseToFoodEntry = (data: any): FoodEntry => ({
+  id: data.id,
+  meal_type: data.meal_type as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+  food_items: Array.isArray(data.food_items) ? data.food_items as FoodItem[] : [],
+  total_calories: data.total_calories,
+  total_protein: data.total_protein,
+  total_carbs: data.total_carbs,
+  total_fat: data.total_fat,
+  photo_url: data.photo_url,
+  ai_analyzed: data.ai_analyzed,
+  user_confirmed: data.user_confirmed,
+  notes: data.notes,
+  logged_date: data.logged_date,
+  created_at: data.created_at
+});
+
+const transformDatabaseToDailySummary = (data: any): DailyNutritionSummary => ({
+  id: data.id,
+  summary_date: data.summary_date,
+  total_calories: data.total_calories,
+  total_protein: data.total_protein,
+  total_carbs: data.total_carbs,
+  total_fat: data.total_fat,
+  meals_count: data.meals_count,
+  metabolism_readings_count: data.metabolism_readings_count
+});
+
 export const useNutrition = () => {
   const [nutritionGoals, setNutritionGoals] = useState<NutritionGoal | null>(null);
   const [metabolismReadings, setMetabolismReadings] = useState<MetabolismReading[]>([]);
@@ -92,7 +139,7 @@ export const useNutrition = () => {
         return;
       }
 
-      setNutritionGoals(data as NutritionGoal);
+      setNutritionGoals(data ? transformDatabaseToNutritionGoal(data) : null);
     } catch (error) {
       console.error('Error loading nutrition goals:', error);
     }
@@ -117,7 +164,7 @@ export const useNutrition = () => {
         return;
       }
 
-      setDailySummary(data);
+      setDailySummary(data ? transformDatabaseToDailySummary(data) : null);
     } catch (error) {
       console.error('Error loading daily summary:', error);
     }
@@ -140,7 +187,7 @@ export const useNutrition = () => {
         return;
       }
 
-      setMetabolismReadings(data as MetabolismReading[] || []);
+      setMetabolismReadings((data || []).map(transformDatabaseToMetabolismReading));
     } catch (error) {
       console.error('Error loading metabolism readings:', error);
     }
@@ -165,10 +212,7 @@ export const useNutrition = () => {
         return;
       }
 
-      setFoodEntries((data as any[])?.map(item => ({
-        ...item,
-        food_items: Array.isArray(item.food_items) ? item.food_items : []
-      })) || []);
+      setFoodEntries((data || []).map(transformDatabaseToFoodEntry));
     } catch (error) {
       console.error('Error loading food entries:', error);
     }
@@ -197,7 +241,7 @@ export const useNutrition = () => {
 
       if (error) throw error;
 
-      setNutritionGoals(data as NutritionGoal);
+      setNutritionGoals(transformDatabaseToNutritionGoal(data));
       toast.success('Nutrition goals saved!');
     } catch (error) {
       console.error('Error saving nutrition goals:', error);
@@ -221,7 +265,7 @@ export const useNutrition = () => {
 
       if (error) throw error;
 
-      setMetabolismReadings(prev => [data as MetabolismReading, ...prev.slice(0, 9)]);
+      setMetabolismReadings(prev => [transformDatabaseToMetabolismReading(data), ...prev.slice(0, 9)]);
       toast.success('Metabolism reading added!');
     } catch (error) {
       console.error('Error adding metabolism reading:', error);
@@ -265,10 +309,7 @@ export const useNutrition = () => {
 
       if (error) throw error;
 
-      setFoodEntries(prev => [{
-        ...data as any,
-        food_items: Array.isArray((data as any).food_items) ? (data as any).food_items : []
-      }, ...prev]);
+      setFoodEntries(prev => [transformDatabaseToFoodEntry(data), ...prev]);
       toast.success('Food entry saved!');
       
       // Refresh daily summary
@@ -286,7 +327,10 @@ export const useNutrition = () => {
     try {
       const { data, error } = await supabase
         .from('food_entries')
-        .update(updates)
+        .update({
+          ...updates,
+          food_items: updates.food_items ? updates.food_items as any : undefined
+        })
         .eq('id', id)
         .select()
         .single();
@@ -294,7 +338,7 @@ export const useNutrition = () => {
       if (error) throw error;
 
       setFoodEntries(prev => 
-        prev.map(entry => entry.id === id ? { ...entry, ...data } : entry)
+        prev.map(entry => entry.id === id ? transformDatabaseToFoodEntry(data) : entry)
       );
       
       toast.success('Food entry updated!');
@@ -338,7 +382,7 @@ export const useNutrition = () => {
 
       if (error) throw error;
 
-      return data || [];
+      return (data || []).map(transformDatabaseToFoodEntry);
     } catch (error) {
       console.error('Error loading weekly food entries:', error);
       return [];
