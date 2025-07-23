@@ -116,7 +116,10 @@ const WorkoutDetail = () => {
       sets: 3,
       reps: 12,
       weight: "Body weight + assistance", 
-      restTime: 90
+      restTime: 90,
+      image: "/lovable-uploads/0d9b2a95-f255-4a68-a040-7998a9ffb1cf.png",
+      primaryMuscle: "Pectoralis Major (Lower chest)",
+      secondaryMuscles: "Triceps brachii, anterior deltoids, rhomboids (minor stabilizing)"
     }
   };
 
