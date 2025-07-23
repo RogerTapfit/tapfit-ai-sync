@@ -76,6 +76,7 @@ export type Database = {
           full_name: string | null
           gym_id: string | null
           id: string
+          tap_coins_balance: number
         }
         Insert: {
           avatar_url?: string | null
@@ -84,6 +85,7 @@ export type Database = {
           full_name?: string | null
           gym_id?: string | null
           id: string
+          tap_coins_balance?: number
         }
         Update: {
           avatar_url?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           full_name?: string | null
           gym_id?: string | null
           id?: string
+          tap_coins_balance?: number
         }
         Relationships: []
       }
@@ -144,6 +147,101 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_items: {
+        Row: {
+          category: string
+          coin_cost: number
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          category: string
+          coin_cost: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          category?: string
+          coin_cost?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      tap_coins_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          reference_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_purchases: {
+        Row: {
+          coins_spent: number
+          id: string
+          purchased_at: string
+          store_item_id: string
+          user_id: string
+        }
+        Insert: {
+          coins_spent: number
+          id?: string
+          purchased_at?: string
+          store_item_id: string
+          user_id: string
+        }
+        Update: {
+          coins_spent?: number
+          id?: string
+          purchased_at?: string
+          store_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_purchases_store_item_id_fkey"
+            columns: ["store_item_id"]
+            isOneToOne: false
+            referencedRelation: "store_items"
             referencedColumns: ["id"]
           },
         ]
@@ -233,6 +331,16 @@ export type Database = {
       }
     }
     Functions: {
+      add_tap_coins: {
+        Args: {
+          _user_id: string
+          _amount: number
+          _transaction_type: string
+          _description: string
+          _reference_id?: string
+        }
+        Returns: boolean
+      }
       get_user_gym_id: {
         Args: { _user_id: string }
         Returns: string
@@ -249,6 +357,16 @@ export type Database = {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
           _gym_id: string
+        }
+        Returns: boolean
+      }
+      spend_tap_coins: {
+        Args: {
+          _user_id: string
+          _amount: number
+          _transaction_type: string
+          _description: string
+          _reference_id?: string
         }
         Returns: boolean
       }
