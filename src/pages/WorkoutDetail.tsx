@@ -56,7 +56,10 @@ const WorkoutDetail = () => {
       sets: 4,
       reps: 12,
       weight: "40-60 lbs",
-      restTime: 90
+      restTime: 90,
+      image: "/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png",
+      primaryMuscle: "Pectoralis Major (Sternal & Clavicular heads – inner & upper chest)",
+      secondaryMuscles: "Anterior deltoids, biceps (stabilizers)"
     },
     "3": {
       name: "Incline Chest Press Machine",
