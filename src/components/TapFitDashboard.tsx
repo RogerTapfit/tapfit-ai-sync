@@ -220,7 +220,7 @@ const TapFitDashboard = () => {
         
         <Button variant="outline" className="glow-card h-16 text-lg">
           <Trophy className="h-5 w-5 mr-2" />
-          Challenges
+          View Challenges
         </Button>
       </div>
 

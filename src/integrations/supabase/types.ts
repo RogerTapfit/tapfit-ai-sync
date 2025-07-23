@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_type: string
+          badge_color: string
+          badge_icon: string | null
+          coin_reward: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rarity_level: string
+          trigger_condition: Json
+        }
+        Insert: {
+          achievement_type: string
+          badge_color?: string
+          badge_icon?: string | null
+          coin_reward?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity_level?: string
+          trigger_condition: Json
+        }
+        Update: {
+          achievement_type?: string
+          badge_color?: string
+          badge_icon?: string | null
+          coin_reward?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity_level?: string
+          trigger_condition?: Json
+        }
+        Relationships: []
+      }
+      challenges: {
+        Row: {
+          bonus_coin_reward: number | null
+          challenge_type: string
+          coin_reward: number
+          created_at: string
+          description: string | null
+          difficulty_level: string
+          id: string
+          is_active: boolean
+          is_recurring: boolean
+          name: string
+          target_value: number
+          time_limit_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          bonus_coin_reward?: number | null
+          challenge_type: string
+          coin_reward?: number
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          name: string
+          target_value: number
+          time_limit_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bonus_coin_reward?: number | null
+          challenge_type?: string
+          coin_reward?: number
+          created_at?: string
+          description?: string | null
+          difficulty_level?: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          name?: string
+          target_value?: number
+          time_limit_days?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_nutrition_summary: {
         Row: {
           created_at: string
@@ -426,6 +516,97 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          coins_earned: number
+          created_at: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          coins_earned?: number
+          created_at?: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          coins_earned?: number
+          created_at?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_challenges: {
+        Row: {
+          challenge_id: string
+          coins_earned: number | null
+          completed_at: string | null
+          created_at: string
+          current_progress: number
+          early_completion_bonus: boolean
+          expires_at: string | null
+          id: string
+          started_at: string
+          status: string
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          coins_earned?: number | null
+          completed_at?: string | null
+          created_at?: string
+          current_progress?: number
+          early_completion_bonus?: boolean
+          expires_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          target_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          coins_earned?: number | null
+          completed_at?: string | null
+          created_at?: string
+          current_progress?: number
+          early_completion_bonus?: boolean
+          expires_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_fitness_preferences: {
         Row: {
           available_days: string[]
@@ -690,6 +871,15 @@ export type Database = {
           _transaction_type: string
           _description: string
           _reference_id?: string
+        }
+        Returns: boolean
+      }
+      award_challenge_coins: {
+        Args: {
+          _user_id: string
+          _amount: number
+          _reference_id: string
+          _type: string
         }
         Returns: boolean
       }

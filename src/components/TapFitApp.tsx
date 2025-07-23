@@ -4,6 +4,7 @@ import TapFitDashboard from "./TapFitDashboard";
 import WorkoutTracker from "./WorkoutTracker";
 import SmartPinDashboard from "./SmartPinDashboard";
 import SubscriptionPlans from "./SubscriptionPlans";
+import ChallengesAchievements from "./ChallengesAchievements";
 import SensorWorkout from "../pages/SensorWorkout";
 import { HealthDataExport } from "./HealthDataExport";
 import WorkoutPlanDashboard from "./WorkoutPlanDashboard";
@@ -31,20 +32,7 @@ const TapFitApp = () => {
     </div>
   );
 
-  const renderChallengesPage = () => (
-    <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
-      <div className="text-center py-12">
-        <Trophy className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Challenges & Achievements</h2>
-        <p className="text-muted-foreground mb-6">Complete challenges and earn rewards</p>
-        <Card className="glow-card max-w-md mx-auto p-6">
-          <p className="text-sm text-muted-foreground">
-            Daily challenges, weekly goals, and achievement systems coming soon!
-          </p>
-        </Card>
-      </div>
-    </div>
-  );
+  const renderChallengesPage = () => <ChallengesAchievements />;
 
   const renderSettingsPage = () => (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
