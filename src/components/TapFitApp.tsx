@@ -4,6 +4,7 @@ import TapFitDashboard from "./TapFitDashboard";
 import WorkoutTracker from "./WorkoutTracker";
 import SmartPinDashboard from "./SmartPinDashboard";
 import SubscriptionPlans from "./SubscriptionPlans";
+import SensorWorkout from "../pages/SensorWorkout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
@@ -103,6 +104,8 @@ const TapFitApp = () => {
         return <WorkoutTracker />;
       case 'smart-pins':
         return <SmartPinDashboard />;
+      case 'sensor-workout':
+        return <SensorWorkout />;
       case 'social':
         return renderSocialPage();
       case 'challenges':
