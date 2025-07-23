@@ -46,7 +46,10 @@ const WorkoutDetail = () => {
       sets: 4,
       reps: 10,
       weight: "60-80 lbs",
-      restTime: 90
+      restTime: 90,
+      image: "/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png",
+      primaryMuscle: "Pectoralis Major (Sternal head – mid chest)",
+      secondaryMuscles: "Anterior deltoids, triceps brachii"
     },
     "2": {
       name: "Pec Deck (Butterfly) Machine", 
@@ -250,6 +253,31 @@ const WorkoutDetail = () => {
           >
             Skip Rest
           </Button>
+        </Card>
+      )}
+
+      {/* Machine Image and Muscle Groups */}
+      {workout.image && (
+        <Card className="glow-card p-6">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <img 
+                src={workout.image} 
+                alt={workout.name}
+                className="w-full h-64 object-contain rounded-lg bg-secondary/50"
+              />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <h4 className="font-semibold text-primary mb-2">Primary Muscle</h4>
+                <p className="text-sm">{workout.primaryMuscle}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-primary mb-2">Secondary Muscles</h4>
+                <p className="text-sm">{workout.secondaryMuscles}</p>
+              </div>
+            </div>
+          </div>
         </Card>
       )}
 
