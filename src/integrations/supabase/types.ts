@@ -98,6 +98,53 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_workouts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          estimated_duration: number
+          id: string
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          target_muscle_group: string
+          user_id: string
+          workout_plan_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          estimated_duration: number
+          id?: string
+          scheduled_date: string
+          scheduled_time: string
+          status?: string
+          target_muscle_group: string
+          user_id: string
+          workout_plan_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          estimated_duration?: number
+          id?: string
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          target_muscle_group?: string
+          user_id?: string
+          workout_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_workouts_workout_plan_id_fkey"
+            columns: ["workout_plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       smart_pin_data: {
         Row: {
           created_at: string
@@ -214,6 +261,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_fitness_preferences: {
+        Row: {
+          available_days: string[]
+          created_at: string
+          current_fitness_level: string
+          equipment_restrictions: string[] | null
+          health_conditions: string[] | null
+          id: string
+          preferred_time_slots: string[]
+          primary_goal: string
+          session_duration_preference: number
+          updated_at: string
+          user_id: string
+          workout_frequency: number
+        }
+        Insert: {
+          available_days?: string[]
+          created_at?: string
+          current_fitness_level?: string
+          equipment_restrictions?: string[] | null
+          health_conditions?: string[] | null
+          id?: string
+          preferred_time_slots?: string[]
+          primary_goal?: string
+          session_duration_preference?: number
+          updated_at?: string
+          user_id: string
+          workout_frequency?: number
+        }
+        Update: {
+          available_days?: string[]
+          created_at?: string
+          current_fitness_level?: string
+          equipment_restrictions?: string[] | null
+          health_conditions?: string[] | null
+          id?: string
+          preferred_time_slots?: string[]
+          primary_goal?: string
+          session_duration_preference?: number
+          updated_at?: string
+          user_id?: string
+          workout_frequency?: number
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           coins_spent: number
@@ -277,6 +369,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workout_exercises: {
+        Row: {
+          created_at: string
+          exercise_order: number
+          id: string
+          machine_name: string
+          notes: string | null
+          reps: number
+          rest_seconds: number
+          scheduled_workout_id: string
+          sets: number
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          exercise_order: number
+          id?: string
+          machine_name: string
+          notes?: string | null
+          reps: number
+          rest_seconds?: number
+          scheduled_workout_id: string
+          sets: number
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          exercise_order?: number
+          id?: string
+          machine_name?: string
+          notes?: string | null
+          reps?: number
+          rest_seconds?: number
+          scheduled_workout_id?: string
+          sets?: number
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_exercises_scheduled_workout_id_fkey"
+            columns: ["scheduled_workout_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_plans: {
+        Row: {
+          created_at: string
+          duration_weeks: number
+          fitness_goal: string
+          id: string
+          injuries_notes: string | null
+          is_active: boolean
+          machines_to_avoid: string[] | null
+          max_workout_duration: number | null
+          name: string
+          preferred_days: string[] | null
+          preferred_times: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_weeks?: number
+          fitness_goal: string
+          id?: string
+          injuries_notes?: string | null
+          is_active?: boolean
+          machines_to_avoid?: string[] | null
+          max_workout_duration?: number | null
+          name: string
+          preferred_days?: string[] | null
+          preferred_times?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_weeks?: number
+          fitness_goal?: string
+          id?: string
+          injuries_notes?: string | null
+          is_active?: boolean
+          machines_to_avoid?: string[] | null
+          max_workout_duration?: number | null
+          name?: string
+          preferred_days?: string[] | null
+          preferred_times?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       workout_sessions: {
         Row: {
