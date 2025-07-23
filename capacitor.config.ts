@@ -16,7 +16,16 @@ const config: CapacitorConfig = {
         availableDevices: "Available devices",
         noDeviceFound: "No device found"
       }
+    },
+    Haptics: {
+      impact: true,
+      notification: true,
+      selection: true
     }
+  },
+  ios: {
+    contentInset: 'automatic',
+    preferredContentMode: 'mobile'
   }
 };
 

@@ -5,6 +5,7 @@ import WorkoutTracker from "./WorkoutTracker";
 import SmartPinDashboard from "./SmartPinDashboard";
 import SubscriptionPlans from "./SubscriptionPlans";
 import SensorWorkout from "../pages/SensorWorkout";
+import { HealthDataExport } from "./HealthDataExport";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
@@ -51,7 +52,7 @@ const TapFitApp = () => {
         <p className="text-muted-foreground">Manage your TapFit experience</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl">
         <Card className="glow-card p-6">
           <div className="flex items-center gap-3 mb-4">
             <Smartphone className="h-5 w-5 text-primary" />
@@ -92,6 +93,11 @@ const TapFitApp = () => {
             </Button>
           </div>
         </Card>
+      </div>
+
+      {/* Health Data Export Section */}
+      <div className="max-w-4xl">
+        <HealthDataExport />
       </div>
     </div>
   );

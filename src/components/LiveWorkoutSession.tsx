@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useBLESensor } from '@/hooks/useBLESensor';
+import { useTapCoins } from '@/hooks/useTapCoins';
+import { HealthMetricsPanel } from './HealthMetricsPanel';
 import { 
   Bluetooth, 
   BluetoothConnected, 
@@ -29,6 +31,8 @@ export const LiveWorkoutSession: React.FC = () => {
     startWorkoutSession,
     endWorkoutSession
   } = useBLESensor();
+  
+  const { awardCoins } = useTapCoins();
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -144,7 +148,19 @@ export const LiveWorkoutSession: React.FC = () => {
                   </Button>
                 ) : (
                   <Button 
-                    onClick={endWorkoutSession}
+                    onClick={async () => {
+                      // Award coins for completing workout session
+                      if (currentSession) {
+                        const sessionMinutes = Math.floor(currentSession.activeTime / 60);
+                        const baseCoins = 25; // Base completion bonus
+                        const timeBonus = Math.min(sessionMinutes * 2, 20); // 2 coins per minute, max 20
+                        const repBonus = Math.min(realtimeReps, 30); // 1 coin per rep, max 30
+                        const totalCoins = baseCoins + timeBonus + repBonus;
+                        
+                        await awardCoins(totalCoins, 'earn_workout', `Completed BLE sensor workout: ${realtimeReps} reps in ${sessionMinutes} minutes`);
+                      }
+                      endWorkoutSession();
+                    }}
                     size="sm"
                     variant="destructive"
                   >
@@ -229,6 +245,9 @@ export const LiveWorkoutSession: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Apple Watch Health Monitoring */}
+      <HealthMetricsPanel isWorkoutActive={isSessionActive} />
 
       {/* Instructions Card */}
       {!isConnected && (
