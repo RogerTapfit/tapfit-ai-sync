@@ -22,7 +22,8 @@ import heroImage from "@/assets/tapfit-hero.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
-import { TopPriorityStats } from "./TopPriorityStats";
+import { TodaysPerformance } from "./TopPriorityStats";
+import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { useAvatar } from "@/hooks/useAvatar";
 
@@ -112,14 +113,40 @@ const TapFitDashboard = () => {
         </div>
       </div>
 
-      {/* TOP PRIORITY: Power Level & Today's Stats */}
-      <TopPriorityStats 
+      {/* 1. Today's Performance - Right after hero image */}
+      <TodaysPerformance 
         todayStats={todayStats} 
         onStartWorkout={handleStartWorkout} 
       />
 
-      {/* Tap Coins Widget */}
+      {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
+
+      {/* 3. Weekly Progress */}
+      <Card className="glow-card animate-slide-up">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Weekly Progress</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span>Workout Goal</span>
+                <span>4/5 sessions</span>
+              </div>
+              <Progress value={80} className="h-2" />
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span>Calorie Goal</span>
+                <span>1,850/2,000</span>
+              </div>
+              <Progress value={92} className="h-2" />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 4. Power Level */}
+      <PowerLevelMeter />
 
       {/* Connection Status */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -224,29 +251,6 @@ const TapFitDashboard = () => {
           View Challenges
         </Button>
       </div>
-
-      {/* Weekly Progress */}
-      <Card className="glow-card animate-slide-up">
-        <div className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Weekly Progress</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Workout Goal</span>
-                <span>4/5 sessions</span>
-              </div>
-              <Progress value={80} className="h-2" />
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>Calorie Goal</span>
-                <span>1,850/2,000</span>
-              </div>
-              <Progress value={92} className="h-2" />
-            </div>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };
