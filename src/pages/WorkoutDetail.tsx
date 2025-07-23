@@ -76,7 +76,10 @@ const WorkoutDetail = () => {
       sets: 3,
       reps: "8-10",
       weight: "70-90 lbs", 
-      restTime: 90
+      restTime: 90,
+      image: "/lovable-uploads/72acfefe-3a0e-4d74-b92f-ce88b0a38d7e.png",
+      primaryMuscle: "Pectoralis Major (Lower/Abdominal head – lower chest)",
+      secondaryMuscles: "Triceps brachii, anterior deltoids"
     },
     "5": {
       name: "Cable Crossover Machine",
