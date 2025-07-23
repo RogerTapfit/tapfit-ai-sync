@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,22 @@ import { format, addDays, startOfWeek, isToday, isFuture, parseISO } from 'date-
 const WorkoutCalendar = () => {
   const { weeklySchedule, markWorkoutComplete, rescheduleWorkout, loading } = useWorkoutPlan();
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Format time to 24-hour format (e.g., "18:00" instead of "6:00 PM")
+  const formatTime24Hour = (timeString: string) => {
+    // If the time is already in 24-hour format, return as is
+    if (timeString.includes(':') && timeString.length === 5) {
+      return timeString;
+    }
+    
+    // Handle other time formats and convert to 24-hour
+    try {
+      const date = new Date(`2000-01-01T${timeString}`);
+      return format(date, 'HH:mm');
+    } catch {
+      return timeString; // Return original if parsing fails
+    }
+  };
 
   // Get workouts for the next 4 weeks
   const futureWorkouts = useMemo(() => {
@@ -125,7 +142,7 @@ const WorkoutCalendar = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {workout.time}
+                            {formatTime24Hour(workout.time)}
                           </div>
                           <div className="flex items-center gap-1">
                             <Target className="h-3 w-3" />
@@ -179,7 +196,7 @@ const WorkoutCalendar = () => {
                       {workout.muscle_group.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {format(workout.fullDate, 'EEEE, MMMM d')} at {workout.time}
+                      {format(workout.fullDate, 'EEEE, MMMM d')} at {formatTime24Hour(workout.time)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {workout.exercises.length} exercises • {workout.duration} minutes
