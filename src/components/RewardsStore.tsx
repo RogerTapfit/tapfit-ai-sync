@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Coins, ShoppingCart, History, Zap, Palette, Trophy, Package } from 'lucide-react';
+import { ArrowLeft, Coins, ShoppingCart, History, Zap, Palette, Trophy, Package, User } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
+import { AvatarShop } from './AvatarShop';
 
 interface RewardsStoreProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ interface RewardsStoreProps {
 export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
   const { balance, storeItems, transactions, purchases, purchaseItem, hasPurchased, loading } = useTapCoins();
   const [activeTab, setActiveTab] = useState('store');
+  const [showAvatarShop, setShowAvatarShop] = useState(false);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -35,12 +37,18 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
   };
 
   const filteredItems = storeItems.filter(item => 
-    activeTab === 'store' || 
-    (activeTab === 'abilities' && item.category === 'ability') ||
-    (activeTab === 'cosmetics' && item.category === 'cosmetic') ||
-    (activeTab === 'entries' && item.category === 'entry') ||
-    (activeTab === 'digital' && item.category === 'digital')
+    !item.category.startsWith('avatar_') && (
+      activeTab === 'store' || 
+      (activeTab === 'abilities' && item.category === 'ability') ||
+      (activeTab === 'cosmetics' && item.category === 'cosmetic') ||
+      (activeTab === 'entries' && item.category === 'entry') ||
+      (activeTab === 'digital' && item.category === 'digital')
+    )
   );
+
+  if (showAvatarShop) {
+    return <AvatarShop onClose={() => setShowAvatarShop(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4">
@@ -60,6 +68,27 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-yellow-400" />
               <span className="font-bold text-lg">{balance.toLocaleString()}</span>
+            </div>
+          </Card>
+        </div>
+
+        {/* Quick Access */}
+        <div className="mb-6">
+          <Card className="p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Avatar Customization</h3>
+                <p className="text-sm text-muted-foreground">
+                  Unlock exclusive outfits, accessories, and animations for your avatar
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowAvatarShop(true)}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Avatar Shop
+              </Button>
             </div>
           </Card>
         </div>

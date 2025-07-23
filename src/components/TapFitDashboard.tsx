@@ -15,11 +15,13 @@ import {
   Brain,
   Users,
   Trophy,
-  Settings
+  Settings,
+  Palette
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
+import { AvatarBuilder } from "./AvatarBuilder";
 import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { useAvatar } from "@/hooks/useAvatar";
@@ -27,6 +29,7 @@ import { useAvatar } from "@/hooks/useAvatar";
 const TapFitDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
+  const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
   const [todayStats, setTodayStats] = useState({
     calories: 280,
     duration: 45,
@@ -59,6 +62,10 @@ const TapFitDashboard = () => {
     { date: "2 days ago", type: "Legs", duration: 50, calories: 310 }
   ];
 
+  if (showAvatarBuilder) {
+    return <AvatarBuilder onClose={() => setShowAvatarBuilder(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
       {/* Hero Section */}
@@ -78,8 +85,16 @@ const TapFitDashboard = () => {
               <p className="text-foreground/80 text-sm md:text-base">Ready to crush today's workout?</p>
             </div>
             {avatarData && (
-              <div className="hidden md:block">
+              <div className="hidden md:block relative">
                 <AvatarDisplay avatarData={avatarData} size="small" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0"
+                  onClick={() => setShowAvatarBuilder(true)}
+                >
+                  <Palette className="h-3 w-3" />
+                </Button>
               </div>
             )}
           </div>

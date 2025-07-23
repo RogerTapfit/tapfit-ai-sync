@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AvatarDisplay } from './AvatarDisplay';
+import { useAvatar } from '@/hooks/useAvatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,7 @@ const ChallengesAchievements = () => {
     loading,
     joinChallenge
   } = useChallenges();
+  const { avatarData } = useAvatar();
   
   const [challengeFilter, setChallengeFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('reward');
@@ -93,9 +96,12 @@ const ChallengesAchievements = () => {
               <Trophy className="h-6 w-6 text-primary" />
               Challenges & Achievements
             </div>
-            <div className="flex items-center gap-2 text-primary">
-              <Coins className="h-5 w-5" />
-              <span className="font-bold">{totalCoinsEarned} Tap Coins Earned</span>
+            <div className="flex items-center gap-4">
+              {avatarData && <AvatarDisplay avatarData={avatarData} size="small" />}
+              <div className="flex items-center gap-2 text-primary">
+                <Coins className="h-5 w-5" />
+                <span className="font-bold">{totalCoinsEarned} Tap Coins Earned</span>
+              </div>
             </div>
           </CardTitle>
         </CardHeader>
