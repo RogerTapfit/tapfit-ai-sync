@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle, Clock, Target, Activity } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ArrowLeft, CheckCircle, Clock, Target, Activity, AlertTriangle } from "lucide-react";
 
 interface WorkoutMachine {
   id: string;
@@ -51,6 +52,25 @@ const WorkoutList = () => {
     return completed 
       ? <Badge variant="default" className="bg-green-500">Completed</Badge>
       : <Badge variant="secondary">Pending</Badge>;
+  };
+
+  const handleFinishEarly = () => {
+    // Calculate completed exercises for early finish
+    const completedExercises = todaysWorkouts.filter(w => w.completed);
+    const estimatedDuration = Math.max(completedExercises.length * 5, 10); // At least 10 minutes
+    
+    navigate('/workout-summary', {
+      state: {
+        workoutData: {
+          name: "Early Workout Session",
+          exercises: completedExercises.length,
+          duration: estimatedDuration,
+          sets: completedExercises.length * 3, // Estimated sets for completed exercises
+          totalReps: completedExercises.length * 30, // Estimated total reps for completed exercises
+          notes: `Finished early - completed ${completedExercises.length} out of ${todaysWorkouts.length} exercises`
+        }
+      }
+    });
   };
 
   const completedCount = todaysWorkouts.filter(w => w.completed).length;
@@ -173,6 +193,45 @@ const WorkoutList = () => {
           </Button>
         )}
       </div>
+
+      {/* Finish Early Button - Only show if workout is not 100% complete and some exercises are done */}
+      {progressPercentage < 100 && completedCount > 0 && (
+        <div className="mt-6">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="w-full h-12 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Finish Early
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                  Are you sure?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  You've completed {completedCount} out of {todaysWorkouts.length} exercises. 
+                  Finishing early will end your workout session and take you to the summary page.
+                  You'll still earn Tap Coins for the exercises you've completed!
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Continue Workout</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleFinishEarly}
+                  className="bg-yellow-500 hover:bg-yellow-600"
+                >
+                  Yes, Finish Early
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </div>
   );
 };
