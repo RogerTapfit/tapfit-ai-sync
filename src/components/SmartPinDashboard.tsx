@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Activity, Heart, Timer, Target, Dumbbell, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTapCoins } from '@/hooks/useTapCoins';
 
 interface SmartPinDataEntry {
   id: string;
@@ -23,6 +24,7 @@ const SmartPinDashboard = () => {
   const [realtimeData, setRealtimeData] = useState<SmartPinDataEntry | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
+  const { awardCoins } = useTapCoins();
 
   // Fetch initial data
   useEffect(() => {
@@ -67,9 +69,13 @@ const SmartPinDashboard = () => {
           setSmartPinData(prev => [newData, ...prev.slice(0, 9)]);
           setIsConnected(true);
           
+          // Award coins for completed exercise
+          const coinAmount = Math.min(newData.reps * 2, 20); // 2 coins per rep, max 20
+          awardCoins(coinAmount, 'earn_workout', `Completed ${newData.reps} reps on ${newData.machine_id}`, newData.id);
+          
           toast({
             title: "Smart Pin Data Received",
-            description: `New workout data from ${newData.machine_id}`,
+            description: `New workout data from ${newData.machine_id} (+${coinAmount} coins)`,
           });
         }
       )
@@ -120,6 +126,11 @@ const SmartPinDashboard = () => {
         .insert([testData]);
 
       if (error) throw error;
+      
+      // Award coins for test workout completion
+      const coinAmount = Math.min(testData.reps * 2, 20);
+      await awardCoins(coinAmount, 'earn_workout', `Completed test workout: ${testData.reps} reps on ${testData.machine_id}`);
+      
     } catch (error) {
       console.error('Error adding test data:', error);
       toast({

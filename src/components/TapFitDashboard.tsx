@@ -18,6 +18,8 @@ import {
   Settings
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero.jpg";
+import { TapCoinsWidget } from "./TapCoinsWidget";
+import { useTapCoins } from "@/hooks/useTapCoins";
 
 const TapFitDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -28,12 +30,18 @@ const TapFitDashboard = () => {
     exercises: 8,
     heartRate: 142
   });
+  const { awardCoins } = useTapCoins();
 
   useEffect(() => {
     // Simulate connection after 2 seconds
     const timer = setTimeout(() => setIsConnected(true), 2000);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleStartWorkout = async () => {
+    // Award coins for starting a workout
+    await awardCoins(10, 'earn_workout', 'Started a new workout session');
+  };
 
   const aiInsights = [
     "Your strength is improving 15% faster than average",
@@ -118,6 +126,11 @@ const TapFitDashboard = () => {
         </Card>
       </div>
 
+      {/* Tap Coins Widget */}
+      <div className="mb-6">
+        <TapCoinsWidget />
+      </div>
+
       {/* Today's Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="metric-card animate-fade-in">
@@ -195,7 +208,7 @@ const TapFitDashboard = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Button className="glow-button h-16 text-lg">
+        <Button className="glow-button h-16 text-lg" onClick={handleStartWorkout}>
           <Activity className="h-5 w-5 mr-2" />
           Start Workout
         </Button>
