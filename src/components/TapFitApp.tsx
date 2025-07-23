@@ -1,0 +1,124 @@
+import { useState } from "react";
+import Navigation from "./Navigation";
+import TapFitDashboard from "./TapFitDashboard";
+import WorkoutTracker from "./WorkoutTracker";
+import SubscriptionPlans from "./SubscriptionPlans";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
+
+const TapFitApp = () => {
+  const [currentPage, setCurrentPage] = useState('dashboard');
+
+  const renderSocialPage = () => (
+    <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
+      <div className="text-center py-12">
+        <Users className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Social Features</h2>
+        <p className="text-muted-foreground mb-6">Connect with friends and track progress together</p>
+        <Card className="glow-card max-w-md mx-auto p-6">
+          <p className="text-sm text-muted-foreground">
+            Follow friends, join challenges, and climb leaderboards. Coming in the next update!
+          </p>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderChallengesPage = () => (
+    <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
+      <div className="text-center py-12">
+        <Trophy className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Challenges & Achievements</h2>
+        <p className="text-muted-foreground mb-6">Complete challenges and earn rewards</p>
+        <Card className="glow-card max-w-md mx-auto p-6">
+          <p className="text-sm text-muted-foreground">
+            Daily challenges, weekly goals, and achievement systems coming soon!
+          </p>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderSettingsPage = () => (
+    <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-2">Settings</h1>
+        <p className="text-muted-foreground">Manage your TapFit experience</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+        <Card className="glow-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Smartphone className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Connected Devices</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+              <div className="flex items-center gap-3">
+                <Apple className="h-4 w-4" />
+                <span className="text-sm">Apple Watch Series 9</span>
+              </div>
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+            </div>
+            <Button variant="outline" size="sm" className="w-full">
+              Add New Device
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="glow-card p-6">
+          <h3 className="font-semibold mb-4">Subscription</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span>Plan</span>
+              <span className="text-primary font-medium">Free Trial</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Days Remaining</span>
+              <span>5 days</span>
+            </div>
+            <Button 
+              variant="glow" 
+              size="sm" 
+              className="w-full"
+              onClick={() => setCurrentPage('subscription')}
+            >
+              Upgrade Now
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <TapFitDashboard />;
+      case 'workout':
+        return <WorkoutTracker />;
+      case 'social':
+        return renderSocialPage();
+      case 'challenges':
+        return renderChallengesPage();
+      case 'settings':
+        return renderSettingsPage();
+      case 'subscription':
+        return <SubscriptionPlans />;
+      default:
+        return <TapFitDashboard />;
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
+      <div className="flex-1 md:ml-0">
+        {renderContent()}
+      </div>
+    </div>
+  );
+};
+
+export default TapFitApp;
