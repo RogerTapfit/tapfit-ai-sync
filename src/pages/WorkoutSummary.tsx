@@ -32,7 +32,8 @@ const WorkoutSummary = () => {
     duration: 0,
     sets: 0,
     totalReps: 0,
-    notes: ""
+    notes: "",
+    allWorkoutsCompleted: false // Track if all daily workouts are done
   };
 
   const handleRatingSubmit = async () => {
@@ -131,6 +132,12 @@ const WorkoutSummary = () => {
               <Trophy className="h-3 w-3 mr-1" />
               Workout Completed
             </Badge>
+            {workoutData.allWorkoutsCompleted && (
+              <Badge variant="default" className="bg-gradient-to-r from-gold-500 to-yellow-600 text-white animate-pulse">
+                <Star className="h-3 w-3 mr-1" />
+                Daily Goal Complete! (x2 Bonus)
+              </Badge>
+            )}
             {workoutData.sets >= 15 && (
               <Badge variant="secondary">
                 <Target className="h-3 w-3 mr-1" />
@@ -203,8 +210,8 @@ const WorkoutSummary = () => {
                 </div>
               )}
               <hr className="border-yellow-500/30" />
-              <div className="flex justify-between items-center font-bold text-base">
-                <span>Total Earned</span>
+              <div className="flex justify-between items-center font-medium">
+                <span>Subtotal</span>
                 <span className="text-yellow-600">
                   +{(
                     0.5 + // Base completion
@@ -214,6 +221,36 @@ const WorkoutSummary = () => {
                     (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
                     ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
                     (workoutData.exercises >= 5 ? 0.08 : 0) // Multi-exercise bonus
+                  ).toFixed(3)} coins
+                </span>
+              </div>
+              {workoutData.allWorkoutsCompleted && (
+                <div className="flex justify-between items-center">
+                  <span className="text-orange-600 font-medium">🎉 Daily Goal Complete Bonus (x2)</span>
+                  <span className="font-medium text-orange-600">+{(
+                    0.5 + // Base completion
+                    ((workoutData.totalReps || workoutData.sets * 10) * 0.01) + // Reps
+                    (workoutData.duration >= 30 ? 0.25 : 0) + // Duration bonus
+                    (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
+                    (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
+                    ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
+                    (workoutData.exercises >= 5 ? 0.08 : 0) // Multi-exercise bonus
+                  ).toFixed(3)} coins</span>
+                </div>
+              )}
+              <hr className="border-yellow-500/30" />
+              <div className="flex justify-between items-center font-bold text-base">
+                <span>Total Earned</span>
+                <span className="text-yellow-600">
+                  +{(
+                    (0.5 + // Base completion
+                    ((workoutData.totalReps || workoutData.sets * 10) * 0.01) + // Reps
+                    (workoutData.duration >= 30 ? 0.25 : 0) + // Duration bonus
+                    (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
+                    (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
+                    ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
+                    (workoutData.exercises >= 5 ? 0.08 : 0)) * // Multi-exercise bonus
+                    (workoutData.allWorkoutsCompleted ? 2 : 1) // x2 multiplier if all workouts completed
                   ).toFixed(3)} coins
                 </span>
               </div>
