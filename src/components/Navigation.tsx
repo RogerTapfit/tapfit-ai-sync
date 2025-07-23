@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { User } from '@supabase/supabase-js';
 import { 
   Home, 
   Activity, 
@@ -9,15 +10,18 @@ import {
   Settings,
   Crown,
   Menu,
-  X
+  X,
+  LogOut
 } from "lucide-react";
 
 interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
+  user: User | null;
+  onSignOut: () => Promise<void>;
 }
 
-const Navigation = ({ currentPage, onPageChange }: NavigationProps) => {
+const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
@@ -101,6 +105,27 @@ const Navigation = ({ currentPage, onPageChange }: NavigationProps) => {
               );
             })}
           </nav>
+
+          {/* User Info & Logout */}
+          <div className="pt-6 space-y-3">
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+              Account
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm font-medium truncate">
+                {user?.email}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSignOut}
+                className="w-full justify-start"
+              >
+                <LogOut className="h-3 w-3 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
 
           {/* Quick Stats */}
           <div className="pt-6 space-y-3">

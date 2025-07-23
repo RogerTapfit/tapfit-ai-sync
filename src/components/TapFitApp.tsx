@@ -6,9 +6,11 @@ import SubscriptionPlans from "./SubscriptionPlans";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
+import { useAuth } from "./AuthGuard";
 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const { user, signOut } = useAuth();
 
   const renderSocialPage = () => (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
@@ -113,7 +115,12 @@ const TapFitApp = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
+      <Navigation 
+        currentPage={currentPage} 
+        onPageChange={setCurrentPage}
+        user={user}
+        onSignOut={signOut}
+      />
       <div className="flex-1 md:ml-0">
         {renderContent()}
       </div>
