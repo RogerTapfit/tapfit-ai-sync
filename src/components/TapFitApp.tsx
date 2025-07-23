@@ -2,6 +2,7 @@ import { useState } from "react";
 import Navigation from "./Navigation";
 import TapFitDashboard from "./TapFitDashboard";
 import WorkoutTracker from "./WorkoutTracker";
+import SmartPinDashboard from "./SmartPinDashboard";
 import SubscriptionPlans from "./SubscriptionPlans";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,8 @@ const TapFitApp = () => {
         return <TapFitDashboard />;
       case 'workout':
         return <WorkoutTracker />;
+      case 'smart-pins':
+        return <SmartPinDashboard />;
       case 'social':
         return renderSocialPage();
       case 'challenges':

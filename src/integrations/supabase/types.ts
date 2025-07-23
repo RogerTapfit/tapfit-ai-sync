@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      smart_pin_data: {
+        Row: {
+          created_at: string
+          duration: number
+          heart_rate: number | null
+          id: string
+          machine_id: string
+          muscle_group: string
+          reps: number
+          sets: number
+          timestamp: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          duration: number
+          heart_rate?: number | null
+          id?: string
+          machine_id: string
+          muscle_group: string
+          reps: number
+          sets: number
+          timestamp?: string
+          user_id: string
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          heart_rate?: number | null
+          id?: string
+          machine_id?: string
+          muscle_group?: string
+          reps?: number
+          sets?: number
+          timestamp?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
