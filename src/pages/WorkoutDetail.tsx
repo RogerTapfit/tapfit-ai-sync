@@ -96,7 +96,10 @@ const WorkoutDetail = () => {
       sets: 4,
       reps: "8-10", 
       weight: "65-95 lbs (bar + plates)",
-      restTime: 120
+      restTime: 120,
+      image: "/lovable-uploads/55d72a0c-1e5a-4d6f-abfa-edfe80701063.png",
+      primaryMuscle: "Pectoralis Major (Sternal head – mid chest)",
+      secondaryMuscles: "Anterior deltoids, triceps brachii"
     },
     "7": {
       name: "Seated Dip Machine (Chest-focused variant)",
