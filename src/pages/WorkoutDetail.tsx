@@ -86,7 +86,10 @@ const WorkoutDetail = () => {
       sets: 4,
       reps: "12-15",
       weight: "15-25 lbs per side",
-      restTime: 75
+      restTime: 75,
+      image: "/lovable-uploads/ee18485a-269f-4a98-abe3-54fab538f201.png",
+      primaryMuscle: "Pectoralis Major (focus varies depending on angle: high-to-low = lower chest, low-to-high = upper chest)",
+      secondaryMuscles: "Anterior deltoids, serratus anterior, biceps (stabilizers)"
     },
     "6": {
       name: "Smith Machine (Flat Bench Press setup)",
