@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   LogOut,
-  Bluetooth
+  Bluetooth,
+  Brain
 } from "lucide-react";
 
 interface NavigationProps {
@@ -28,6 +29,7 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'workout', label: 'Workout', icon: Activity },
+    { id: 'workout-plan', label: 'AI Workout Plan', icon: Brain },
     { id: 'smart-pins', label: 'Smart Pins', icon: Activity },
     { id: 'sensor-workout', label: 'BLE Sensors', icon: Bluetooth },
     { id: 'social', label: 'Social', icon: Users },

@@ -6,6 +6,7 @@ import SmartPinDashboard from "./SmartPinDashboard";
 import SubscriptionPlans from "./SubscriptionPlans";
 import SensorWorkout from "../pages/SensorWorkout";
 import { HealthDataExport } from "./HealthDataExport";
+import WorkoutPlanDashboard from "./WorkoutPlanDashboard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
@@ -110,6 +111,8 @@ const TapFitApp = () => {
         return <WorkoutTracker />;
       case 'smart-pins':
         return <SmartPinDashboard />;
+      case 'workout-plan':
+        return <WorkoutPlanDashboard />;
       case 'sensor-workout':
         return <SensorWorkout />;
       case 'social':
