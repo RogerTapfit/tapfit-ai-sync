@@ -28,7 +28,12 @@ const WorkoutList = () => {
     { id: "8", name: "Assisted Chest Dips Machine", muscleGroup: "Chest", completed: false }
   ]);
 
-  const toggleWorkoutComplete = (workoutId: string) => {
+  const handleWorkoutClick = (workoutId: string) => {
+    navigate(`/workout/${workoutId}`);
+  };
+
+  const toggleWorkoutComplete = (workoutId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking the status icon
     setTodaysWorkouts(workouts => 
       workouts.map(w => 
         w.id === workoutId ? { ...w, completed: !w.completed } : w
@@ -110,11 +115,13 @@ const WorkoutList = () => {
           <Card 
             key={workout.id} 
             className="glow-card p-4 cursor-pointer hover:bg-background/70 transition-all"
-            onClick={() => toggleWorkoutComplete(workout.id)}
+            onClick={() => handleWorkoutClick(workout.id)}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {getStatusIcon(workout.completed)}
+                <div onClick={(e) => toggleWorkoutComplete(workout.id, e)} className="cursor-pointer">
+                  {getStatusIcon(workout.completed)}
+                </div>
                 <div>
                   <h4 className="font-semibold">{workout.name}</h4>
                   <p className="text-sm text-muted-foreground">

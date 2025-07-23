@@ -33,25 +33,79 @@ interface WorkoutSet {
 const WorkoutDetail = () => {
   const navigate = useNavigate();
   const { workoutId } = useParams();
-  const { weeklySchedule, markWorkoutComplete } = useWorkoutPlan();
-  const [workout, setWorkout] = useState<any>(null);
-  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [sets, setSets] = useState<WorkoutSet[]>([]);
   const [restTime, setRestTime] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // Static workout data
+  const workoutData: Record<string, any> = {
+    "1": {
+      name: "Chest Press Machine",
+      sets: 4,
+      reps: 10,
+      weight: "60-80 lbs",
+      restTime: 90
+    },
+    "2": {
+      name: "Pec Deck (Butterfly) Machine", 
+      sets: 4,
+      reps: 12,
+      weight: "40-60 lbs",
+      restTime: 90
+    },
+    "3": {
+      name: "Incline Chest Press Machine",
+      sets: 3,
+      reps: 10, 
+      weight: "50-70 lbs",
+      restTime: 90
+    },
+    "4": {
+      name: "Decline Chest Press Machine",
+      sets: 3,
+      reps: "8-10",
+      weight: "70-90 lbs", 
+      restTime: 90
+    },
+    "5": {
+      name: "Cable Crossover Machine",
+      sets: 4,
+      reps: "12-15",
+      weight: "15-25 lbs per side",
+      restTime: 75
+    },
+    "6": {
+      name: "Smith Machine (Flat Bench Press setup)",
+      sets: 4,
+      reps: "8-10", 
+      weight: "65-95 lbs (bar + plates)",
+      restTime: 120
+    },
+    "7": {
+      name: "Seated Dip Machine (Chest-focused variant)",
+      sets: 3,
+      reps: 12,
+      weight: "Body weight + assistance",
+      restTime: 90
+    },
+    "8": {
+      name: "Assisted Chest Dips Machine",
+      sets: 3,
+      reps: 12,
+      weight: "Body weight + assistance", 
+      restTime: 90
+    }
+  };
+
+  const workout = workoutData[workoutId || "1"];
 
   useEffect(() => {
-    if (workoutId && weeklySchedule.length > 0) {
-      const foundWorkout = weeklySchedule.find(w => w.id === workoutId);
-      if (foundWorkout) {
-        setWorkout(foundWorkout);
-        initializeSets(foundWorkout.exercises[0]);
-      }
-      setLoading(false);
+    if (workout) {
+      initializeSets();
     }
-  }, [workoutId, weeklySchedule]);
+  }, [workoutId]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -66,17 +120,17 @@ const WorkoutDetail = () => {
     return () => clearTimeout(timer);
   }, [isResting, restTime]);
 
-  const initializeSets = (exercise: any) => {
-    if (!exercise) return;
+  const initializeSets = () => {
+    if (!workout) return;
     
     const newSets: WorkoutSet[] = [];
-    for (let i = 0; i < exercise.sets; i++) {
+    for (let i = 0; i < workout.sets; i++) {
       newSets.push({
         id: i + 1,
-        reps: exercise.reps,
-        weight: 0, // Will be set by user
+        reps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
+        weight: 0,
         completed: false,
-        actualReps: exercise.reps,
+        actualReps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
         actualWeight: 0
       });
     }
@@ -89,8 +143,7 @@ const WorkoutDetail = () => {
     setSets(updatedSets);
 
     // Start rest timer
-    const exercise = workout.exercises[currentExerciseIndex];
-    setRestTime(exercise.rest_seconds);
+    setRestTime(workout.restTime);
     setIsResting(true);
 
     toast.success(`Set ${setIndex + 1} completed!`);
@@ -102,83 +155,18 @@ const WorkoutDetail = () => {
     setSets(updatedSets);
   };
 
-  const nextExercise = () => {
-    if (currentExerciseIndex < workout.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      initializeSets(workout.exercises[currentExerciseIndex + 1]);
-      setIsResting(false);
-      setRestTime(0);
-    } else {
-      // Workout complete
-      completeWorkout();
-    }
-  };
-
-  const completeWorkout = async () => {
-    try {
-      setLoading(true);
-      
-      // Save workout data to smart_pin_data
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      // Create workout session
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('workout_sessions')
-        .insert({
-          user_id: user.id,
-          start_time: new Date().toISOString(),
-          end_time: new Date().toISOString(),
+  const completeWorkout = () => {
+    toast.success('Workout completed!');
+    navigate('/workout-summary', { 
+      state: { 
+        workoutData: {
+          name: workout.name,
+          sets: sets.filter(s => s.completed).length,
+          totalSets: sets.length,
           notes: notes
-        })
-        .select()
-        .single();
-
-      if (sessionError) throw sessionError;
-
-      // Log each completed exercise
-      for (let i = 0; i < workout.exercises.length; i++) {
-        const exercise = workout.exercises[i];
-        const exerciseSets = i === currentExerciseIndex ? sets : []; // Only current exercise has set data
-        
-        // For completed exercises, create smart pin data entries
-        if (exerciseSets.length > 0) {
-          for (const set of exerciseSets.filter(s => s.completed)) {
-            await supabase.from('smart_pin_data').insert({
-              user_id: user.id,
-              session_id: sessionData.id,
-              machine_id: exercise.machine,
-              reps: set.actualReps || set.reps,
-              sets: 1, // Each entry represents one set
-              weight: set.actualWeight || set.weight,
-              duration: exercise.rest_seconds / 60, // Convert to minutes
-              muscle_group: workout.muscle_group,
-              timestamp: new Date().toISOString()
-            });
-          }
         }
       }
-
-      // Mark workout as complete
-      await markWorkoutComplete(workoutId!);
-      
-      navigate('/workout-summary', { 
-        state: { 
-          workoutData: {
-            name: workout.muscle_group,
-            exercises: workout.exercises.length,
-            duration: workout.duration,
-            sets: sets.filter(s => s.completed).length,
-            notes: notes
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error completing workout:', error);
-      toast.error('Failed to save workout data');
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const formatTime = (seconds: number) => {
@@ -198,7 +186,6 @@ const WorkoutDetail = () => {
     );
   }
 
-  const currentExercise = workout.exercises[currentExerciseIndex];
   const completedSets = sets.filter(s => s.completed).length;
   const totalSets = sets.length;
   const exerciseProgress = (completedSets / totalSets) * 100;
@@ -215,13 +202,13 @@ const WorkoutDetail = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{currentExercise.machine}</h1>
+          <h1 className="text-2xl font-bold">{workout.name}</h1>
           <p className="text-muted-foreground">
-            Exercise {currentExerciseIndex + 1} of {workout.exercises.length} • {workout.muscle_group}
+            Chest Workout • {workout.sets} sets × {workout.reps} reps
           </p>
         </div>
         <Badge variant="outline">
-          {currentExerciseIndex + 1}/{workout.exercises.length}
+          Chest
         </Badge>
       </div>
 
@@ -274,30 +261,28 @@ const WorkoutDetail = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{currentExercise.sets}</div>
+            <div className="text-2xl font-bold text-primary">{workout.sets}</div>
             <div className="text-sm text-muted-foreground">Sets</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{currentExercise.reps}</div>
+            <div className="text-2xl font-bold text-primary">{workout.reps}</div>
             <div className="text-sm text-muted-foreground">Reps</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{formatTime(currentExercise.rest_seconds)}</div>
+            <div className="text-2xl font-bold text-primary">{formatTime(workout.restTime)}</div>
             <div className="text-sm text-muted-foreground">Rest</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{workout.muscle_group}</div>
+            <div className="text-2xl font-bold text-primary">Chest</div>
             <div className="text-sm text-muted-foreground">Target</div>
           </div>
         </div>
         
-        {currentExercise.weight_guidance && (
-          <div className="bg-background/50 p-3 rounded-lg">
-            <p className="text-sm">
-              <strong>Weight Guidance:</strong> {currentExercise.weight_guidance}
-            </p>
-          </div>
-        )}
+        <div className="bg-background/50 p-3 rounded-lg">
+          <p className="text-sm">
+            <strong>Starting Weight:</strong> {workout.weight}
+          </p>
+        </div>
       </Card>
 
       {/* Sets */}
@@ -418,11 +403,11 @@ const WorkoutDetail = () => {
         
         {completedSets === totalSets ? (
           <Button 
-            onClick={nextExercise}
+            onClick={completeWorkout}
             className="h-12"
             disabled={loading}
           >
-            {currentExerciseIndex === workout.exercises.length - 1 ? 'Finish Workout' : 'Next Exercise'}
+            Complete Workout
           </Button>
         ) : (
           <Button 
