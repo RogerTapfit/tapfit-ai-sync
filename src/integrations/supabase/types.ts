@@ -323,6 +323,36 @@ export type Database = {
         }
         Relationships: []
       }
+      power_level_history: {
+        Row: {
+          created_at: string
+          date: string
+          factors: Json
+          id: string
+          score: number
+          tier: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          factors?: Json
+          id?: string
+          score: number
+          tier: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          factors?: Json
+          id?: string
+          score?: number
+          tier?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_data: Json | null
@@ -655,6 +685,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_power_levels: {
+        Row: {
+          created_at: string
+          current_score: number
+          current_tier: string
+          id: string
+          last_calculated_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_score?: number
+          current_tier?: string
+          id?: string
+          last_calculated_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_score?: number
+          current_tier?: string
+          id?: string
+          last_calculated_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           coins_spent: number
@@ -886,6 +946,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      calculate_user_power_level: {
+        Args: { _user_id: string }
+        Returns: number
+      }
+      get_power_level_tier: {
+        Args: { _score: number }
+        Returns: string
+      }
       get_user_gym_id: {
         Args: { _user_id: string }
         Returns: string
@@ -913,6 +981,10 @@ export type Database = {
           _description: string
           _reference_id?: string
         }
+        Returns: boolean
+      }
+      update_user_power_level: {
+        Args: { _user_id: string }
         Returns: boolean
       }
     }

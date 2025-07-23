@@ -20,6 +20,7 @@ import {
 import heroImage from "@/assets/tapfit-hero.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
+import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { useAvatar } from "@/hooks/useAvatar";
 
@@ -136,9 +137,10 @@ const TapFitDashboard = () => {
         </Card>
       </div>
 
-      {/* Tap Coins Widget */}
-      <div className="mb-6">
+      {/* Tap Coins Widget and Power Level */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <TapCoinsWidget />
+        <PowerLevelMeter />
       </div>
 
       {/* Today's Stats */}
