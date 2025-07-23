@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const LiveWorkoutSession: React.FC = () => {
+  const navigate = useNavigate();
   const {
     connectionStatus,
     isConnected,
@@ -157,7 +159,22 @@ export const LiveWorkoutSession: React.FC = () => {
                         const totalCoins = repCoins;
                         
                         await awardCoins(totalCoins, 'earn_workout', `Completed BLE sensor workout: ${realtimeReps} reps in ${sessionMinutes} minutes`);
+                        
+                        // Navigate to workout summary
+                        navigate('/workout-summary', {
+                          state: {
+                            workoutData: {
+                              name: "BLE Sensor Workout",
+                              exercises: 1,
+                              duration: sessionMinutes,
+                              sets: Math.ceil(realtimeReps / 10), // Estimate sets
+                              totalReps: realtimeReps,
+                              notes: `Sensor workout completed with ${realtimeReps} reps`
+                            }
+                          }
+                        });
                       }
+                      
                       endWorkoutSession();
                     }}
                     size="sm"

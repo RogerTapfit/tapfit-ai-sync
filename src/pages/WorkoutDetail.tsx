@@ -196,13 +196,20 @@ const WorkoutDetail = () => {
   };
 
   const completeWorkout = () => {
+    // Calculate total reps for coin calculation
+    const totalReps = sets.reduce((sum, set) => sum + (set.actualReps || 0), 0);
+    const estimatedDuration = Math.ceil(sets.length * (workout.restTime / 60)) + 15; // Rest time + exercise time
+    
     toast.success('Workout completed!');
     navigate('/workout-summary', { 
       state: { 
         workoutData: {
           name: workout.name,
+          exercises: 1, // Single exercise
+          duration: estimatedDuration,
           sets: sets.filter(s => s.completed).length,
           totalSets: sets.length,
+          totalReps: totalReps,
           notes: notes
         }
       }

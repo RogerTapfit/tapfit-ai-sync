@@ -30,6 +30,7 @@ const WorkoutSummary = () => {
     exercises: 0,
     duration: 0,
     sets: 0,
+    totalReps: 0,
     notes: ""
   };
 
@@ -41,14 +42,13 @@ const WorkoutSummary = () => {
 
     try {
       // Award coins based on total reps (100 reps = 1 tap coin)
-      // Estimate total reps from sets completed (assuming ~10 reps per set)
-      const estimatedReps = workoutData.sets * 10;
-      const totalCoins = Math.floor(estimatedReps / 100);
+      const totalReps = workoutData.totalReps || (workoutData.sets * 10); // Fallback estimate
+      const totalCoins = Math.floor(totalReps / 100);
 
       await awardCoins(
         totalCoins, 
         'earn_workout', 
-        `Completed ${workoutData.name} workout (${estimatedReps} reps)`
+        `Completed ${workoutData.name} workout (${totalReps} reps)`
       );
 
       setSubmitted(true);
@@ -75,7 +75,7 @@ const WorkoutSummary = () => {
   };
 
   // Estimated calories (rough calculation)
-  const estimatedCalories = Math.round(workoutData.duration * 8 + workoutData.sets * 2);
+  const estimatedCalories = Math.round(workoutData.duration * 8 + (workoutData.totalReps || workoutData.sets * 10) * 0.5);
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
@@ -94,6 +94,12 @@ const WorkoutSummary = () => {
           <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl font-bold">{estimatedCalories}</p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
+        </Card>
+
+        <Card className="metric-card animate-fade-in">
+          <Target className="h-8 w-8 text-primary mx-auto mb-2" />
+          <p className="text-2xl font-bold">{workoutData.totalReps || workoutData.sets * 10}</p>
+          <p className="text-sm text-muted-foreground">Total Reps</p>
         </Card>
 
         <Card className="metric-card animate-fade-in">
@@ -135,9 +141,37 @@ const WorkoutSummary = () => {
               Endurance Star
             </Badge>
           )}
-          <Badge variant="outline">
-            +{Math.floor((workoutData.sets * 10) / 100)} Tap Coins
+          {(workoutData.totalReps || 0) >= 100 && (
+            <Badge variant="secondary" className="bg-purple-500">
+              <Trophy className="h-3 w-3 mr-1" />
+              Century Club
+            </Badge>
+          )}
+          {workoutData.exercises >= 5 && (
+            <Badge variant="secondary" className="bg-blue-500">
+              <Target className="h-3 w-3 mr-1" />
+              Multi-Exercise Master
+            </Badge>
+          )}
+          <Badge variant="outline" className="bg-yellow-500/10 border-yellow-500">
+            +{Math.floor((workoutData.totalReps || workoutData.sets * 10) / 100)} Tap Coins
           </Badge>
+        </div>
+      </Card>
+
+      {/* Motivational Message */}
+      <Card className="glow-card p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+        <div className="text-center space-y-3">
+          <Trophy className="h-12 w-12 mx-auto text-primary" />
+          <h3 className="text-xl font-bold">Outstanding Work! 💪</h3>
+          <p className="text-muted-foreground">
+            You're building strength, discipline, and consistency. Every rep counts toward your fitness goals!
+          </p>
+          <div className="flex flex-wrap gap-2 justify-center mt-4">
+            <span className="px-3 py-1 bg-primary/10 rounded-full text-sm">🔥 Consistency</span>
+            <span className="px-3 py-1 bg-primary/10 rounded-full text-sm">💯 Dedication</span>
+            <span className="px-3 py-1 bg-primary/10 rounded-full text-sm">⚡ Progress</span>
+          </div>
         </div>
       </Card>
 

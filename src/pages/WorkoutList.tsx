@@ -146,12 +146,32 @@ const WorkoutList = () => {
         >
           Back to Dashboard
         </Button>
-        <Button 
-          className="h-12"
-          disabled={progressPercentage === 100}
-        >
-          {progressPercentage === 100 ? 'All Done! 🎉' : `${completedCount}/${todaysWorkouts.length} Complete`}
-        </Button>
+        {progressPercentage === 100 ? (
+          <Button 
+            className="h-12"
+            onClick={() => navigate('/workout-summary', {
+              state: {
+                workoutData: {
+                  name: "Daily Workout Session",
+                  exercises: todaysWorkouts.length,
+                  duration: 45, // Estimated duration
+                  sets: todaysWorkouts.length * 4, // Estimated sets
+                  totalReps: todaysWorkouts.length * 40, // Estimated total reps
+                  notes: ""
+                }
+              }
+            })}
+          >
+            Finish Workout Session 🎉
+          </Button>
+        ) : (
+          <Button 
+            className="h-12"
+            disabled
+          >
+            {`${completedCount}/${todaysWorkouts.length} Complete`}
+          </Button>
+        )}
       </div>
     </div>
   );
