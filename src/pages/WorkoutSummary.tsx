@@ -40,15 +40,15 @@ const WorkoutSummary = () => {
     }
 
     try {
-      // Award coins based on workout completion and rating
-      const baseCoins = 25;
-      const ratingBonus = rating >= 4 ? 10 : 0;
-      const totalCoins = baseCoins + ratingBonus;
+      // Award coins based on total reps (100 reps = 1 tap coin)
+      // Estimate total reps from sets completed (assuming ~10 reps per set)
+      const estimatedReps = workoutData.sets * 10;
+      const totalCoins = Math.floor(estimatedReps / 100);
 
       await awardCoins(
         totalCoins, 
         'earn_workout', 
-        `Completed ${workoutData.name} workout${ratingBonus > 0 ? ' with high rating' : ''}`
+        `Completed ${workoutData.name} workout (${estimatedReps} reps)`
       );
 
       setSubmitted(true);
@@ -136,7 +136,7 @@ const WorkoutSummary = () => {
             </Badge>
           )}
           <Badge variant="outline">
-            +{25 + (rating >= 4 ? 10 : 0)} Tap Coins
+            +{Math.floor((workoutData.sets * 10) / 100)} Tap Coins
           </Badge>
         </div>
       </Card>

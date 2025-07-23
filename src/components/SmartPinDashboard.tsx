@@ -69,8 +69,8 @@ const SmartPinDashboard = () => {
           setSmartPinData(prev => [newData, ...prev.slice(0, 9)]);
           setIsConnected(true);
           
-          // Award coins for completed exercise
-          const coinAmount = Math.min(newData.reps * 2, 20); // 2 coins per rep, max 20
+          // Award coins for completed exercise (100 reps = 1 tap coin)
+          const coinAmount = Math.floor(newData.reps / 100);
           awardCoins(coinAmount, 'earn_workout', `Completed ${newData.reps} reps on ${newData.machine_id}`, newData.id);
           
           toast({
@@ -127,8 +127,8 @@ const SmartPinDashboard = () => {
 
       if (error) throw error;
       
-      // Award coins for test workout completion
-      const coinAmount = Math.min(testData.reps * 2, 20);
+      // Award coins for test workout completion (100 reps = 1 tap coin)
+      const coinAmount = Math.floor(testData.reps / 100);
       await awardCoins(coinAmount, 'earn_workout', `Completed test workout: ${testData.reps} reps on ${testData.machine_id}`);
       
     } catch (error) {
