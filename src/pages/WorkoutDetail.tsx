@@ -45,81 +45,89 @@ const WorkoutDetail = () => {
       name: "Chest Press Machine",
       sets: 4,
       reps: 10,
-      weight: "60-80 lbs",
+      weight: "80 lbs",
       restTime: 90,
       image: "/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png",
       primaryMuscle: "Pectoralis Major (Sternal head – mid chest)",
-      secondaryMuscles: "Anterior deltoids, triceps brachii"
+      secondaryMuscles: "Anterior deltoids, triceps brachii",
+      notes: "Top end of your suggested range for strength focus"
     },
     "2": {
       name: "Pec Deck (Butterfly) Machine", 
       sets: 4,
       reps: 12,
-      weight: "40-60 lbs",
+      weight: "50 lbs",
       restTime: 90,
       image: "/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png",
       primaryMuscle: "Pectoralis Major (Sternal & Clavicular heads – inner & upper chest)",
-      secondaryMuscles: "Anterior deltoids, biceps (stabilizers)"
+      secondaryMuscles: "Anterior deltoids, biceps (stabilizers)",
+      notes: "Mid-range for hypertrophy, controlled tempo"
     },
     "3": {
       name: "Incline Chest Press Machine",
       sets: 3,
       reps: 10, 
-      weight: "50-70 lbs",
+      weight: "60 lbs",
       restTime: 90,
       image: "/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png",
       primaryMuscle: "Pectoralis Major (Clavicular head – upper chest)",
-      secondaryMuscles: "Anterior deltoids, triceps brachii"
+      secondaryMuscles: "Anterior deltoids, triceps brachii",
+      notes: "Moderate load, hitting upper chest"
     },
     "4": {
       name: "Decline Chest Press Machine",
       sets: 3,
       reps: "8-10",
-      weight: "70-90 lbs", 
+      weight: "80 lbs", 
       restTime: 90,
       image: "/lovable-uploads/72acfefe-3a0e-4d74-b92f-ce88b0a38d7e.png",
       primaryMuscle: "Pectoralis Major (Lower/Abdominal head – lower chest)",
-      secondaryMuscles: "Triceps brachii, anterior deltoids"
+      secondaryMuscles: "Triceps brachii, anterior deltoids",
+      notes: "Slightly heavier for power-based lower pec work"
     },
     "5": {
       name: "Cable Crossover Machine",
       sets: 4,
       reps: "12-15",
-      weight: "15-25 lbs per side",
+      weight: "20 lbs per side",
       restTime: 75,
       image: "/lovable-uploads/ee18485a-269f-4a98-abe3-54fab538f201.png",
       primaryMuscle: "Pectoralis Major (focus varies depending on angle: high-to-low = lower chest, low-to-high = upper chest)",
-      secondaryMuscles: "Anterior deltoids, serratus anterior, biceps (stabilizers)"
+      secondaryMuscles: "Anterior deltoids, serratus anterior, biceps (stabilizers)",
+      notes: "Isolation movement, moderate to high reps"
     },
     "6": {
       name: "Smith Machine (Flat Bench Press setup)",
       sets: 4,
       reps: "8-10", 
-      weight: "65-95 lbs (bar + plates)",
+      weight: "85 lbs (bar + plates)",
       restTime: 120,
       image: "/lovable-uploads/55d72a0c-1e5a-4d6f-abfa-edfe80701063.png",
       primaryMuscle: "Pectoralis Major (Sternal head – mid chest)",
-      secondaryMuscles: "Anterior deltoids, triceps brachii"
+      secondaryMuscles: "Anterior deltoids, triceps brachii",
+      notes: "Includes bar weight + plates"
     },
     "7": {
       name: "Seated Dip Machine (Chest-focused variant)",
       sets: 3,
       reps: 12,
-      weight: "Body weight + assistance",
+      weight: "100 lbs",
       restTime: 90,
       image: "/lovable-uploads/2659df27-2ead-4acf-ace3-edd4b33cad78.png",
       primaryMuscle: "Pectoralis Major (Lower portion)",
-      secondaryMuscles: "Triceps brachii, anterior deltoids"
+      secondaryMuscles: "Triceps brachii, anterior deltoids",
+      notes: "Compound press targeting lower chest and triceps"
     },
     "8": {
       name: "Assisted Chest Dips Machine",
       sets: 3,
-      reps: 12,
-      weight: "Body weight + assistance", 
+      reps: 10,
+      weight: "70 lbs assist", 
       restTime: 90,
       image: "/lovable-uploads/0d9b2a95-f255-4a68-a040-7998a9ffb1cf.png",
       primaryMuscle: "Pectoralis Major (Lower chest)",
-      secondaryMuscles: "Triceps brachii, anterior deltoids, rhomboids (minor stabilizing)"
+      secondaryMuscles: "Triceps brachii, anterior deltoids, rhomboids (minor stabilizing)",
+      notes: "Medium assistance for controlled negative phase"
     }
   };
 
@@ -327,10 +335,15 @@ const WorkoutDetail = () => {
           </div>
         </div>
         
-        <div className="bg-background/50 p-3 rounded-lg">
+        <div className="bg-background/50 p-3 rounded-lg space-y-2">
           <p className="text-sm">
             <strong>Starting Weight:</strong> {workout.weight}
           </p>
+          {workout.notes && (
+            <p className="text-sm">
+              <strong>Training Notes:</strong> {workout.notes}
+            </p>
+          )}
         </div>
       </Card>
 
