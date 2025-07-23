@@ -325,6 +325,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_data: Json | null
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -334,6 +335,7 @@ export type Database = {
           tap_coins_balance: number
         }
         Insert: {
+          avatar_data?: Json | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -343,6 +345,7 @@ export type Database = {
           tap_coins_balance?: number
         }
         Update: {
+          avatar_data?: Json | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null

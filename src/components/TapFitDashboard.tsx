@@ -19,7 +19,9 @@ import {
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
+import { AvatarDisplay } from "./AvatarDisplay";
 import { useTapCoins } from "@/hooks/useTapCoins";
+import { useAvatar } from "@/hooks/useAvatar";
 
 const TapFitDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -31,6 +33,7 @@ const TapFitDashboard = () => {
     heartRate: 142
   });
   const { awardCoins } = useTapCoins();
+  const { avatarData } = useAvatar();
 
   useEffect(() => {
     // Simulate connection after 2 seconds
@@ -66,11 +69,18 @@ const TapFitDashboard = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-between p-6">
-          <div>
-            <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              Welcome Back
-            </h1>
-            <p className="text-foreground/80 text-sm md:text-base">Ready to crush today's workout?</p>
+          <div className="flex items-center gap-6">
+            <div>
+              <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                Welcome Back
+              </h1>
+              <p className="text-foreground/80 text-sm md:text-base">Ready to crush today's workout?</p>
+            </div>
+            {avatarData && (
+              <div className="hidden md:block">
+                <AvatarDisplay avatarData={avatarData} size="small" />
+              </div>
+            )}
           </div>
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User } from '@supabase/supabase-js';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { 
   Home, 
   Activity, 
@@ -13,13 +13,14 @@ import {
   X,
   LogOut,
   Bluetooth,
-  Brain
+  Brain,
+  User as UserIcon
 } from "lucide-react";
 
 interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
-  user: User | null;
+  user: SupabaseUser | null;
   onSignOut: () => Promise<void>;
 }
 
@@ -34,6 +35,7 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
     { id: 'sensor-workout', label: 'BLE Sensors', icon: Bluetooth },
     { id: 'social', label: 'Social', icon: Users },
     { id: 'challenges', label: 'Challenges', icon: Trophy },
+    { id: 'avatar', label: 'Avatar', icon: UserIcon },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

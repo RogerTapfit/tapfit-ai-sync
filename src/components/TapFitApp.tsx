@@ -8,6 +8,7 @@ import ChallengesAchievements from "./ChallengesAchievements";
 import SensorWorkout from "../pages/SensorWorkout";
 import { HealthDataExport } from "./HealthDataExport";
 import WorkoutPlanDashboard from "./WorkoutPlanDashboard";
+import { AvatarCustomizer } from "./AvatarCustomizer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
@@ -111,6 +112,8 @@ const TapFitApp = () => {
         return renderSettingsPage();
       case 'subscription':
         return <SubscriptionPlans />;
+      case 'avatar':
+        return <AvatarCustomizer onClose={() => setCurrentPage('dashboard')} />;
       default:
         return <TapFitDashboard />;
     }
