@@ -17,6 +17,7 @@ import {
 import { useWorkoutPlan } from '@/hooks/useWorkoutPlan';
 import WorkoutPlanSetup from './WorkoutPlanSetup';
 import WeeklyWorkoutSchedule from './WeeklyWorkoutSchedule';
+import WorkoutCalendar from './WorkoutCalendar';
 
 const WorkoutPlanDashboard = () => {
   const { currentPlan, weeklySchedule, preferences, generateNewPlan, loading } = useWorkoutPlan();
@@ -91,10 +92,14 @@ const WorkoutPlanDashboard = () => {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="schedule" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Schedule
+            This Week
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Calendar
           </TabsTrigger>
           <TabsTrigger value="setup" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
@@ -108,7 +113,7 @@ const WorkoutPlanDashboard = () => {
 
         <TabsContent value="schedule" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Weekly Workout Schedule</h2>
+            <h2 className="text-lg font-semibold">This Week's Schedule</h2>
             {currentPlan && (
               <Button 
                 onClick={generateNewPlan} 
@@ -122,6 +127,24 @@ const WorkoutPlanDashboard = () => {
             )}
           </div>
           <WeeklyWorkoutSchedule />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Workout Calendar & Future Workouts</h2>
+            {currentPlan && (
+              <Button 
+                onClick={generateNewPlan} 
+                disabled={loading}
+                variant="outline"
+                size="sm"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Regenerate Plan
+              </Button>
+            )}
+          </div>
+          <WorkoutCalendar />
         </TabsContent>
 
         <TabsContent value="setup" className="space-y-4">
