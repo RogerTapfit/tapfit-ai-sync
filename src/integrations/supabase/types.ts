@@ -146,6 +146,56 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_logs: {
+        Row: {
+          completed_at: string
+          created_at: string
+          exercise_name: string
+          id: string
+          machine_name: string | null
+          notes: string | null
+          reps_completed: number
+          sets_completed: number
+          user_id: string
+          weight_used: number | null
+          workout_log_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          exercise_name: string
+          id?: string
+          machine_name?: string | null
+          notes?: string | null
+          reps_completed?: number
+          sets_completed?: number
+          user_id: string
+          weight_used?: number | null
+          workout_log_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          machine_name?: string | null
+          notes?: string | null
+          reps_completed?: number
+          sets_completed?: number
+          user_id?: string
+          weight_used?: number | null
+          workout_log_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_logs_workout_log_id_fkey"
+            columns: ["workout_log_id"]
+            isOneToOne: false
+            referencedRelation: "workout_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       food_entries: {
         Row: {
           ai_analyzed: boolean
@@ -856,6 +906,68 @@ export type Database = {
           },
         ]
       }
+      workout_logs: {
+        Row: {
+          calories_burned: number | null
+          completed_at: string | null
+          completed_exercises: number
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          muscle_group: string
+          notes: string | null
+          scheduled_workout_id: string | null
+          started_at: string
+          total_exercises: number
+          total_reps: number
+          updated_at: string
+          user_id: string
+          workout_name: string
+        }
+        Insert: {
+          calories_burned?: number | null
+          completed_at?: string | null
+          completed_exercises?: number
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          muscle_group: string
+          notes?: string | null
+          scheduled_workout_id?: string | null
+          started_at?: string
+          total_exercises?: number
+          total_reps?: number
+          updated_at?: string
+          user_id: string
+          workout_name: string
+        }
+        Update: {
+          calories_burned?: number | null
+          completed_at?: string | null
+          completed_exercises?: number
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          muscle_group?: string
+          notes?: string | null
+          scheduled_workout_id?: string | null
+          started_at?: string
+          total_exercises?: number
+          total_reps?: number
+          updated_at?: string
+          user_id?: string
+          workout_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_logs_scheduled_workout_id_fkey"
+            columns: ["scheduled_workout_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workout_plans: {
         Row: {
           created_at: string
@@ -1005,6 +1117,14 @@ export type Database = {
       get_power_level_tier: {
         Args: { _score: number }
         Returns: string
+      }
+      get_todays_workout_progress: {
+        Args: { _user_id: string }
+        Returns: {
+          total_exercises: number
+          completed_exercises: number
+          completion_percentage: number
+        }[]
       }
       get_user_gym_id: {
         Args: { _user_id: string }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, CheckCircle, Clock, Target, Activity, AlertTriangle } from "lucide-react";
+import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 
 interface WorkoutMachine {
   id: string;
@@ -16,6 +17,7 @@ interface WorkoutMachine {
 
 const WorkoutList = () => {
   const navigate = useNavigate();
+  const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, todaysProgress, currentWorkoutLog } = useWorkoutLogger();
   
   // Today's chest workout machines
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([
@@ -29,17 +31,68 @@ const WorkoutList = () => {
     { id: "8", name: "Assisted Chest Dips Machine", muscleGroup: "Chest", completed: false }
   ]);
 
+  // Load completed exercises from database
+  useEffect(() => {
+    const loadCompletedExercises = async () => {
+      const completedExercises = await getTodaysCompletedExercises();
+      setTodaysWorkouts(workouts => 
+        workouts.map(workout => ({
+          ...workout,
+          completed: completedExercises.includes(workout.name)
+        }))
+      );
+    };
+
+    loadCompletedExercises();
+  }, []);
+
+  // Start workout session if not already started
+  useEffect(() => {
+    const initializeWorkout = async () => {
+      if (!currentWorkoutLog) {
+        await startWorkout("Daily Chest Workout", "Chest", todaysWorkouts.length);
+      }
+    };
+
+    initializeWorkout();
+  }, []);
+
   const handleWorkoutClick = (workoutId: string) => {
     navigate(`/workout/${workoutId}`);
   };
 
-  const toggleWorkoutComplete = (workoutId: string, e: React.MouseEvent) => {
+  const toggleWorkoutComplete = async (workoutId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation when clicking the status icon
-    setTodaysWorkouts(workouts => 
-      workouts.map(w => 
-        w.id === workoutId ? { ...w, completed: !w.completed } : w
-      )
-    );
+    
+    const workout = todaysWorkouts.find(w => w.id === workoutId);
+    if (!workout || !currentWorkoutLog) return;
+
+    if (!workout.completed) {
+      // Log the exercise completion
+      const success = await logExercise(
+        currentWorkoutLog.id,
+        workout.name,
+        workout.name, // Use machine name as exercise name
+        3, // Default 3 sets
+        30, // Default 30 reps
+        undefined // No weight specified
+      );
+
+      if (success) {
+        setTodaysWorkouts(workouts => 
+          workouts.map(w => 
+            w.id === workoutId ? { ...w, completed: true } : w
+          )
+        );
+      }
+    } else {
+      // If trying to uncomplete, just update UI (could implement removal logic if needed)
+      setTodaysWorkouts(workouts => 
+        workouts.map(w => 
+          w.id === workoutId ? { ...w, completed: false } : w
+        )
+      );
+    }
   };
 
   const getStatusIcon = (completed: boolean) => {
@@ -54,10 +107,18 @@ const WorkoutList = () => {
       : <Badge variant="secondary">Pending</Badge>;
   };
 
-  const handleFinishEarly = () => {
+  const handleFinishEarly = async () => {
     // Calculate completed exercises for early finish
     const completedExercises = todaysWorkouts.filter(w => w.completed);
     const estimatedDuration = Math.max(completedExercises.length * 5, 10); // At least 10 minutes
+    
+    if (currentWorkoutLog) {
+      await completeWorkout(
+        currentWorkoutLog.id, 
+        estimatedDuration,
+        `Finished early - completed ${completedExercises.length} out of ${todaysWorkouts.length} exercises`
+      );
+    }
     
     navigate('/workout-summary', {
       state: {
@@ -169,18 +230,27 @@ const WorkoutList = () => {
         {progressPercentage === 100 ? (
           <Button 
             className="h-12"
-            onClick={() => navigate('/workout-summary', {
-              state: {
-                workoutData: {
-                  name: "Daily Workout Session",
-                  exercises: todaysWorkouts.length,
-                  duration: 45, // Estimated duration
-                  sets: todaysWorkouts.length * 4, // Estimated sets
-                  totalReps: todaysWorkouts.length * 40, // Estimated total reps
-                  notes: ""
-                }
+            onClick={async () => {
+              if (currentWorkoutLog) {
+                await completeWorkout(
+                  currentWorkoutLog.id,
+                  45, // Estimated duration
+                  "Completed full workout session"
+                );
               }
-            })}
+              navigate('/workout-summary', {
+                state: {
+                  workoutData: {
+                    name: "Daily Workout Session",
+                    exercises: todaysWorkouts.length,
+                    duration: 45, // Estimated duration
+                    sets: todaysWorkouts.length * 4, // Estimated sets
+                    totalReps: todaysWorkouts.length * 40, // Estimated total reps
+                    notes: ""
+                  }
+                }
+              })
+            }}
           >
             Finish Workout Session 🎉
           </Button>

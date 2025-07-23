@@ -26,6 +26,7 @@ import { TodaysPerformance } from "./TopPriorityStats";
 import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { useAvatar } from "@/hooks/useAvatar";
+import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 
 const TapFitDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -39,6 +40,17 @@ const TapFitDashboard = () => {
   });
   const { awardCoins } = useTapCoins();
   const { avatarData } = useAvatar();
+  const { todaysProgress } = useWorkoutLogger();
+
+  // Update today's stats with real data from workout progress
+  useEffect(() => {
+    if (todaysProgress.completed_exercises > 0) {
+      setTodayStats(prev => ({
+        ...prev,
+        exercises: todaysProgress.completed_exercises
+      }));
+    }
+  }, [todaysProgress]);
 
   useEffect(() => {
     // Simulate connection after 2 seconds
@@ -128,10 +140,10 @@ const TapFitDashboard = () => {
           <div className="space-y-4">
             <div>
               <div className="flex justify-between text-sm mb-2">
-                <span>Workout Goal</span>
-                <span>4/5 sessions</span>
+                <span>Today's Exercises</span>
+                <span>{todaysProgress.completed_exercises}/{todaysProgress.total_exercises || 8} completed</span>
               </div>
-              <Progress value={80} className="h-2" />
+              <Progress value={todaysProgress.completion_percentage || 0} className="h-2" />
             </div>
             <div>
               <div className="flex justify-between text-sm mb-2">
