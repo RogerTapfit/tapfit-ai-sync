@@ -355,45 +355,52 @@ const WorkoutDetail = () => {
             key={set.id} 
             className={`glow-card p-4 ${set.completed ? 'border-green-500 bg-green-500/5' : ''}`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="space-y-4">
+              {/* Set header */}
+              <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold">Set {set.id}</div>
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={set.actualReps}
-                      onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                      className="w-16 h-8"
-                      disabled={set.completed}
-                    />
-                    <span className="text-sm text-muted-foreground">reps</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Weight className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      value={set.actualWeight}
-                      onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
-                      className="w-20 h-8"
-                      disabled={set.completed}
-                    />
-                    <span className="text-sm text-muted-foreground">lbs</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {set.completed ? (
+                {set.completed && (
                   <Badge variant="default" className="bg-green-500">
                     <CheckCircle className="h-4 w-4 mr-1" />
                     Complete
                   </Badge>
-                ) : (
+                )}
+              </div>
+              
+              {/* Inputs and button - responsive layout */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                {/* Input fields */}
+                <div className="flex gap-4 flex-1">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <Input
+                      type="number"
+                      value={set.actualReps}
+                      onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
+                      className="w-full h-10"
+                      disabled={set.completed}
+                    />
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">reps</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <Weight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <Input
+                      type="number"
+                      value={set.actualWeight}
+                      onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
+                      className="w-full h-10"
+                      disabled={set.completed}
+                    />
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">lbs</span>
+                  </div>
+                </div>
+                
+                {/* Complete button */}
+                {!set.completed && (
                   <Button
                     onClick={() => handleSetComplete(index)}
                     disabled={isResting}
-                    className="h-8"
+                    className="w-full sm:w-auto sm:min-w-[120px] h-10"
                   >
                     Complete Set
                   </Button>
