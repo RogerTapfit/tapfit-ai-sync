@@ -66,7 +66,10 @@ const WorkoutDetail = () => {
       sets: 3,
       reps: 10, 
       weight: "50-70 lbs",
-      restTime: 90
+      restTime: 90,
+      image: "/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png",
+      primaryMuscle: "Pectoralis Major (Clavicular head – upper chest)",
+      secondaryMuscles: "Anterior deltoids, triceps brachii"
     },
     "4": {
       name: "Decline Chest Press Machine",
