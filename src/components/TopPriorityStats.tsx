@@ -1,0 +1,68 @@
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Activity, Clock, Target, Heart } from "lucide-react";
+import { PowerLevelMeter } from "./PowerLevelMeter";
+
+interface TopPriorityStatsProps {
+  todayStats: {
+    calories: number;
+    duration: number;
+    exercises: number;
+    heartRate: number;
+  };
+  onStartWorkout: () => void;
+}
+
+export const TopPriorityStats = ({ todayStats, onStartWorkout }: TopPriorityStatsProps) => {
+  return (
+    <div className="space-y-6">
+      {/* Power Level - Most Important */}
+      <PowerLevelMeter />
+      
+      {/* Today's Workout Stats */}
+      <Card className="glow-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">Today's Performance</h3>
+          <Button className="glow-button" onClick={onStartWorkout}>
+            <Activity className="h-4 w-4 mr-2" />
+            Start Workout
+          </Button>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center space-y-2">
+            <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
+              <Activity className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-primary">{todayStats.calories}</p>
+            <p className="text-sm text-muted-foreground">Calories Burned</p>
+          </div>
+
+          <div className="text-center space-y-2">
+            <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
+              <Clock className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-primary">{todayStats.duration}m</p>
+            <p className="text-sm text-muted-foreground">Workout Time</p>
+          </div>
+
+          <div className="text-center space-y-2">
+            <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
+              <Target className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-primary">{todayStats.exercises}</p>
+            <p className="text-sm text-muted-foreground">Exercises Done</p>
+          </div>
+
+          <div className="text-center space-y-2">
+            <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
+              <Heart className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-primary">{todayStats.heartRate}</p>
+            <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};

@@ -22,7 +22,7 @@ import heroImage from "@/assets/tapfit-hero.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
-import { PowerLevelMeter } from "./PowerLevelMeter";
+import { TopPriorityStats } from "./TopPriorityStats";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { useAvatar } from "@/hooks/useAvatar";
 
@@ -112,6 +112,15 @@ const TapFitDashboard = () => {
         </div>
       </div>
 
+      {/* TOP PRIORITY: Power Level & Today's Stats */}
+      <TopPriorityStats 
+        todayStats={todayStats} 
+        onStartWorkout={handleStartWorkout} 
+      />
+
+      {/* Tap Coins Widget */}
+      <TapCoinsWidget />
+
       {/* Connection Status */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="glow-card p-4">
@@ -152,39 +161,6 @@ const TapFitDashboard = () => {
               <p className="text-sm text-muted-foreground">Active</p>
             </div>
           </div>
-        </Card>
-      </div>
-
-      {/* Tap Coins Widget and Power Level */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <TapCoinsWidget />
-        <PowerLevelMeter />
-      </div>
-
-      {/* Today's Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="metric-card animate-fade-in">
-          <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{todayStats.calories}</p>
-          <p className="text-sm text-muted-foreground">Calories</p>
-        </Card>
-
-        <Card className="metric-card animate-fade-in">
-          <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{todayStats.duration}m</p>
-          <p className="text-sm text-muted-foreground">Duration</p>
-        </Card>
-
-        <Card className="metric-card animate-fade-in">
-          <Target className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{todayStats.exercises}</p>
-          <p className="text-sm text-muted-foreground">Exercises</p>
-        </Card>
-
-        <Card className="metric-card animate-fade-in">
-          <Heart className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{todayStats.heartRate}</p>
-          <p className="text-sm text-muted-foreground">Avg BPM</p>
         </Card>
       </div>
 
@@ -237,12 +213,7 @@ const TapFitDashboard = () => {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Button className="glow-button h-16 text-lg" onClick={handleStartWorkout}>
-          <Activity className="h-5 w-5 mr-2" />
-          Start Workout
-        </Button>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button variant="outline" className="glow-card h-16 text-lg">
           <Users className="h-5 w-5 mr-2" />
           Social
