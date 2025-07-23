@@ -42,6 +42,20 @@ const WorkoutPlanSetup = () => {
     '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
   ];
 
+  // Format time to AM/PM format
+  const formatTimeAMPM = (timeString: string) => {
+    try {
+      const date = new Date(`2000-01-01T${timeString}`);
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      });
+    } catch {
+      return timeString;
+    }
+  };
+
   const handleDayToggle = (day: string) => {
     const updatedDays = formData.available_days.includes(day)
       ? formData.available_days.filter(d => d !== day)
@@ -179,7 +193,7 @@ const WorkoutPlanSetup = () => {
                   className="cursor-pointer px-2 py-1 text-center"
                   onClick={() => handleTimeToggle(time)}
                 >
-                  {time}
+                  {formatTimeAMPM(time)}
                 </Badge>
               ))}
             </div>
