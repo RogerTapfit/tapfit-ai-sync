@@ -155,6 +155,14 @@ const WorkoutDetail = () => {
   const initializeSets = () => {
     if (!workout) return;
     
+    // Extract numeric weight from the workout weight string
+    const extractWeight = (weightStr: string): number => {
+      const match = weightStr.match(/(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    };
+    
+    const defaultWeight = extractWeight(workout.weight);
+    
     const newSets: WorkoutSet[] = [];
     for (let i = 0; i < workout.sets; i++) {
       newSets.push({
@@ -163,7 +171,7 @@ const WorkoutDetail = () => {
         weight: 0,
         completed: false,
         actualReps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
-        actualWeight: 0
+        actualWeight: defaultWeight
       });
     }
     setSets(newSets);
