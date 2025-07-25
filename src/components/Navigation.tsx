@@ -41,16 +41,19 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
   return (
     <>
       {/* Mobile Menu Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
+      <div className="md:hidden fixed top-6 left-4 z-50">
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="glow-card"
+          className="glow-card bg-card/95 backdrop-blur-sm"
         >
           {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
       </div>
+
+      {/* Mobile Top Spacer */}
+      <div className="md:hidden h-16 w-full" />
 
       {/* Mobile Overlay */}
       {isMenuOpen && (
