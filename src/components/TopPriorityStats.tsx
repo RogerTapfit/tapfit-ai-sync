@@ -17,7 +17,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
     <Card className="glow-card p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
-        <Button className="glow-button" onClick={onStartWorkout}>
+        <Button className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0" onClick={onStartWorkout}>
           <Activity className="h-4 w-4 mr-2" />
           Start Workout
         </Button>
