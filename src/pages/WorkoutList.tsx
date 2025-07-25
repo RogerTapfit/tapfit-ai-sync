@@ -233,7 +233,7 @@ const WorkoutList = () => {
 
       {/* Workout List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-red-500">
+        <h3 className="text-lg font-semibold text-white">
           Today's Chest Exercises
         </h3>
         
