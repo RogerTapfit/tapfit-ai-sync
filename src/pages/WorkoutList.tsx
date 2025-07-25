@@ -191,7 +191,7 @@ const WorkoutList = () => {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Today's Workout
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-foreground/70">
             {new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
               month: 'long', 
@@ -206,7 +206,7 @@ const WorkoutList = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-primary">Workout Progress</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-foreground/70">
               {completedCount} of {todaysWorkouts.length} exercises completed
             </p>
           </div>
@@ -214,7 +214,7 @@ const WorkoutList = () => {
             <div className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               {Math.round(progressPercentage)}%
             </div>
-            <div className="text-sm text-muted-foreground">Complete</div>
+            <div className="text-sm text-foreground/70">Complete</div>
           </div>
         </div>
         <Progress value={progressPercentage} className="h-3" />
@@ -226,7 +226,7 @@ const WorkoutList = () => {
           <Target className="h-5 w-5 text-accent" />
           <div>
             <p className="font-semibold text-accent">Chest Day Workout</p>
-            <p className="text-sm text-muted-foreground">Goal: Chest Development</p>
+            <p className="text-sm text-foreground/70">Goal: Chest Development</p>
           </div>
         </div>
       </Card>
@@ -254,7 +254,7 @@ const WorkoutList = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold">{workout.name}</h4>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-sm text-foreground/70 flex items-center gap-1">
                     <Activity className="h-3 w-3 text-secondary" />
                     Target: {workout.muscleGroup}
                   </p>
