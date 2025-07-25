@@ -136,7 +136,7 @@ const WorkoutList = () => {
   const getStatusIcon = (completed: boolean) => {
     return completed 
       ? <CheckCircle className="h-5 w-5 text-green-500" />
-      : <Clock className="h-5 w-5 text-yellow-500" />;
+      : <Clock className="h-5 w-5 text-red-500" />;
   };
 
   const getStatusBadge = (completed: boolean) => {
