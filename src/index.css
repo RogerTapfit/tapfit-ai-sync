@@ -202,4 +202,32 @@ All colors MUST be HSL for proper theming.
       transform: scale(1);
     }
   }
+
+  /* Heartbeat glow animation for Start Workout button */
+  .animate-heartbeat-glow {
+    animation: heartbeatGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes heartbeatGlow {
+    0%, 100% {
+      box-shadow: 0 0 5px hsl(348 83% 47% / 0.5);
+      transform: scale(1);
+    }
+    20% {
+      box-shadow: 0 0 15px hsl(348 83% 47% / 0.8), 0 0 25px hsl(348 83% 47% / 0.4);
+      transform: scale(1.05);
+    }
+    40% {
+      box-shadow: 0 0 5px hsl(348 83% 47% / 0.5);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 18px hsl(348 83% 47% / 0.9), 0 0 30px hsl(348 83% 47% / 0.5);
+      transform: scale(1.08);
+    }
+    60% {
+      box-shadow: 0 0 5px hsl(348 83% 47% / 0.5);
+      transform: scale(1);
+    }
+  }
 }
