@@ -138,9 +138,49 @@ class AudioManager {
     } else if (percentage === 75) {
       this.createTone(659.25, 0.2, 'triangle'); // E5
     } else if (percentage === 100) {
-      // Special 100% completion
-      this.playWorkoutComplete();
+      // Special 100% completion with epic victory sound
+      this.playEpicVictory();
     }
+  }
+
+  async playEpicVictory(): Promise<void> {
+    await this.initializeAudio();
+    // Epic victory fanfare - longer and more triumphant than workout complete
+    
+    // First chord - F major
+    const chord1 = [
+      { frequency: 349.23, duration: 0.6 }, // F4
+      { frequency: 440.00, duration: 0.6 }, // A4
+      { frequency: 523.25, duration: 0.6 }, // C5
+    ];
+    this.playTones(chord1, 'triangle');
+    
+    // Second chord - G major (higher)
+    setTimeout(() => {
+      const chord2 = [
+        { frequency: 392.00, duration: 0.6 }, // G4
+        { frequency: 493.88, duration: 0.6 }, // B4
+        { frequency: 587.33, duration: 0.6 }, // D5
+      ];
+      this.playTones(chord2, 'triangle');
+    }, 300);
+    
+    // Final triumphant chord - C major (highest)
+    setTimeout(() => {
+      const finalChord = [
+        { frequency: 523.25, duration: 1.2 }, // C5
+        { frequency: 659.25, duration: 1.2 }, // E5
+        { frequency: 783.99, duration: 1.2 }, // G5
+        { frequency: 1046.50, duration: 1.2 }, // C6
+      ];
+      this.playTones(finalChord, 'triangle');
+    }, 600);
+    
+    // Victory melody on top
+    setTimeout(() => this.createTone(1046.50, 0.3, 'sine'), 800); // C6
+    setTimeout(() => this.createTone(1174.66, 0.3, 'sine'), 1000); // D6
+    setTimeout(() => this.createTone(1318.51, 0.4, 'sine'), 1200); // E6
+    setTimeout(() => this.createTone(1567.98, 0.6, 'sine'), 1400); // G6
   }
 
   async playRestTimerBeep(): Promise<void> {
