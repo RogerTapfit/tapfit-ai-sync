@@ -60,9 +60,9 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
           requestAnimationFrame(updateCounter);
         } else {
           setCurrentValue(finalValue);
-          // Trigger scale animation
+          // Trigger bouncy scale animation
           setIsScaling(true);
-          setTimeout(() => setIsScaling(false), 400);
+          setTimeout(() => setIsScaling(false), 600);
           onComplete?.();
         }
       };
@@ -81,12 +81,11 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   return (
     <span 
       ref={elementRef}
-      className={`font-bold transition-transform duration-400 ${
-        isScaling ? 'scale-130 animate-bounce' : 'scale-100'
-      }`}
+      className={`font-bold ${isScaling ? 'animate-bounce-scale' : ''}`}
       style={{
-        transform: isScaling ? 'scale(1.3)' : 'scale(1)',
-        transition: 'transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)'
+        animationDuration: isScaling ? '0.6s' : undefined,
+        animationTimingFunction: isScaling ? 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' : undefined,
+        animationFillMode: 'forwards'
       }}
     >
       {formatValue(currentValue)}{suffix}
