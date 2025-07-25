@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, Clock, Dumbbell, Heart } from "lucide-react";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 
 interface TodaysPerformanceProps {
   todayStats: {
@@ -28,7 +29,9 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Activity className="h-6 w-6 text-stats-calories" />
           </div>
-          <p className="text-2xl font-bold text-stats-calories">{todayStats.calories}</p>
+          <p className="text-2xl font-bold text-stats-calories">
+            <AnimatedNumber finalValue={todayStats.calories} duration={2500} />
+          </p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </div>
 
@@ -36,7 +39,9 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Clock className="h-6 w-6 text-stats-duration" />
           </div>
-          <p className="text-2xl font-bold text-stats-duration">{todayStats.duration}m</p>
+          <p className="text-2xl font-bold text-stats-duration">
+            <AnimatedNumber finalValue={todayStats.duration} duration={2200} suffix="m" />
+          </p>
           <p className="text-sm text-muted-foreground">Workout Time</p>
         </div>
 
@@ -44,7 +49,9 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Dumbbell className="h-6 w-6 text-stats-exercises" />
           </div>
-          <p className="text-2xl font-bold text-stats-exercises">{todayStats.exercises}</p>
+          <p className="text-2xl font-bold text-stats-exercises">
+            <AnimatedNumber finalValue={todayStats.exercises} duration={1800} />
+          </p>
           <p className="text-sm text-muted-foreground">Exercises Done</p>
         </div>
 
@@ -52,7 +59,9 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Heart className="h-6 w-6 text-stats-heart" />
           </div>
-          <p className="text-2xl font-bold text-stats-heart">{todayStats.heartRate}</p>
+          <p className="text-2xl font-bold text-stats-heart">
+            <AnimatedNumber finalValue={todayStats.heartRate} duration={2800} />
+          </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
       </div>
