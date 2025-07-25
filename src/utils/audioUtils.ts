@@ -214,21 +214,28 @@ class AudioManager {
 
   async playCashPayout(): Promise<void> {
     await this.initializeAudio();
-    // Cash register cha-ching sound with coins falling
+    // Fun cash register cha-ching sound with good vibes
     
-    // Initial cha-ching
-    this.createTone(1000, 0.1, 'triangle');
-    setTimeout(() => this.createTone(800, 0.1, 'triangle'), 80);
+    // Main cha-ching sound (classic cash register)
+    this.createTone(1200, 0.15, 'triangle');
+    setTimeout(() => this.createTone(900, 0.12, 'triangle'), 80);
+    setTimeout(() => this.createTone(1100, 0.1, 'triangle'), 140);
     
-    // Coins falling effect
+    // Cash drawer opening sound
+    setTimeout(() => this.createTone(300, 0.2, 'square'), 200);
+    
+    // Coins cascading effect with variation
     setTimeout(() => {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 12; i++) {
         setTimeout(() => {
-          const frequency = 400 + Math.random() * 200;
-          this.createTone(frequency, 0.08, 'sine');
-        }, i * 60);
+          const frequency = 350 + Math.random() * 300 + (i * 10);
+          this.createTone(frequency, 0.06 + Math.random() * 0.04, 'sine');
+        }, i * 45 + Math.random() * 20);
       }
-    }, 200);
+    }, 300);
+    
+    // Final satisfying ring
+    setTimeout(() => this.createTone(1400, 0.3, 'triangle'), 800);
   }
 
   // Settings

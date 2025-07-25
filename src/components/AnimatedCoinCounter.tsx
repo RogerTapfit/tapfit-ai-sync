@@ -15,11 +15,11 @@ export const AnimatedCoinCounter: React.FC<AnimatedCoinCounterProps> = ({
   onComplete
 }) => {
   const [currentAmount, setCurrentAmount] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
-    if (!isAnimating && finalAmount > 0) {
-      setIsAnimating(true);
+    if (!hasAnimated && finalAmount > 0) {
+      setHasAnimated(true);
       setCurrentAmount(0);
 
       const startTime = Date.now();
@@ -39,7 +39,6 @@ export const AnimatedCoinCounter: React.FC<AnimatedCoinCounterProps> = ({
           requestAnimationFrame(updateCounter);
         } else {
           setCurrentAmount(finalAmount);
-          setIsAnimating(false);
           // Play cash payout sound when animation completes
           audioManager.playCashPayout();
           onComplete?.();
@@ -48,7 +47,7 @@ export const AnimatedCoinCounter: React.FC<AnimatedCoinCounterProps> = ({
 
       requestAnimationFrame(updateCounter);
     }
-  }, [finalAmount, duration, isAnimating, onComplete]);
+  }, [finalAmount, duration, hasAnimated, onComplete]);
 
   const formatAmount = (amount: number) => {
     return amount.toFixed(decimals);
