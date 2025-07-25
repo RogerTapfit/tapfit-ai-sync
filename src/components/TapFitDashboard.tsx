@@ -18,7 +18,7 @@ import {
   Settings,
   Palette
 } from "lucide-react";
-import heroImage from "@/assets/tapfit-hero.jpg";
+import heroImage from "@/assets/tapfit-hero-new.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
@@ -90,7 +90,8 @@ const TapFitDashboard = () => {
           alt="TapFit Futuristic Gym" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-between p-6">
           <div className="flex items-center gap-6">
             <div>
