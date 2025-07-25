@@ -15,7 +15,7 @@ import {
   Share2,
   Coins,
   Dumbbell,
-  PersonStanding
+  UserCheck
 } from "lucide-react";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
@@ -134,7 +134,7 @@ const WorkoutSummary = () => {
         </Card>
 
         <Card className="metric-card animate-fade-in">
-          <PersonStanding className="h-8 w-8 text-primary mx-auto mb-2" />
+          <UserCheck className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
             <AnimatedNumber finalValue={workoutData.exercises} duration={2100} />
           </p>
