@@ -183,11 +183,14 @@ const WorkoutList = () => {
           variant="outline"
           size="icon"
           onClick={() => navigate(-1)}
+          className="border-primary/30 hover:border-primary/60 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Today's Workout</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Today's Workout
+          </h1>
           <p className="text-muted-foreground">
             {new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
@@ -199,16 +202,18 @@ const WorkoutList = () => {
       </div>
 
       {/* Progress Overview */}
-      <Card className="glow-card p-6">
+      <Card className="glow-card p-6 border-l-4 border-l-primary/50">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold">Workout Progress</h3>
+            <h3 className="text-lg font-semibold text-primary">Workout Progress</h3>
             <p className="text-sm text-muted-foreground">
               {completedCount} of {todaysWorkouts.length} exercises completed
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary">{Math.round(progressPercentage)}%</div>
+            <div className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              {Math.round(progressPercentage)}%
+            </div>
             <div className="text-sm text-muted-foreground">Complete</div>
           </div>
         </div>
@@ -216,11 +221,11 @@ const WorkoutList = () => {
       </Card>
 
       {/* Plan Info */}
-      <Card className="glow-card p-4">
+      <Card className="glow-card p-4 border-l-4 border-l-accent/50 bg-gradient-to-r from-accent/5 to-transparent">
         <div className="flex items-center gap-3">
-          <Target className="h-5 w-5 text-primary" />
+          <Target className="h-5 w-5 text-accent" />
           <div>
-            <p className="font-semibold">Chest Day Workout</p>
+            <p className="font-semibold text-accent">Chest Day Workout</p>
             <p className="text-sm text-muted-foreground">Goal: Chest Development</p>
           </div>
         </div>
@@ -228,12 +233,18 @@ const WorkoutList = () => {
 
       {/* Workout List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Today's Chest Exercises</h3>
+        <h3 className="text-lg font-semibold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+          Today's Chest Exercises
+        </h3>
         
-        {todaysWorkouts.map((workout) => (
+        {todaysWorkouts.map((workout, index) => (
           <Card 
             key={workout.id} 
-            className="glow-card p-4 cursor-pointer hover:bg-background/70 transition-all"
+            className={`glow-card p-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all duration-300 border-l-2 ${
+              workout.completed 
+                ? 'border-l-green-500/60 bg-gradient-to-r from-green-500/5 to-transparent' 
+                : 'border-l-secondary/40 hover:border-l-primary/60'
+            }`}
             onClick={() => handleWorkoutClick(workout.id)}
           >
             <div className="flex items-center justify-between">
@@ -243,7 +254,8 @@ const WorkoutList = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold">{workout.name}</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-3 w-3 text-secondary" />
                     Target: {workout.muscleGroup}
                   </p>
                 </div>
