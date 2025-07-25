@@ -27,11 +27,14 @@ import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { useAvatar } from "@/hooks/useAvatar";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
+import { useAuth } from "./AuthGuard";
+import { supabase } from "@/integrations/supabase/client";
 
 const TapFitDashboard = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ full_name?: string } | null>(null);
   const [todayStats, setTodayStats] = useState({
     calories: 280,
     duration: 45,
@@ -41,6 +44,26 @@ const TapFitDashboard = () => {
   const { awardCoins } = useTapCoins();
   const { avatarData } = useAvatar();
   const { todaysProgress } = useWorkoutLogger();
+  const { user } = useAuth();
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (data && !error) {
+          setUserProfile(data);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user?.id]);
 
   // Update today's stats with real data from workout progress
   useEffect(() => {
@@ -98,7 +121,7 @@ const TapFitDashboard = () => {
               <div className="absolute inset-0 bg-background/40 blur-sm rounded-lg -m-2" />
               <div className="relative">
                 <h1 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-lg">
-                  Welcome Back
+                  Welcome Back{userProfile?.full_name ? `, ${userProfile.full_name.split(' ')[0]}` : ''}
                 </h1>
                 <p className="text-foreground/90 text-sm md:text-base drop-shadow-sm">Ready to crush today's workout?</p>
               </div>
