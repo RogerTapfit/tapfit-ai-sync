@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface AnimatedNumberProps {
   finalValue: number;
@@ -10,7 +10,7 @@ interface AnimatedNumberProps {
 
 export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   finalValue,
-  duration = 2000,
+  duration = 3000, // 50% slower (was 2000)
   decimals = 0,
   onComplete,
   suffix = ""
@@ -18,9 +18,29 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   const [currentValue, setCurrentValue] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
   const [isScaling, setIsScaling] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const elementRef = useRef<HTMLSpanElement>(null);
+
+  // Intersection Observer to detect when element is in view
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasAnimated]);
 
   useEffect(() => {
-    if (!hasAnimated && finalValue > 0) {
+    if (!hasAnimated && isVisible && finalValue > 0) {
       setHasAnimated(true);
       setCurrentValue(0);
 
@@ -49,7 +69,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 
       requestAnimationFrame(updateCounter);
     }
-  }, [finalValue, duration, hasAnimated, onComplete]);
+  }, [finalValue, duration, hasAnimated, isVisible, onComplete]);
 
   const formatValue = (value: number) => {
     if (decimals === 0) {
@@ -60,6 +80,7 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 
   return (
     <span 
+      ref={elementRef}
       className={`font-bold transition-transform duration-400 ${
         isScaling ? 'scale-130 animate-bounce' : 'scale-100'
       }`}

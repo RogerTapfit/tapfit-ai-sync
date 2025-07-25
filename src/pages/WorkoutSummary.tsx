@@ -110,7 +110,7 @@ const WorkoutSummary = () => {
         <Card className="metric-card animate-fade-in">
           <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
-            <AnimatedNumber finalValue={estimatedCalories} duration={1800} />
+            <AnimatedNumber finalValue={estimatedCalories} duration={2700} />
           </p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </Card>
@@ -118,7 +118,7 @@ const WorkoutSummary = () => {
         <Card className="metric-card animate-fade-in">
           <Target className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
-            <AnimatedNumber finalValue={workoutData.totalReps || workoutData.sets * 10} duration={2000} />
+            <AnimatedNumber finalValue={workoutData.totalReps || workoutData.sets * 10} duration={3000} />
           </p>
           <p className="text-sm text-muted-foreground">Total Reps</p>
         </Card>
@@ -126,7 +126,7 @@ const WorkoutSummary = () => {
         <Card className="metric-card animate-fade-in">
           <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
-            <AnimatedNumber finalValue={workoutData.duration} duration={1600} suffix="m" />
+            <AnimatedNumber finalValue={workoutData.duration} duration={2400} suffix="m" />
           </p>
           <p className="text-sm text-muted-foreground">Duration</p>
         </Card>
@@ -134,7 +134,7 @@ const WorkoutSummary = () => {
         <Card className="metric-card animate-fade-in">
           <Target className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
-            <AnimatedNumber finalValue={workoutData.exercises} duration={1400} />
+            <AnimatedNumber finalValue={workoutData.exercises} duration={2100} />
           </p>
           <p className="text-sm text-muted-foreground">Exercises</p>
         </Card>
@@ -142,7 +142,7 @@ const WorkoutSummary = () => {
         <Card className="metric-card animate-fade-in">
           <Trophy className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
-            <AnimatedNumber finalValue={workoutData.sets} duration={2200} />
+            <AnimatedNumber finalValue={workoutData.sets} duration={3300} />
           </p>
           <p className="text-sm text-muted-foreground">Sets Completed</p>
         </Card>
