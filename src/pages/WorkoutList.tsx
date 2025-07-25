@@ -115,10 +115,30 @@ const WorkoutList = () => {
       if (success) {
         console.log("Exercise logged successfully, updating local state");
         
-        // Play positive sound effect
-        const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEaBj2T3fPEeS0FKoPO89OSQwkTYMLu6KZSEQlGnt7vwmIaBo2S1/LHeSYFL4PN8tp3LwYYdrXq6qZVEQpBl+Dlu2EdCDKP3PDUfygGKYLN8thzKwQae7Tr7qlWEwg/md7wu2MgCTaQ3fLSeywEKoXO8tp5LwcYebXi7KZSFgZFm9/ru2EdBz+Q1/LEeioGJoHL8dd1KgQaebTo66hWEgdGmN7zuWMcBzeP2/LQeSsFJYHL9NZ3LAYUeLfj7KZRFQZGZN7iu2IaBj2P3O/FfCgFWI/c5K6GRVH8GxAx7qhROgdHmJcOTQcIDiEJDBhqWJHjBVoXABoMEpIoXAg=");
-        audio.volume = 0.3;
-        audio.play().catch(e => console.log("Audio play failed:", e));
+        // Play positive sound effect using Web Audio API
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          // Create a positive, uplifting sound (C major chord)
+          oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+          oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+          
+          oscillator.type = 'sine';
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.5);
+        } catch (error) {
+          console.log("Audio playback failed:", error);
+        }
         
         setTodaysWorkouts(workouts => 
           workouts.map(w => 
