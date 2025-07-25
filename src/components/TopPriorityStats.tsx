@@ -34,7 +34,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
 
         <div className="text-center space-y-2">
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
-            <Clock className="h-6 w-6 text-stats-duration" />
+            <Clock className="h-6 w-6 text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-stats-duration">{todayStats.duration}m</p>
           <p className="text-sm text-muted-foreground">Workout Time</p>
