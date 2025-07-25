@@ -248,6 +248,26 @@ const WorkoutDetail = () => {
   const totalSets = sets.length;
   const exerciseProgress = (completedSets / totalSets) * 100;
 
+  // Dynamic progress bar gradient color based on percentage
+  const getProgressGradient = (percentage: number) => {
+    // Create a smooth gradient from red (0%) to yellow (50%) to green (100%)
+    if (percentage <= 50) {
+      // Red to Yellow transition (0% to 50%)
+      const ratio = percentage / 50;
+      const red = 255;
+      const green = Math.round(255 * ratio);
+      const blue = 0;
+      return `rgb(${red}, ${green}, ${blue})`;
+    } else {
+      // Yellow to Green transition (50% to 100%)
+      const ratio = (percentage - 50) / 50;
+      const red = Math.round(255 * (1 - ratio));
+      const green = 255;
+      const blue = 0;
+      return `rgb(${red}, ${green}, ${blue})`;
+    }
+  };
+
   // Auto-complete when all sets are done
   useEffect(() => {
     if (completedSets === totalSets && totalSets > 0) {
@@ -290,13 +310,28 @@ const WorkoutDetail = () => {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary">{Math.round(exerciseProgress)}%</div>
+            <div 
+              className="text-2xl font-bold transition-colors duration-500"
+              style={{
+                color: getProgressGradient(exerciseProgress)
+              }}
+            >
+              {Math.round(exerciseProgress)}%
+            </div>
           </div>
         </div>
-        <div className="w-full bg-secondary rounded-full h-3">
+        <div className="relative">
+          <div className="w-full bg-secondary rounded-full h-3"></div>
           <div 
-            className="bg-primary h-3 rounded-full transition-all duration-300"
-            style={{ width: `${exerciseProgress}%` }}
+            className="absolute inset-0 h-3 rounded-full transition-all duration-500"
+            style={{
+              background: `linear-gradient(90deg, 
+                rgb(239, 68, 68) 0%, 
+                rgb(251, 191, 36) 50%, 
+                rgb(34, 197, 94) 100%)`,
+              width: `${exerciseProgress}%`,
+              clipPath: 'inset(0 0 0 0)'
+            }}
           />
         </div>
       </Card>
