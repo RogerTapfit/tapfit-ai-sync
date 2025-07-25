@@ -90,15 +90,18 @@ const TapFitDashboard = () => {
           alt="TapFit Futuristic Gym" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/98 via-background/85 to-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-between p-6">
           <div className="flex items-center gap-6">
-            <div>
-              <h1 className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                Welcome Back
-              </h1>
-              <p className="text-foreground/80 text-sm md:text-base">Ready to crush today's workout?</p>
+            <div className="relative">
+              <div className="absolute inset-0 bg-background/40 blur-sm rounded-lg -m-2" />
+              <div className="relative">
+                <h1 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-lg">
+                  Welcome Back
+                </h1>
+                <p className="text-foreground/90 text-sm md:text-base drop-shadow-sm">Ready to crush today's workout?</p>
+              </div>
             </div>
             {avatarData && (
               <div className="hidden md:block relative">
