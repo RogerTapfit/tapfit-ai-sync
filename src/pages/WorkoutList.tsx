@@ -114,6 +114,12 @@ const WorkoutList = () => {
 
       if (success) {
         console.log("Exercise logged successfully, updating local state");
+        
+        // Play positive sound effect
+        const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEaBj2T3fPEeS0FKoPO89OSQwkTYMLu6KZSEQlGnt7vwmIaBo2S1/LHeSYFL4PN8tp3LwYYdrXq6qZVEQpBl+Dlu2EdCDKP3PDUfygGKYLN8thzKwQae7Tr7qlWEwg/md7wu2MgCTaQ3fLSeywEKoXO8tp5LwcYebXi7KZSFgZFm9/ru2EdBz+Q1/LEeioGJoHL8dd1KgQaebTo66hWEgdGmN7zuWMcBzeP2/LQeSsFJYHL9NZ3LAYUeLfj7KZRFQZGZN7iu2IaBj2P3O/FfCgFWI/c5K6GRVH8GxAx7qhROgdHmJcOTQcIDiEJDBhqWJHjBVoXABoMEpIoXAg=");
+        audio.volume = 0.3;
+        audio.play().catch(e => console.log("Audio play failed:", e));
+        
         setTodaysWorkouts(workouts => 
           workouts.map(w => 
             w.id === workoutId ? { ...w, completed: true } : w
@@ -174,6 +180,17 @@ const WorkoutList = () => {
 
   const completedCount = todaysWorkouts.filter(w => w.completed).length;
   const progressPercentage = todaysWorkouts.length > 0 ? (completedCount / todaysWorkouts.length) * 100 : 0;
+  
+  // Dynamic progress bar color based on percentage
+  const getProgressColor = (percentage: number) => {
+    if (percentage <= 33) {
+      return "bg-red-500";
+    } else if (percentage <= 66) {
+      return "bg-yellow-500";
+    } else {
+      return "bg-green-500";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
@@ -217,7 +234,10 @@ const WorkoutList = () => {
             <div className="text-sm text-foreground/70">Complete</div>
           </div>
         </div>
-        <Progress value={progressPercentage} className="h-3" />
+        <Progress 
+          value={progressPercentage} 
+          className={`h-3 [&>div]:${getProgressColor(progressPercentage)} [&>div]:transition-colors [&>div]:duration-500`} 
+        />
       </Card>
 
       {/* Plan Info */}
