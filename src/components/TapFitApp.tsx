@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Navigation from "./Navigation";
 import TapFitDashboard from "./TapFitDashboard";
-import WorkoutTracker from "./WorkoutTracker";
 import SmartPinDashboard from "./SmartPinDashboard";
 import SubscriptionPlans from "./SubscriptionPlans";
 import ChallengesAchievements from "./ChallengesAchievements";
@@ -96,8 +95,6 @@ const TapFitApp = () => {
     switch (currentPage) {
       case 'dashboard':
         return <TapFitDashboard />;
-      case 'workout':
-        return <WorkoutTracker />;
       case 'smart-pins':
         return <SmartPinDashboard />;
       case 'workout-plan':
