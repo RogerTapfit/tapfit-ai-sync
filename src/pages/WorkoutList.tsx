@@ -201,14 +201,23 @@ const WorkoutList = () => {
   const completedCount = todaysWorkouts.filter(w => w.completed).length;
   const progressPercentage = todaysWorkouts.length > 0 ? (completedCount / todaysWorkouts.length) * 100 : 0;
   
-  // Dynamic progress bar color based on percentage
-  const getProgressColor = (percentage: number) => {
-    if (percentage <= 33) {
-      return "bg-red-500";
-    } else if (percentage <= 66) {
-      return "bg-yellow-500";
+  // Dynamic progress bar gradient color based on percentage
+  const getProgressGradient = (percentage: number) => {
+    // Create a smooth gradient from red (0%) to yellow (50%) to green (100%)
+    if (percentage <= 50) {
+      // Red to Yellow transition (0% to 50%)
+      const ratio = percentage / 50;
+      const red = 255;
+      const green = Math.round(255 * ratio);
+      const blue = 0;
+      return `rgb(${red}, ${green}, ${blue})`;
     } else {
-      return "bg-green-500";
+      // Yellow to Green transition (50% to 100%)
+      const ratio = (percentage - 50) / 50;
+      const red = Math.round(255 * (1 - ratio));
+      const green = 255;
+      const blue = 0;
+      return `rgb(${red}, ${green}, ${blue})`;
     }
   };
 
@@ -254,10 +263,23 @@ const WorkoutList = () => {
             <div className="text-sm text-foreground/70">Complete</div>
           </div>
         </div>
-        <Progress 
-          value={progressPercentage} 
-          className={`h-3 [&>div]:${getProgressColor(progressPercentage)} [&>div]:transition-colors [&>div]:duration-500`} 
-        />
+        <div className="relative">
+          <Progress 
+            value={progressPercentage} 
+            className="h-3"
+          />
+          <div 
+            className="absolute inset-0 h-3 rounded-full transition-all duration-500"
+            style={{
+              background: `linear-gradient(90deg, 
+                rgb(239, 68, 68) 0%, 
+                rgb(251, 191, 36) 50%, 
+                rgb(34, 197, 94) 100%)`,
+              width: `${progressPercentage}%`,
+              clipPath: 'inset(0 0 0 0)'
+            }}
+          />
+        </div>
       </Card>
 
       {/* Plan Info */}
