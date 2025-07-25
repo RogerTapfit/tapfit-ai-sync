@@ -28,7 +28,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Activity className="h-6 w-6 text-stats-calories" />
           </div>
-          <p className="text-2xl font-bold text-primary">{todayStats.calories}</p>
+          <p className="text-2xl font-bold text-stats-calories">{todayStats.calories}</p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </div>
 
@@ -36,7 +36,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Clock className="h-6 w-6 text-stats-duration" />
           </div>
-          <p className="text-2xl font-bold text-primary">{todayStats.duration}m</p>
+          <p className="text-2xl font-bold text-stats-duration">{todayStats.duration}m</p>
           <p className="text-sm text-muted-foreground">Workout Time</p>
         </div>
 
@@ -44,7 +44,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Target className="h-6 w-6 text-stats-exercises" />
           </div>
-          <p className="text-2xl font-bold text-primary">{todayStats.exercises}</p>
+          <p className="text-2xl font-bold text-stats-exercises">{todayStats.exercises}</p>
           <p className="text-sm text-muted-foreground">Exercises Done</p>
         </div>
 
@@ -52,7 +52,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
             <Heart className="h-6 w-6 text-stats-heart" />
           </div>
-          <p className="text-2xl font-bold text-primary">{todayStats.heartRate}</p>
+          <p className="text-2xl font-bold text-stats-heart">{todayStats.heartRate}</p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
       </div>
