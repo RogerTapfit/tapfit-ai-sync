@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
+import { AnimatedCoinCounter } from "@/components/AnimatedCoinCounter";
 
 const WorkoutSummary = () => {
   const navigate = useNavigate();
@@ -258,22 +259,24 @@ const WorkoutSummary = () => {
                 </div>
               )}
               <hr className="border-yellow-500/30" />
-              <div className="flex justify-between items-center font-bold text-base">
-                <span>Total Earned</span>
-                <span className="text-yellow-600">
-                  +{(
-                    (0.5 + // Base completion
-                    ((workoutData.totalReps || workoutData.sets * 10) * 0.01) + // Reps
-                    (workoutData.duration >= 30 ? 0.25 : 0) + // Duration bonus
-                    (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
-                    (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
-                    ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
-                    (workoutData.exercises >= 5 ? 0.08 : 0) + // Multi-exercise bonus
-                    0.1) * // Review bonus
-                    (workoutData.allWorkoutsCompleted ? 2 : 1) // x2 multiplier if all workouts completed
-                  ).toFixed(3)} coins
-                </span>
-              </div>
+               <div className="flex justify-between items-center font-bold text-base">
+                 <span>Total Earned</span>
+                 <AnimatedCoinCounter 
+                   finalAmount={(
+                     (0.5 + // Base completion
+                     ((workoutData.totalReps || workoutData.sets * 10) * 0.01) + // Reps
+                     (workoutData.duration >= 30 ? 0.25 : 0) + // Duration bonus
+                     (workoutData.sets >= 15 ? 0.1 : 0) + // Volume bonus
+                     (workoutData.duration >= 45 ? 0.15 : 0) + // Endurance bonus
+                     ((workoutData.totalReps || 0) >= 100 ? 0.2 : 0) + // Century bonus
+                     (workoutData.exercises >= 5 ? 0.08 : 0) + // Multi-exercise bonus
+                     0.1) * // Review bonus
+                     (workoutData.allWorkoutsCompleted ? 2 : 1) // x2 multiplier if all workouts completed
+                   )}
+                   duration={2500}
+                   decimals={3}
+                 />
+               </div>
             </div>
           </div>
         </div>

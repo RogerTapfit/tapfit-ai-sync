@@ -212,6 +212,25 @@ class AudioManager {
     this.createTone(880, 0.1, 'triangle');
   }
 
+  async playCashPayout(): Promise<void> {
+    await this.initializeAudio();
+    // Cash register cha-ching sound with coins falling
+    
+    // Initial cha-ching
+    this.createTone(1000, 0.1, 'triangle');
+    setTimeout(() => this.createTone(800, 0.1, 'triangle'), 80);
+    
+    // Coins falling effect
+    setTimeout(() => {
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const frequency = 400 + Math.random() * 200;
+          this.createTone(frequency, 0.08, 'sine');
+        }, i * 60);
+      }
+    }, 200);
+  }
+
   // Settings
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
@@ -229,8 +248,6 @@ class AudioManager {
     return this.isEnabled;
   }
 }
-
-// Export singleton instance
 export const audioManager = new AudioManager();
 
 // React hook for audio settings
