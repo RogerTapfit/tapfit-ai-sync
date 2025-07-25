@@ -144,12 +144,24 @@ const WorkoutDetail = () => {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isResting && restTime > 0) {
+      // Play countdown beeps at 10, 5, 4, 3, 2, 1 seconds
+      if ([10, 5, 4, 3, 2, 1].includes(restTime)) {
+        import('@/utils/audioUtils').then(({ audioManager }) => {
+          audioManager.playCountdownBeep();
+        });
+      }
+      
       timer = setTimeout(() => {
         setRestTime(restTime - 1);
       }, 1000);
     } else if (isResting && restTime === 0) {
       setIsResting(false);
       toast.success("Rest time complete! Ready for next set");
+      
+      // Play rest complete sound
+      import('@/utils/audioUtils').then(({ audioManager }) => {
+        audioManager.playRestComplete();
+      });
     }
     return () => clearTimeout(timer);
   }, [isResting, restTime]);
@@ -179,10 +191,28 @@ const WorkoutDetail = () => {
     setSets(newSets);
   };
 
-  const handleSetComplete = (setIndex: number) => {
+  const handleSetComplete = async (setIndex: number) => {
     const updatedSets = [...sets];
     updatedSets[setIndex].completed = true;
     setSets(updatedSets);
+
+    // Play set completion sound
+    const { audioManager } = await import('@/utils/audioUtils');
+    await audioManager.playSetComplete();
+    
+    // Check for progress milestones
+    const newCompletedSets = updatedSets.filter(set => set.completed).length;
+    const newProgress = (newCompletedSets / totalSets) * 100;
+    
+    if (newProgress === 25 || newProgress === 50 || newProgress === 75) {
+      setTimeout(async () => {
+        await audioManager.playProgressMilestone(newProgress);
+      }, 200);
+    } else if (newProgress === 100) {
+      setTimeout(async () => {
+        await audioManager.playWorkoutComplete();
+      }, 300);
+    }
 
     // Start rest timer
     setRestTime(workout.restTime);
@@ -285,7 +315,11 @@ const WorkoutDetail = () => {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => navigate(-1)}
+          onClick={async () => {
+            const { audioManager } = await import('@/utils/audioUtils');
+            await audioManager.playButtonClick();
+            navigate(-1);
+          }}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

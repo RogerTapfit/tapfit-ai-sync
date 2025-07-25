@@ -115,29 +115,22 @@ const WorkoutList = () => {
       if (success) {
         console.log("Exercise logged successfully, updating local state");
         
-        // Play positive sound effect using Web Audio API
-        try {
-          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-          
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          
-          // Create a positive, uplifting sound (C major chord)
-          oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-          oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-          oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-          
-          oscillator.type = 'sine';
-          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-          
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.5);
-        } catch (error) {
-          console.log("Audio playback failed:", error);
+        // Play enhanced success sound
+        const { audioManager } = await import('@/utils/audioUtils');
+        await audioManager.playSetComplete();
+        
+        // Check for progress milestones
+        const newCompletedCount = todaysWorkouts.filter(w => w.completed || w.id === workoutId).length;
+        const newProgress = (newCompletedCount / todaysWorkouts.length) * 100;
+        
+        if (newProgress === 25 || newProgress === 50 || newProgress === 75) {
+          setTimeout(async () => {
+            await audioManager.playProgressMilestone(newProgress);
+          }, 300);
+        } else if (newProgress === 100) {
+          setTimeout(async () => {
+            await audioManager.playWorkoutComplete();
+          }, 500);
         }
         
         setTodaysWorkouts(workouts => 
@@ -228,7 +221,11 @@ const WorkoutList = () => {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => navigate(-1)}
+          onClick={async () => {
+            const { audioManager } = await import('@/utils/audioUtils');
+            await audioManager.playButtonClick();
+            navigate(-1);
+          }}
           className="border-primary/30 hover:border-primary/60 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -340,7 +337,11 @@ const WorkoutList = () => {
         <Button 
           variant="outline" 
           className="h-12"
-          onClick={() => navigate('/')}
+          onClick={async () => {
+            const { audioManager } = await import('@/utils/audioUtils');
+            await audioManager.playButtonClick();
+            navigate('/');
+          }}
         >
           Back to Dashboard
         </Button>
