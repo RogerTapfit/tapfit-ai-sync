@@ -203,31 +203,19 @@ All colors MUST be HSL for proper theming.
     }
   }
 
-  /* Heartbeat glow animation for Start Workout button */
+  /* Steady pulse glow animation for Start Workout button */
   .animate-heartbeat-glow {
-    animation: heartbeatGlow 2s ease-in-out infinite;
+    animation: steadyPulseGlow 3s ease-in-out infinite;
   }
 
-  @keyframes heartbeatGlow {
+  @keyframes steadyPulseGlow {
     0%, 100% {
       box-shadow: 0 0 5px hsl(348 83% 47% / 0.5);
       transform: scale(1);
     }
-    20% {
-      box-shadow: 0 0 15px hsl(348 83% 47% / 0.8), 0 0 25px hsl(348 83% 47% / 0.4);
-      transform: scale(1.05);
-    }
-    40% {
-      box-shadow: 0 0 5px hsl(348 83% 47% / 0.5);
-      transform: scale(1);
-    }
     50% {
-      box-shadow: 0 0 18px hsl(348 83% 47% / 0.9), 0 0 30px hsl(348 83% 47% / 0.5);
-      transform: scale(1.08);
-    }
-    60% {
-      box-shadow: 0 0 5px hsl(348 83% 47% / 0.5);
-      transform: scale(1);
+      box-shadow: 0 0 20px hsl(348 83% 47% / 0.9), 0 0 35px hsl(348 83% 47% / 0.6);
+      transform: scale(1.05);
     }
   }
 }
