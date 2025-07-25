@@ -142,7 +142,7 @@ const WorkoutList = () => {
   const getStatusBadge = (completed: boolean) => {
     return completed 
       ? <Badge variant="default" className="bg-green-500">Completed</Badge>
-      : <Badge variant="secondary">Pending</Badge>;
+      : <Badge variant="secondary" className="bg-yellow-500 text-black">Pending</Badge>;
   };
 
   const handleFinishEarly = async () => {
