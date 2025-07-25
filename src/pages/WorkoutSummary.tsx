@@ -13,7 +13,8 @@ import {
   Home,
   Repeat,
   Share2,
-  Coins
+  Coins,
+  Dumbbell
 } from "lucide-react";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
@@ -116,7 +117,7 @@ const WorkoutSummary = () => {
         </Card>
 
         <Card className="metric-card animate-fade-in">
-          <Target className="h-8 w-8 text-primary mx-auto mb-2" />
+          <Dumbbell className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
             <AnimatedNumber finalValue={workoutData.totalReps || workoutData.sets * 10} duration={3000} />
           </p>
