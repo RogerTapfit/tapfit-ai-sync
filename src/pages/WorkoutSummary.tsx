@@ -18,6 +18,7 @@ import {
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
 import { AnimatedCoinCounter } from "@/components/AnimatedCoinCounter";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 
 const WorkoutSummary = () => {
   const navigate = useNavigate();
@@ -108,31 +109,41 @@ const WorkoutSummary = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="metric-card animate-fade-in">
           <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{estimatedCalories}</p>
+          <p className="text-2xl">
+            <AnimatedNumber finalValue={estimatedCalories} duration={1800} />
+          </p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </Card>
 
         <Card className="metric-card animate-fade-in">
           <Target className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{workoutData.totalReps || workoutData.sets * 10}</p>
+          <p className="text-2xl">
+            <AnimatedNumber finalValue={workoutData.totalReps || workoutData.sets * 10} duration={2000} />
+          </p>
           <p className="text-sm text-muted-foreground">Total Reps</p>
         </Card>
 
         <Card className="metric-card animate-fade-in">
           <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{workoutData.duration}m</p>
+          <p className="text-2xl">
+            <AnimatedNumber finalValue={workoutData.duration} duration={1600} suffix="m" />
+          </p>
           <p className="text-sm text-muted-foreground">Duration</p>
         </Card>
 
         <Card className="metric-card animate-fade-in">
           <Target className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{workoutData.exercises}</p>
+          <p className="text-2xl">
+            <AnimatedNumber finalValue={workoutData.exercises} duration={1400} />
+          </p>
           <p className="text-sm text-muted-foreground">Exercises</p>
         </Card>
 
         <Card className="metric-card animate-fade-in">
           <Trophy className="h-8 w-8 text-primary mx-auto mb-2" />
-          <p className="text-2xl font-bold">{workoutData.sets}</p>
+          <p className="text-2xl">
+            <AnimatedNumber finalValue={workoutData.sets} duration={2200} />
+          </p>
           <p className="text-sm text-muted-foreground">Sets Completed</p>
         </Card>
       </div>
