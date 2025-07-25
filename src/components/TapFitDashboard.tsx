@@ -262,7 +262,7 @@ const TapFitDashboard = () => {
         </Button>
         
         <Button variant="outline" className="glow-card h-16 text-lg">
-          <Trophy className="h-5 w-5 mr-2" />
+          <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
           View Challenges
         </Button>
       </div>

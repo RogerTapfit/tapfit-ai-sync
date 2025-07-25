@@ -93,7 +93,7 @@ const ChallengesAchievements = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-primary" />
+              <Trophy className="h-6 w-6 text-yellow-500" />
               Challenges & Achievements
             </div>
             <div className="flex items-center gap-4">

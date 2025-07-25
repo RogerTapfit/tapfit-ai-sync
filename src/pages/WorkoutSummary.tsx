@@ -99,7 +99,7 @@ const WorkoutSummary = () => {
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-          <Trophy className="h-8 w-8 text-primary" />
+          <Trophy className="h-8 w-8 text-yellow-500" />
         </div>
         <h1 className="text-3xl font-bold">Workout Complete!</h1>
         <p className="text-muted-foreground">Great job on finishing your {workoutData.name} workout</p>
@@ -140,7 +140,7 @@ const WorkoutSummary = () => {
         </Card>
 
         <Card className="metric-card animate-fade-in">
-          <Trophy className="h-8 w-8 text-primary mx-auto mb-2" />
+          <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
           <p className="text-2xl">
             <AnimatedNumber finalValue={workoutData.sets} duration={3300} />
           </p>
@@ -154,7 +154,7 @@ const WorkoutSummary = () => {
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Badge variant="default" className="bg-green-500">
-              <Trophy className="h-3 w-3 mr-1" />
+              <Trophy className="h-3 w-3 mr-1 text-yellow-500" />
               Workout Completed
             </Badge>
             {workoutData.allWorkoutsCompleted && (
@@ -177,7 +177,7 @@ const WorkoutSummary = () => {
             )}
             {(workoutData.totalReps || 0) >= 100 && (
               <Badge variant="secondary" className="bg-purple-500">
-                <Trophy className="h-3 w-3 mr-1" />
+                <Trophy className="h-3 w-3 mr-1 text-yellow-500" />
                 Century Club
               </Badge>
             )}
@@ -296,7 +296,7 @@ const WorkoutSummary = () => {
       {/* Motivational Message */}
       <Card className="glow-card p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
         <div className="text-center space-y-3">
-          <Trophy className="h-12 w-12 mx-auto text-primary" />
+          <Trophy className="h-12 w-12 mx-auto text-yellow-500" />
           <h3 className="text-xl font-bold">Outstanding Work! 💪</h3>
           <p className="text-muted-foreground">
             You're building strength, discipline, and consistency. Every rep counts toward your fitness goals!
@@ -366,7 +366,7 @@ const WorkoutSummary = () => {
         </Card>
       ) : (
         <Card className="glow-card p-6 text-center">
-          <Trophy className="h-12 w-12 mx-auto mb-4 text-primary" />
+          <Trophy className="h-12 w-12 mx-auto mb-4 text-yellow-500" />
           <h3 className="text-lg font-semibold mb-2">Thank You!</h3>
           <p className="text-muted-foreground">
             Your feedback helps us improve your workout experience.
