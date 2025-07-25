@@ -188,7 +188,7 @@ const WorkoutList = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold text-primary">
             Today's Workout
           </h1>
           <p className="text-foreground/70">
@@ -211,7 +211,7 @@ const WorkoutList = () => {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <div className="text-2xl font-bold text-primary">
               {Math.round(progressPercentage)}%
             </div>
             <div className="text-sm text-foreground/70">Complete</div>
@@ -225,7 +225,7 @@ const WorkoutList = () => {
         <div className="flex items-center gap-3">
           <Target className="h-5 w-5 text-accent" />
           <div>
-            <p className="font-semibold text-accent">Chest Day Workout</p>
+            <p className="font-semibold text-red-500">Chest Day Workout</p>
             <p className="text-sm text-foreground/70">Goal: Chest Development</p>
           </div>
         </div>
@@ -233,7 +233,7 @@ const WorkoutList = () => {
 
       {/* Workout List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
+        <h3 className="text-lg font-semibold text-red-500">
           Today's Chest Exercises
         </h3>
         
