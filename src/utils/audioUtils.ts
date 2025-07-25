@@ -3,6 +3,8 @@ class AudioManager {
   private audioContext: AudioContext | null = null;
   private isEnabled: boolean = true;
   private volume: number = 0.7;
+  private audioBuffers: Map<string, AudioBuffer> = new Map();
+  private loadingPromises: Map<string, Promise<AudioBuffer>> = new Map();
 
   // Initialize audio context on first user interaction
   async initializeAudio(): Promise<void> {
@@ -36,6 +38,65 @@ class AudioManager {
 
     oscillator.start(this.audioContext.currentTime);
     oscillator.stop(this.audioContext.currentTime + duration);
+  }
+
+  // Load MP3 audio file
+  async loadAudio(url: string, key: string): Promise<AudioBuffer> {
+    if (this.audioBuffers.has(key)) {
+      return this.audioBuffers.get(key)!;
+    }
+
+    if (this.loadingPromises.has(key)) {
+      return this.loadingPromises.get(key)!;
+    }
+
+    const loadPromise = this.fetchAndDecodeAudio(url);
+    this.loadingPromises.set(key, loadPromise);
+
+    try {
+      const buffer = await loadPromise;
+      this.audioBuffers.set(key, buffer);
+      this.loadingPromises.delete(key);
+      return buffer;
+    } catch (error) {
+      this.loadingPromises.delete(key);
+      throw error;
+    }
+  }
+
+  private async fetchAndDecodeAudio(url: string): Promise<AudioBuffer> {
+    await this.initializeAudio();
+    if (!this.audioContext) throw new Error('AudioContext not available');
+
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    return this.audioContext.decodeAudioData(arrayBuffer);
+  }
+
+  // Play MP3 audio buffer
+  private playAudioBuffer(buffer: AudioBuffer): void {
+    if (!this.audioContext || !this.isEnabled) return;
+
+    const source = this.audioContext.createBufferSource();
+    const gainNode = this.audioContext.createGain();
+
+    source.buffer = buffer;
+    source.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    gainNode.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
+    source.start(0);
+  }
+
+  // Play custom MP3 sound with fallback to synthetic
+  async playCustomSound(audioUrl: string, key: string, fallbackFn?: () => void): Promise<void> {
+    try {
+      const buffer = await this.loadAudio(audioUrl, key);
+      this.playAudioBuffer(buffer);
+    } catch (error) {
+      console.warn(`Failed to play custom sound ${key}:`, error);
+      if (fallbackFn) fallbackFn();
+    }
   }
 
   // Play multiple tones in sequence or harmony

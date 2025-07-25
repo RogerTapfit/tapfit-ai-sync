@@ -196,9 +196,15 @@ const WorkoutDetail = () => {
     updatedSets[setIndex].completed = true;
     setSets(updatedSets);
 
-    // Play set completion sound
+    // Play set completion sound (custom or default)
     const { audioManager } = await import('@/utils/audioUtils');
-    await audioManager.playSetComplete();
+    const customSounds = JSON.parse(localStorage.getItem('customSounds') || '{}');
+    if (customSounds['set-complete']) {
+      await audioManager.playCustomSound(customSounds['set-complete'], 'set-complete', 
+        () => audioManager.playSetComplete());
+    } else {
+      await audioManager.playSetComplete();
+    }
     
     // Check for progress milestones
     const newCompletedSets = updatedSets.filter(set => set.completed).length;
