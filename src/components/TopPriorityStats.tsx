@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Target, Heart } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart } from "lucide-react";
 
 interface TodaysPerformanceProps {
   todayStats: {
@@ -42,7 +42,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
 
         <div className="text-center space-y-2">
           <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
-            <Target className="h-6 w-6 text-stats-exercises" />
+            <Dumbbell className="h-6 w-6 text-stats-exercises" />
           </div>
           <p className="text-2xl font-bold text-stats-exercises">{todayStats.exercises}</p>
           <p className="text-sm text-muted-foreground">Exercises Done</p>
