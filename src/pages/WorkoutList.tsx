@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle, Clock, Target, Activity, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 
 interface WorkoutMachine {
@@ -223,7 +223,7 @@ const WorkoutList = () => {
       {/* Plan Info */}
       <Card className="glow-card p-4 border-l-4 border-l-accent/50 bg-gradient-to-r from-accent/5 to-transparent">
         <div className="flex items-center gap-3">
-          <Target className="h-5 w-5 text-accent" />
+          <Dumbbell className="h-5 w-5 text-red-500" />
           <div>
             <p className="font-semibold text-red-500">Chest Day Workout</p>
             <p className="text-sm text-foreground/70">Goal: Chest Development</p>
