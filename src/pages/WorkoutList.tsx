@@ -257,7 +257,12 @@ const WorkoutList = () => {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-primary">
+            <div 
+              className="text-2xl font-bold transition-colors duration-500"
+              style={{
+                color: getProgressGradient(progressPercentage)
+              }}
+            >
               {Math.round(progressPercentage)}%
             </div>
             <div className="text-sm text-foreground/70">Complete</div>
