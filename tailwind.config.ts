@@ -61,6 +61,12 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				stats: {
+					calories: 'hsl(var(--stats-calories))',
+					duration: 'hsl(var(--stats-duration))',
+					exercises: 'hsl(var(--stats-exercises))',
+					heart: 'hsl(var(--stats-heart))'
 				}
 			},
 			borderRadius: {
