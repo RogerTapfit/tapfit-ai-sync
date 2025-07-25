@@ -14,7 +14,7 @@ interface TodaysPerformanceProps {
 
 export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerformanceProps) => {
   return (
-    <Card className="glow-card p-6">
+    <Card className="glow-card p-6 bg-stats-heart/5 border-stats-heart/20 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
         <Button className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0" onClick={onStartWorkout}>
