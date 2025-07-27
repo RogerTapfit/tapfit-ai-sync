@@ -26,40 +26,40 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
-            <Activity className="h-6 w-6 text-stats-calories" />
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
+            <Activity className="h-6 w-6 text-primary" />
           </div>
-          <p className="text-2xl font-bold text-stats-calories">
+          <p className="text-2xl font-bold text-primary">
             <AnimatedNumber finalValue={todayStats.calories} duration={2500} />
           </p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
-            <Clock className="h-6 w-6 text-stats-duration" />
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
+            <Clock className="h-6 w-6 text-primary/80" />
           </div>
-          <p className="text-2xl font-bold text-stats-duration">
+          <p className="text-2xl font-bold text-primary/80">
             <AnimatedNumber finalValue={todayStats.duration} duration={2200} suffix="m" />
           </p>
           <p className="text-sm text-muted-foreground">Workout Time</p>
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
-            <Dumbbell className="h-6 w-6 text-stats-exercises" />
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
+            <Dumbbell className="h-6 w-6 text-primary/70" />
           </div>
-          <p className="text-2xl font-bold text-stats-exercises">
+          <p className="text-2xl font-bold text-primary/70">
             <AnimatedNumber finalValue={todayStats.exercises} duration={1800} />
           </p>
           <p className="text-sm text-muted-foreground">Exercises Done</p>
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/10 mx-auto w-fit">
-            <Heart className="h-6 w-6 text-stats-heart" />
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
+            <Heart className="h-6 w-6 text-primary/90" />
           </div>
-          <p className="text-2xl font-bold text-stats-heart">
+          <p className="text-2xl font-bold text-primary/90">
             <AnimatedNumber finalValue={todayStats.heartRate} duration={2800} />
           </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
