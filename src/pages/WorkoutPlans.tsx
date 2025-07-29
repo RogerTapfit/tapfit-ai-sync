@@ -266,7 +266,7 @@ const WorkoutPlans = () => {
                           {workout.status}
                         </Badge>
                         <Button 
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
                           onClick={() => {
                             setSelectedWeeklyWorkout(workout);
