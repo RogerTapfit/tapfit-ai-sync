@@ -179,9 +179,23 @@ Return a valid JSON object with this exact structure:
 
     let workoutPlan;
     try {
-      workoutPlan = JSON.parse(aiData.choices[0].message.content);
+      let content = aiData.choices[0].message.content;
+      
+      // Strip markdown code blocks if present
+      if (content.includes('```json')) {
+        content = content.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+      } else if (content.includes('```')) {
+        content = content.replace(/```\s*/g, '').replace(/```\s*$/g, '');
+      }
+      
+      // Trim any extra whitespace
+      content = content.trim();
+      
+      console.log('Cleaned content for parsing:', content);
+      workoutPlan = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiData.choices[0].message.content);
+      console.error('Parse error details:', parseError.message);
       throw new Error('Failed to parse workout plan from AI');
     }
 
