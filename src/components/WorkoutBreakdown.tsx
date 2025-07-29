@@ -1,16 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock } from 'lucide-react';
-import { ScheduledWorkout } from '@/hooks/useWorkoutPlan';
+import { ArrowLeft, Clock, Target, Activity, Dumbbell } from 'lucide-react';
+import { ScheduledWorkout, WorkoutExercise } from '@/hooks/useWorkoutPlan';
+import MachineDetailView from './MachineDetailView';
 
 interface WorkoutBreakdownProps {
   workout: ScheduledWorkout | null;
   onBack: () => void;
 }
 
+interface MachineCardProps {
+  exercise: WorkoutExercise;
+  index: number;
+  onMachineClick: (exercise: WorkoutExercise) => void;
+}
+
+const MachineCard: React.FC<MachineCardProps> = ({ exercise, index, onMachineClick }) => {
+  const machineImageUrl = '/placeholder.svg'; // Will be updated when machine images are available
+  
+  return (
+    <Card 
+      className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+      onClick={() => onMachineClick(exercise)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
+          <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+            <img 
+              src={machineImageUrl} 
+              alt={exercise.machine}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = '/placeholder.svg';
+              }}
+            />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-base truncate">{exercise.machine}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Primary: {exercise.exercise_type || 'Strength Training'}
+                </p>
+              </div>
+              <Badge variant="secondary" className="text-xs ml-2">
+                #{index + 1}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-1 text-sm">
+                <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                <span>{exercise.sets || 3} × {exercise.reps || 12}</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span>{exercise.rest_seconds || 60}s rest</span>
+              </div>
+              {exercise.duration_minutes && (
+                <div className="flex items-center gap-1 text-sm">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  <span>{exercise.duration_minutes} min</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-3">
+              <Badge 
+                variant="outline" 
+                className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+              >
+                <Target className="h-3 w-3 mr-1" />
+                Click to start exercise
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const WorkoutBreakdown: React.FC<WorkoutBreakdownProps> = ({ workout, onBack }) => {
+  const [selectedExercise, setSelectedExercise] = useState<WorkoutExercise | null>(null);
+  const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
+
+  const handleMachineClick = (exercise: WorkoutExercise) => {
+    setSelectedExercise(exercise);
+  };
+
+  const handleBackToWorkout = () => {
+    setSelectedExercise(null);
+  };
+
+  const handleExerciseComplete = (exercise: WorkoutExercise) => {
+    setCompletedExercises(prev => new Set(prev).add(exercise.machine));
+  };
+
+  if (selectedExercise) {
+    return (
+      <MachineDetailView
+        exercise={selectedExercise}
+        onBack={handleBackToWorkout}
+        onExerciseComplete={handleExerciseComplete}
+      />
+    );
+  }
   if (!workout) {
     return (
       <div className="space-y-4">
@@ -47,45 +145,14 @@ const WorkoutBreakdown: React.FC<WorkoutBreakdownProps> = ({ workout, onBack }) 
         </p>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-4">
         {workout.exercises.map((exercise, index) => (
-          <div
+          <MachineCard
             key={index}
-            className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/30 hover:bg-card/50 transition-colors cursor-pointer"
-            onClick={() => {
-              // Handle exercise click - could mark as complete, show details, etc.
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-destructive/20 border border-destructive/30 rounded-full flex items-center justify-center">
-                <Clock className="h-3 w-3 text-destructive" />
-              </div>
-              <div>
-                <h3 className="font-medium text-foreground text-sm">
-                  {exercise.machine}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Target: {workout.muscle_group.replace('_', ' ')}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                {exercise.duration_minutes ? (
-                  <p className="text-sm font-medium text-foreground">
-                    {exercise.duration_minutes} min
-                  </p>
-                ) : (
-                  <p className="text-sm font-medium text-foreground">
-                    {exercise.sets}×{exercise.reps}
-                  </p>
-                )}
-              </div>
-              <Badge variant="secondary" className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">
-                Pending
-              </Badge>
-            </div>
-          </div>
+            exercise={exercise}
+            index={index}
+            onMachineClick={handleMachineClick}
+          />
         ))}
       </div>
 
