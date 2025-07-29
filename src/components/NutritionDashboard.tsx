@@ -60,74 +60,84 @@ const NutritionDashboard = () => {
   const latestReading = metabolismReadings[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
+        <Card className="glow-card">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Calories Today</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-muted-foreground mb-2">Calories Today</p>
+                <p className="text-2xl font-bold text-foreground">
                   {dailySummary?.total_calories || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-1">
                   of {nutritionGoals?.daily_calories || 0}
                 </p>
               </div>
-              <Apple className="h-8 w-8 text-green-500" />
+              <div className="p-3 rounded-xl bg-green-500/20 shadow-glow">
+                <Apple className="h-8 w-8 text-green-500" />
+              </div>
             </div>
             {nutritionGoals && (
-              <Progress value={calorieProgress} className="mt-3" />
+              <Progress value={calorieProgress} className="mt-4" />
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="glow-card">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Current Goal</p>
-                <p className="text-lg font-semibold">
+                <p className="text-sm text-muted-foreground mb-2">Current Goal</p>
+                <p className="text-lg font-semibold text-foreground">
                   {nutritionGoals?.goal_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not Set'}
                 </p>
               </div>
-              <Target className="h-8 w-8 text-primary" />
+              <div className="p-3 rounded-xl bg-primary/20 shadow-glow">
+                <Target className="h-8 w-8 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card 
-          className="cursor-pointer hover:bg-accent/50 transition-colors"
+          className="glow-card cursor-pointer hover:bg-accent/50 transition-all duration-200 hover:shadow-lg"
           onClick={() => setShowFoodEntries(true)}
         >
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Meals Logged</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm text-muted-foreground mb-2">Meals Logged</p>
+                <p className="text-2xl font-bold text-foreground">
                   {dailySummary?.meals_count || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">today - click to view</p>
+                <p className="text-sm text-muted-foreground mt-1">today - click to view</p>
               </div>
-              <Utensils className="h-8 w-8 text-blue-500" />
+              <div className="p-3 rounded-xl bg-blue-500/20 shadow-glow">
+                <Utensils className="h-8 w-8 text-blue-500" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
+        <Card className="glow-card">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Metabolism</p>
-                <p className="text-lg font-semibold capitalize">
+                <p className="text-sm text-muted-foreground mb-2">Metabolism</p>
+                <p className="text-lg font-semibold text-foreground capitalize">
                   {latestReading?.reading_type?.replace('_', ' ') || 'Unknown'}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                   {latestReading ? 'Latest reading' : 'No data'}
                 </p>
               </div>
-              {latestReading && getMetabolismIcon(latestReading.reading_type)}
+              <div className="p-3 rounded-xl bg-muted/20 shadow-glow">
+                {latestReading ? getMetabolismIcon(latestReading.reading_type) : (
+                  <Activity className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -135,40 +145,43 @@ const NutritionDashboard = () => {
 
       {/* Macros Progress */}
       {nutritionGoals && (
-        <Card>
+        <Card className="glow-card">
           <CardHeader>
-            <CardTitle>Daily Macros Progress</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Daily Macros Progress
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Protein</span>
+                  <span className="text-sm font-medium text-foreground">Protein</span>
                   <span className="text-sm text-muted-foreground">
                     {dailySummary?.total_protein?.toFixed(0) || 0}g / {nutritionGoals.protein_grams}g
                   </span>
                 </div>
-                <Progress value={proteinProgress} className="h-2" />
+                <Progress value={proteinProgress} className="h-3" />
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Carbs</span>
+                  <span className="text-sm font-medium text-foreground">Carbs</span>
                   <span className="text-sm text-muted-foreground">
                     {dailySummary?.total_carbs?.toFixed(0) || 0}g / {nutritionGoals.carbs_grams}g
                   </span>
                 </div>
-                <Progress value={carbProgress} className="h-2" />
+                <Progress value={carbProgress} className="h-3" />
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Fat</span>
+                  <span className="text-sm font-medium text-foreground">Fat</span>
                   <span className="text-sm text-muted-foreground">
                     {dailySummary?.total_fat?.toFixed(0) || 0}g / {nutritionGoals.fat_grams}g
                   </span>
                 </div>
-                <Progress value={fatProgress} className="h-2" />
+                <Progress value={fatProgress} className="h-3" />
               </div>
             </div>
           </CardContent>
