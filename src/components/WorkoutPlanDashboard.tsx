@@ -18,6 +18,7 @@ import { useWorkoutPlan } from '@/hooks/useWorkoutPlan';
 import WorkoutPlanSetup from './WorkoutPlanSetup';
 import WeeklyWorkoutSchedule from './WeeklyWorkoutSchedule';
 import WorkoutCalendar from './WorkoutCalendar';
+import GenerateTestWorkout from './GenerateTestWorkout';
 
 const WorkoutPlanDashboard = () => {
   const { currentPlan, weeklySchedule, preferences, generateNewPlan, loading } = useWorkoutPlan();
@@ -151,6 +152,11 @@ const WorkoutPlanDashboard = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">AI Workout Plan Configuration</h2>
           </div>
+          
+          {/* Test Workout Generator */}
+          <GenerateTestWorkout />
+          
+          {/* Full Setup */}
           <WorkoutPlanSetup />
         </TabsContent>
 

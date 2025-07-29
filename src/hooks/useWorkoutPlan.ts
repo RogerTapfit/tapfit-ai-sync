@@ -225,22 +225,33 @@ export const useWorkoutPlan = () => {
 
       if (planError) throw planError;
 
-      // Create scheduled workouts
-      const scheduledWorkouts = data.workouts.map((workout: any) => {
-        const today = new Date();
-        const dayIndex = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(workout.day);
-        const workoutDate = new Date(today);
-        workoutDate.setDate(today.getDate() + (dayIndex - today.getDay() + 7) % 7);
-
-        return {
-          workout_plan_id: planData.id,
-          user_id: user.id,
-          scheduled_date: workoutDate.toISOString().split('T')[0],
-          scheduled_time: workout.time,
-          target_muscle_group: workout.muscle_group,
-          estimated_duration: workout.duration
-        };
-      });
+      // Create scheduled workouts for the next 4 weeks
+      const scheduledWorkouts = [];
+      const today = new Date();
+      
+      for (let week = 0; week < 4; week++) {
+        data.workouts.forEach((workout: any) => {
+          const dayIndex = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(workout.day);
+          const workoutDate = new Date();
+          
+          // Calculate the date for this workout in the current week + week offset
+          const startOfCurrentWeek = new Date(today);
+          startOfCurrentWeek.setDate(today.getDate() - today.getDay()); // Get to Sunday of current week
+          
+          const targetDate = new Date(startOfCurrentWeek);
+          targetDate.setDate(startOfCurrentWeek.getDate() + (week * 7) + dayIndex); // Add weeks and day offset
+          
+          scheduledWorkouts.push({
+            workout_plan_id: planData.id,
+            user_id: user.id,
+            scheduled_date: targetDate.toISOString().split('T')[0],
+            scheduled_time: workout.time,
+            target_muscle_group: workout.muscle_group,
+            estimated_duration: workout.duration,
+            status: 'scheduled'
+          });
+        });
+      }
 
       const { data: workoutData, error: workoutError } = await supabase
         .from('scheduled_workouts')
@@ -249,26 +260,30 @@ export const useWorkoutPlan = () => {
 
       if (workoutError) throw workoutError;
 
-      // Create exercises for each workout
-      for (let i = 0; i < data.workouts.length; i++) {
-        const workout = data.workouts[i];
-        const scheduledWorkout = workoutData[i];
+      // Create exercises for each scheduled workout
+      let workoutIndex = 0;
+      for (let week = 0; week < 4; week++) {
+        for (let i = 0; i < data.workouts.length; i++) {
+          const workout = data.workouts[i];
+          const scheduledWorkout = workoutData[workoutIndex];
 
-        const exercises = workout.exercises.map((exercise: any) => ({
-          scheduled_workout_id: scheduledWorkout.id,
-          machine_name: exercise.machine,
-          sets: exercise.sets,
-          reps: exercise.reps,
-          rest_seconds: exercise.rest_seconds,
-          exercise_order: exercise.order,
-          notes: exercise.weight_guidance
-        }));
+          const exercises = workout.exercises.map((exercise: any) => ({
+            scheduled_workout_id: scheduledWorkout.id,
+            machine_name: exercise.machine,
+            sets: exercise.sets,
+            reps: exercise.reps,
+            rest_seconds: exercise.rest_seconds,
+            exercise_order: exercise.order,
+            notes: exercise.weight_guidance
+          }));
 
-        const { error: exerciseError } = await supabase
-          .from('workout_exercises')
-          .insert(exercises);
+          const { error: exerciseError } = await supabase
+            .from('workout_exercises')
+            .insert(exercises);
 
-        if (exerciseError) throw exerciseError;
+          if (exerciseError) throw exerciseError;
+          workoutIndex++;
+        }
       }
 
       // Deactivate old plans
