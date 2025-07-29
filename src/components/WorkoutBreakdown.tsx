@@ -47,59 +47,43 @@ const WorkoutBreakdown: React.FC<WorkoutBreakdownProps> = ({ workout, onBack }) 
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {workout.exercises.map((exercise, index) => (
           <div
             key={index}
-            className="rounded-lg border border-border/50 bg-card/50 p-4 transition-colors hover:bg-card/70"
+            className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/30 hover:bg-card/50 transition-colors cursor-pointer"
+            onClick={() => {
+              // Handle exercise click - could mark as complete, show details, etc.
+            }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-destructive/20 border border-destructive/30 rounded-full flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-destructive" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground">
-                    {exercise.machine}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Target: {workout.muscle_group.replace('_', ' ')}
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-destructive/20 border border-destructive/30 rounded-full flex items-center justify-center">
+                <Clock className="h-3 w-3 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-medium text-foreground text-sm">
+                  {exercise.machine}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Target: {workout.muscle_group.replace('_', ' ')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                {exercise.duration_minutes ? (
+                  <p className="text-sm font-medium text-foreground">
+                    {exercise.duration_minutes} min
                   </p>
-                  {exercise.weight_guidance && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {exercise.weight_guidance}
-                    </p>
-                  )}
-                </div>
+                ) : (
+                  <p className="text-sm font-medium text-foreground">
+                    {exercise.sets}×{exercise.reps}
+                  </p>
+                )}
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  {exercise.duration_minutes ? (
-                    <>
-                      <p className="font-medium text-foreground">
-                        {exercise.duration_minutes} minutes
-                      </p>
-                      {exercise.intensity && (
-                        <p className="text-sm text-muted-foreground">
-                          {exercise.intensity}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-medium text-foreground">
-                        {exercise.sets} sets × {exercise.reps} reps
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {exercise.rest_seconds}s rest
-                      </p>
-                    </>
-                  )}
-                </div>
-                <Badge variant="secondary" className="bg-amber-500/20 text-amber-600 border-amber-500/30">
-                  Pending
-                </Badge>
-              </div>
+              <Badge variant="secondary" className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">
+                Pending
+              </Badge>
             </div>
           </div>
         ))}
