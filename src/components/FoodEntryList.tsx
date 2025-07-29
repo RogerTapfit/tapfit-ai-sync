@@ -73,6 +73,33 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
     return gradeResult.grade;
   };
 
+  const getGradeDescription = (entry: FoodEntry) => {
+    // Use stored grade if available, otherwise calculate it
+    if (entry.health_grade) {
+      // For stored grades, generate a simple description based on the grade
+      const grade = entry.health_grade;
+      if (grade.startsWith('A')) {
+        return { pros: ["Excellent nutritional balance", "Supports fitness goals"], cons: [] };
+      } else if (grade.startsWith('B')) {
+        return { pros: ["Good nutrition"], cons: ["Could use more vegetables"] };
+      } else if (grade.startsWith('C')) {
+        return { pros: ["Some nutritional value"], cons: ["Room for improvement"] };
+      } else {
+        return { pros: [], cons: ["High in processed foods", "Consider healthier alternatives"] };
+      }
+    }
+    
+    // Calculate detailed grade for entries that don't have one stored
+    const gradeResult = calculateHealthGrade(
+      entry.food_items,
+      entry.total_calories,
+      entry.total_protein,
+      entry.total_carbs,
+      entry.total_fat
+    );
+    return { pros: gradeResult.pros, cons: gradeResult.cons };
+  };
+
   const handleDelete = async (entryId: string) => {
     if (!confirm('Are you sure you want to delete this food entry?')) return;
     
@@ -156,7 +183,10 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                               <Clock className="h-3 w-3" />
                               {formatTime(entry.created_at)}
                             </div>
-                            {/* Health Grade */}
+                          </div>
+
+                          {/* Health Grade and Description */}
+                          <div className="flex flex-col items-end gap-2">
                             <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full border ${getGradeBgColor(getDisplayGrade(entry))}`}>
                               <span className={`text-sm font-bold ${getGradeColor(getDisplayGrade(entry))}`}>
                                 {getDisplayGrade(entry)}
@@ -212,6 +242,34 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                             <div className="text-muted-foreground">Fat</div>
                           </div>
                         </div>
+
+                        {/* Grade Description */}
+                        {(() => {
+                          const description = getGradeDescription(entry);
+                          if (description.pros.length > 0 || description.cons.length > 0) {
+                            return (
+                              <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm space-y-2">
+                                <div className="flex items-center gap-2 font-medium text-muted-foreground">
+                                  <Award className="h-4 w-4" />
+                                  Grade Analysis
+                                </div>
+                                {description.pros.length > 0 && (
+                                  <div>
+                                    <span className="text-stats-exercises font-medium">✓ Pros: </span>
+                                    <span className="text-muted-foreground">{description.pros.join(", ")}</span>
+                                  </div>
+                                )}
+                                {description.cons.length > 0 && (
+                                  <div>
+                                    <span className="text-destructive font-medium">⚠ Cons: </span>
+                                    <span className="text-muted-foreground">{description.cons.join(", ")}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
 
                         {/* Notes */}
                         {entry.notes && (

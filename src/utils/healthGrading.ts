@@ -7,6 +7,8 @@ export interface GradeResult {
   insight: string;
   recommendation: string;
   healthyStreak?: boolean;
+  pros: string[];
+  cons: string[];
 }
 
 export const calculateHealthGrade = (
@@ -105,6 +107,23 @@ export const calculateHealthGrade = (
   const category = foodItems.map(item => item.name).join(" with ");
   const insight = insights.slice(0, 3).join(", ");
   
+  // Generate detailed pros and cons
+  const pros: string[] = [];
+  const cons: string[] = [];
+  
+  if (hasLeanProtein) pros.push("Good protein source");
+  if (hasVegetables) pros.push("Contains vegetables");
+  if (reasonablePortions) pros.push("Reasonable portion size");
+  if (highProtein) pros.push("High in protein");
+  if (hasHighFiber) pros.push("Good fiber content");
+  if (!hasProcessedFood) pros.push("Whole food ingredients");
+  
+  if (hasProcessedFood) cons.push("Contains processed foods");
+  if (!reasonablePortions) cons.push("Large portion size");
+  if (totalFat >= totalCalories * 0.35) cons.push("High in fat");
+  if (!hasVegetables) cons.push("Lacks vegetables");
+  if (!hasLeanProtein) cons.push("Limited quality protein");
+  
   let recommendation: string;
   if (score >= 7) {
     recommendation = "Excellent choice! This meal supports your fitness goals.";
@@ -122,7 +141,9 @@ export const calculateHealthGrade = (
     category,
     insight,
     recommendation,
-    healthyStreak: score >= 7
+    healthyStreak: score >= 7,
+    pros,
+    cons
   };
 };
 
