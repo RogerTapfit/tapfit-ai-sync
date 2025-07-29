@@ -12,15 +12,18 @@ import {
   CheckCircle,
   Clock,
   Dumbbell,
-  Zap
+  Zap,
+  Eye
 } from 'lucide-react';
 import { useWorkoutPlan } from '@/hooks/useWorkoutPlan';
+import { useNavigate } from 'react-router-dom';
 import WorkoutPlanSetup from './WorkoutPlanSetup';
 import WeeklyWorkoutSchedule from './WeeklyWorkoutSchedule';
 import WorkoutCalendar from './WorkoutCalendar';
 import GenerateTestWorkout from './GenerateTestWorkout';
 
 const WorkoutPlanDashboard = () => {
+  const navigate = useNavigate();
   const { currentPlan, weeklySchedule, preferences, generateNewPlan, loading } = useWorkoutPlan();
   const [activeTab, setActiveTab] = useState('schedule');
 
@@ -115,17 +118,29 @@ const WorkoutPlanDashboard = () => {
         <TabsContent value="schedule" className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">This Week's Schedule</h2>
-            {currentPlan && (
-              <Button 
-                onClick={generateNewPlan} 
-                disabled={loading}
-                variant="outline"
-                size="sm"
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Regenerate Plan
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {currentPlan && (
+                <Button 
+                  onClick={() => navigate('/workout-plans')}
+                  variant="default"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View My Workouts
+                </Button>
+              )}
+              {currentPlan && (
+                <Button 
+                  onClick={generateNewPlan} 
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Regenerate Plan
+                </Button>
+              )}
+            </div>
           </div>
           <WeeklyWorkoutSchedule />
         </TabsContent>

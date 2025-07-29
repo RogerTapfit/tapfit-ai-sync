@@ -20,6 +20,22 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { preferences, machines } = await req.json();
 
+    // Get user profile for age and weight considerations
+    const authHeader = req.headers.get('authorization');
+    let userProfile = null;
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('weight_kg, gender, height_cm')
+          .eq('id', user.id)
+          .maybeSingle();
+        userProfile = profile;
+      }
+    }
+
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
@@ -35,6 +51,13 @@ serve(async (req) => {
     }
 
     const prompt = `Generate a personalized 5-day gym workout plan based on these preferences and equipment commonly found in 24 Hour Fitness gyms:
+
+USER PROFILE:
+${userProfile ? `
+- Weight: ${userProfile.weight_kg ? `${userProfile.weight_kg}kg` : 'Not specified'}
+- Height: ${userProfile.height_cm ? `${userProfile.height_cm}cm` : 'Not specified'}
+- Gender: ${userProfile.gender || 'Not specified'}
+` : '- Profile information not available'}
 
 PREFERENCES:
 - Fitness Goal: ${preferences.primary_goal}
@@ -91,6 +114,7 @@ Day 5 – Friday: Glutes & Conditioning
 ADAPTATION RULES:
 - If user selects fewer than 5 days, prioritize: Push, Pull, Legs (3 days) or add Upper Mix (4 days)
 - Adjust sets/reps based on experience level: Beginner (2-3 sets, 12-15 reps), Intermediate (3-4 sets, 8-12 reps), Advanced (4-5 sets, 6-10 reps)
+- Consider user's weight for resistance recommendations (lighter users start with lower weights)
 - Match workout times to user's preferred time slots
 - Avoid any equipment listed in restrictions
 - Modify exercises for health conditions
@@ -131,7 +155,7 @@ Return a valid JSON object with this exact structure:
         messages: [
           { 
             role: 'system', 
-            content: 'You are a certified personal trainer and fitness expert. Generate safe, effective workout plans based on user preferences. Always return valid JSON.' 
+            content: 'You are a certified personal trainer and fitness expert. Generate safe, effective workout plans based on user preferences and physical profile. Always return valid JSON.' 
           },
           { role: 'user', content: prompt }
         ],
