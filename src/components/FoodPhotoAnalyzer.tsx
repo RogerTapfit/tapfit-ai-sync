@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Loader2, Check, Edit3, Save, X } from 'lucide-react';
+import { Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
+import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
 
 interface FoodPhotoAnalyzerProps {
   onDataChange?: () => void;
@@ -253,6 +254,65 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Health Grade Analysis */}
+            {editingItems.length > 0 && (() => {
+              const totalCalories = editingItems.reduce((sum, item) => sum + item.calories, 0);
+              const totalProtein = editingItems.reduce((sum, item) => sum + item.protein, 0);
+              const totalCarbs = editingItems.reduce((sum, item) => sum + item.carbs, 0);
+              const totalFat = editingItems.reduce((sum, item) => sum + item.fat, 0);
+              const gradeResult = calculateHealthGrade(editingItems, totalCalories, totalProtein, totalCarbs, totalFat);
+              
+              return (
+                <Card className="bg-muted/30 border-2">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Award className="h-5 w-5 text-primary" />
+                      <span className="font-semibold">Health Grade</span>
+                      <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full border-2 ${getGradeBgColor(gradeResult.grade)}`}>
+                        <span className={`text-lg font-bold ${getGradeColor(gradeResult.grade)}`}>
+                          {gradeResult.grade}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {gradeResult.pros.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-stats-exercises mb-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-4 w-4" />
+                          What's Good
+                        </h5>
+                        <ul className="space-y-1">
+                          {gradeResult.pros.map((pro, index) => (
+                            <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <CheckCircle2 className="h-3 w-3 text-stats-exercises mt-1 flex-shrink-0" />
+                              {pro}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {gradeResult.cons.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-destructive mb-2 flex items-center gap-1">
+                          <XCircle className="h-4 w-4" />
+                          Areas for Improvement
+                        </h5>
+                        <ul className="space-y-1">
+                          {gradeResult.cons.map((con, index) => (
+                            <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                              <XCircle className="h-3 w-3 text-destructive mt-1 flex-shrink-0" />
+                              {con}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             {/* Food Items Editor */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
