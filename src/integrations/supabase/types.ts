@@ -1234,6 +1234,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      fix_incomplete_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_power_level_tier: {
         Args: { _score: number }
         Returns: string
@@ -1264,6 +1268,10 @@ export type Database = {
           _gym_id: string
         }
         Returns: boolean
+      }
+      refresh_daily_nutrition_summary_for_user: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
       spend_tap_coins: {
         Args: {
