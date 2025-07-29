@@ -127,7 +127,7 @@ Return a valid JSON object with this exact structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
@@ -139,10 +139,18 @@ Return a valid JSON object with this exact structure:
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', response.status, errorData);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+    }
+
     const aiData = await response.json();
+    console.log('OpenAI response:', JSON.stringify(aiData, null, 2));
     
     if (!aiData.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI');
+      console.error('Invalid OpenAI response structure:', aiData);
+      throw new Error('Invalid response from OpenAI - no content in response');
     }
 
     let workoutPlan;

@@ -723,42 +723,51 @@ export type Database = {
       user_fitness_preferences: {
         Row: {
           available_days: string[]
+          available_equipment: string[] | null
           created_at: string
           current_fitness_level: string
           equipment_restrictions: string[] | null
           health_conditions: string[] | null
           id: string
           preferred_time_slots: string[]
+          preferred_workout_time: string | null
           primary_goal: string
           session_duration_preference: number
+          target_muscle_groups: string[] | null
           updated_at: string
           user_id: string
           workout_frequency: number
         }
         Insert: {
           available_days?: string[]
+          available_equipment?: string[] | null
           created_at?: string
           current_fitness_level?: string
           equipment_restrictions?: string[] | null
           health_conditions?: string[] | null
           id?: string
           preferred_time_slots?: string[]
+          preferred_workout_time?: string | null
           primary_goal?: string
           session_duration_preference?: number
+          target_muscle_groups?: string[] | null
           updated_at?: string
           user_id: string
           workout_frequency?: number
         }
         Update: {
           available_days?: string[]
+          available_equipment?: string[] | null
           created_at?: string
           current_fitness_level?: string
           equipment_restrictions?: string[] | null
           health_conditions?: string[] | null
           id?: string
           preferred_time_slots?: string[]
+          preferred_workout_time?: string | null
           primary_goal?: string
           session_duration_preference?: number
+          target_muscle_groups?: string[] | null
           updated_at?: string
           user_id?: string
           workout_frequency?: number
