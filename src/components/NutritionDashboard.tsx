@@ -19,10 +19,12 @@ import NutritionGoalsSetup from './NutritionGoalsSetup';
 import FoodPhotoAnalyzer from './FoodPhotoAnalyzer';
 import WeeklyNutritionCalendar from './WeeklyNutritionCalendar';
 import MetabolismTracker from './MetabolismTracker';
+import FoodEntryList from './FoodEntryList';
 
 const NutritionDashboard = () => {
   const { nutritionGoals, dailySummary, metabolismReadings, refreshData } = useNutrition();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showFoodEntries, setShowFoodEntries] = useState(false);
 
   const handleDataRefresh = () => {
     refreshData();
@@ -96,7 +98,10 @@ const NutritionDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/50 transition-colors"
+          onClick={() => setShowFoodEntries(true)}
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -104,7 +109,7 @@ const NutritionDashboard = () => {
                 <p className="text-2xl font-bold">
                   {dailySummary?.meals_count || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">today</p>
+                <p className="text-sm text-muted-foreground">today - click to view</p>
               </div>
               <Utensils className="h-8 w-8 text-blue-500" />
             </div>
@@ -286,6 +291,13 @@ const NutritionDashboard = () => {
           <WeeklyNutritionCalendar />
         </TabsContent>
       </Tabs>
+
+      {/* Food Entry List Modal */}
+      <FoodEntryList 
+        isOpen={showFoodEntries}
+        onClose={() => setShowFoodEntries(false)}
+        onDataChange={handleDataRefresh}
+      />
     </div>
   );
 };
