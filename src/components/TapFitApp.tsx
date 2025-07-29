@@ -127,7 +127,7 @@ const TapFitApp = () => {
         user={user}
         onSignOut={signOut}
       />
-      <div className="flex-1 md:ml-0">
+      <div className="flex-1 md:ml-0 pt-20 md:pt-0">
         {renderContent()}
       </div>
     </div>
