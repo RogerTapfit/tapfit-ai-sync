@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -45,6 +46,7 @@ export interface WorkoutPlan {
 }
 
 export const useWorkoutPlan = () => {
+  const navigate = useNavigate();
   const [preferences, setPreferences] = useState<FitnessPreferences | null>(null);
   const [currentPlan, setCurrentPlan] = useState<WorkoutPlan | null>(null);
   const [weeklySchedule, setWeeklySchedule] = useState<ScheduledWorkout[]>([]);
@@ -203,11 +205,20 @@ export const useWorkoutPlan = () => {
       if (!user) throw new Error('No user found');
 
       // Call the edge function to generate plan
+      console.log('Sending preferences to generate plan:', preferences);
       const { data, error } = await supabase.functions.invoke('generateWorkoutPlan', {
         body: { preferences }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data || !data.workouts) {
+        console.error('Invalid response from edge function:', data);
+        throw new Error('Invalid workout plan data received');
+      }
 
       // Save the generated plan to database
       const { data: planData, error: planError } = await supabase
@@ -295,10 +306,14 @@ export const useWorkoutPlan = () => {
 
       toast.success('New workout plan generated!');
       await loadCurrentPlan();
+      
+      // Navigate to workout plans page
+      navigate('/workout-plans');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating plan:', error);
-      toast.error('Failed to generate workout plan');
+      const errorMessage = error?.message || 'Failed to generate workout plan';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
