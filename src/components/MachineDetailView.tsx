@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat } from 'lucide-react';
+import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat, Check } from 'lucide-react';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
 
 interface MachineDetailViewProps {
@@ -205,11 +205,12 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
                   </div>
                   {!set.completed && (
                     <Button
-                      size="sm"
+                      size="icon"
                       onClick={() => handleSetComplete(index)}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 h-8 w-8"
+                      aria-label="Complete set"
                     >
-                      Complete
+                      <Check className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
