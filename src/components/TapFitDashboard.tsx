@@ -195,7 +195,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
 
-      {/* Nutrition Quick Access */}
+      {/* Track Nutrition */}
       <Card className="glow-card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-transparent to-green-500/10" />
         <div className="relative p-6">
@@ -204,6 +204,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               <div className="p-3 rounded-xl bg-green-500/20 shadow-glow">
                 <Apple className="h-8 w-8 text-green-500" />
               </div>
+              <div>
+                <h3 className="text-xl font-bold">Track Nutrition</h3>
+                <p className="text-sm text-muted-foreground">Monitor your daily nutrition and meal intake</p>
+              </div>
             </div>
             <Button 
               variant="glow" 
@@ -211,7 +215,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               onClick={() => onPageChange?.('nutrition')}
               className="shadow-glow bg-green-500/10 hover:bg-green-500/20 text-green-500 border-green-500/20 animate-nutrition-glow"
             >
-              Track Nutrition
+              Get Started
             </Button>
           </div>
         </div>
