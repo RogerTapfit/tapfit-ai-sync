@@ -95,7 +95,7 @@ const TapFitApp = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <TapFitDashboard />;
+        return <TapFitDashboard onPageChange={setCurrentPage} />;
       case 'smart-pins':
         return <SmartPinDashboard />;
       case 'workout-plan':

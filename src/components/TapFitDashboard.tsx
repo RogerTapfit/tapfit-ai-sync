@@ -17,7 +17,8 @@ import {
   Users,
   Trophy,
   Settings,
-  Palette
+  Palette,
+  Apple
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero-new.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
@@ -32,7 +33,11 @@ import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
 import FitnessChatbot from "./FitnessChatbot";
 
-const TapFitDashboard = () => {
+interface TapFitDashboardProps {
+  onPageChange?: (page: string) => void;
+}
+
+const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const navigate = useNavigate();
   const [isConnected, setIsConnected] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
@@ -189,6 +194,32 @@ const TapFitDashboard = () => {
 
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
+
+      {/* Nutrition Quick Access */}
+      <Card className="glow-card relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-transparent to-green-500/10" />
+        <div className="relative p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-green-500/20 shadow-glow">
+                <Apple className="h-8 w-8 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Nutrition Tracking</h3>
+                <p className="text-sm text-muted-foreground">Track your meals and reach your nutrition goals</p>
+              </div>
+            </div>
+            <Button 
+              variant="glow" 
+              size="lg"
+              onClick={() => onPageChange?.('nutrition')}
+              className="shadow-glow bg-green-500/10 hover:bg-green-500/20 text-green-500 border-green-500/20"
+            >
+              Track Nutrition
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       {/* 3. Weekly Progress */}
       <Card className="glow-card animate-slide-up">
