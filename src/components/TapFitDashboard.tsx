@@ -164,7 +164,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       <Card className="glow-card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
         <div className="relative p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-primary/20 shadow-glow">
                 <Brain className="h-8 w-8 text-primary" />
@@ -177,7 +177,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               variant="glow" 
               size="lg"
               onClick={() => navigate('/workout-plan')}
-              className="shadow-glow"
+              className="shadow-glow w-full"
             >
               Get Started
             </Button>
