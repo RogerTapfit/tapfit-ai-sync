@@ -43,12 +43,12 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
   return (
     <>
       {/* Mobile Menu Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
+      <div className="md:hidden fixed top-4 left-4 z-[100]">
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="glow-card"
+          className="glow-card bg-background border-border shadow-lg"
         >
           {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
