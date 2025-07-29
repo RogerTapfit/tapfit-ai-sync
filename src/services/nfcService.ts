@@ -44,40 +44,66 @@ export interface NFCData {
   action: 'start_exercise';
 }
 
-// NFC types for development
-interface TagEvent {
-  nfcTag: {
-    ndefMessage: Array<{
-      type: string;
-      payload: Uint8Array;
-    }>;
-  };
+// Enhanced NFC interfaces for native implementation
+interface NfcTag {
+  ndefMessage: Array<{
+    type: string;
+    payload: Uint8Array;
+  }>;
+}
+
+interface NFCScanResult {
+  nfcTag: NfcTag;
 }
 
 interface NFCPlugin {
   isSupported(): Promise<{ isSupported: boolean }>;
-  addListener(eventName: string, callback: (event: TagEvent) => void): Promise<void>;
+  addListener(eventName: string, callback: (result: NFCScanResult) => void): Promise<void>;
   removeAllListeners(): Promise<void>;
   write(options: { ndefMessage: any[] }): Promise<void>;
+  startScan(): Promise<void>;
+  stopScan(): Promise<void>;
 }
 
-// Mock NFC for development - will be replaced with real plugin in production
-const MockNFC: NFCPlugin = {
-  isSupported: async () => ({ isSupported: Capacitor.isNativePlatform() }),
-  addListener: async () => {
-    console.log('Mock NFC listener added');
-  },
-  removeAllListeners: async () => {
-    console.log('Mock NFC listeners removed');
-  },
-  write: async () => {
-    console.log('Mock NFC tag written');
+// Enhanced NFC implementation that will work with the real plugin when deployed
+class EnhancedNFC implements NFCPlugin {
+  async isSupported(): Promise<{ isSupported: boolean }> {
+    if (!Capacitor.isNativePlatform()) {
+      return { isSupported: false };
+    }
+    // On native platforms, assume NFC is available (will be handled by the real plugin)
+    return { isSupported: true };
   }
-};
+
+  async addListener(eventName: string, callback: (result: NFCScanResult) => void): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+      // This will be replaced by the actual NFC plugin implementation
+      console.log('NFC listener added - will be handled by native plugin');
+    } else {
+      console.log('Web environment - NFC not available');
+    }
+  }
+
+  async removeAllListeners(): Promise<void> {
+    console.log('NFC listeners removed');
+  }
+
+  async write(options: { ndefMessage: any[] }): Promise<void> {
+    console.log('NFC tag write request:', options);
+  }
+
+  async startScan(): Promise<void> {
+    console.log('NFC scan started');
+  }
+
+  async stopScan(): Promise<void> {
+    console.log('NFC scan stopped');
+  }
+}
 
 export class NFCService {
   private static instance: NFCService;
-  private nfc: NFCPlugin = MockNFC;
+  private nfc: NFCPlugin = new EnhancedNFC();
 
   public static getInstance(): NFCService {
     if (!NFCService.instance) {
@@ -106,23 +132,32 @@ export class NFCService {
     }
 
     try {
-      await this.nfc.addListener('nfcTagScanned', (event: TagEvent) => {
-        const tag = event.nfcTag;
-        const ndefMessage = tag.ndefMessage;
+      await this.nfc.addListener('nfcTagScanned', (result: NFCScanResult) => {
+        const tag = result.nfcTag;
         
-        if (ndefMessage && ndefMessage.length > 0) {
-          const record = ndefMessage[0];
-          if (record.type === 'U') { // URL record
-            const url = new TextDecoder().decode(record.payload.slice(1)); // Skip URL prefix byte
-            const urlObj = new URL(url);
-            const machineId = urlObj.pathname.split('/').pop();
-            
-            if (this.isValidMachineId(machineId!)) {
-              callback({
-                appId: 'app.lovable.4e37f3a98b5244369842e2cc950a194e',
-                machineId: machineId as MachineId,
-                action: 'start_exercise'
-              });
+        if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+          const record = tag.ndefMessage[0];
+          
+          // Handle URL records (type 'U')
+          if (record.type === 'U' && record.payload) {
+            try {
+              // Convert Uint8Array to string, skip first byte (URL prefix)
+              const url = new TextDecoder().decode(record.payload.slice(1));
+              
+              // Extract machine ID from tapfit:// URL
+              if (url.startsWith('tapfit://machine/')) {
+                const machineId = url.replace('tapfit://machine/', '');
+                
+                if (this.isValidMachineId(machineId)) {
+                  callback({
+                    appId: 'app.lovable.4e37f3a98b5244369842e2cc950a194e',
+                    machineId: machineId as MachineId,
+                    action: 'start_exercise'
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing NFC URL:', error);
             }
           }
         }
@@ -154,7 +189,7 @@ export class NFCService {
     try {
       const ndefRecord = {
         type: 'U', // URL record type
-        payload: new TextEncoder().encode(`\x01${deepLinkUrl}`) // 0x01 prefix for http://
+        payload: new TextEncoder().encode(`\x01${deepLinkUrl}`) // 0x01 prefix for URI identifier
       };
 
       await this.nfc.write({

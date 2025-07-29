@@ -23,7 +23,9 @@ const config: CapacitorConfig = {
       selection: true
     },
     NFC: {
-      enabled: true
+      enabled: true,
+      scanOnAppStart: true,
+      scanInstructions: "Hold your device near an NFC tag to access gym equipment"
     }
   },
   android: {
@@ -42,7 +44,9 @@ const config: CapacitorConfig = {
   },
   ios: {
     contentInset: 'automatic',
-    preferredContentMode: 'mobile'
+    preferredContentMode: 'mobile',
+    scheme: 'tapfit',
+    customUrlScheme: 'tapfit'
   }
 };
 
