@@ -9,6 +9,7 @@ import { HealthDataExport } from "./HealthDataExport";
 import WorkoutPlanDashboard from "./WorkoutPlanDashboard";
 import { AvatarBuilder } from "./AvatarBuilder";
 import NutritionDashboard from "./NutritionDashboard";
+import NFCTagWriter from "./NFCTagWriter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
@@ -83,6 +84,11 @@ const TapFitApp = () => {
             </Button>
           </div>
         </Card>
+      </div>
+
+      {/* NFC Tag Programming Section */}
+      <div className="max-w-4xl">
+        <NFCTagWriter />
       </div>
 
       {/* Health Data Export Section */}

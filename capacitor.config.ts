@@ -21,6 +21,9 @@ const config: CapacitorConfig = {
       impact: true,
       notification: true,
       selection: true
+    },
+    NFC: {
+      enabled: true
     }
   },
   ios: {
