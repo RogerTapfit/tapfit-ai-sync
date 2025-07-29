@@ -871,38 +871,47 @@ export type Database = {
       workout_exercises: {
         Row: {
           created_at: string
+          duration_minutes: number | null
           exercise_order: number
+          exercise_type: string | null
           id: string
+          intensity: string | null
           machine_name: string
           notes: string | null
-          reps: number
+          reps: number | null
           rest_seconds: number
           scheduled_workout_id: string
-          sets: number
+          sets: number | null
           weight: number | null
         }
         Insert: {
           created_at?: string
+          duration_minutes?: number | null
           exercise_order: number
+          exercise_type?: string | null
           id?: string
+          intensity?: string | null
           machine_name: string
           notes?: string | null
-          reps: number
+          reps?: number | null
           rest_seconds?: number
           scheduled_workout_id: string
-          sets: number
+          sets?: number | null
           weight?: number | null
         }
         Update: {
           created_at?: string
+          duration_minutes?: number | null
           exercise_order?: number
+          exercise_type?: string | null
           id?: string
+          intensity?: string | null
           machine_name?: string
           notes?: string | null
-          reps?: number
+          reps?: number | null
           rest_seconds?: number
           scheduled_workout_id?: string
-          sets?: number
+          sets?: number | null
           weight?: number | null
         }
         Relationships: [

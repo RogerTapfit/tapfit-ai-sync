@@ -19,11 +19,15 @@ export interface FitnessPreferences {
 
 export interface WorkoutExercise {
   machine: string;
-  sets: number;
-  reps: number;
+  sets?: number;
+  reps?: number;
   rest_seconds: number;
   weight_guidance?: string;
   order: number;
+  // Cardio exercise fields
+  duration_minutes?: number;
+  exercise_type?: string;
+  intensity?: string;
 }
 
 export interface ScheduledWorkout {
@@ -151,7 +155,10 @@ export const useWorkoutPlan = () => {
             reps: ex.reps,
             rest_seconds: ex.rest_seconds,
             weight_guidance: ex.notes,
-            order: ex.exercise_order
+            order: ex.exercise_order,
+            duration_minutes: ex.duration_minutes,
+            exercise_type: ex.exercise_type,
+            intensity: ex.intensity
           })) || [],
           scheduled_date: workout.scheduled_date,
           status: workout.status
@@ -278,15 +285,37 @@ export const useWorkoutPlan = () => {
           const workout = data.workouts[i];
           const scheduledWorkout = workoutData[workoutIndex];
 
-          const exercises = workout.exercises.map((exercise: any) => ({
-            scheduled_workout_id: scheduledWorkout.id,
-            machine_name: exercise.machine,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            rest_seconds: exercise.rest_seconds,
-            exercise_order: exercise.order,
-            notes: exercise.weight_guidance
-          }));
+          const exercises = workout.exercises.map((exercise: any) => {
+            // Handle both strength and cardio exercises
+            const baseExercise = {
+              scheduled_workout_id: scheduledWorkout.id,
+              machine_name: exercise.machine,
+              exercise_order: exercise.order,
+              rest_seconds: exercise.rest_seconds || 0,
+              notes: exercise.weight_guidance || exercise.intensity
+            };
+
+            // Check if it's a cardio exercise (has duration_minutes) or strength exercise (has sets)
+            if (exercise.duration_minutes) {
+              return {
+                ...baseExercise,
+                duration_minutes: exercise.duration_minutes,
+                exercise_type: exercise.type || 'cardio',
+                intensity: exercise.intensity,
+                sets: null,
+                reps: null
+              };
+            } else {
+              return {
+                ...baseExercise,
+                sets: exercise.sets,
+                reps: exercise.reps,
+                duration_minutes: null,
+                exercise_type: null,
+                intensity: null
+              };
+            }
+          });
 
           const { error: exerciseError } = await supabase
             .from('workout_exercises')

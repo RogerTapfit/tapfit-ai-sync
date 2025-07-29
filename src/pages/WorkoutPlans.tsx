@@ -179,12 +179,25 @@ const WorkoutPlans = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">
-                              {exercise.sets} sets × {exercise.reps} reps
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {exercise.rest_seconds}s rest
-                            </p>
+                            {exercise.duration_minutes ? (
+                              <>
+                                <p className="font-medium">
+                                  {exercise.duration_minutes} minutes
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {exercise.intensity}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-medium">
+                                  {exercise.sets} sets × {exercise.reps} reps
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {exercise.rest_seconds}s rest
+                                </p>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -247,7 +260,10 @@ const WorkoutPlans = () => {
                         <div key={index} className="flex items-center justify-between text-sm">
                           <span>{exercise.machine}</span>
                           <span className="text-muted-foreground">
-                            {exercise.sets}×{exercise.reps}
+                            {exercise.duration_minutes 
+                              ? `${exercise.duration_minutes} min` 
+                              : `${exercise.sets}×${exercise.reps}`
+                            }
                           </span>
                         </div>
                       ))}
