@@ -185,14 +185,6 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                             </div>
                           </div>
 
-                          {/* Health Grade and Description */}
-                          <div className="flex flex-col items-end gap-2">
-                            <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full border ${getGradeBgColor(getDisplayGrade(entry))}`}>
-                              <span className={`text-sm font-bold ${getGradeColor(getDisplayGrade(entry))}`}>
-                                {getDisplayGrade(entry)}
-                              </span>
-                            </div>
-                          </div>
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-1">
@@ -252,6 +244,11 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                                 <div className="flex items-center gap-2 font-medium text-muted-foreground">
                                   <Award className="h-4 w-4" />
                                   Grade Analysis
+                                  <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full border ml-2 ${getGradeBgColor(getDisplayGrade(entry))}`}>
+                                    <span className={`text-xs font-bold ${getGradeColor(getDisplayGrade(entry))}`}>
+                                      {getDisplayGrade(entry)}
+                                    </span>
+                                  </div>
                                 </div>
                                 {description.pros.length > 0 && (
                                   <div>
