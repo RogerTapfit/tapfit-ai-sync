@@ -2,7 +2,23 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, Target, Activity, Dumbbell } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Clock, 
+  Target, 
+  Activity, 
+  Dumbbell,
+  Zap,
+  Circle,
+  RotateCcw,
+  Footprints,
+  Waves,
+  Mountain,
+  TrendingUp,
+  Repeat,
+  Timer,
+  Compass
+} from 'lucide-react';
 import { ScheduledWorkout, WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import MachineDetailView from './MachineDetailView';
 
@@ -18,7 +34,31 @@ interface MachineCardProps {
 }
 
 const MachineCard: React.FC<MachineCardProps> = ({ exercise, index, onMachineClick }) => {
-  const machineImageUrl = '/placeholder.svg'; // Will be updated when machine images are available
+  const getExerciseIcon = (machineName: string) => {
+    const name = machineName.toLowerCase();
+    
+    if (name.includes('squat')) return Zap;
+    if (name.includes('calf')) return TrendingUp;
+    if (name.includes('twist') || name.includes('russian')) return RotateCcw;
+    if (name.includes('leg') && name.includes('raise')) return Footprints;
+    if (name.includes('deadlift')) return Mountain;
+    if (name.includes('bench')) return Circle;
+    if (name.includes('row')) return Waves;
+    if (name.includes('press')) return TrendingUp;
+    if (name.includes('curl')) return Repeat;
+    if (name.includes('pull')) return TrendingUp;
+    if (name.includes('lat')) return Mountain;
+    if (name.includes('tricep')) return Timer;
+    if (name.includes('bicep')) return Repeat;
+    if (name.includes('shoulder')) return Compass;
+    if (name.includes('chest')) return Circle;
+    if (name.includes('back')) return Mountain;
+    if (name.includes('abs') || name.includes('core')) return RotateCcw;
+    
+    return Dumbbell; // Default icon
+  };
+
+  const ExerciseIcon = getExerciseIcon(exercise.machine);
   
   return (
     <Card 
@@ -27,15 +67,8 @@ const MachineCard: React.FC<MachineCardProps> = ({ exercise, index, onMachineCli
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-            <img 
-              src={machineImageUrl} 
-              alt={exercise.machine}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/placeholder.svg';
-              }}
-            />
+          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
+            <ExerciseIcon className="h-8 w-8 text-white" />
           </div>
           
           <div className="flex-1 min-w-0">
