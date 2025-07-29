@@ -221,7 +221,7 @@ All colors MUST be HSL for proper theming.
 
   /* Steady pulse glow animation for Nutrition button */
   .animate-nutrition-glow {
-    animation: steadyNutritionGlow 8s ease-in-out infinite;
+    animation: steadyNutritionGlow 80s ease-in-out infinite;
   }
 
   @keyframes steadyNutritionGlow {
