@@ -14,7 +14,8 @@ import {
   LogOut,
   Bluetooth,
   Brain,
-  User as UserIcon
+  User as UserIcon,
+  Apple
 } from "lucide-react";
 
 interface NavigationProps {
@@ -32,6 +33,7 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
     { id: 'workout-plan', label: 'AI Workout Plan', icon: Brain },
     { id: 'smart-pins', label: 'Smart Pins', icon: Activity },
     { id: 'sensor-workout', label: 'BLE Sensors', icon: Bluetooth },
+    { id: 'nutrition', label: 'Nutrition', icon: Apple },
     { id: 'social', label: 'Social', icon: Users },
     { id: 'challenges', label: 'Challenges', icon: Trophy },
     { id: 'avatar', label: 'Avatar', icon: UserIcon },

@@ -8,6 +8,7 @@ import SensorWorkout from "../pages/SensorWorkout";
 import { HealthDataExport } from "./HealthDataExport";
 import WorkoutPlanDashboard from "./WorkoutPlanDashboard";
 import { AvatarBuilder } from "./AvatarBuilder";
+import NutritionDashboard from "./NutritionDashboard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
@@ -101,6 +102,8 @@ const TapFitApp = () => {
         return <WorkoutPlanDashboard />;
       case 'sensor-workout':
         return <SensorWorkout />;
+      case 'nutrition':
+        return <NutritionDashboard />;
       case 'social':
         return renderSocialPage();
       case 'challenges':
