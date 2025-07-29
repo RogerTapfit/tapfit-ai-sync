@@ -209,7 +209,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               variant="glow" 
               size="lg"
               onClick={() => onPageChange?.('nutrition')}
-              className="shadow-glow bg-green-500/10 hover:bg-green-500/20 text-green-500 border-green-500/20"
+              className="shadow-glow bg-green-500/10 hover:bg-green-500/20 text-green-500 border-green-500/20 animate-nutrition-glow"
             >
               Track Nutrition
             </Button>
