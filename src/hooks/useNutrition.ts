@@ -45,6 +45,8 @@ export interface FoodEntry {
   notes?: string;
   logged_date: string;
   created_at: string;
+  health_grade?: string;
+  grade_score?: number;
 }
 
 export interface DailyNutritionSummary {
@@ -91,7 +93,9 @@ const transformDatabaseToFoodEntry = (data: any): FoodEntry => ({
   user_confirmed: data.user_confirmed,
   notes: data.notes,
   logged_date: data.logged_date,
-  created_at: data.created_at
+  created_at: data.created_at,
+  health_grade: data.health_grade,
+  grade_score: data.grade_score
 });
 
 const transformDatabaseToDailySummary = (data: any): DailyNutritionSummary => ({

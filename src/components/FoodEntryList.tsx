@@ -11,10 +11,12 @@ import {
   Edit, 
   Trash2, 
   Image as ImageIcon,
-  ChevronLeft
+  ChevronLeft,
+  Award
 } from 'lucide-react';
 import { FoodEntry, useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
+import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
 
 interface FoodEntryListProps {
   isOpen: boolean;
@@ -52,6 +54,23 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
       snack: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
     };
     return colors[mealType as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getDisplayGrade = (entry: FoodEntry) => {
+    // Use stored grade if available, otherwise calculate it
+    if (entry.health_grade) {
+      return entry.health_grade;
+    }
+    
+    // Calculate grade for entries that don't have one stored
+    const gradeResult = calculateHealthGrade(
+      entry.food_items,
+      entry.total_calories,
+      entry.total_protein,
+      entry.total_carbs,
+      entry.total_fat
+    );
+    return gradeResult.grade;
   };
 
   const handleDelete = async (entryId: string) => {
@@ -136,6 +155,12 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               {formatTime(entry.created_at)}
+                            </div>
+                            {/* Health Grade */}
+                            <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full border ${getGradeBgColor(getDisplayGrade(entry))}`}>
+                              <span className={`text-sm font-bold ${getGradeColor(getDisplayGrade(entry))}`}>
+                                {getDisplayGrade(entry)}
+                              </span>
                             </div>
                           </div>
 

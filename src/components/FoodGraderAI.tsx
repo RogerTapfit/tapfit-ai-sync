@@ -6,15 +6,8 @@ import { Camera, Upload, Star, TrendingUp, Award, Coins } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { useTapCoins } from '@/hooks/useTapCoins';
+import { calculateHealthGrade, getGradeColor, getGradeBgColor, GradeResult } from '@/utils/healthGrading';
 
-interface GradeResult {
-  grade: string;
-  score: number;
-  category: string;
-  insight: string;
-  recommendation: string;
-  healthyStreak?: boolean;
-}
 
 interface AnalysisResult {
   food_items: Array<{
@@ -52,7 +45,7 @@ export const FoodGraderAI = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const { analyzeFoodImage, loading } = useNutrition();
+  const { analyzeFoodImage, saveFoodEntry, loading } = useNutrition();
   const { awardCoins } = useTapCoins();
 
   const convertToBase64 = (file: File): Promise<string> => {
@@ -80,117 +73,6 @@ export const FoodGraderAI = () => {
     }
   };
 
-  const calculateHealthGrade = (analysis: AnalysisResult): GradeResult => {
-    let score = 0;
-    const insights: string[] = [];
-    
-    // Analyze food items for health factors
-    const hasLeanProtein = analysis.food_items.some(item => 
-      item.name.toLowerCase().includes('chicken') || 
-      item.name.toLowerCase().includes('fish') || 
-      item.name.toLowerCase().includes('turkey') ||
-      item.name.toLowerCase().includes('tofu') ||
-      (item.name.toLowerCase().includes('steak') && item.protein > 20)
-    );
-    
-    const hasVegetables = analysis.food_items.some(item =>
-      item.name.toLowerCase().includes('vegetable') ||
-      item.name.toLowerCase().includes('broccoli') ||
-      item.name.toLowerCase().includes('spinach') ||
-      item.name.toLowerCase().includes('pepper') ||
-      item.name.toLowerCase().includes('carrot') ||
-      item.name.toLowerCase().includes('lettuce') ||
-      item.name.toLowerCase().includes('tomato')
-    );
-
-    const hasProcessedFood = analysis.food_items.some(item =>
-      item.name.toLowerCase().includes('fried') ||
-      item.name.toLowerCase().includes('pizza') ||
-      item.name.toLowerCase().includes('burger') ||
-      item.name.toLowerCase().includes('fries') ||
-      item.name.toLowerCase().includes('chips')
-    );
-
-    const hasHighFiber = analysis.food_items.some(item =>
-      item.name.toLowerCase().includes('bean') ||
-      item.name.toLowerCase().includes('quinoa') ||
-      item.name.toLowerCase().includes('oats') ||
-      item.name.toLowerCase().includes('brown rice')
-    );
-
-    // Portion size assessment (rough estimate)
-    const reasonablePortions = analysis.total_calories < 800;
-    const proteinRatio = analysis.total_protein / Math.max(analysis.total_calories / 4, 1);
-    const highProtein = proteinRatio > 0.25;
-
-    // Scoring logic
-    if (hasLeanProtein) {
-      score += 2;
-      insights.push("Contains lean protein");
-    }
-    if (hasVegetables) {
-      score += 2;
-      insights.push("Includes vegetables");
-    }
-    if (reasonablePortions) {
-      score += 1;
-      insights.push("Reasonable portion size");
-    }
-    if (analysis.total_fat < analysis.total_calories * 0.35) {
-      score += 1;
-      insights.push("Moderate fat content");
-    }
-    if (hasHighFiber) {
-      score += 1;
-      insights.push("Good fiber sources");
-    }
-    if (highProtein) {
-      score += 1;
-      insights.push("High protein content");
-    }
-    if (!hasProcessedFood) {
-      score += 2;
-      insights.push("Mostly whole foods");
-    } else {
-      score -= 2;
-      insights.push("Contains processed ingredients");
-    }
-
-    // Grade mapping
-    let grade: string;
-    if (score >= 9) grade = "A+";
-    else if (score >= 8) grade = "A";
-    else if (score >= 7) grade = "A-";
-    else if (score >= 6) grade = "B";
-    else if (score >= 5) grade = "C";
-    else if (score >= 3) grade = "D";
-    else grade = "F";
-
-    // Generate category and recommendations
-    const category = analysis.food_items.map(item => item.name).join(" with ");
-    const insight = insights.slice(0, 3).join(", ");
-    
-    let recommendation: string;
-    if (score >= 7) {
-      recommendation = "Excellent choice! This meal supports your fitness goals.";
-    } else if (score >= 5) {
-      recommendation = "Good meal! Consider adding more vegetables for extra nutrients.";
-    } else if (score >= 3) {
-      recommendation = "Okay choice. Try to include more whole foods next time.";
-    } else {
-      recommendation = "Consider healthier alternatives with more vegetables and lean protein.";
-    }
-
-    return {
-      grade,
-      score,
-      category,
-      insight,
-      recommendation,
-      healthyStreak: score >= 7
-    };
-  };
-
   const handleAnalyzeFood = async () => {
     if (!imageFile) {
       toast.error('Please select an image first');
@@ -203,7 +85,13 @@ export const FoodGraderAI = () => {
       const result = await analyzeFoodImage(base64Image, mealType);
       
       setAnalysisResult(result);
-      const grade = calculateHealthGrade(result);
+      const grade = calculateHealthGrade(
+        result.food_items,
+        result.total_calories,
+        result.total_protein,
+        result.total_carbs,
+        result.total_fat
+      );
       setGradeResult(grade);
       setShowResults(true);
 
@@ -221,19 +109,40 @@ export const FoodGraderAI = () => {
     }
   };
 
-  const getGradeColor = (grade: string) => {
-    if (grade.startsWith('A')) return 'text-stats-exercises';
-    if (grade.startsWith('B')) return 'text-stats-calories';
-    if (grade.startsWith('C')) return 'text-stats-duration';
-    return 'text-destructive';
+  const handleLogToNutrition = async () => {
+    if (!analysisResult || !gradeResult) return;
+
+    try {
+      await saveFoodEntry({
+        meal_type: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+        food_items: analysisResult.food_items,
+        total_calories: analysisResult.total_calories,
+        total_protein: analysisResult.total_protein,
+        total_carbs: analysisResult.total_carbs,
+        total_fat: analysisResult.total_fat,
+        ai_analyzed: true,
+        user_confirmed: true,
+        logged_date: new Date().toISOString().split('T')[0],
+        health_grade: gradeResult.grade,
+        grade_score: gradeResult.score,
+        notes: `AI Analysis: ${gradeResult.insight}. ${gradeResult.recommendation}`
+      });
+      
+      toast.success('Food entry logged successfully!');
+      
+      // Reset form
+      setSelectedImage(null);
+      setAnalysisResult(null);
+      setGradeResult(null);
+      setShowResults(false);
+      setImageFile(null);
+      
+    } catch (error) {
+      console.error('Error logging food entry:', error);
+      toast.error('Failed to log food entry');
+    }
   };
 
-  const getGradeBgColor = (grade: string) => {
-    if (grade.startsWith('A')) return 'bg-stats-exercises/20 border-stats-exercises/30';
-    if (grade.startsWith('B')) return 'bg-stats-calories/20 border-stats-calories/30';
-    if (grade.startsWith('C')) return 'bg-stats-duration/20 border-stats-duration/30';
-    return 'bg-destructive/20 border-destructive/30';
-  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
@@ -419,7 +328,7 @@ export const FoodGraderAI = () => {
               >
                 Grade Another
               </Button>
-              <Button className="flex-1 glow-button">
+              <Button className="flex-1 glow-button" onClick={handleLogToNutrition}>
                 Log to Nutrition
               </Button>
             </div>

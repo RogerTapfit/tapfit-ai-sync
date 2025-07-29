@@ -201,6 +201,8 @@ export type Database = {
           ai_analyzed: boolean
           created_at: string
           food_items: Json
+          grade_score: number | null
+          health_grade: string | null
           id: string
           logged_date: string
           meal_type: string
@@ -218,6 +220,8 @@ export type Database = {
           ai_analyzed?: boolean
           created_at?: string
           food_items: Json
+          grade_score?: number | null
+          health_grade?: string | null
           id?: string
           logged_date?: string
           meal_type: string
@@ -235,6 +239,8 @@ export type Database = {
           ai_analyzed?: boolean
           created_at?: string
           food_items?: Json
+          grade_score?: number | null
+          health_grade?: string | null
           id?: string
           logged_date?: string
           meal_type?: string
