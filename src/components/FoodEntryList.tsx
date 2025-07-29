@@ -206,10 +206,10 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                           <div className="space-y-2">
                             {entry.food_items.map((item, index) => (
                               <div key={index} className="text-sm text-muted-foreground">
-                                <div className="font-medium text-foreground">{item.name}</div>
+                                <div className="font-medium text-foreground break-words">{item.name}</div>
                                 <div className="flex flex-wrap gap-2 mt-1">
-                                  {item.quantity && <span className="text-xs bg-muted px-2 py-1 rounded">{item.quantity}</span>}
-                                  <span className="text-xs bg-muted px-2 py-1 rounded">
+                                  {item.quantity && <span className="text-xs bg-muted px-2 py-1 rounded break-words">{item.quantity}</span>}
+                                  <span className="text-xs bg-muted px-2 py-1 rounded whitespace-nowrap">
                                     {item.calories} cal, {item.protein}g protein
                                   </span>
                                 </div>
@@ -244,23 +244,23 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                           if (description.pros.length > 0 || description.cons.length > 0) {
                             return (
                               <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm space-y-2">
-                                <div className="flex items-center gap-2 font-medium text-muted-foreground">
-                                  <Award className="h-4 w-4" />
-                                  Grade Analysis
-                                  <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full border ml-2 ${getGradeBgColor(getDisplayGrade(entry))}`}>
+                                <div className="flex flex-wrap items-center gap-2 font-medium text-muted-foreground">
+                                  <Award className="h-4 w-4 flex-shrink-0" />
+                                  <span>Grade Analysis</span>
+                                  <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full border ${getGradeBgColor(getDisplayGrade(entry))}`}>
                                     <span className={`text-xs font-bold ${getGradeColor(getDisplayGrade(entry))}`}>
                                       {getDisplayGrade(entry)}
                                     </span>
                                   </div>
                                 </div>
                                 {description.pros.length > 0 && (
-                                  <div>
+                                  <div className="break-words">
                                     <span className="text-stats-exercises font-medium">✓ Pros: </span>
                                     <span className="text-muted-foreground">{description.pros.join(", ")}</span>
                                   </div>
                                 )}
                                 {description.cons.length > 0 && (
-                                  <div>
+                                  <div className="break-words">
                                     <span className="text-destructive font-medium">⚠ Cons: </span>
                                     <span className="text-muted-foreground">{description.cons.join(", ")}</span>
                                   </div>
@@ -273,7 +273,7 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
 
                         {/* Notes */}
                         {entry.notes && (
-                          <div className="mt-3 p-2 bg-muted rounded text-sm">
+                          <div className="mt-3 p-2 bg-muted rounded text-sm break-words">
                             <strong>Notes:</strong> {entry.notes}
                           </div>
                         )}
