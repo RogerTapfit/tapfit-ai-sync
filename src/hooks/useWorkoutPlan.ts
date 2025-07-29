@@ -4,13 +4,16 @@ import { toast } from 'sonner';
 
 export interface FitnessPreferences {
   current_fitness_level: 'beginner' | 'intermediate' | 'advanced';
-  primary_goal: 'build_muscle' | 'burn_fat' | 'tone' | 'increase_endurance' | 'general_fitness';
+  primary_goal: 'muscle_building' | 'fat_loss' | 'toning' | 'endurance' | 'general_fitness';
   workout_frequency: number;
   session_duration_preference: number;
   available_days: string[];
   preferred_time_slots: string[];
   equipment_restrictions?: string[];
   health_conditions?: string[];
+  target_muscle_groups?: string[];
+  available_equipment?: string[];
+  preferred_workout_time?: 'morning' | 'afternoon' | 'evening';
 }
 
 export interface WorkoutExercise {
@@ -76,12 +79,15 @@ export const useWorkoutPlan = () => {
         const defaultPrefs: FitnessPreferences = {
           current_fitness_level: 'beginner',
           primary_goal: 'general_fitness',
-          workout_frequency: 3,
-          session_duration_preference: 45,
-          available_days: ['monday', 'wednesday', 'friday'],
+          workout_frequency: 5,
+          session_duration_preference: 60,
+          available_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
           preferred_time_slots: ['18:00'],
           equipment_restrictions: [],
-          health_conditions: []
+          health_conditions: [],
+          target_muscle_groups: ['chest', 'back', 'shoulders', 'legs'],
+          available_equipment: [],
+          preferred_workout_time: 'evening'
         };
         setPreferences(defaultPrefs);
       }
