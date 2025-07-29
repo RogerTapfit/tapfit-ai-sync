@@ -218,20 +218,4 @@ All colors MUST be HSL for proper theming.
       transform: scale(1.05);
     }
   }
-
-  /* Steady pulse glow animation for Nutrition button */
-  .animate-nutrition-glow {
-    animation: steadyNutritionGlow 80s ease-in-out infinite;
-  }
-
-  @keyframes steadyNutritionGlow {
-    0%, 100% {
-      box-shadow: 0 0 2px hsl(142 76% 36% / 0.3);
-      transform: scale(1);
-    }
-    50% {
-      box-shadow: 0 0 4px hsl(142 76% 36% / 0.4), 0 0 6px hsl(142 76% 36% / 0.3);
-      transform: scale(1.005);
-    }
-  }
 }
