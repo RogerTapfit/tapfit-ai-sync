@@ -115,14 +115,15 @@ const WorkoutPlanDashboard = () => {
         </TabsList>
 
         <TabsContent value="schedule" className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">This Week's Schedule</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
               {currentPlan && (
                 <Button 
                   onClick={() => navigate('/workout-plans')}
                   variant="default"
                   size="sm"
+                  className="w-full sm:w-auto"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View My Workouts
@@ -134,9 +135,10 @@ const WorkoutPlanDashboard = () => {
                   disabled={loading}
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  Regenerate Plan
+                  Regenerate
                 </Button>
               )}
             </div>
