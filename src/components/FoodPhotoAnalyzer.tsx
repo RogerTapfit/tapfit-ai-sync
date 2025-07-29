@@ -10,7 +10,11 @@ import { Camera, Upload, Loader2, Check, Edit3, Save, X } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 
-const FoodPhotoAnalyzer = () => {
+interface FoodPhotoAnalyzerProps {
+  onDataChange?: () => void;
+}
+
+const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
   const { analyzeFoodImage, saveFoodEntry, loading } = useNutrition();
   const [image, setImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -105,6 +109,10 @@ const FoodPhotoAnalyzer = () => {
       setEditingItems([]);
       setNotes('');
       
+      // Refresh parent data
+      onDataChange?.();
+      
+      toast.success('Food entry saved successfully!');
     } catch (error) {
       console.error('Error saving food entry:', error);
     }

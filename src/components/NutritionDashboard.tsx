@@ -21,8 +21,12 @@ import WeeklyNutritionCalendar from './WeeklyNutritionCalendar';
 import MetabolismTracker from './MetabolismTracker';
 
 const NutritionDashboard = () => {
-  const { nutritionGoals, dailySummary, metabolismReadings } = useNutrition();
+  const { nutritionGoals, dailySummary, metabolismReadings, refreshData } = useNutrition();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const handleDataRefresh = () => {
+    refreshData();
+  };
 
   // Calculate progress percentages
   const calorieProgress = nutritionGoals ? 
@@ -267,7 +271,7 @@ const NutritionDashboard = () => {
         </TabsContent>
 
         <TabsContent value="camera" className="space-y-4">
-          <FoodPhotoAnalyzer />
+          <FoodPhotoAnalyzer onDataChange={handleDataRefresh} />
         </TabsContent>
 
         <TabsContent value="goals" className="space-y-4">
