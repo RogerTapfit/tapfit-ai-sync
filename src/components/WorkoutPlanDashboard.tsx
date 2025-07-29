@@ -68,8 +68,7 @@ const WorkoutPlanDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Current Goal</p>
-                <p className="text-lg font-semibold flex items-center gap-2">
-                  {getGoalEmoji(preferences?.primary_goal || 'general_fitness')}
+                <p className="text-lg font-semibold">
                   {preferences?.primary_goal?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not Set'}
                 </p>
               </div>

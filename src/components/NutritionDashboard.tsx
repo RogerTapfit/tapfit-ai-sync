@@ -88,8 +88,7 @@ const NutritionDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Current Goal</p>
-                <p className="text-lg font-semibold flex items-center gap-2">
-                  {getGoalEmoji(nutritionGoals?.goal_type || 'maintenance')}
+                <p className="text-lg font-semibold">
                   {nutritionGoals?.goal_type?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not Set'}
                 </p>
               </div>
