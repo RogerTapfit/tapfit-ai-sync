@@ -123,7 +123,7 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[80vh]">
+      <DialogContent className="max-w-4xl h-[80vh] w-[95vw] sm:w-full">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Button 
@@ -154,9 +154,9 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
               sortedEntries.map((entry) => (
                 <Card key={entry.id} className="overflow-hidden">
                   <CardContent className="p-0">
-                    <div className="flex">
+                    <div className="flex flex-col sm:flex-row">
                       {/* Food Photo */}
-                      <div className="w-24 h-24 bg-muted flex-shrink-0 flex items-center justify-center">
+                      <div className="w-full h-48 sm:w-24 sm:h-24 bg-muted flex-shrink-0 flex items-center justify-center">
                         {entry.photo_url ? (
                           <img 
                             src={entry.photo_url} 
@@ -170,24 +170,25 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
 
                       {/* Main Content */}
                       <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                             <Badge className={getMealTypeColor(entry.meal_type)}>
                               {entry.meal_type.charAt(0).toUpperCase() + entry.meal_type.slice(1)}
                             </Badge>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {formatDate(entry.created_at)}
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {formatTime(entry.created_at)}
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {formatDate(entry.created_at)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {formatTime(entry.created_at)}
+                              </div>
                             </div>
                           </div>
 
-
                           {/* Action Buttons */}
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 self-end sm:self-auto">
                             <Button 
                               variant="ghost" 
                               size="sm"
@@ -202,36 +203,38 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                         {/* Food Items */}
                         <div className="mb-3">
                           <h4 className="font-medium mb-2">Food Items:</h4>
-                          <div className="grid gap-1">
+                          <div className="space-y-2">
                             {entry.food_items.map((item, index) => (
                               <div key={index} className="text-sm text-muted-foreground">
-                                <span className="font-medium">{item.name}</span>
-                                {item.quantity && <span> - {item.quantity}</span>}
-                                <span className="ml-2">
-                                  ({item.calories} cal, {item.protein}g protein)
-                                </span>
+                                <div className="font-medium text-foreground">{item.name}</div>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {item.quantity && <span className="text-xs bg-muted px-2 py-1 rounded">{item.quantity}</span>}
+                                  <span className="text-xs bg-muted px-2 py-1 rounded">
+                                    {item.calories} cal, {item.protein}g protein
+                                  </span>
+                                </div>
                               </div>
                             ))}
                           </div>
                         </div>
 
                         {/* Nutritional Summary */}
-                        <div className="grid grid-cols-4 gap-4 text-sm">
-                          <div className="text-center">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm mb-3">
+                          <div className="text-center p-2 bg-muted/30 rounded">
                             <div className="font-bold text-lg">{entry.total_calories}</div>
-                            <div className="text-muted-foreground">Calories</div>
+                            <div className="text-muted-foreground text-xs">Calories</div>
                           </div>
-                          <div className="text-center">
+                          <div className="text-center p-2 bg-muted/30 rounded">
                             <div className="font-bold text-lg">{entry.total_protein.toFixed(1)}g</div>
-                            <div className="text-muted-foreground">Protein</div>
+                            <div className="text-muted-foreground text-xs">Protein</div>
                           </div>
-                          <div className="text-center">
+                          <div className="text-center p-2 bg-muted/30 rounded">
                             <div className="font-bold text-lg">{entry.total_carbs.toFixed(1)}g</div>
-                            <div className="text-muted-foreground">Carbs</div>
+                            <div className="text-muted-foreground text-xs">Carbs</div>
                           </div>
-                          <div className="text-center">
+                          <div className="text-center p-2 bg-muted/30 rounded">
                             <div className="font-bold text-lg">{entry.total_fat.toFixed(1)}g</div>
-                            <div className="text-muted-foreground">Fat</div>
+                            <div className="text-muted-foreground text-xs">Fat</div>
                           </div>
                         </div>
 
