@@ -181,33 +181,33 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <Repeat className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <Repeat className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <input
                       type="number"
                       value={set.actualReps}
                       onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                      className="w-16 px-2 py-1 text-sm border rounded text-foreground bg-background"
+                      className="w-14 px-2 py-1 text-sm border rounded text-foreground bg-background"
                       disabled={set.completed}
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Weight className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-1">
+                    <Weight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <input
                       type="number"
                       value={set.weight}
                       onChange={(e) => handleSetEdit(index, 'weight', parseInt(e.target.value) || 0)}
-                      className="w-16 px-2 py-1 text-sm border rounded text-foreground bg-background"
+                      className="w-14 px-2 py-1 text-sm border rounded text-foreground bg-background"
                       disabled={set.completed}
                     />
-                    <span className="text-xs text-muted-foreground">lbs</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">lbs</span>
                   </div>
                   {!set.completed && (
                     <Button
                       size="sm"
                       onClick={() => handleSetComplete(index)}
-                      className="ml-2"
+                      className="flex-shrink-0"
                     >
                       Complete
                     </Button>
