@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { useNutrition } from "@/hooks/useNutrition";
 
 interface TodaysPerformanceProps {
   todayStats: {
@@ -14,6 +15,8 @@ interface TodaysPerformanceProps {
 }
 
 export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerformanceProps) => {
+  const { dailySummary } = useNutrition();
+  
   return (
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
@@ -24,7 +27,7 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
         </Button>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="text-center space-y-2">
           <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
             <Activity className="h-6 w-6 text-stats-heart" />
@@ -63,6 +66,16 @@ export const TodaysPerformance = ({ todayStats, onStartWorkout }: TodaysPerforma
             <AnimatedNumber finalValue={todayStats.heartRate} duration={2800} />
           </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
+        </div>
+
+        <div className="text-center space-y-2">
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
+            <Utensils className="h-6 w-6 text-green-500" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            <AnimatedNumber finalValue={dailySummary?.meals_count || 0} duration={2000} />
+          </p>
+          <p className="text-sm text-muted-foreground">Meals Logged</p>
         </div>
       </div>
     </Card>

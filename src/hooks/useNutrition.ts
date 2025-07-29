@@ -112,12 +112,56 @@ export const useNutrition = () => {
   const [dailySummary, setDailySummary] = useState<DailyNutritionSummary | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Load user nutrition data
-  useEffect(() => {
+  // Define refreshData early to use in effects
+  const refreshData = () => {
     loadNutritionGoals();
     loadTodaysSummary();
     loadRecentMetabolismReadings();
     loadTodaysFoodEntries();
+  };
+
+  // Load user nutrition data on mount and user change
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Defer data fetching to prevent deadlocks
+        setTimeout(() => {
+          loadNutritionGoals();
+          loadTodaysSummary();
+          loadRecentMetabolismReadings();
+          loadTodaysFoodEntries();
+        }, 0);
+      }
+    });
+
+    // Load initial data
+    loadNutritionGoals();
+    loadTodaysSummary();
+    loadRecentMetabolismReadings();
+    loadTodaysFoodEntries();
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Refresh data when app regains focus (for mobile sync)
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshData();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const loadNutritionGoals = async () => {
@@ -402,11 +446,6 @@ export const useNutrition = () => {
     updateFoodEntry,
     deleteFoodEntry,
     getWeeklyFoodEntries,
-    refreshData: () => {
-      loadNutritionGoals();
-      loadTodaysSummary();
-      loadRecentMetabolismReadings();
-      loadTodaysFoodEntries();
-    }
+    refreshData
   };
 };
