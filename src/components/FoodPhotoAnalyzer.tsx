@@ -147,7 +147,7 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
-            AI Food Photo Analyzer
+            AI See Food Analyzer
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">

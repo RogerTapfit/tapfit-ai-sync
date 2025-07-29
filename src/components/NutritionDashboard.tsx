@@ -185,7 +185,7 @@ const NutritionDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="camera" className="flex items-center gap-2">
             <Camera className="h-4 w-4 text-green-500" />
-            Add Food
+            See Food
           </TabsTrigger>
           <TabsTrigger value="goals" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
