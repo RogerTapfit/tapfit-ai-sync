@@ -151,6 +151,32 @@ const TapFitDashboard = () => {
         </div>
       </div>
 
+      {/* AI Workout Plan Button */}
+      <Card className="glow-card relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
+        <div className="relative p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/20 shadow-glow">
+                <Brain className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">AI Workout Plan</h3>
+                <p className="text-sm text-muted-foreground">Get personalized workouts powered by AI</p>
+              </div>
+            </div>
+            <Button 
+              variant="glow" 
+              size="lg"
+              onClick={() => window.location.href = '/workout-plan'}
+              className="shadow-glow"
+            >
+              Get Started
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* 1. Today's Performance - Right after hero image */}
       <TodaysPerformance 
         todayStats={todayStats} 
