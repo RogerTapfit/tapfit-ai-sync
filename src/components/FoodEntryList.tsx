@@ -130,12 +130,14 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
               variant="ghost" 
               size="sm" 
               onClick={onClose}
-              className="mr-2"
+              className="mr-2 flex-shrink-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Utensils className="h-5 w-5" />
-            Food Entry History ({foodEntries.length} entries)
+            <Utensils className="h-5 w-5 flex-shrink-0" />
+            <span className="whitespace-nowrap">
+              Food Entry History ({foodEntries.length} entries)
+            </span>
           </DialogTitle>
         </DialogHeader>
         
