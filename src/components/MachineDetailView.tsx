@@ -188,7 +188,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
                       type="number"
                       value={set.actualReps}
                       onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                      className="w-16 px-2 py-1 text-sm border rounded"
+                      className="w-16 px-2 py-1 text-sm border rounded text-foreground bg-background"
                       disabled={set.completed}
                     />
                   </div>
@@ -198,7 +198,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
                       type="number"
                       value={set.weight}
                       onChange={(e) => handleSetEdit(index, 'weight', parseInt(e.target.value) || 0)}
-                      className="w-16 px-2 py-1 text-sm border rounded"
+                      className="w-16 px-2 py-1 text-sm border rounded text-foreground bg-background"
                       disabled={set.completed}
                     />
                     <span className="text-xs text-muted-foreground">lbs</span>
