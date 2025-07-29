@@ -147,6 +147,95 @@ export const useNutrition = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Real-time subscription for food entries
+  useEffect(() => {
+    const setupRealtimeSubscriptions = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel('food-entries-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'food_entries',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Real-time food entries change:', payload);
+            
+            if (payload.eventType === 'INSERT') {
+              const newEntry = transformDatabaseToFoodEntry(payload.new);
+              setFoodEntries(prev => {
+                // Check if entry already exists to prevent duplicates
+                const exists = prev.some(entry => entry.id === newEntry.id);
+                if (exists) return prev;
+                return [newEntry, ...prev];
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedEntry = transformDatabaseToFoodEntry(payload.new);
+              setFoodEntries(prev => 
+                prev.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+              );
+            } else if (payload.eventType === 'DELETE') {
+              setFoodEntries(prev => prev.filter(entry => entry.id !== payload.old.id));
+            }
+            
+            // Refresh daily summary on any change
+            loadTodaysSummary();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupRealtimeSubscriptions();
+  }, []);
+
+  // Real-time subscription for daily nutrition summary
+  useEffect(() => {
+    const setupSummarySubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel('nutrition-summary-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'daily_nutrition_summary',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Real-time nutrition summary change:', payload);
+            
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const summary = transformDatabaseToDailySummary(payload.new);
+              // Only update if it's today's summary
+              const today = new Date().toISOString().split('T')[0];
+              if (summary.summary_date === today) {
+                setDailySummary(summary);
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupSummarySubscription();
+  }, []);
+
   // Refresh data when app regains focus (for mobile sync)
   useEffect(() => {
     const handleFocus = () => {
