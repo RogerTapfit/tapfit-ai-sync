@@ -30,13 +30,15 @@ import { useAvatar } from "@/hooks/useAvatar";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
+import FitnessChatbot from "./FitnessChatbot";
 
 const TapFitDashboard = () => {
   const navigate = useNavigate();
   const [isConnected, setIsConnected] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ full_name?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ full_name?: string; id?: string } | null>(null);
+  const [showChatbot, setShowChatbot] = useState(false);
   const [todayStats, setTodayStats] = useState({
     calories: 280,
     duration: 45,
@@ -54,7 +56,7 @@ const TapFitDashboard = () => {
       if (user?.id) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('full_name, id')
           .eq('id', user.id)
           .single();
         
@@ -317,6 +319,13 @@ const TapFitDashboard = () => {
           View Challenges
         </Button>
       </div>
+
+      {/* AI Fitness Chatbot */}
+      <FitnessChatbot 
+        isOpen={showChatbot}
+        onToggle={() => setShowChatbot(!showChatbot)}
+        userId={userProfile?.id}
+      />
     </div>
   );
 };
