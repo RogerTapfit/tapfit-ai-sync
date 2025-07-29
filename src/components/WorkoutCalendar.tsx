@@ -3,13 +3,16 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Dumbbell, Target, CheckCircle2, SkipForward } from 'lucide-react';
-import { useWorkoutPlan } from '@/hooks/useWorkoutPlan';
+import { Calendar, Clock, Dumbbell, Target, CheckCircle2, SkipForward, List } from 'lucide-react';
+import { useWorkoutPlan, ScheduledWorkout } from '@/hooks/useWorkoutPlan';
+import WorkoutBreakdown from './WorkoutBreakdown';
 import { format, addDays, startOfWeek, isToday, isFuture, parseISO } from 'date-fns';
 
 const WorkoutCalendar = () => {
   const { weeklySchedule, markWorkoutComplete, rescheduleWorkout, loading } = useWorkoutPlan();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<ScheduledWorkout | null>(null);
 
   // Format time to AM/PM format (e.g., "6:00 PM")
   const formatTimeAMPM = (timeString: string) => {
@@ -99,6 +102,18 @@ const WorkoutCalendar = () => {
     }, {} as Record<string, typeof futureWorkouts>);
   }, [futureWorkouts]);
 
+  if (showBreakdown) {
+    return (
+      <WorkoutBreakdown 
+        workout={selectedWorkout} 
+        onBack={() => {
+          setShowBreakdown(false);
+          setSelectedWorkout(null);
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Calendar Grid View */}
@@ -156,19 +171,20 @@ const WorkoutCalendar = () => {
                           {workout.exercises.length} exercises planned
                         </div>
                         
-                        {workout.isFuture && workout.status === 'scheduled' && (
-                          <div className="flex gap-2 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => workout.id && markWorkoutComplete(workout.id)}
-                              disabled={loading}
-                              className="text-xs"
-                            >
-                              Mark Complete
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedWorkout(workout);
+                              setShowBreakdown(true);
+                            }}
+                            className="text-xs"
+                          >
+                            <List className="h-3 w-3 mr-1" />
+                            Preview Workout
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))}
@@ -213,11 +229,14 @@ const WorkoutCalendar = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => workout.id && markWorkoutComplete(workout.id)}
+                    onClick={() => {
+                      setSelectedWorkout(workout);
+                      setShowBreakdown(true);
+                    }}
                     disabled={loading}
                   >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Complete
+                    <List className="h-4 w-4 mr-2" />
+                    Preview Workout
                   </Button>
                 </div>
               </div>

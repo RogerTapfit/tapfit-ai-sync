@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +10,17 @@ import {
   XCircle, 
   RotateCcw,
   Dumbbell,
-  Timer
+  Timer,
+  List
 } from 'lucide-react';
 import { useWorkoutPlan, ScheduledWorkout } from '@/hooks/useWorkoutPlan';
+import WorkoutBreakdown from './WorkoutBreakdown';
 import { format, isToday, isPast } from 'date-fns';
 
 const WeeklyWorkoutSchedule = () => {
   const { currentPlan, weeklySchedule, markWorkoutComplete, rescheduleWorkout } = useWorkoutPlan();
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<ScheduledWorkout | null>(null);
 
   if (!currentPlan) {
     return (
@@ -59,6 +63,18 @@ const WeeklyWorkoutSchedule = () => {
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' & ');
   };
+
+  if (showBreakdown) {
+    return (
+      <WorkoutBreakdown 
+        workout={selectedWorkout} 
+        onBack={() => {
+          setShowBreakdown(false);
+          setSelectedWorkout(null);
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -134,16 +150,18 @@ const WeeklyWorkoutSchedule = () => {
                     )}
 
                     <div className="flex gap-2">
-                      {workout.status === 'scheduled' && (
-                        <Button
-                          size="sm"
-                          onClick={() => workout.id && markWorkoutComplete(workout.id)}
-                          className="flex-1"
-                        >
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Mark Complete
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedWorkout(workout);
+                          setShowBreakdown(true);
+                        }}
+                        className="flex-1"
+                      >
+                        <List className="h-3 w-3 mr-1" />
+                        Preview Workout
+                      </Button>
                       
                       {workout.status !== 'completed' && (
                         <Button
