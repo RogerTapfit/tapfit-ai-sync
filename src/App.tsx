@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { nfcService } from "./services/nfcService";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -16,12 +18,41 @@ import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
 
+const NFCHandler = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const initNFC = async () => {
+      try {
+        const isAvailable = await nfcService.isNFCAvailable();
+        if (isAvailable) {
+          await nfcService.startNFCListening((data) => {
+            // Automatically navigate to machine when NFC tag is detected
+            navigate(`/machine/${data.machineId}`);
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to initialize NFC:', error);
+      }
+    };
+
+    initNFC();
+
+    return () => {
+      nfcService.stopNFCListening();
+    };
+  }, [navigate]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NFCHandler />
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={

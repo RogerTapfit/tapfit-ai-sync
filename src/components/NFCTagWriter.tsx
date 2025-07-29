@@ -44,8 +44,8 @@ const NFCTagWriter = () => {
   const getManualInstructions = () => {
     if (!selectedMachine) return null;
 
-    const baseUrl = 'https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com';
-    const deepLinkUrl = `${baseUrl}/machine/${selectedMachine}?forceHideBadge=true`;
+    const deepLinkUrl = `tapfit://machine/${selectedMachine}`;
+    const fallbackUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${selectedMachine}?forceHideBadge=true`;
 
     return (
       <Card className="mt-4">
@@ -61,16 +61,44 @@ const NFCTagWriter = () => {
             <p><strong>2.</strong> Tap "Write" at the bottom</p>
             <p><strong>3.</strong> Select "Add a record"</p>
             <p><strong>4.</strong> Choose "URL/URI"</p>
-            <p><strong>5.</strong> Enter this URL:</p>
-            <div className="bg-muted p-2 rounded text-xs font-mono break-all">
+            <p><strong>5.</strong> For automatic app opening, use this deep link:</p>
+            <div className="bg-muted p-2 rounded text-xs font-mono break-all mb-2">
               {deepLinkUrl}
+            </div>
+            <p className="text-xs text-muted-foreground">Or use this fallback URL if the deep link doesn't work:</p>
+            <div className="bg-muted p-2 rounded text-xs font-mono break-all">
+              {fallbackUrl}
             </div>
             <p><strong>6.</strong> Tap "Write" and hold your NFC tag near your phone</p>
           </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(deepLinkUrl);
+                toast.success('Deep link copied to clipboard!');
+              }}
+            >
+              Copy Deep Link
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(fallbackUrl);
+                toast.success('Fallback URL copied to clipboard!');
+              }}
+            >
+              Copy Fallback
+            </Button>
+          </div>
+          
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              This URL will open the {MACHINE_IDS[selectedMachine].machine} directly in your browser when the NFC tag is tapped.
+              The deep link will automatically open the TapFit app and navigate directly to the {MACHINE_IDS[selectedMachine].machine} workout. No notifications or manual navigation required!
             </AlertDescription>
           </Alert>
         </CardContent>

@@ -26,6 +26,20 @@ const config: CapacitorConfig = {
       enabled: true
     }
   },
+  android: {
+    scheme: 'tapfit',
+    intentFilters: [
+      {
+        action: 'android.intent.action.VIEW',
+        category: 'android.intent.category.DEFAULT',
+        data: [
+          {
+            scheme: 'tapfit'
+          }
+        ]
+      }
+    ]
+  },
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile'
