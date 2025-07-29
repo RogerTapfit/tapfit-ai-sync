@@ -204,10 +204,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               <div className="p-3 rounded-xl bg-green-500/20 shadow-glow">
                 <Apple className="h-8 w-8 text-green-500" />
               </div>
-              <div>
-                <h3 className="text-xl font-bold">Nutrition Tracking</h3>
-                <p className="text-sm text-muted-foreground">Track your meals and reach your nutrition goals</p>
-              </div>
             </div>
             <Button 
               variant="glow" 
