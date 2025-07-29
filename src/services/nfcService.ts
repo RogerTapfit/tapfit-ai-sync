@@ -1,5 +1,13 @@
 import { Capacitor } from '@capacitor/core';
 
+// For now, we'll use a mock until the real plugin is available after deployment
+const NFC = {
+  isSupported: () => Promise.resolve({ isSupported: Capacitor.isNativePlatform() }),
+  addListener: (event: string, callback: Function) => Promise.resolve(),
+  removeAllListeners: () => Promise.resolve(),
+  write: (options: any) => Promise.resolve()
+};
+
 // Machine ID to exercise mapping
 export const MACHINE_IDS = {
   'chest-press': {
@@ -44,66 +52,15 @@ export interface NFCData {
   action: 'start_exercise';
 }
 
-// Enhanced NFC interfaces for native implementation
-interface NfcTag {
+interface NFCTagData {
   ndefMessage: Array<{
     type: string;
     payload: Uint8Array;
   }>;
 }
 
-interface NFCScanResult {
-  nfcTag: NfcTag;
-}
-
-interface NFCPlugin {
-  isSupported(): Promise<{ isSupported: boolean }>;
-  addListener(eventName: string, callback: (result: NFCScanResult) => void): Promise<void>;
-  removeAllListeners(): Promise<void>;
-  write(options: { ndefMessage: any[] }): Promise<void>;
-  startScan(): Promise<void>;
-  stopScan(): Promise<void>;
-}
-
-// Enhanced NFC implementation that will work with the real plugin when deployed
-class EnhancedNFC implements NFCPlugin {
-  async isSupported(): Promise<{ isSupported: boolean }> {
-    if (!Capacitor.isNativePlatform()) {
-      return { isSupported: false };
-    }
-    // On native platforms, assume NFC is available (will be handled by the real plugin)
-    return { isSupported: true };
-  }
-
-  async addListener(eventName: string, callback: (result: NFCScanResult) => void): Promise<void> {
-    if (Capacitor.isNativePlatform()) {
-      // This will be replaced by the actual NFC plugin implementation
-      console.log('NFC listener added - will be handled by native plugin');
-    } else {
-      console.log('Web environment - NFC not available');
-    }
-  }
-
-  async removeAllListeners(): Promise<void> {
-    console.log('NFC listeners removed');
-  }
-
-  async write(options: { ndefMessage: any[] }): Promise<void> {
-    console.log('NFC tag write request:', options);
-  }
-
-  async startScan(): Promise<void> {
-    console.log('NFC scan started');
-  }
-
-  async stopScan(): Promise<void> {
-    console.log('NFC scan stopped');
-  }
-}
-
 export class NFCService {
   private static instance: NFCService;
-  private nfc: NFCPlugin = new EnhancedNFC();
 
   public static getInstance(): NFCService {
     if (!NFCService.instance) {
@@ -118,7 +75,7 @@ export class NFCService {
     }
 
     try {
-      const isSupported = await this.nfc.isSupported();
+      const isSupported = await NFC.isSupported();
       return isSupported.isSupported;
     } catch (error) {
       console.warn('NFC not available:', error);
@@ -132,10 +89,10 @@ export class NFCService {
     }
 
     try {
-      await this.nfc.addListener('nfcTagScanned', (result: NFCScanResult) => {
+      await NFC.addListener('nfcTagScanned', (result: any) => {
         const tag = result.nfcTag;
         
-        if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+        if (tag?.ndefMessage && tag.ndefMessage.length > 0) {
           const record = tag.ndefMessage[0];
           
           // Handle URL records (type 'U')
@@ -172,7 +129,7 @@ export class NFCService {
 
   public async stopNFCListening(): Promise<void> {
     try {
-      await this.nfc.removeAllListeners();
+      await NFC.removeAllListeners();
       console.log('NFC listening stopped');
     } catch (error) {
       console.error('Failed to stop NFC listening:', error);
@@ -192,7 +149,7 @@ export class NFCService {
         payload: new TextEncoder().encode(`\x01${deepLinkUrl}`) // 0x01 prefix for URI identifier
       };
 
-      await this.nfc.write({
+      await NFC.write({
         ndefMessage: [ndefRecord]
       });
       
