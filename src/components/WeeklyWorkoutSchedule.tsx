@@ -130,24 +130,6 @@ const WeeklyWorkoutSchedule = () => {
                       </span>
                     </div>
 
-                    {workout.exercises && workout.exercises.length > 0 && (
-                      <div className="space-y-2 mb-4">
-                        <p className="text-sm font-medium">Exercises:</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {workout.exercises.map((exercise, index) => (
-                            <div 
-                              key={index} 
-                              className="text-sm p-2 bg-muted rounded-md"
-                            >
-                              <div className="font-medium">{exercise.machine}</div>
-                              <div className="text-muted-foreground">
-                                {exercise.sets} sets × {exercise.reps} reps
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     <div className="flex gap-2">
                       <Button

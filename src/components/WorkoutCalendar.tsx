@@ -168,7 +168,7 @@ const WorkoutCalendar = () => {
                         </div>
                         
                         <div className="text-xs text-muted-foreground">
-                          {workout.exercises.length} exercises planned
+                          {workout.exercises?.length || 0} exercises
                         </div>
                         
                         <div className="flex gap-2 mt-2">
