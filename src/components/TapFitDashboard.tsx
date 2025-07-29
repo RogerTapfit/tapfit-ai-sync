@@ -171,7 +171,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               </div>
               <div>
                 <h3 className="text-xl font-bold">AI Workout Plan</h3>
-                <p className="text-sm text-muted-foreground">Get personalized workouts powered by AI</p>
               </div>
             </div>
             <Button 
