@@ -10,6 +10,7 @@ import WorkoutList from "./pages/WorkoutList";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import WorkoutSummary from "./pages/WorkoutSummary";
 import WorkoutPlans from "./pages/WorkoutPlans";
+import WorkoutPlan from "./pages/WorkoutPlan";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,11 @@ const App = () => (
           <Route path="/workout-plans" element={
             <AuthGuard fallback={<Auth />}>
               <WorkoutPlans />
+            </AuthGuard>
+          } />
+          <Route path="/workout-plan" element={
+            <AuthGuard fallback={<Auth />}>
+              <WorkoutPlan />
             </AuthGuard>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

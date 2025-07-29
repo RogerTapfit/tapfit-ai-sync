@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 import { 
   Activity, 
   Heart, 
@@ -31,6 +32,7 @@ import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
 
 const TapFitDashboard = () => {
+  const navigate = useNavigate();
   const [isConnected, setIsConnected] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
@@ -168,7 +170,7 @@ const TapFitDashboard = () => {
             <Button 
               variant="glow" 
               size="lg"
-              onClick={() => window.location.href = '/workout-plan'}
+              onClick={() => navigate('/workout-plan')}
               className="shadow-glow"
             >
               Get Started
