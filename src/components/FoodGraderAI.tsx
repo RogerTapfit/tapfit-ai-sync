@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Star, TrendingUp, Award, Coins } from 'lucide-react';
+import { Camera, Upload, Star, TrendingUp, Award, Coins, CheckCircle2, XCircle } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { useTapCoins } from '@/hooks/useTapCoins';
@@ -286,6 +286,53 @@ export const FoodGraderAI = () => {
                 </div>
                 <div className="text-sm text-muted-foreground">Fat</div>
               </div>
+            </div>
+
+            {/* Grade Analysis */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 font-medium text-muted-foreground">
+                <Award className="h-4 w-4" />
+                Grade Analysis
+                <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full border ml-2 ${getGradeBgColor(gradeResult.grade)}`}>
+                  <span className={`text-xs font-bold ${getGradeColor(gradeResult.grade)}`}>
+                    {gradeResult.grade}
+                  </span>
+                </div>
+              </div>
+              
+              {gradeResult.pros.length > 0 && (
+                <div>
+                  <h5 className="font-medium text-stats-exercises mb-2 flex items-center gap-1">
+                    <CheckCircle2 className="h-4 w-4" />
+                    What's Good
+                  </h5>
+                  <ul className="space-y-1">
+                    {gradeResult.pros.map((pro, index) => (
+                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <CheckCircle2 className="h-3 w-3 text-stats-exercises mt-1 flex-shrink-0" />
+                        {pro}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {gradeResult.cons.length > 0 && (
+                <div>
+                  <h5 className="font-medium text-destructive mb-2 flex items-center gap-1">
+                    <XCircle className="h-4 w-4" />
+                    Areas for Improvement
+                  </h5>
+                  <ul className="space-y-1">
+                    {gradeResult.cons.map((con, index) => (
+                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                        <XCircle className="h-3 w-3 text-destructive mt-1 flex-shrink-0" />
+                        {con}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Recommendation */}
