@@ -4,13 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, Target, Dumbbell, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, Target, Dumbbell, ChevronLeft, ChevronRight, ArrowLeft, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import WorkoutBreakdown from '@/components/WorkoutBreakdown';
 
 const WorkoutPlans = () => {
   const navigate = useNavigate();
   const { currentPlan, weeklySchedule, loading, markWorkoutComplete } = useWorkoutPlan();
   const [selectedWorkoutIndex, setSelectedWorkoutIndex] = useState(0);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const formatTime = (timeString: string) => {
     const time = new Date(`2000-01-01T${timeString}`);
@@ -87,18 +89,25 @@ const WorkoutPlans = () => {
         </Button>
       </div>
       <div className="container mx-auto p-6 space-y-6">
-        {/* Plan Overview */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">{currentPlan.name}</h1>
-          <p className="text-muted-foreground">
-            Goal: {currentPlan.fitness_goal.replace('_', ' ')}
-          </p>
-          {currentPlan.notes && (
-            <p className="text-sm text-muted-foreground">{currentPlan.notes}</p>
-          )}
-        </div>
+        {showBreakdown ? (
+          <WorkoutBreakdown 
+            workout={selectedWorkout} 
+            onBack={() => setShowBreakdown(false)} 
+          />
+        ) : (
+          <>
+            {/* Plan Overview */}
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-bold">{currentPlan.name}</h1>
+              <p className="text-muted-foreground">
+                Goal: {currentPlan.fitness_goal.replace('_', ' ')}
+              </p>
+              {currentPlan.notes && (
+                <p className="text-sm text-muted-foreground">{currentPlan.notes}</p>
+              )}
+            </div>
 
-        <Tabs defaultValue="workout-cycle" className="w-full">
+            <Tabs defaultValue="workout-cycle" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="workout-cycle">Workout Cycle</TabsTrigger>
             <TabsTrigger value="weekly-schedule">This Week's Schedule</TabsTrigger>
@@ -154,6 +163,15 @@ const WorkoutPlans = () => {
                         </span>
                       </CardDescription>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowBreakdown(true)}
+                      className="ml-auto"
+                    >
+                      <List className="h-4 w-4 mr-2" />
+                      View Full Breakdown
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -278,7 +296,9 @@ const WorkoutPlans = () => {
               ))}
             </div>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </>
+        )}
       </div>
     </div>
   );
