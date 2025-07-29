@@ -2,6 +2,73 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Weight calculation logic (embedded for edge function)
+interface UserWeightProfile {
+  weight_kg: number;
+  age: number;
+  experience_level: 'beginner' | 'intermediate' | 'advanced';
+  primary_goal: 'fat_loss' | 'muscle_building' | 'general_fitness' | 'strength_training';
+  gender?: string;
+  current_max_weights?: Record<string, number>;
+}
+
+const BASE_FACTORS = {
+  beginner: 0.15,
+  intermediate: 0.3,
+  advanced: 0.5
+} as const;
+
+const GOAL_MULTIPLIERS = {
+  fat_loss: 0.9,
+  muscle_building: 1.1,
+  general_fitness: 1.0,
+  strength_training: 1.25
+} as const;
+
+const EXERCISE_MODIFIERS = {
+  'chest_press': 0.8, 'bench_press': 0.7, 'shoulder_press': 0.5,
+  'lat_pulldown': 0.6, 'seated_row': 0.6, 'bicep_curl': 0.2,
+  'tricep_extension': 0.25, 'leg_press': 1.5, 'squat': 0.8,
+  'leg_curl': 0.4, 'leg_extension': 0.5, 'calf_raise': 0.8,
+  'default': 0.6
+} as const;
+
+const GENDER_MODIFIERS = {
+  male: 1.0, female: 0.75, other: 0.85
+} as const;
+
+function calculateOptimalWeight(userProfile: UserWeightProfile, exerciseName: string, machineName: string): number {
+  const { weight_kg, age, experience_level, primary_goal, gender = 'other', current_max_weights = {} } = userProfile;
+  
+  // Calculate base weight using formula
+  const baseFactor = BASE_FACTORS[experience_level];
+  const goalMultiplier = GOAL_MULTIPLIERS[primary_goal];
+  const genderModifier = GENDER_MODIFIERS[gender as keyof typeof GENDER_MODIFIERS] || GENDER_MODIFIERS.other;
+  
+  const ageAdjustment = (age - 25) * 0.01;
+  const ageModifier = Math.max(0.5, 1 - ageAdjustment);
+  
+  const exerciseKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
+  const exerciseModifier = EXERCISE_MODIFIERS[exerciseKey as keyof typeof EXERCISE_MODIFIERS] || EXERCISE_MODIFIERS.default;
+  
+  const baseWeight = weight_kg * baseFactor * goalMultiplier * genderModifier * ageModifier * exerciseModifier;
+  const roundedWeight = Math.round(baseWeight / 2.5) * 2.5;
+  return Math.max(5, roundedWeight);
+}
+
+function calculateSetsAndReps(goal: string, experience: string): { sets: number; reps: number; rest_seconds: number } {
+  const programs = {
+    fat_loss: { beginner: { sets: 2, reps: 15, rest: 45 }, intermediate: { sets: 3, reps: 12, rest: 60 }, advanced: { sets: 4, reps: 10, rest: 45 } },
+    muscle_building: { beginner: { sets: 3, reps: 10, rest: 60 }, intermediate: { sets: 4, reps: 8, rest: 90 }, advanced: { sets: 4, reps: 6, rest: 120 } },
+    general_fitness: { beginner: { sets: 2, reps: 12, rest: 60 }, intermediate: { sets: 3, reps: 10, rest: 75 }, advanced: { sets: 3, reps: 8, rest: 90 } },
+    strength_training: { beginner: { sets: 3, reps: 8, rest: 90 }, intermediate: { sets: 4, reps: 5, rest: 180 }, advanced: { sets: 5, reps: 3, rest: 240 } }
+  };
+
+  const goalKey = goal as keyof typeof programs;
+  const expKey = experience as keyof typeof programs[typeof goalKey];
+  return programs[goalKey]?.[expKey] || { sets: 3, reps: 10, rest: 60 };
+}
+
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -29,7 +96,7 @@ serve(async (req) => {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('weight_kg, gender, height_cm')
+          .select('weight_kg, gender, height_cm, age, experience_level, primary_goal, current_max_weights')
           .eq('id', user.id)
           .maybeSingle();
         userProfile = profile;
@@ -199,7 +266,34 @@ Return a valid JSON object with this exact structure:
       throw new Error('Failed to parse workout plan from AI');
     }
 
-    console.log('Generated workout plan:', JSON.stringify(workoutPlan, null, 2));
+    // Enhance workout plan with calculated weights if user profile available
+    if (userProfile && userProfile.weight_kg && userProfile.age && userProfile.experience_level && userProfile.primary_goal) {
+      const weightProfile: UserWeightProfile = {
+        weight_kg: userProfile.weight_kg,
+        age: userProfile.age,
+        experience_level: userProfile.experience_level,
+        primary_goal: userProfile.primary_goal,
+        gender: userProfile.gender,
+        current_max_weights: userProfile.current_max_weights || {}
+      };
+
+      workoutPlan.workouts.forEach((workout: any) => {
+        workout.exercises.forEach((exercise: any) => {
+          // Calculate optimal weight and sets/reps
+          const calculatedWeight = calculateOptimalWeight(weightProfile, exercise.machine, exercise.machine);
+          const setsReps = calculateSetsAndReps(userProfile.primary_goal, userProfile.experience_level);
+          
+          // Update exercise with calculated values
+          exercise.calculated_weight = calculatedWeight;
+          exercise.sets = setsReps.sets;
+          exercise.reps = setsReps.reps;
+          exercise.rest_seconds = setsReps.rest_seconds;
+          exercise.weight_guidance = `Start with ${calculatedWeight}kg, increase by 5% weekly based on performance`;
+        });
+      });
+    }
+
+    console.log('Enhanced workout plan:', JSON.stringify(workoutPlan, null, 2));
 
     return new Response(JSON.stringify(workoutPlan), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

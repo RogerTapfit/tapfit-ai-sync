@@ -25,15 +25,18 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   onBack, 
   onExerciseComplete 
 }) => {
-  const [sets, setSets] = useState<SetData[]>(() => 
-    Array.from({ length: exercise.sets || 3 }, (_, i) => ({
+  const [sets, setSets] = useState<SetData[]>(() => {
+    // Use calculated weight if available, otherwise fallback to exercise weight or reasonable default
+    const defaultWeight = (exercise as any).calculated_weight || exercise.weight || 20;
+    
+    return Array.from({ length: exercise.sets || 3 }, (_, i) => ({
       setNumber: i + 1,
       targetReps: exercise.reps || 12,
       actualReps: exercise.reps || 12,
-      weight: 0, // Default weight
+      weight: defaultWeight,
       completed: false
-    }))
-  );
+    }));
+  });
   
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);

@@ -24,6 +24,9 @@ export interface WorkoutExercise {
   rest_seconds: number;
   weight_guidance?: string;
   order: number;
+  // Weight calculation fields
+  weight?: number;
+  calculated_weight?: number;
   // Cardio exercise fields
   duration_minutes?: number;
   exercise_type?: string;

@@ -1,0 +1,236 @@
+export interface UserWeightProfile {
+  weight_kg: number;
+  age: number;
+  experience_level: 'beginner' | 'intermediate' | 'advanced';
+  primary_goal: 'fat_loss' | 'muscle_building' | 'general_fitness' | 'strength_training';
+  gender?: string;
+  current_max_weights?: Record<string, number>;
+}
+
+export interface ExerciseWeightCalculation {
+  exercise_name: string;
+  machine_name: string;
+  recommended_weight: number;
+  sets: number;
+  reps: number;
+  rest_seconds: number;
+}
+
+// Base multipliers for weight calculations
+const BASE_FACTORS = {
+  beginner: 0.15,
+  intermediate: 0.3,
+  advanced: 0.5
+} as const;
+
+const GOAL_MULTIPLIERS = {
+  fat_loss: 0.9,
+  muscle_building: 1.1,
+  general_fitness: 1.0,
+  strength_training: 1.25
+} as const;
+
+// Exercise-specific modifiers (relative to bodyweight baseline)
+const EXERCISE_MODIFIERS = {
+  // Upper body exercises
+  'chest_press': 0.8,
+  'bench_press': 0.7,
+  'shoulder_press': 0.5,
+  'lat_pulldown': 0.6,
+  'seated_row': 0.6,
+  'bicep_curl': 0.2,
+  'tricep_extension': 0.25,
+  
+  // Lower body exercises
+  'leg_press': 1.5,
+  'squat': 0.8,
+  'leg_curl': 0.4,
+  'leg_extension': 0.5,
+  'calf_raise': 0.8,
+  
+  // Default for unlisted exercises
+  'default': 0.6
+} as const;
+
+// Gender modifiers
+const GENDER_MODIFIERS = {
+  male: 1.0,
+  female: 0.75,
+  other: 0.85
+} as const;
+
+/**
+ * Calculate optimal starting weight for an exercise
+ */
+export function calculateOptimalWeight(
+  userProfile: UserWeightProfile,
+  exerciseName: string,
+  machineName: string
+): number {
+  const {
+    weight_kg,
+    age,
+    experience_level,
+    primary_goal,
+    gender = 'other',
+    current_max_weights = {}
+  } = userProfile;
+
+  // Check if user has a recorded max for this exercise
+  const maxWeightKey = `${machineName}_${exerciseName}`.toLowerCase().replace(/\s+/g, '_');
+  if (current_max_weights[maxWeightKey]) {
+    // Use percentage of max based on goal and experience
+    const maxWeight = current_max_weights[maxWeightKey];
+    const percentageOfMax = getPercentageOfMax(experience_level, primary_goal);
+    return Math.round(maxWeight * percentageOfMax);
+  }
+
+  // Calculate base weight using formula
+  const baseFactor = BASE_FACTORS[experience_level];
+  const goalMultiplier = GOAL_MULTIPLIERS[primary_goal];
+  const genderModifier = GENDER_MODIFIERS[gender as keyof typeof GENDER_MODIFIERS] || GENDER_MODIFIERS.other;
+  
+  // Age adjustment: decrease 1% for every year over 25, increase for under
+  const ageAdjustment = (age - 25) * 0.01;
+  const ageModifier = Math.max(0.5, 1 - ageAdjustment); // Minimum 50% modifier
+  
+  // Get exercise-specific modifier
+  const exerciseKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
+  const exerciseModifier = EXERCISE_MODIFIERS[exerciseKey as keyof typeof EXERCISE_MODIFIERS] || EXERCISE_MODIFIERS.default;
+  
+  // Calculate final weight
+  const baseWeight = weight_kg * baseFactor * goalMultiplier * genderModifier * ageModifier * exerciseModifier;
+  
+  // Round to nearest 5 lbs/2.5 kg and ensure minimum weight
+  const roundedWeight = Math.round(baseWeight / 2.5) * 2.5;
+  return Math.max(5, roundedWeight); // Minimum 5kg/10lbs
+}
+
+/**
+ * Get percentage of max lift to use based on experience and goal
+ */
+function getPercentageOfMax(
+  experience: 'beginner' | 'intermediate' | 'advanced',
+  goal: 'fat_loss' | 'muscle_building' | 'general_fitness' | 'strength_training'
+): number {
+  const basePercentages = {
+    beginner: 0.6,    // 60% of max
+    intermediate: 0.7, // 70% of max
+    advanced: 0.8     // 80% of max
+  };
+
+  const goalAdjustments = {
+    fat_loss: -0.1,          // Lower intensity for fat loss
+    muscle_building: 0,      // Standard intensity
+    general_fitness: -0.05,  // Slightly lower intensity
+    strength_training: 0.1   // Higher intensity for strength
+  };
+
+  const basePercentage = basePercentages[experience];
+  const adjustment = goalAdjustments[goal];
+  
+  return Math.min(0.85, Math.max(0.5, basePercentage + adjustment));
+}
+
+/**
+ * Calculate sets and reps based on user goal and experience
+ */
+export function calculateSetsAndReps(
+  goal: 'fat_loss' | 'muscle_building' | 'general_fitness' | 'strength_training',
+  experience: 'beginner' | 'intermediate' | 'advanced',
+  exerciseType: 'compound' | 'isolation' = 'compound'
+): { sets: number; reps: number; rest_seconds: number } {
+  const programs = {
+    fat_loss: {
+      beginner: { sets: 2, reps: 15, rest: 45 },
+      intermediate: { sets: 3, reps: 12, rest: 60 },
+      advanced: { sets: 4, reps: 10, rest: 45 }
+    },
+    muscle_building: {
+      beginner: { sets: 3, reps: 10, rest: 60 },
+      intermediate: { sets: 4, reps: 8, rest: 90 },
+      advanced: { sets: 4, reps: 6, rest: 120 }
+    },
+    general_fitness: {
+      beginner: { sets: 2, reps: 12, rest: 60 },
+      intermediate: { sets: 3, reps: 10, rest: 75 },
+      advanced: { sets: 3, reps: 8, rest: 90 }
+    },
+    strength_training: {
+      beginner: { sets: 3, reps: 8, rest: 90 },
+      intermediate: { sets: 4, reps: 5, rest: 180 },
+      advanced: { sets: 5, reps: 3, rest: 240 }
+    }
+  };
+
+  const baseProgram = programs[goal][experience];
+  
+  // Adjust for isolation exercises (typically higher reps, shorter rest)
+  if (exerciseType === 'isolation') {
+    return {
+      sets: baseProgram.sets,
+      reps: Math.min(20, baseProgram.reps + 3),
+      rest_seconds: Math.max(30, baseProgram.rest - 15)
+    };
+  }
+
+  return {
+    sets: baseProgram.sets,
+    reps: baseProgram.reps,
+    rest_seconds: baseProgram.rest
+  };
+}
+
+/**
+ * Determine if an exercise should progress weight based on performance
+ */
+export function shouldProgressWeight(
+  completionPercentage: number,
+  perceivedExertion: number,
+  weeksAtCurrentWeight: number
+): { shouldProgress: boolean; progressionType: 'increase' | 'decrease' | 'maintain'; percentage: number } {
+  // If completion rate is very low, decrease weight
+  if (completionPercentage < 70) {
+    return {
+      shouldProgress: true,
+      progressionType: 'decrease',
+      percentage: -10
+    };
+  }
+
+  // If completion rate is high and exertion is low, increase weight
+  if (completionPercentage >= 90 && perceivedExertion <= 3 && weeksAtCurrentWeight >= 1) {
+    return {
+      shouldProgress: true,
+      progressionType: 'increase',
+      percentage: 5
+    };
+  }
+
+  // If stuck at same weight for too long with decent performance, small increase
+  if (weeksAtCurrentWeight >= 3 && completionPercentage >= 80) {
+    return {
+      shouldProgress: true,
+      progressionType: 'increase',
+      percentage: 2.5
+    };
+  }
+
+  return {
+    shouldProgress: false,
+    progressionType: 'maintain',
+    percentage: 0
+  };
+}
+
+/**
+ * Calculate new weight based on progression decision
+ */
+export function calculateProgressedWeight(
+  currentWeight: number,
+  progressionPercentage: number
+): number {
+  const newWeight = currentWeight * (1 + progressionPercentage / 100);
+  // Round to nearest 2.5kg/5lbs
+  return Math.round(newWeight / 2.5) * 2.5;
+}

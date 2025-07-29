@@ -408,18 +408,23 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_data: Json | null
           avatar_url: string | null
           calibration_completed: boolean | null
           created_at: string
+          current_max_weights: Json | null
           diet_type: string | null
           email: string | null
+          experience_level: string | null
           full_name: string | null
           gender: string | null
           gym_id: string | null
           height_cm: number | null
           id: string
           onboarding_completed: boolean | null
+          preferred_equipment_type: string | null
+          primary_goal: string | null
           tap_coins_balance: number
           target_carbs_grams: number | null
           target_daily_calories: number | null
@@ -428,18 +433,23 @@ export type Database = {
           weight_kg: number | null
         }
         Insert: {
+          age?: number | null
           avatar_data?: Json | null
           avatar_url?: string | null
           calibration_completed?: boolean | null
           created_at?: string
+          current_max_weights?: Json | null
           diet_type?: string | null
           email?: string | null
+          experience_level?: string | null
           full_name?: string | null
           gender?: string | null
           gym_id?: string | null
           height_cm?: number | null
           id: string
           onboarding_completed?: boolean | null
+          preferred_equipment_type?: string | null
+          primary_goal?: string | null
           tap_coins_balance?: number
           target_carbs_grams?: number | null
           target_daily_calories?: number | null
@@ -448,18 +458,23 @@ export type Database = {
           weight_kg?: number | null
         }
         Update: {
+          age?: number | null
           avatar_data?: Json | null
           avatar_url?: string | null
           calibration_completed?: boolean | null
           created_at?: string
+          current_max_weights?: Json | null
           diet_type?: string | null
           email?: string | null
+          experience_level?: string | null
           full_name?: string | null
           gender?: string | null
           gym_id?: string | null
           height_cm?: number | null
           id?: string
           onboarding_completed?: boolean | null
+          preferred_equipment_type?: string | null
+          primary_goal?: string | null
           tap_coins_balance?: number
           target_carbs_grams?: number | null
           target_daily_calories?: number | null
@@ -871,6 +886,42 @@ export type Database = {
           },
         ]
       }
+      weight_progressions: {
+        Row: {
+          created_at: string
+          exercise_name: string
+          id: string
+          machine_name: string | null
+          new_weight: number
+          previous_weight: number | null
+          progression_reason: string | null
+          user_id: string
+          week_number: number | null
+        }
+        Insert: {
+          created_at?: string
+          exercise_name: string
+          id?: string
+          machine_name?: string | null
+          new_weight: number
+          previous_weight?: number | null
+          progression_reason?: string | null
+          user_id: string
+          week_number?: number | null
+        }
+        Update: {
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          machine_name?: string | null
+          new_weight?: number
+          previous_weight?: number | null
+          progression_reason?: string | null
+          user_id?: string
+          week_number?: number | null
+        }
+        Relationships: []
+      }
       workout_exercises: {
         Row: {
           created_at: string
@@ -988,6 +1039,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workout_performance: {
+        Row: {
+          actual_weight: number | null
+          completed_at: string | null
+          completed_reps: number
+          completed_sets: number
+          completion_percentage: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          perceived_exertion: number | null
+          recommended_weight: number | null
+          scheduled_workout_id: string
+          user_id: string
+          workout_exercise_id: string
+        }
+        Insert: {
+          actual_weight?: number | null
+          completed_at?: string | null
+          completed_reps?: number
+          completed_sets?: number
+          completion_percentage?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          perceived_exertion?: number | null
+          recommended_weight?: number | null
+          scheduled_workout_id: string
+          user_id: string
+          workout_exercise_id: string
+        }
+        Update: {
+          actual_weight?: number | null
+          completed_at?: string | null
+          completed_reps?: number
+          completed_sets?: number
+          completion_percentage?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          perceived_exertion?: number | null
+          recommended_weight?: number | null
+          scheduled_workout_id?: string
+          user_id?: string
+          workout_exercise_id?: string
+        }
+        Relationships: []
       }
       workout_plans: {
         Row: {
