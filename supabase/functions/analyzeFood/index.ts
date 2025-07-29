@@ -95,7 +95,19 @@ Important guidelines:
 
     let nutritionData;
     try {
-      nutritionData = JSON.parse(aiData.choices[0].message.content);
+      let content = aiData.choices[0].message.content;
+      
+      // Handle markdown-wrapped JSON
+      if (content.includes('```json')) {
+        content = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      } else if (content.includes('```')) {
+        content = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      // Clean up any extra whitespace
+      content = content.trim();
+      
+      nutritionData = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse AI response:', aiData.choices[0].message.content);
       throw new Error('Failed to parse nutrition data from AI');
