@@ -13,6 +13,7 @@ const WorkoutPlans = () => {
   const { currentPlan, weeklySchedule, loading, markWorkoutComplete } = useWorkoutPlan();
   const [selectedWorkoutIndex, setSelectedWorkoutIndex] = useState(0);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [selectedWeeklyWorkout, setSelectedWeeklyWorkout] = useState<any>(null);
 
   const formatTime = (timeString: string) => {
     const time = new Date(`2000-01-01T${timeString}`);
@@ -91,8 +92,11 @@ const WorkoutPlans = () => {
       <div className="container mx-auto p-6 space-y-6">
         {showBreakdown ? (
           <WorkoutBreakdown 
-            workout={selectedWorkout} 
-            onBack={() => setShowBreakdown(false)} 
+            workout={selectedWeeklyWorkout || selectedWorkout} 
+            onBack={() => {
+              setShowBreakdown(false);
+              setSelectedWeeklyWorkout(null);
+            }} 
           />
         ) : (
           <>
@@ -261,14 +265,17 @@ const WorkoutPlans = () => {
                         >
                           {workout.status}
                         </Badge>
-                        {workout.status === 'scheduled' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => workout.id && markWorkoutComplete(workout.id)}
-                          >
-                            Mark Complete
-                          </Button>
-                        )}
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedWeeklyWorkout(workout);
+                            setShowBreakdown(true);
+                          }}
+                        >
+                          <List className="h-4 w-4 mr-2" />
+                          Preview Workout
+                        </Button>
                       </div>
                     </div>
                   </CardHeader>
