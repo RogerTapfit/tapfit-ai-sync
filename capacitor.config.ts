@@ -46,7 +46,11 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
     scheme: 'tapfit',
-    customUrlScheme: 'tapfit'
+    customUrlScheme: 'tapfit',
+    associatedDomains: ['applinks:tapfit'],
+    infoPlist: {
+      NFCReaderUsageDescription: 'This app uses NFC to identify gym equipment for seamless workout tracking.'
+    }
   }
 };
 

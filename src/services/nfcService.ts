@@ -1,12 +1,26 @@
 import { Capacitor } from '@capacitor/core';
 
-// For now, we'll use a mock until the real plugin is available after deployment
-const NFC = {
-  isSupported: () => Promise.resolve({ isSupported: Capacitor.isNativePlatform() }),
-  addListener: (event: string, callback: Function) => Promise.resolve(),
-  removeAllListeners: () => Promise.resolve(),
-  write: (options: any) => Promise.resolve()
-};
+// NFC Plugin interface - will be replaced by @capacitor-community/nfc when deployed
+let NFC: any;
+
+if (Capacitor.isNativePlatform()) {
+  // On native platforms, the plugin will be available
+  try {
+    NFC = (window as any).Capacitor.Plugins.NFC;
+  } catch (error) {
+    console.warn('NFC plugin not available, using fallback');
+  }
+}
+
+// Fallback implementation for development
+if (!NFC) {
+  NFC = {
+    isSupported: () => Promise.resolve({ isSupported: false }),
+    addListener: () => Promise.resolve(),
+    removeAllListeners: () => Promise.resolve(),
+    write: () => Promise.resolve()
+  };
+}
 
 // Machine ID to exercise mapping
 export const MACHINE_IDS = {
