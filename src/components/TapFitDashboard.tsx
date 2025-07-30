@@ -11,8 +11,6 @@ import {
   Target, 
   Clock, 
   TrendingUp,
-  Bluetooth,
-  Watch,
   Brain,
   Users,
   Trophy,
@@ -243,48 +241,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* 4. Power Level */}
       <PowerLevelMeter />
 
-      {/* Connection Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="glow-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Bluetooth className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold">Smart Machines</p>
-              <p className="text-sm text-muted-foreground">
-                {isConnected ? '3 devices connected' : 'Scanning...'}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="glow-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Watch className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold">Apple Watch</p>
-              <p className="text-sm text-muted-foreground">
-                {isConnected ? 'Synced' : 'Connecting...'}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="glow-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Brain className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold">AI Coach</p>
-              <p className="text-sm text-muted-foreground">Active</p>
-            </div>
-          </div>
-        </Card>
-      </div>
 
       {/* AI Insights */}
       <Card className="ai-feedback animate-slide-up">
