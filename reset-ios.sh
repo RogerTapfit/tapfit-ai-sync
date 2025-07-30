@@ -1,7 +1,16 @@
 #!/bin/bash
 # Reset iOS build completely to fix scheme issues
 
-echo "🧹 Clearing all iOS build artifacts..."
+echo "🧹 Clearing all iOS build artifacts and caches..."
+
+# Clear global Capacitor CLI cache
+echo "Reinstalling Capacitor CLI globally..."
+npm uninstall -g @capacitor/cli 2>/dev/null || true
+npm install -g @capacitor/cli
+
+# Clear local Capacitor cache
+echo "Clearing local Capacitor cache..."
+rm -rf ~/.capacitor 2>/dev/null || true
 
 # Remove iOS platform if it exists
 npx cap remove ios 2>/dev/null || true
@@ -21,4 +30,5 @@ npm run build
 npx cap add ios
 npx cap sync ios
 
-echo "🚀 Ready! Now run: npx cap run ios"
+echo "🚀 Ready! Now run with explicit scheme:"
+echo "npx cap run ios --scheme App"
