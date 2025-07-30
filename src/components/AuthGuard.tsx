@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { OnboardingFlow } from './OnboardingFlow';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -15,7 +16,11 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  const platform = Capacitor.getPlatform();
+  const isNative = Capacitor.isNativePlatform();
+  
   console.log('🔐 AuthGuard: Initializing...');
+  console.log('🔐 AuthGuard: Platform:', platform, 'IsNative:', isNative);
   
   const { profile, loading: profileLoading, needsOnboarding, refetch } = useOnboarding(session?.user?.id);
   
@@ -25,7 +30,9 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     loading, 
     profileLoading, 
     needsOnboarding, 
-    error 
+    error,
+    platform,
+    isNative
   });
 
   useEffect(() => {
@@ -110,6 +117,22 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
 
   if (!user) {
     console.log('🔐 AuthGuard: No user, showing fallback...');
+    
+    // Mobile debug mode - temporarily bypass auth for testing
+    if (isNative && window.location.hash.includes('debug=true')) {
+      console.log('🔐 AuthGuard: Mobile debug mode - bypassing auth');
+      return <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold">Mobile Debug Mode</h2>
+          <p className="text-muted-foreground">Auth bypassed for testing</p>
+          <p className="text-sm">Platform: {platform}</p>
+          <button onClick={() => window.location.hash = ''} className="px-4 py-2 bg-primary text-primary-foreground rounded">
+            Exit Debug Mode
+          </button>
+        </div>
+      </div>;
+    }
+    
     return <>{fallback}</>;
   }
 
