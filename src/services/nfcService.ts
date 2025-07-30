@@ -119,9 +119,9 @@ export class NFCService {
               
               console.log('NFC URL detected:', url);
               
-              // Extract machine ID from tapfit:// URL
-              if (url.startsWith('tapfit://machine/')) {
-                const machineId = url.replace('tapfit://machine/', '');
+              // Extract machine ID from universal URL
+              if (url.includes('/machine/')) {
+                const machineId = url.split('/machine/')[1]?.split('?')[0];
                 
                 if (this.isValidMachineId(machineId)) {
                   callback({
