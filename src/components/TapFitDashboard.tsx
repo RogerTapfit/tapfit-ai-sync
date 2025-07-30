@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import FitnessChatbot from "./FitnessChatbot";
 import { NFCTestPanel } from "./NFCTestPanel";
 import { useAIInsights } from "@/hooks/useAIInsights";
+import { useRecentWorkouts } from "@/hooks/useRecentWorkouts";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -48,6 +49,9 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   
   // Use the new AI insights hook
   const { insights: aiInsights, loading: insightsLoading, lastUpdated, refetch: refetchInsights } = useAIInsights(userProfile?.id);
+  
+  // Use real workout data
+  const { recentWorkouts, loading: workoutsLoading } = useRecentWorkouts(userProfile?.id);
   const [todayStats, setTodayStats] = useState({
     calories: 280,
     duration: 45,
@@ -101,11 +105,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     window.location.href = '/workout-list';
   };
 
-  const recentWorkouts = [
-    { date: "Today", type: "Upper Body", duration: 45, calories: 280 },
-    { date: "Yesterday", type: "Cardio", duration: 30, calories: 220 },
-    { date: "2 days ago", type: "Legs", duration: 50, calories: 310 }
-  ];
 
   if (showAvatarBuilder) {
     return <AvatarBuilder onClose={() => setShowAvatarBuilder(false)} />;
@@ -309,21 +308,46 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
             <Button variant="outline" size="sm">View All</Button>
           </div>
           <div className="space-y-3">
-            {recentWorkouts.map((workout, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/70 transition-colors">
-                <div>
-                  <p className="font-semibold">{workout.type}</p>
-                  <p className="text-sm text-muted-foreground">{workout.date}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">{workout.duration}m • {workout.calories} cal</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <TrendingUp className="h-3 w-3 text-green-500" />
-                    <span className="text-xs text-green-500">+12% vs avg</span>
+            {workoutsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-background/50 animate-pulse">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : recentWorkouts.length > 0 ? (
+              recentWorkouts.map((workout, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/70 transition-colors">
+                  <div>
+                    <p className="font-semibold">{workout.type}</p>
+                    <p className="text-sm text-muted-foreground">{workout.date}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{workout.duration}m • {workout.calories} cal</p>
+                    {workout.change && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <TrendingUp className="h-3 w-3 text-green-500" />
+                        <span className="text-xs text-green-500">{workout.change}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No recent workouts found</p>
+                <p className="text-sm">Start your first workout to see your progress here!</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </Card>
