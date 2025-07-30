@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Target, Dumbbell, Calendar, Heart } from 'lucide-react';
+
 
 interface EnhancedProfile {
   age: number;
@@ -149,7 +149,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <User className="h-12 w-12 text-primary mx-auto" />
+              
               <h2 className="text-2xl font-bold">Basic Information</h2>
               <p className="text-muted-foreground">Help us personalize your experience</p>
             </div>
@@ -222,7 +222,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <Target className="h-12 w-12 text-primary mx-auto" />
+              
               <h2 className="text-2xl font-bold">Fitness Goals</h2>
               <p className="text-muted-foreground">What do you want to achieve?</p>
             </div>
@@ -256,7 +256,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <Dumbbell className="h-12 w-12 text-primary mx-auto" />
+              
               <h2 className="text-2xl font-bold">Experience Level</h2>
               <p className="text-muted-foreground">Help us set the right intensity</p>
             </div>
@@ -314,7 +314,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <Calendar className="h-12 w-12 text-primary mx-auto" />
+              
               <h2 className="text-2xl font-bold">Equipment Preferences</h2>
               <p className="text-muted-foreground">What type of equipment do you prefer?</p>
             </div>
@@ -364,7 +364,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <Heart className="h-12 w-12 text-primary mx-auto" />
+              
               <h2 className="text-2xl font-bold">Health & Safety</h2>
               <p className="text-muted-foreground">Help us keep you safe during workouts</p>
             </div>
