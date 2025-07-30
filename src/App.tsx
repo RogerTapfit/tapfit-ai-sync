@@ -46,56 +46,60 @@ const NFCHandler = () => {
   return null;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <NFCHandler />
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={
-            <AuthGuard fallback={<Auth />}>
-              <Index />
-            </AuthGuard>
-          } />
-          <Route path="/workout-list" element={
-            <AuthGuard fallback={<Auth />}>
-              <WorkoutList />
-            </AuthGuard>
-          } />
-          <Route path="/workout/:workoutId" element={
-            <AuthGuard fallback={<Auth />}>
-              <WorkoutDetail />
-            </AuthGuard>
-          } />
-          <Route path="/workout-summary" element={
-            <AuthGuard fallback={<Auth />}>
-              <WorkoutSummary />
-            </AuthGuard>
-          } />
-          <Route path="/workout-plans" element={
-            <AuthGuard fallback={<Auth />}>
-              <WorkoutPlans />
-            </AuthGuard>
-          } />
-          <Route path="/workout-plan" element={
-            <AuthGuard fallback={<Auth />}>
-              <WorkoutPlan />
-            </AuthGuard>
-          } />
-          <Route path="/machine/:machineId" element={
-            <AuthGuard fallback={<Auth />}>
-              <MachineAccess />
-            </AuthGuard>
-          } />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  console.log('📱 App: Starting TapFit application...');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <NFCHandler />
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={
+              <AuthGuard fallback={<Auth />}>
+                <Index />
+              </AuthGuard>
+            } />
+            <Route path="/workout-list" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutList />
+              </AuthGuard>
+            } />
+            <Route path="/workout/:workoutId" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutDetail />
+              </AuthGuard>
+            } />
+            <Route path="/workout-summary" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutSummary />
+              </AuthGuard>
+            } />
+            <Route path="/workout-plans" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutPlans />
+              </AuthGuard>
+            } />
+            <Route path="/workout-plan" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutPlan />
+              </AuthGuard>
+            } />
+            <Route path="/machine/:machineId" element={
+              <AuthGuard fallback={<Auth />}>
+                <MachineAccess />
+              </AuthGuard>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
