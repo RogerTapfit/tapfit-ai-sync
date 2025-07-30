@@ -32,6 +32,7 @@ import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
 import FitnessChatbot from "./FitnessChatbot";
+import { NFCTestPanel } from "./NFCTestPanel";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -345,6 +346,9 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           View Challenges
         </Button>
       </div>
+
+      {/* NFC Test Panel */}
+      <NFCTestPanel />
 
       {/* AI Fitness Chatbot */}
       <FitnessChatbot 

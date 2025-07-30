@@ -1,18 +1,18 @@
 import { Capacitor } from '@capacitor/core';
 
-// NFC Plugin interface - will be replaced by @capacitor-community/nfc when deployed
+// NFC Plugin - will be available when @capacitor-community/nfc is installed
 let NFC: any;
 
 if (Capacitor.isNativePlatform()) {
-  // On native platforms, the plugin will be available
   try {
-    NFC = (window as any).Capacitor.Plugins.NFC;
+    // Import the plugin dynamically when on native platform
+    NFC = (window as any).Capacitor?.Plugins?.NFC;
   } catch (error) {
-    console.warn('NFC plugin not available, using fallback');
+    console.warn('NFC plugin not available');
   }
 }
 
-// Fallback implementation for development
+// Fallback for web/development
 if (!NFC) {
   NFC = {
     isSupported: () => Promise.resolve({ isSupported: false }),
@@ -89,8 +89,8 @@ export class NFCService {
     }
 
     try {
-      const isSupported = await NFC.isSupported();
-      return isSupported.isSupported;
+      const status = await NFC.isSupported();
+      return status.isSupported;
     } catch (error) {
       console.warn('NFC not available:', error);
       return false;
@@ -104,16 +104,20 @@ export class NFCService {
 
     try {
       await NFC.addListener('nfcTagScanned', (result: any) => {
-        const tag = result.nfcTag;
+        console.log('NFC tag scanned:', result);
         
-        if (tag?.ndefMessage && tag.ndefMessage.length > 0) {
-          const record = tag.ndefMessage[0];
+        if (result.ndefMessage && result.ndefMessage.length > 0) {
+          const record = result.ndefMessage[0];
           
-          // Handle URL records (type 'U')
+          // Handle URL records
           if (record.type === 'U' && record.payload) {
             try {
-              // Convert Uint8Array to string, skip first byte (URL prefix)
-              const url = new TextDecoder().decode(record.payload.slice(1));
+              // Convert payload to string
+              const payloadString = new TextDecoder().decode(new Uint8Array(record.payload));
+              // Remove URL prefix byte if present
+              const url = payloadString.startsWith('\u0001') ? payloadString.slice(1) : payloadString;
+              
+              console.log('NFC URL detected:', url);
               
               // Extract machine ID from tapfit:// URL
               if (url.startsWith('tapfit://machine/')) {
@@ -158,14 +162,10 @@ export class NFCService {
     const deepLinkUrl = `tapfit://machine/${machineId}`;
 
     try {
-      const ndefRecord = {
-        type: 'U', // URL record type
-        payload: new TextEncoder().encode(`\x01${deepLinkUrl}`) // 0x01 prefix for URI identifier
-      };
-
-      await NFC.write({
-        ndefMessage: [ndefRecord]
-      });
+      await NFC.write([{
+        type: 'url',
+        payload: deepLinkUrl
+      }]);
       
       console.log('NFC tag written successfully:', deepLinkUrl);
     } catch (error) {
