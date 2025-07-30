@@ -15,6 +15,9 @@ interface EnhancedProfile {
   age: number;
   weight_kg: number;
   height_cm: number;
+  weight_lbs: number;
+  height_feet: number;
+  height_inches: number;
   gender: 'male' | 'female' | 'other';
   experience_level: 'beginner' | 'intermediate' | 'advanced';
   primary_goal: 'fat_loss' | 'muscle_building' | 'general_fitness' | 'strength_training';
@@ -35,6 +38,9 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     age: 25,
     weight_kg: 70,
     height_cm: 170,
+    weight_lbs: 154,
+    height_feet: 5,
+    height_inches: 7,
     gender: 'other',
     experience_level: 'beginner',
     primary_goal: 'general_fitness',
@@ -45,8 +51,38 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
+  // Conversion utilities
+  const lbsToKg = (lbs: number) => lbs * 0.453592;
+  const kgToLbs = (kg: number) => kg / 0.453592;
+  const feetInchesToCm = (feet: number, inches: number) => (feet * 12 + inches) * 2.54;
+  const cmToFeetInches = (cm: number) => {
+    const totalInches = cm / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return { feet, inches };
+  };
+
   const handleInputChange = (field: keyof EnhancedProfile, value: any) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+    setProfile(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // Auto-convert when weight or height changes
+      if (field === 'weight_lbs') {
+        updated.weight_kg = lbsToKg(value);
+      } else if (field === 'weight_kg') {
+        updated.weight_lbs = kgToLbs(value);
+      } else if (field === 'height_feet' || field === 'height_inches') {
+        const feet = field === 'height_feet' ? value : prev.height_feet;
+        const inches = field === 'height_inches' ? value : prev.height_inches;
+        updated.height_cm = feetInchesToCm(feet, inches);
+      } else if (field === 'height_cm') {
+        const { feet, inches } = cmToFeetInches(value);
+        updated.height_feet = feet;
+        updated.height_inches = inches;
+      }
+      
+      return updated;
+    });
   };
 
   const handleNext = () => {
@@ -126,8 +162,6 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                   type="number"
                   value={profile.age}
                   onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 25)}
-                  min="16"
-                  max="80"
                 />
               </div>
               <div className="space-y-2">
@@ -145,28 +179,39 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
+                <Label htmlFor="weight">Weight (lbs)</Label>
                 <Input
                   id="weight"
                   type="number"
-                  value={profile.weight_kg}
-                  onChange={(e) => handleInputChange('weight_kg', parseFloat(e.target.value) || 70)}
-                  min="40"
-                  max="200"
+                  value={profile.weight_lbs}
+                  onChange={(e) => handleInputChange('weight_lbs', parseFloat(e.target.value) || 154)}
+                  min="88"
+                  max="440"
                   step="0.1"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
+                <Label htmlFor="height-feet">Height (feet)</Label>
                 <Input
-                  id="height"
+                  id="height-feet"
                   type="number"
-                  value={profile.height_cm}
-                  onChange={(e) => handleInputChange('height_cm', parseInt(e.target.value) || 170)}
-                  min="140"
-                  max="220"
+                  value={profile.height_feet}
+                  onChange={(e) => handleInputChange('height_feet', parseInt(e.target.value) || 5)}
+                  min="0"
+                  max="8"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height-inches">Height (inches)</Label>
+                <Input
+                  id="height-inches"
+                  type="number"
+                  value={profile.height_inches}
+                  onChange={(e) => handleInputChange('height_inches', parseInt(e.target.value) || 7)}
+                  min="0"
+                  max="11"
                 />
               </div>
             </div>
@@ -352,8 +397,8 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
               <h3 className="font-semibold mb-2">Profile Summary</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Age: {profile.age} years</div>
-                <div>Weight: {profile.weight_kg} kg</div>
-                <div>Height: {profile.height_cm} cm</div>
+                <div>Weight: {Math.round(profile.weight_lbs)} lbs</div>
+                <div>Height: {profile.height_feet}'{profile.height_inches}"</div>
                 <div>Goal: {profile.primary_goal.replace('_', ' ')}</div>
                 <div>Experience: {profile.experience_level}</div>
                 <div>Equipment: {profile.preferred_equipment_type.replace('_', ' ')}</div>
