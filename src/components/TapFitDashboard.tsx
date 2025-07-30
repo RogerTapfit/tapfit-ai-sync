@@ -200,7 +200,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           <DialogTrigger asChild>
             <Button 
               size="lg"
-              className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 transition-all duration-300 animate-pulse-glow-slow border-0 rounded-2xl"
+              className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 transition-all duration-300 animate-pulse-glow-super-slow border-0 rounded-2xl"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative flex items-center gap-4">

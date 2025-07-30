@@ -126,6 +126,14 @@ export default {
 					'100%': {
 						boxShadow: '0 0 30px hsl(0 84% 60% / 0.4), 0 0 40px hsl(0 84% 60% / 0.1)'
 					}
+				},
+				'pulse-glow-super-slow': {
+					'0%, 100%': {
+						boxShadow: '0 0 20px hsl(16 100% 66% / 0.3)'
+					},
+					'50%': {
+						boxShadow: '0 0 40px hsl(16 100% 66% / 0.6), 0 0 60px hsl(16 100% 66% / 0.2)'
+					}
 				}
 			},
 			animation: {
@@ -133,6 +141,7 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 2s infinite',
 				'pulse-glow-slow': 'pulse-glow 10s infinite',
+				'pulse-glow-super-slow': 'pulse-glow-super-slow 20s infinite ease-in-out',
 				'fade-in': 'fade-in 0.6s ease-out',
 				'slide-up': 'slide-up 0.4s ease-out',
 				'glow': 'glow 2s ease-in-out infinite alternate'
