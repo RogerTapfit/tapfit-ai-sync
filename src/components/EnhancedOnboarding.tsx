@@ -209,7 +209,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                   id="height-inches"
                   type="number"
                   value={profile.height_inches}
-                  onChange={(e) => handleInputChange('height_inches', parseInt(e.target.value) || 7)}
+                  onChange={(e) => handleInputChange('height_inches', e.target.value === '' ? 7 : parseInt(e.target.value) || 0)}
                   min="0"
                   max="11"
                 />
