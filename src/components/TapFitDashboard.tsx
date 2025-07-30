@@ -34,6 +34,9 @@ import FitnessChatbot from "./FitnessChatbot";
 import { NFCTestPanel } from "./NFCTestPanel";
 import { useAIInsights } from "@/hooks/useAIInsights";
 import { useRecentWorkouts } from "@/hooks/useRecentWorkouts";
+import FoodPhotoAnalyzer from "./FoodPhotoAnalyzer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Camera } from "lucide-react";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -191,24 +194,38 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
 
-      {/* Nutrition Quick Access */}
+      {/* See Food Button - Prominent Food Scanner */}
       <Card className="glow-card relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-transparent to-green-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-orange-500/10" />
         <div className="relative p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-green-500/20 shadow-glow">
-                <Apple className="h-8 w-8 text-green-500" />
+              <div className="p-3 rounded-xl bg-orange-500/20 shadow-glow">
+                <Camera className="h-8 w-8 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Food Scanner</h3>
+                <p className="text-sm text-muted-foreground">AI-powered nutrition analysis</p>
               </div>
             </div>
-            <Button 
-              variant="glow" 
-              size="lg"
-              onClick={() => onPageChange?.('nutrition')}
-              className="shadow-glow bg-red-500 hover:bg-red-600 text-white"
-            >
-              Track Nutrition
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="glow" 
+                  size="lg"
+                  className="shadow-glow bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  <Camera className="h-5 w-5 mr-2" />
+                  See Food
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>AI Food Photo Analyzer</DialogTitle>
+                </DialogHeader>
+                <FoodPhotoAnalyzer onDataChange={() => {}} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </Card>
