@@ -41,8 +41,9 @@ const NFCHandler = () => {
     // Handle deep links
     const handleDeepLink = (url: string) => {
       console.log('Deep link received:', url);
-      if (url.startsWith('tapfit://machine/')) {
-        const machineId = url.replace('tapfit://machine/', '');
+      // Handle both custom scheme and universal links
+      if (url.includes('/machine/')) {
+        const machineId = url.split('/machine/')[1];
         navigate(`/machine/${machineId}`);
       }
     };
