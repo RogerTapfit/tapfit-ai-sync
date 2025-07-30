@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Coins, ChevronRight } from 'lucide-react';
+
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { RewardsStore } from './RewardsStore';
 
@@ -20,7 +20,7 @@ export const TapCoinsWidget = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500">
-            <Coins className="h-5 w-5 text-white" />
+            <span className="text-white font-bold text-sm">TC</span>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Tap Coins</p>
@@ -29,7 +29,7 @@ export const TapCoinsWidget = () => {
             </p>
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        <span className="text-muted-foreground">→</span>
       </div>
     </Card>
   );

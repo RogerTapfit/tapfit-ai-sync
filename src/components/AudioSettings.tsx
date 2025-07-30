@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Volume2, VolumeX, TestTube, Upload } from "lucide-react";
+
 import { useAudioSettings } from "@/utils/audioUtils";
 import { toast } from "sonner";
 
@@ -71,11 +71,6 @@ const AudioSettings = () => {
   return (
     <Card className="p-6 space-y-6">
       <div className="flex items-center gap-3">
-        {isEnabled ? (
-          <Volume2 className="h-5 w-5 text-primary" />
-        ) : (
-          <VolumeX className="h-5 w-5 text-muted-foreground" />
-        )}
         <h3 className="text-lg font-semibold">Audio Settings</h3>
       </div>
 
@@ -117,7 +112,6 @@ const AudioSettings = () => {
       {isEnabled && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <Upload className="h-4 w-4 text-primary" />
             <p className="font-medium">Custom Sounds</p>
           </div>
           
@@ -152,7 +146,6 @@ const AudioSettings = () => {
       {isEnabled && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <TestTube className="h-4 w-4 text-primary" />
             <p className="font-medium">Test Default Sounds</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
