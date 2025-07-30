@@ -6,6 +6,7 @@ import { HashRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Capacitor } from '@capacitor/core';
 import { nfcService } from "./services/nfcService";
+import { App as CapacitorApp } from '@capacitor/app';
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -37,10 +38,25 @@ const NFCHandler = () => {
       }
     };
 
+    // Handle deep links
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+      if (url.startsWith('tapfit://machine/')) {
+        const machineId = url.replace('tapfit://machine/', '');
+        navigate(`/machine/${machineId}`);
+      }
+    };
+
+    // Listen for app URL events
+    CapacitorApp.addListener('appUrlOpen', (event) => {
+      handleDeepLink(event.url);
+    });
+
     initNFC();
 
     return () => {
       nfcService.stopNFCListening();
+      CapacitorApp.removeAllListeners();
     };
   }, [navigate]);
 

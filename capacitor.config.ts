@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
     cleartext: true
   },
   ios: {
-    scheme: 'TapFit'
+    scheme: 'tapfit'
   },
   plugins: {
     NFC: {
