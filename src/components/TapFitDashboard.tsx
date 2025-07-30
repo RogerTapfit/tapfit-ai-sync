@@ -16,7 +16,8 @@ import {
   Trophy,
   Settings,
   Palette,
-  Apple
+  Apple,
+  RefreshCw
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero-new.jpg";
 import { TapCoinsWidget } from "./TapCoinsWidget";
@@ -31,6 +32,7 @@ import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
 import FitnessChatbot from "./FitnessChatbot";
 import { NFCTestPanel } from "./NFCTestPanel";
+import { useAIInsights } from "@/hooks/useAIInsights";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -43,6 +45,9 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
   const [userProfile, setUserProfile] = useState<{ full_name?: string; id?: string } | null>(null);
   const [showChatbot, setShowChatbot] = useState(false);
+  
+  // Use the new AI insights hook
+  const { insights: aiInsights, loading: insightsLoading, lastUpdated, refetch: refetchInsights } = useAIInsights(userProfile?.id);
   const [todayStats, setTodayStats] = useState({
     calories: 280,
     duration: 45,
@@ -95,12 +100,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     // Navigate to workout list
     window.location.href = '/workout-list';
   };
-
-  const aiInsights = [
-    "Your strength is improving 15% faster than average",
-    "Consider 2-3 rest days this week for optimal recovery",
-    "Your cardio endurance has increased 8% this month"
-  ];
 
   const recentWorkouts = [
     { date: "Today", type: "Upper Body", duration: 45, calories: 280 },
@@ -250,15 +249,54 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               <Brain className="h-5 w-5 text-primary" />
             </div>
             <h3 className="text-lg font-semibold">AI Insights</h3>
-            <Badge variant="secondary" className="ml-auto">Live</Badge>
+            <Badge variant="secondary" className="ml-auto">
+              {insightsLoading ? 'Updating...' : 'Live'}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={refetchInsights}
+              disabled={insightsLoading}
+              className="h-8 w-8 p-0 ml-2"
+            >
+              <RefreshCw className={`h-3 w-3 ${insightsLoading ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
           <div className="space-y-3">
-            {aiInsights.map((insight, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                <Zap className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm">{insight}</p>
+            {insightsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-background/50 animate-pulse">
+                    <div className="h-4 w-4 bg-gray-300 dark:bg-gray-600 rounded mt-0.5 flex-shrink-0"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              aiInsights.map((insight, index) => (
+                <div key={index} className={`flex items-start gap-3 p-3 rounded-lg ${
+                  insight.type === 'positive' 
+                    ? 'bg-green-500/10 border border-green-500/20' 
+                    : insight.type === 'warning'
+                    ? 'bg-amber-500/10 border border-amber-500/20'
+                    : 'bg-background/50'
+                }`}>
+                  <Zap className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
+                    insight.type === 'positive' 
+                      ? 'text-green-500' 
+                      : insight.type === 'warning'
+                      ? 'text-amber-500'
+                      : 'text-primary'
+                  }`} />
+                  <p className="text-sm">{insight.text}</p>
+                </div>
+              ))
+            )}
+            {lastUpdated && !insightsLoading && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+              </p>
+            )}
           </div>
         </div>
       </Card>
