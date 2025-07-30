@@ -107,12 +107,15 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
 
   if (loading || profileLoading) {
     console.log('🔐 AuthGuard: Showing loading state...');
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
+    const LoadingComponent = (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
         <p className="text-muted-foreground">Connecting to TapFit...</p>
+        <p className="text-sm text-muted-foreground mt-2">Platform: {platform}</p>
       </div>
     );
+    console.log('🔐 AuthGuard: Loading component created, returning...');
+    return LoadingComponent;
   }
 
   if (!user) {
@@ -138,16 +141,19 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
 
   // Show onboarding if user hasn't completed it
   if (needsOnboarding) {
+    console.log('🔐 AuthGuard: User needs onboarding, showing OnboardingFlow...');
     return (
       <OnboardingFlow 
         userId={user.id} 
         onComplete={() => {
+          console.log('🔐 AuthGuard: Onboarding completed, refetching...');
           refetch();
         }}
       />
     );
   }
 
+  console.log('🔐 AuthGuard: User authenticated, rendering children...');
   return <>{children}</>;
 };
 
