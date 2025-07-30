@@ -159,15 +159,15 @@ export class NFCService {
       throw new Error('NFC not available on this device');
     }
 
-    const deepLinkUrl = `tapfit://machine/${machineId}`;
+    const universalUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${machineId}?forceHideBadge=true`;
 
     try {
       await NFC.write([{
         type: 'url',
-        payload: deepLinkUrl
+        payload: universalUrl
       }]);
       
-      console.log('NFC tag written successfully:', deepLinkUrl);
+      console.log('NFC tag written successfully:', universalUrl);
     } catch (error) {
       console.error('Failed to write NFC tag:', error);
       throw error;

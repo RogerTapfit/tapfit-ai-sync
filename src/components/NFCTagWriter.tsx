@@ -44,8 +44,8 @@ const NFCTagWriter = () => {
   const getManualInstructions = () => {
     if (!selectedMachine) return null;
 
-    const deepLinkUrl = `tapfit://machine/${selectedMachine}`;
-    const fallbackUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${selectedMachine}?forceHideBadge=true`;
+    const universalUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${selectedMachine}?forceHideBadge=true`;
+    const fallbackUrl = universalUrl;
 
     return (
       <Card className="mt-4">
@@ -61,13 +61,9 @@ const NFCTagWriter = () => {
             <p><strong>2.</strong> Tap "Write" at the bottom</p>
             <p><strong>3.</strong> Select "Add a record"</p>
             <p><strong>4.</strong> Choose "URL/URI"</p>
-            <p><strong>5.</strong> For automatic app opening, use this deep link:</p>
-            <div className="bg-muted p-2 rounded text-xs font-mono break-all mb-2">
-              {deepLinkUrl}
-            </div>
-            <p className="text-xs text-muted-foreground">Or use this fallback URL if the deep link doesn't work:</p>
+            <p><strong>5.</strong> Use this universal URL that will open the app:</p>
             <div className="bg-muted p-2 rounded text-xs font-mono break-all">
-              {fallbackUrl}
+              {universalUrl}
             </div>
             <p><strong>6.</strong> Tap "Write" and hold your NFC tag near your phone</p>
           </div>
@@ -77,28 +73,18 @@ const NFCTagWriter = () => {
               variant="outline" 
               size="sm"
               onClick={() => {
-                navigator.clipboard.writeText(deepLinkUrl);
-                toast.success('Deep link copied to clipboard!');
+                navigator.clipboard.writeText(universalUrl);
+                toast.success('URL copied to clipboard!');
               }}
             >
-              Copy Deep Link
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                navigator.clipboard.writeText(fallbackUrl);
-                toast.success('Fallback URL copied to clipboard!');
-              }}
-            >
-              Copy Fallback
+              Copy URL
             </Button>
           </div>
           
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              The deep link will automatically open the TapFit app and navigate directly to the {MACHINE_IDS[selectedMachine].machine} workout. No notifications or manual navigation required!
+              This URL will automatically open the TapFit app and navigate directly to the {MACHINE_IDS[selectedMachine].machine} workout. No notifications or manual navigation required!
             </AlertDescription>
           </Alert>
         </CardContent>
