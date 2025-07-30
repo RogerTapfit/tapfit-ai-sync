@@ -194,41 +194,32 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
 
-      {/* See Food Button - Prominent Food Scanner */}
-      <Card className="glow-card relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-transparent to-orange-500/10" />
-        <div className="relative p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-orange-500/20 shadow-glow">
-                <Camera className="h-8 w-8 text-orange-500" />
+      {/* See Food Button - Prominent Standalone Food Scanner */}
+      <div className="my-8 flex justify-center">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button 
+              size="lg"
+              className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 transition-all duration-300 animate-pulse-glow border-0 rounded-2xl"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-center gap-4">
+                <Camera className="h-8 w-8" />
+                <div className="flex flex-col items-start">
+                  <span className="text-2xl font-black">SEE FOOD</span>
+                  <span className="text-sm font-normal opacity-90">AI Food Scanner</span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold">Food Scanner</h3>
-                <p className="text-sm text-muted-foreground">AI-powered nutrition analysis</p>
-              </div>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="glow" 
-                  size="lg"
-                  className="shadow-glow bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  <Camera className="h-5 w-5 mr-2" />
-                  See Food
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>AI Food Photo Analyzer</DialogTitle>
-                </DialogHeader>
-                <FoodPhotoAnalyzer onDataChange={() => {}} />
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </Card>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>AI Food Photo Analyzer</DialogTitle>
+            </DialogHeader>
+            <FoodPhotoAnalyzer onDataChange={() => {}} />
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* 3. Weekly Progress */}
       <Card className="glow-card animate-slide-up">
