@@ -132,6 +132,7 @@ export default {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 2s infinite',
+				'pulse-glow-slow': 'pulse-glow 2.4s infinite',
 				'fade-in': 'fade-in 0.6s ease-out',
 				'slide-up': 'slide-up 0.4s ease-out',
 				'glow': 'glow 2s ease-in-out infinite alternate'
