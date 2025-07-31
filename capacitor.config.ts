@@ -9,16 +9,6 @@ const config: CapacitorConfig = {
     cleartext: true
   },
   plugins: {
-    ExxiliCapacitorNfc: {
-      ios: {
-        NFCReaderUsageDescription: "This app uses NFC to identify gym machines and automatically connect to Puck.js sensors for workout tracking."
-      },
-      android: {
-        permissions: [
-          "android.permission.NFC"
-        ]
-      }
-    },
     Camera: {
       ios: {
         NSCameraUsageDescription: "This app uses the camera to analyze food for nutrition tracking.",

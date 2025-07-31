@@ -1,22 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 
-// NFC Plugin - Enhanced for real NFC integration
+// NFC Plugin - Using mock implementation for development
+// Real NFC functionality requires physical device testing
 let NFC: any;
-
-if (Capacitor.isNativePlatform()) {
-  try {
-    // Try to access the Exxili NFC plugin from Capacitor
-    NFC = (window as any).Capacitor?.Plugins?.ExxiliCapacitorNfc;
-    
-    // If not available, try alternative access methods
-    if (!NFC) {
-      // Check for direct plugin access
-      NFC = (window as any).ExxiliCapacitorNfc;
-    }
-  } catch (error) {
-    console.warn('NFC plugin not available:', error);
-  }
-}
 
 // Enhanced fallback with more realistic simulation for development
 if (!NFC) {
