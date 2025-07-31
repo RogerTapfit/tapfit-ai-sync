@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
+import { ArrowLeft, Coins, Lock, Check } from 'lucide-react';
 import { AvatarDisplay } from './AvatarDisplay';
 import { useAvatar, AvatarData } from '@/hooks/useAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
@@ -89,12 +89,12 @@ export const AvatarCustomizer = ({ onClose }: AvatarCustomizerProps) => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={onClose}>
-              
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="text-2xl font-bold">Avatar Customizer</h1>
           </div>
           <div className="flex items-center gap-2">
-            
+            <Coins className="h-5 w-5 text-yellow-500" />
             <span className="font-bold text-lg">{balance.toLocaleString()}</span>
           </div>
         </div>

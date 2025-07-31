@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-
+import { ArrowLeft, ArrowRight, Coins, Sparkles } from 'lucide-react';
 import { AvatarDisplay } from './AvatarDisplay';
 import { useAvatar, AvatarData } from '@/hooks/useAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
@@ -178,6 +178,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                     <div className="flex items-center gap-2">
                       {!canUseItem(item.name, item.category) && (
                         <div className="flex items-center gap-1">
+                          <Coins className="h-4 w-4 text-yellow-500" />
                           <span className="font-bold text-sm">{item.coin_cost}</span>
                         </div>
                       )}
@@ -209,7 +210,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                 <div className="flex items-center gap-2">
                   {!canUseItem(item.name, item.category) && item.coin_cost > 0 && (
                     <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">💰</span>
+                      <Coins className="h-4 w-4 text-yellow-500" />
                       <span className="font-bold text-sm">{item.coin_cost}</span>
                     </div>
                   )}
@@ -280,12 +281,12 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                   {!canUseItem(item.name, item.category) && item.coin_cost > 0 && (
-                     <div className="flex items-center gap-1">
-                       <span className="text-yellow-500">💰</span>
-                       <span className="font-bold text-sm">{item.coin_cost}</span>
-                     </div>
-                   )}
+                  {!canUseItem(item.name, item.category) && item.coin_cost > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Coins className="h-4 w-4 text-yellow-500" />
+                      <span className="font-bold text-sm">{item.coin_cost}</span>
+                    </div>
+                  )}
                   <Button
                     size="sm"
                     variant={canUseItem(item.name, item.category) ? "default" : "outline"}
@@ -338,7 +339,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={onClose}>
-              <span>←</span>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
               <h1 className="text-2xl font-bold">

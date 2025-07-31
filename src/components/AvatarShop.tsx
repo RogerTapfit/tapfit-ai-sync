@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
+import { Coins, Lock, Check, Star, Crown, Sparkles } from 'lucide-react';
 import { AvatarDisplay } from './AvatarDisplay';
 import { useAvatar } from '@/hooks/useAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
@@ -86,9 +86,12 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
             </div>
             <div className="flex items-center gap-1">
               {owned ? (
-                <span className="text-green-500 text-sm">Owned</span>
+                <Check className="h-4 w-4 text-green-500" />
               ) : (
-                <span className="font-bold text-sm">{item.coin_cost}</span>
+                <>
+                  <Coins className="h-4 w-4 text-yellow-500" />
+                  <span className="font-bold text-sm">{item.coin_cost}</span>
+                </>
               )}
             </div>
           </div>
@@ -103,11 +106,17 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
             disabled={owned || (!canAfford && !owned)}
           >
             {owned ? (
-              'Owned'
+              <>
+                <Check className="h-3 w-3 mr-1" />
+                Owned
+              </>
             ) : canAfford ? (
               'Purchase'
             ) : (
-              `Need ${item.coin_cost - balance} coins`
+              <>
+                <Lock className="h-3 w-3 mr-1" />
+                Need {item.coin_cost - balance} coins
+              </>
             )}
           </Button>
         </CardContent>
@@ -122,13 +131,15 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Crown className="h-8 w-8 text-yellow-500" />
               Avatar Shop
             </h1>
             <p className="text-muted-foreground">Customize your look with exclusive items</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-card p-3 rounded-lg">
-              <span className="font-bold text-lg">{balance.toLocaleString()} Coins</span>
+              <Coins className="h-5 w-5 text-yellow-500" />
+              <span className="font-bold text-lg">{balance.toLocaleString()}</span>
             </div>
             <Button variant="outline" onClick={onClose}>
               Back to Dashboard
@@ -158,6 +169,7 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
             <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
               <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="featured">
+                  <Star className="h-4 w-4 mr-1" />
                   Featured
                 </TabsTrigger>
                 <TabsTrigger value="avatar_hair">Hair</TabsTrigger>
@@ -172,6 +184,7 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
                 <div className="space-y-4">
                   <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-4 rounded-lg border border-purple-500/20">
                     <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="h-5 w-5 text-purple-500" />
                       <h3 className="font-semibold">Premium Collection</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">Exclusive high-tier items for elite athletes</p>
