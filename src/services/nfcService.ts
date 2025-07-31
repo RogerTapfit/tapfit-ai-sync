@@ -5,13 +5,13 @@ let NFC: any;
 
 if (Capacitor.isNativePlatform()) {
   try {
-    // Try to access the NFC plugin from Capacitor
-    NFC = (window as any).Capacitor?.Plugins?.NFC;
+    // Try to access the Exxili NFC plugin from Capacitor
+    NFC = (window as any).Capacitor?.Plugins?.ExxiliCapacitorNfc;
     
     // If not available, try alternative access methods
     if (!NFC) {
-      // Check for @capacitor-community/nfc plugin
-      NFC = (window as any).CapacitorCommunityNFC;
+      // Check for direct plugin access
+      NFC = (window as any).ExxiliCapacitorNfc;
     }
   } catch (error) {
     console.warn('NFC plugin not available:', error);
