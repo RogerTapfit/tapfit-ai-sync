@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,11 @@ import {
   Zap
 } from 'lucide-react';
 
-export const LiveWorkoutSession: React.FC = () => {
+interface LiveWorkoutSessionProps {
+  autoConnect?: boolean;
+}
+
+export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConnect = false }) => {
   const navigate = useNavigate();
   const {
     connectionStatus,
@@ -31,10 +35,18 @@ export const LiveWorkoutSession: React.FC = () => {
     stopScanning,
     disconnect,
     startWorkoutSession,
-    endWorkoutSession
+    endWorkoutSession,
+    autoConnect: triggerAutoConnect
   } = useBLESensor();
   
   const { awardCoins } = useTapCoins();
+
+  // Auto-connect when autoConnect prop is true
+  useEffect(() => {
+    if (autoConnect && !isConnected && !isScanning) {
+      triggerAutoConnect();
+    }
+  }, [autoConnect, isConnected, isScanning, triggerAutoConnect]);
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -91,7 +103,12 @@ export const LiveWorkoutSession: React.FC = () => {
           <CardTitle className="flex items-center justify-between">
             <span>BLE Sensor Connection</span>
             <div className="flex gap-2">
-              {!isConnected && !isScanning && (
+              {autoConnect && isScanning && (
+                <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
+                  Auto-connecting...
+                </Badge>
+              )}
+              {!isConnected && !isScanning && !autoConnect && (
                 <Button 
                   onClick={startScanning}
                   size="sm"
@@ -101,7 +118,7 @@ export const LiveWorkoutSession: React.FC = () => {
                   Scan for Devices
                 </Button>
               )}
-              {isScanning && (
+              {isScanning && !autoConnect && (
                 <Button 
                   onClick={stopScanning}
                   size="sm"
@@ -278,6 +295,7 @@ export const LiveWorkoutSession: React.FC = () => {
                 <li>• Ensure your Puck.js is powered on</li>
                 <li>• Make sure it's within Bluetooth range</li>
                 <li>• Check that the device name contains "Puck.js"</li>
+                <li>• Use NFC tag with: <code className="text-xs bg-muted px-1 rounded">tapfit://machine/123?autoConnect=puck</code> for auto-connection</li>
               </ul>
             </div>
             

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { nfcService, type MachineId } from '@/services/nfcService';
 import MachineDetailView from '@/components/MachineDetailView';
@@ -11,9 +11,13 @@ import { toast } from 'sonner';
 const MachineAccess = () => {
   const { machineId } = useParams<{ machineId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [exercise, setExercise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check for auto-connect parameter
+  const shouldAutoConnect = searchParams.get('autoConnect') === 'puck';
 
   useEffect(() => {
     const initializeMachine = () => {
@@ -121,6 +125,7 @@ const MachineAccess = () => {
         exercise={exercise}
         onBack={handleBack}
         onExerciseComplete={handleExerciseComplete}
+        autoConnect={shouldAutoConnect}
       />
     </div>
   );

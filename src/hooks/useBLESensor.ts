@@ -194,6 +194,27 @@ export const useBLESensor = () => {
     }
   }, [isSessionActive]);
 
+  const autoConnect = useCallback(async () => {
+    try {
+      const hasPermissions = await requestPermissions();
+      if (!hasPermissions) return;
+
+      await bleService.startScanning();
+      toast({
+        title: "Auto-connecting to Puck.js",
+        description: "Searching for nearby sensors...",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Failed to auto-connect:', error);
+      toast({
+        title: "Auto-connect Failed",
+        description: "Failed to automatically connect to Puck.js.",
+        variant: "destructive"
+      });
+    }
+  }, [requestPermissions, toast]);
+
   const startWorkoutSession = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -329,6 +350,7 @@ export const useBLESensor = () => {
     disconnect,
     startWorkoutSession,
     endWorkoutSession,
-    requestPermissions
+    requestPermissions,
+    autoConnect
   };
 };

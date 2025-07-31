@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat, Check } from 'lucide-react';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
+import { LiveWorkoutSession } from './LiveWorkoutSession';
 
 interface MachineDetailViewProps {
   exercise: WorkoutExercise;
   onBack: () => void;
   onExerciseComplete: (exercise: WorkoutExercise) => void;
+  autoConnect?: boolean;
 }
 
 interface SetData {
@@ -23,7 +25,8 @@ interface SetData {
 const MachineDetailView: React.FC<MachineDetailViewProps> = ({ 
   exercise, 
   onBack, 
-  onExerciseComplete 
+  onExerciseComplete,
+  autoConnect = false
 }) => {
   const [sets, setSets] = useState<SetData[]>(() => {
     // Use calculated weight if available, otherwise fallback to exercise weight or reasonable default
@@ -230,6 +233,9 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
           </p>
         </CardContent>
       </Card>
+
+      {/* BLE Sensor Integration */}
+      <LiveWorkoutSession autoConnect={autoConnect} />
 
       {allSetsCompleted && (
         <Button 
