@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,13 +32,12 @@ const WorkoutList = () => {
     { id: "8", name: "Assisted Chest Dips Machine", muscleGroup: "Chest", completed: false }
   ]);
 
-  // Load completed exercises from database
-  const loadCompletedExercises = async () => {
+  // Load completed exercises from database (memoized to prevent infinite loops)
+  const loadCompletedExercises = useCallback(async () => {
     console.log("Loading completed exercises...");
     const completedExercises = await getTodaysCompletedExercises();
     console.log("Completed exercises from DB:", completedExercises);
-    await refreshProgress(); // Also refresh the overall progress
-    console.log("Progress refreshed, todaysProgress:", todaysProgress);
+    
     setTodaysWorkouts(workouts => {
       const updatedWorkouts = workouts.map(workout => ({
         ...workout,
@@ -47,45 +46,47 @@ const WorkoutList = () => {
       console.log("Updated workouts:", updatedWorkouts);
       return updatedWorkouts;
     });
-  };
+  }, [getTodaysCompletedExercises]);
 
-  // Initial load
+  // Initial load with loading protection
   useEffect(() => {
-    loadCompletedExercises();
-  }, []);
+    let mounted = true;
+    
+    const initialize = async () => {
+      if (mounted) {
+        await loadCompletedExercises();
+        await refreshProgress();
+      }
+    };
+    
+    initialize();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [loadCompletedExercises, refreshProgress]);
 
-  // Refresh when progress updates
+  // Start workout session once when component mounts (not on every change)
   useEffect(() => {
-    console.log("todaysProgress changed:", todaysProgress);
-    loadCompletedExercises();
-  }, [todaysProgress]);
-
-  // Refresh data when returning from other pages
-  useEffect(() => {
-    console.log("Location changed:", location);
-    // Check if we're returning from a workout detail page
-    if (location.state?.fromWorkoutDetail) {
-      console.log("Refreshing from workout detail page");
-      loadCompletedExercises();
-      // Clear the state to prevent unnecessary reloads
-      window.history.replaceState({}, document.title);
-    }
-  }, [location]);
-
-  // Start workout session if not already started
-  useEffect(() => {
+    let mounted = true;
+    
     const initializeWorkout = async () => {
       console.log("Initializing workout, currentWorkoutLog:", currentWorkoutLog);
-      if (!currentWorkoutLog) {
+      if (mounted && !currentWorkoutLog) {
         console.log("No current workout log, starting new workout");
         await startWorkout("Daily Chest Workout", "Chest", todaysWorkouts.length);
-      } else {
-        console.log("Current workout log exists:", currentWorkoutLog);
       }
     };
 
-    initializeWorkout();
-  }, [currentWorkoutLog]);
+    // Only initialize if we don't have a workout log
+    if (!currentWorkoutLog) {
+      initializeWorkout();
+    }
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty dependency array - run only once
 
   const handleWorkoutClick = (workoutId: string) => {
     navigate(`/workout/${workoutId}`);
@@ -138,8 +139,7 @@ const WorkoutList = () => {
             w.id === workoutId ? { ...w, completed: true } : w
           )
         );
-        // Refresh the data to ensure consistency
-        await loadCompletedExercises();
+        // Don't call loadCompletedExercises here to prevent loops
       }
     } else {
       console.log("Trying to uncomplete workout - not implemented");
