@@ -1,19 +1,22 @@
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import Navigation from "./Navigation";
-import TapFitDashboard from "./TapFitDashboard";
-import SmartPinDashboard from "./SmartPinDashboard";
-import SubscriptionPlans from "./SubscriptionPlans";
-import ChallengesAchievements from "./ChallengesAchievements";
-import SensorWorkout from "../pages/SensorWorkout";
-import { HealthDataExport } from "./HealthDataExport";
-import WorkoutPlanDashboard from "./WorkoutPlanDashboard";
-import { AvatarBuilder } from "./AvatarBuilder";
-import NutritionDashboard from "./NutritionDashboard";
-import NFCTagWriter from "./NFCTagWriter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
 import { useAuth } from "./AuthGuard";
+import LoadingSpinner from "./LoadingSpinner";
+
+// Lazy load components for better performance
+const TapFitDashboard = lazy(() => import("./TapFitDashboard"));
+const SmartPinDashboard = lazy(() => import("./SmartPinDashboard"));
+const SubscriptionPlans = lazy(() => import("./SubscriptionPlans"));
+const ChallengesAchievements = lazy(() => import("./ChallengesAchievements"));
+const SensorWorkout = lazy(() => import("../pages/SensorWorkout"));
+const HealthDataExport = lazy(() => import("./HealthDataExport").then(module => ({ default: module.HealthDataExport })));
+const WorkoutPlanDashboard = lazy(() => import("./WorkoutPlanDashboard"));
+const AvatarBuilder = lazy(() => import("./AvatarBuilder").then(module => ({ default: module.AvatarBuilder })));
+const NutritionDashboard = lazy(() => import("./NutritionDashboard"));
+const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -99,30 +102,38 @@ const TapFitApp = () => {
   );
 
   const renderContent = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <TapFitDashboard onPageChange={setCurrentPage} />;
-      case 'smart-pins':
-        return <SmartPinDashboard />;
-      case 'workout-plan':
-        return <WorkoutPlanDashboard />;
-      case 'sensor-workout':
-        return <SensorWorkout />;
-      case 'nutrition':
-        return <NutritionDashboard />;
-      case 'social':
-        return renderSocialPage();
-      case 'challenges':
-        return renderChallengesPage();
-      case 'settings':
-        return renderSettingsPage();
-      case 'subscription':
-        return <SubscriptionPlans />;
-      case 'avatar':
-        return <AvatarBuilder onClose={() => setCurrentPage('dashboard')} />;
-      default:
-        return <TapFitDashboard />;
-    }
+    const content = (() => {
+      switch (currentPage) {
+        case 'dashboard':
+          return <TapFitDashboard onPageChange={setCurrentPage} />;
+        case 'smart-pins':
+          return <SmartPinDashboard />;
+        case 'workout-plan':
+          return <WorkoutPlanDashboard />;
+        case 'sensor-workout':
+          return <SensorWorkout />;
+        case 'nutrition':
+          return <NutritionDashboard />;
+        case 'social':
+          return renderSocialPage();
+        case 'challenges':
+          return renderChallengesPage();
+        case 'settings':
+          return renderSettingsPage();
+        case 'subscription':
+          return <SubscriptionPlans />;
+        case 'avatar':
+          return <AvatarBuilder onClose={() => setCurrentPage('dashboard')} />;
+        default:
+          return <TapFitDashboard />;
+      }
+    })();
+
+    return (
+      <Suspense fallback={<LoadingSpinner size="lg" text="Loading..." />}>
+        {content}
+      </Suspense>
+    );
   };
 
   return (

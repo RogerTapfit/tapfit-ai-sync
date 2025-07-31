@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XC
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
+import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface FoodPhotoAnalyzerProps {
   onDataChange?: () => void;
@@ -24,8 +26,6 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [editingItems, setEditingItems] = useState<FoodItem[]>([]);
   const [notes, setNotes] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -34,16 +34,94 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
     { value: 'snack', label: 'Snack', icon: '🍎' }
   ];
 
-  const handleImageCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage(e.target?.result as string);
+  const takePicture = async () => {
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        // Fallback for web - use file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              setImage(event.target?.result as string);
+              setImageFile(file);
+              setAnalysisResult(null);
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        input.click();
+        return;
+      }
+
+      const image = await CapacitorCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera
+      });
+
+      if (image.dataUrl) {
+        setImage(image.dataUrl);
+        // Convert dataUrl to File for compatibility with existing code
+        const response = await fetch(image.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
         setImageFile(file);
         setAnalysisResult(null);
-      };
-      reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error('Error taking picture:', error);
+      toast.error('Failed to access camera. Please try again.');
+    }
+  };
+
+  const selectFromGallery = async () => {
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        // Fallback for web - use file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              setImage(event.target?.result as string);
+              setImageFile(file);
+              setAnalysisResult(null);
+            };
+            reader.readAsDataURL(file);
+          }
+        };
+        input.click();
+        return;
+      }
+
+      const image = await CapacitorCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos
+      });
+
+      if (image.dataUrl) {
+        setImage(image.dataUrl);
+        // Convert dataUrl to File for compatibility with existing code
+        const response = await fetch(image.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
+        setImageFile(file);
+        setAnalysisResult(null);
+      }
+    } catch (error) {
+      console.error('Error selecting from gallery:', error);
+      toast.error('Failed to access photo library. Please try again.');
     }
   };
 
@@ -158,7 +236,7 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => cameraInputRef.current?.click()}
+                onClick={takePicture}
                 className="flex items-center gap-2"
               >
                 <Camera className="h-4 w-4" />
@@ -167,29 +245,13 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={selectFromGallery}
                 className="flex items-center gap-2"
               >
                 <Upload className="h-4 w-4" />
                 Upload Photo
               </Button>
             </div>
-            
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleImageCapture}
-              className="hidden"
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageCapture}
-              className="hidden"
-            />
 
             {image && (
               <div className="relative">

@@ -13,6 +13,19 @@ const config: CapacitorConfig = {
       ios: {
         NFCReaderUsageDescription: "This app uses NFC to identify gym machines and start workouts automatically."
       }
+    },
+    Camera: {
+      ios: {
+        NSCameraUsageDescription: "This app uses the camera to analyze food for nutrition tracking.",
+        NSPhotoLibraryUsageDescription: "This app needs access to photo library to select food images for analysis."
+      },
+      android: {
+        permissions: [
+          "android.permission.CAMERA",
+          "android.permission.READ_EXTERNAL_STORAGE",
+          "android.permission.WRITE_EXTERNAL_STORAGE"
+        ]
+      }
     }
   },
   ios: {
