@@ -14,7 +14,16 @@ const config: CapacitorConfig = {
         NFCReaderUsageDescription: "This app uses NFC to identify gym machines and start workouts automatically."
       }
     }
-  }
+  },
+  ios: {
+    scheme: "tapfit"
+  },
+  deepLinks: [
+    {
+      protocol: "tapfit",
+      hostname: "*"
+    }
+  ]
 };
 
 export default config;

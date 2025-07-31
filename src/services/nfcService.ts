@@ -5,14 +5,14 @@ let NFC: any;
 
 if (Capacitor.isNativePlatform()) {
   try {
-    // Import the plugin dynamically when on native platform
+    // Access the plugin from Capacitor Plugins registry
     NFC = (window as any).Capacitor?.Plugins?.NFC;
   } catch (error) {
     console.warn('NFC plugin not available');
   }
 }
 
-// Fallback for web/development
+// Fallback for web/development or when plugin is not available
 if (!NFC) {
   NFC = {
     isSupported: () => Promise.resolve({ isSupported: false }),
@@ -119,17 +119,21 @@ export class NFCService {
               
               console.log('NFC URL detected:', url);
               
-              // Extract machine ID from universal URL
-              if (url.includes('/machine/')) {
-                const machineId = url.split('/machine/')[1]?.split('?')[0];
-                
-                if (this.isValidMachineId(machineId)) {
-                  callback({
-                    appId: 'app.lovable.4e37f3a98b5244369842e2cc950a194e',
-                    machineId: machineId as MachineId,
-                    action: 'start_exercise'
-                  });
-                }
+              // Extract machine ID from both custom scheme and HTTP URLs
+              let machineId: string | undefined;
+              
+              if (url.includes('tapfit://machine/')) {
+                machineId = url.split('tapfit://machine/')[1]?.split('?')[0];
+              } else if (url.includes('/machine/')) {
+                machineId = url.split('/machine/')[1]?.split('?')[0];
+              }
+              
+              if (machineId && this.isValidMachineId(machineId)) {
+                callback({
+                  appId: 'app.lovable.4e37f3a98b5244369842e2cc950a194e',
+                  machineId: machineId as MachineId,
+                  action: 'start_exercise'
+                });
               }
             } catch (error) {
               console.error('Error parsing NFC URL:', error);
@@ -159,15 +163,20 @@ export class NFCService {
       throw new Error('NFC not available on this device');
     }
 
-    const universalUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${machineId}?forceHideBadge=true`;
+    // Use custom URL scheme for native app, HTTP URL for web fallback
+    const nativeUrl = `tapfit://machine/${machineId}`;
+    const webUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${machineId}?forceHideBadge=true`;
+    
+    // For native platforms, use the custom scheme
+    const targetUrl = Capacitor.isNativePlatform() ? nativeUrl : webUrl;
 
     try {
       await NFC.write([{
         type: 'url',
-        payload: universalUrl
+        payload: targetUrl
       }]);
       
-      console.log('NFC tag written successfully:', universalUrl);
+      console.log('NFC tag written successfully:', targetUrl);
     } catch (error) {
       console.error('Failed to write NFC tag:', error);
       throw error;
