@@ -11,7 +11,12 @@ const config: CapacitorConfig = {
   plugins: {
     NFC: {
       ios: {
-        NFCReaderUsageDescription: "This app uses NFC to identify gym machines and start workouts automatically."
+        NFCReaderUsageDescription: "This app uses NFC to identify gym machines and automatically connect to Puck.js sensors for workout tracking."
+      },
+      android: {
+        permissions: [
+          "android.permission.NFC"
+        ]
       }
     },
     Camera: {

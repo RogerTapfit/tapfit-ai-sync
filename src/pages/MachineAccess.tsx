@@ -1,11 +1,12 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { nfcService, type MachineId } from '@/services/nfcService';
+import { bleService } from '@/services/bleService';
 import MachineDetailView from '@/components/MachineDetailView';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Bluetooth, Nfc } from 'lucide-react';
 import { toast } from 'sonner';
 
 const MachineAccess = () => {
@@ -15,12 +16,14 @@ const MachineAccess = () => {
   const [exercise, setExercise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConnectingBLE, setIsConnectingBLE] = useState(false);
+  const [bleConnected, setBleConnected] = useState(false);
   
   // Check for auto-connect parameter
   const shouldAutoConnect = searchParams.get('autoConnect') === 'puck';
 
   useEffect(() => {
-    const initializeMachine = () => {
+    const initializeMachine = async () => {
       if (!machineId) {
         setError('No machine ID provided');
         setLoading(false);
@@ -33,28 +36,81 @@ const MachineAccess = () => {
         return;
       }
 
-      const machineDetails = nfcService.getMachineDetails(machineId as MachineId);
-      
-      // Create exercise object compatible with MachineDetailView
-      const exerciseData = {
-        machine: machineDetails.machine,
-        sets: machineDetails.defaultSets,
-        reps: machineDetails.defaultReps,
-        rest_seconds: machineDetails.restSeconds,
-        weight_guidance: 'Adjust weight based on your strength level',
-        order: 1,
-        exercise_type: machineDetails.exerciseType,
-        muscle_group: machineDetails.muscleGroup
-      };
+      try {
+        const machineDetails = nfcService.getMachineDetails(machineId as MachineId);
+        
+        // Create exercise object compatible with MachineDetailView
+        const exerciseData = {
+          machine: machineDetails.machine,
+          sets: machineDetails.defaultSets,
+          reps: machineDetails.defaultReps,
+          rest_seconds: machineDetails.restSeconds,
+          weight_guidance: 'Adjust weight based on your strength level',
+          order: 1,
+          exercise_type: machineDetails.exerciseType,
+          muscle_group: machineDetails.muscleGroup
+        };
 
-      setExercise(exerciseData);
-      setLoading(false);
-      
-      toast.success(`${machineDetails.machine} loaded via NFC!`);
+        setExercise(exerciseData);
+        
+        // Auto-initiate BLE connection for this machine
+        await initiateBLEConnection(machineId as MachineId);
+        
+        toast.success(`${machineDetails.machine} loaded via NFC!`);
+      } catch (error) {
+        console.error('Error initializing machine:', error);
+        setError('Failed to initialize machine');
+      } finally {
+        setLoading(false);
+      }
     };
 
     initializeMachine();
   }, [machineId]);
+
+  // Initialize BLE connection for machine-specific Puck.js
+  const initiateBLEConnection = async (machineId: MachineId) => {
+    setIsConnectingBLE(true);
+    
+    try {
+      console.log(`Initiating BLE connection for machine: ${machineId}`);
+      
+      // Request BLE permissions first
+      const hasPermissions = await bleService.requestPermissions();
+      if (!hasPermissions) {
+        toast.error("Please enable Bluetooth to connect to the Puck.js sensor");
+        return;
+      }
+
+      // Connect to machine-specific device
+      await bleService.connectToMachineDevice(machineId);
+      
+      toast.info(`Looking for ${machineId}-puck device...`);
+
+      // Listen for connection status changes
+      const unsubscribe = bleService.onStatusChange((status) => {
+        if (status.isConnected) {
+          setBleConnected(true);
+          toast.success(`Puck.js Connected: ${status.deviceName}`);
+          unsubscribe();
+        }
+      });
+
+      // Stop connecting after 30 seconds if no device found
+      setTimeout(() => {
+        if (!bleConnected) {
+          setIsConnectingBLE(false);
+          toast.warning("Puck.js not found - using manual tracking");
+        }
+      }, 30000);
+
+    } catch (error) {
+      console.error("Failed to connect to BLE device:", error);
+      toast.error("Could not connect to Puck.js sensor");
+    } finally {
+      setIsConnectingBLE(false);
+    }
+  };
 
   const handleBack = () => {
     navigate('/');
@@ -111,6 +167,33 @@ const MachineAccess = () => {
     return null;
   }
 
+  // Connection status component
+  const ConnectionStatusCard = () => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Nfc className="h-5 w-5 text-green-500" />
+            <span className="text-sm text-green-600 font-medium">NFC Connected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Bluetooth className={`h-5 w-5 ${bleConnected ? 'text-green-500' : isConnectingBLE ? 'text-yellow-500' : 'text-gray-400'}`} />
+            <span className={`text-sm font-medium ${bleConnected ? 'text-green-600' : isConnectingBLE ? 'text-yellow-600' : 'text-gray-500'}`}>
+              {bleConnected ? 'Puck.js Connected' : isConnectingBLE ? 'Connecting...' : 'Puck.js Disconnected'}
+            </span>
+          </div>
+        </div>
+        {!bleConnected && !isConnectingBLE && (
+          <Alert className="mt-3">
+            <AlertDescription className="text-xs">
+              Manual rep tracking active. Ensure your Puck.js device is named "{machineId}-puck" for auto-connection.
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-4">
@@ -121,11 +204,13 @@ const MachineAccess = () => {
         </Alert>
       </div>
       
+      <ConnectionStatusCard />
+      
       <MachineDetailView
         exercise={exercise}
         onBack={handleBack}
         onExerciseComplete={handleExerciseComplete}
-        autoConnect={shouldAutoConnect}
+        autoConnect={true}
       />
     </div>
   );

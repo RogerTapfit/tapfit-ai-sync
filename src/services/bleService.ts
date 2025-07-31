@@ -31,6 +31,9 @@ class BLEService {
   private readonly PUCK_CHARACTERISTIC_UUID = 'FFE1'; // Nordic UART TX
   private readonly PUCK_DEVICE_NAME = 'Puck.js';
   
+  // Machine-specific device tracking
+  private targetMachineId: string | null = null;
+  
   private status: BLEConnectionStatus = {
     isConnected: false,
     isScanning: false
@@ -66,7 +69,7 @@ class BLEService {
     }
   }
 
-  async startScanning(): Promise<void> {
+  async startScanning(targetMachineId?: string): Promise<void> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -76,9 +79,11 @@ class BLEService {
       return;
     }
 
+    this.targetMachineId = targetMachineId || null;
+
     try {
       this.updateStatus({ isScanning: true });
-      console.log('Starting BLE scan for Puck.js devices...');
+      console.log('Starting BLE scan for Puck.js devices...', targetMachineId ? `targeting: ${targetMachineId}` : '');
 
       await BleClient.requestLEScan(
         {
@@ -128,9 +133,27 @@ class BLEService {
       rssi: result.rssi
     });
 
-    // Check if this is a Puck.js device
-    if (device.name?.includes(this.PUCK_DEVICE_NAME)) {
-      console.log('Found Puck.js device, attempting to connect...');
+    // Enhanced device matching logic
+    let shouldConnect = false;
+    
+    if (this.targetMachineId) {
+      // Look for machine-specific Puck.js device
+      const expectedDeviceName = `${this.targetMachineId}-puck`;
+      if (device.name?.toLowerCase().includes(expectedDeviceName.toLowerCase()) ||
+          device.name?.toLowerCase().includes(this.targetMachineId.toLowerCase())) {
+        console.log(`Machine-specific Puck.js device found for ${this.targetMachineId}:`, device);
+        shouldConnect = true;
+      }
+    } else {
+      // General Puck.js device detection
+      if (device.name?.includes(this.PUCK_DEVICE_NAME)) {
+        console.log('General Puck.js device found:', device);
+        shouldConnect = true;
+      }
+    }
+    
+    if (shouldConnect) {
+      console.log('Attempting to connect to device...');
       await this.connectToDevice(device);
     }
   }
@@ -353,16 +376,22 @@ class BLEService {
     return this.connectedDevice;
   }
 
-  // Future-proofing: Support for other sensor types
-  async connectToSensor(sensorType: 'puckjs' | 'heartRate' | 'motion', deviceId?: string): Promise<void> {
+  // Enhanced sensor connection with machine-specific targeting
+  async connectToSensor(sensorType: 'puckjs' | 'heartRate' | 'motion', deviceId?: string, machineId?: string): Promise<void> {
     switch (sensorType) {
       case 'puckjs':
-        await this.startScanning();
+        await this.startScanning(machineId);
         break;
       // Add other sensor types here
       default:
         throw new Error(`Unsupported sensor type: ${sensorType}`);
     }
+  }
+
+  // Method to connect to machine-specific Puck.js device
+  async connectToMachineDevice(machineId: string): Promise<void> {
+    console.log(`Connecting to Puck.js device for machine: ${machineId}`);
+    await this.connectToSensor('puckjs', undefined, machineId);
   }
 }
 
