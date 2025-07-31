@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +17,14 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = () => {
+    // Check if there's a referrer in location state, otherwise go to dashboard
+    const from = location.state?.from?.pathname || '/';
+    navigate(from);
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,10 +136,22 @@ const Auth = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Reset Password</CardTitle>
-            <CardDescription>
-              Enter your email to receive reset instructions
-            </CardDescription>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleBack}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>
+                  Enter your email to receive reset instructions
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePasswordReset} className="space-y-4">
@@ -168,10 +189,22 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Welcome to TapFit</CardTitle>
-          <CardDescription>
-            Sign in to your account or create a new one
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleBack}
+              className="h-8 w-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <CardTitle>Welcome to TapFit</CardTitle>
+              <CardDescription>
+                Sign in to your account or create a new one
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

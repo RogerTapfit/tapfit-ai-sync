@@ -2,16 +2,39 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LiveWorkoutSession } from '@/components/LiveWorkoutSession';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Smartphone, Bluetooth, Activity, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Smartphone, Bluetooth, Activity, BarChart3, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function SensorWorkout() {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleBack}
+          className="h-10 w-10"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Smart Sensor Workouts</h1>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-primary">
-          Smart Sensor Workouts
-        </h1>
+        <h2 className="text-3xl font-bold text-primary">
+          Real-time BLE Tracking
+        </h2>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Connect your Puck.js BLE sensor for real-time rep counting and motion tracking
         </p>

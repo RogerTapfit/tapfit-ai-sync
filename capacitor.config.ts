@@ -16,7 +16,12 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
-    scheme: "tapfit"
+    scheme: "tapfit",
+    preferredContentMode: "mobile",
+    orientation: "portrait"
+  },
+  android: {
+    orientation: "portrait"
   },
   deepLinks: [
     {
