@@ -105,7 +105,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     // No coins for just starting - coins are earned per rep completed
     
     // Navigate to workout list
-    window.location.href = '/workout-list';
+    navigate('/workout-list');
   };
 
 
