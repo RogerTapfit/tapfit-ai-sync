@@ -1,71 +1,308 @@
-// Puck.js Firmware for TapFit Gym Machine Integration
+// Enhanced TapFit Puck.js Firmware v2.0
+// Advanced BLE integration with machine-specific calibration
 // Upload this code to your Puck.js devices using the Espruino Web IDE
 
-// Machine Configuration - Customize per machine
+// Machine Configuration - Customize per machine deployment
 const MACHINE_CONFIG = {
-  // Change this for each machine: 'chest-press', 'lat-pulldown', 'leg-press', 'shoulder-press'
-  machineId: 'chest-press',
+  // Machine identifier - change for each machine installation
+  machineId: 'chest-press', // Options: 'chest-press', 'lat-pulldown', 'leg-press', 'shoulder-press', 'treadmill', 'bike'
   
-  // Motion detection sensitivity (0.1 = very sensitive, 2.0 = less sensitive)
-  motionThreshold: 0.8,
+  // Detection sensitivity and timing
+  motionThreshold: 0.8,        // Base threshold for motion detection
+  repCooldown: 800,           // Minimum time between reps (ms)
+  adaptiveLearning: true,     // Enable machine learning for rep detection
   
-  // Minimum time between reps in milliseconds
-  repCooldown: 1000,
-  
-  // Calibration settings per machine type
+  // Machine-specific calibration profiles
   calibration: {
-    'chest-press': { threshold: 0.8, axis: 'y', direction: 'both' },
-    'lat-pulldown': { threshold: 1.0, axis: 'y', direction: 'down' },
-    'leg-press': { threshold: 1.2, axis: 'z', direction: 'forward' },
-    'shoulder-press': { threshold: 0.9, axis: 'y', direction: 'up' }
+    'chest-press': { 
+      threshold: 0.8, axis: 'y', direction: 'both', 
+      minDuration: 400, maxDuration: 3000, pattern: 'push-pull' 
+    },
+    'lat-pulldown': { 
+      threshold: 1.0, axis: 'y', direction: 'down', 
+      minDuration: 500, maxDuration: 4000, pattern: 'pull-return' 
+    },
+    'leg-press': { 
+      threshold: 1.2, axis: 'z', direction: 'forward', 
+      minDuration: 600, maxDuration: 5000, pattern: 'press-release' 
+    },
+    'shoulder-press': { 
+      threshold: 0.9, axis: 'y', direction: 'up', 
+      minDuration: 400, maxDuration: 3500, pattern: 'press-lower' 
+    },
+    'treadmill': { 
+      threshold: 0.6, axis: 'all', direction: 'rhythmic', 
+      minDuration: 200, maxDuration: 1000, pattern: 'step-cycle' 
+    },
+    'bike': { 
+      threshold: 0.5, axis: 'y', direction: 'circular', 
+      minDuration: 300, maxDuration: 2000, pattern: 'pedal-cycle' 
+    }
+  },
+
+  // BLE Configuration
+  ble: {
+    deviceName: `TapFit-${this.machineId}`,
+    serviceUUID: '6E400001-B5A3-F393-E0A9-E50E24DCCA9E', // Nordic UART Service
+    txCharUUID: '6E400002-B5A3-F393-E0A9-E50E24DCCA9E',  // TX Characteristic
+    rxCharUUID: '6E400003-B5A3-F393-E0A9-E50E24DCCA9E',  // RX Characteristic
+    advertisingInterval: 500
   }
 };
 
-// Global variables
+// Enhanced Global State Management
 let repCount = 0;
 let lastRepTime = 0;
-let isCalibrating = false;
-let baselineAccel = { x: 0, y: 0, z: 0 };
 let sessionStartTime = 0;
+let isCalibrating = false;
+let isConnected = false;
+let baselineAccel = { x: 0, y: 0, z: 0 };
 let motionHistory = [];
-const MOTION_BUFFER_SIZE = 10;
+let repPatterns = []; // For adaptive learning
+let connectionAttempts = 0;
+let nfcTriggered = false;
+let lastHeartbeat = 0;
 
-// Device naming for machine-specific identification
-const deviceName = `${MACHINE_CONFIG.machineId}-puck`;
+// Enhanced buffer sizes and timing
+const MOTION_BUFFER_SIZE = 20;
+const PATTERN_BUFFER_SIZE = 50;
+const MAX_CONNECTION_ATTEMPTS = 5;
 
-// Set device name for BLE advertising
-NRF.setAdvertising({
-  0x1809: [repCount], // Health Thermometer service with rep count
-  0x180F: [E.getBattery()], // Battery service
-}, {
-  name: deviceName,
-  interval: 600, // Advertise every 600ms
-  connectable: true
-});
+// Device identification
+const deviceName = `TapFit-${MACHINE_CONFIG.machineId}`;
+const firmwareVersion = '2.0.1';
 
-// Initialize the device
+// Initialize NFC for machine identification
+try {
+  NRF.nfcURL(`https://tapfit-ai-sync.lovable.app/machine/${MACHINE_CONFIG.machineId}`);
+  console.log("NFC URL configured for machine:", MACHINE_CONFIG.machineId);
+} catch(e) {
+  console.log("NFC setup failed:", e);
+}
+
+// Enhanced BLE Services Setup
+function setupBLEServices() {
+  NRF.setServices({
+    [MACHINE_CONFIG.ble.serviceUUID]: {
+      [MACHINE_CONFIG.ble.txCharUUID]: {
+        value: [0],
+        maxLen: 20,
+        writable: true,
+        onWrite: function(evt) {
+          handleIncomingCommand(evt.data);
+        }
+      },
+      [MACHINE_CONFIG.ble.rxCharUUID]: {
+        value: [0],
+        maxLen: 20,
+        readable: true,
+        notify: true
+      }
+    },
+    // Custom TapFit service for enhanced data
+    0x2A19: { // Battery Service
+      0x2A19: {
+        value: [E.getBattery()],
+        readable: true,
+        notify: true
+      }
+    }
+  }, { advertise: [MACHINE_CONFIG.ble.serviceUUID, 0x2A19] });
+}
+
+// Enhanced advertising with machine identification
+function updateAdvertising() {
+  NRF.setAdvertising({
+    0x1809: [repCount], // Health Thermometer with rep count
+    0x180F: [E.getBattery()], // Battery service
+    0x2A6E: Array.from(MACHINE_CONFIG.machineId.split('').map(c => c.charCodeAt(0))).slice(0,8) // Custom machine ID
+  }, {
+    name: deviceName,
+    interval: MACHINE_CONFIG.ble.advertisingInterval,
+    connectable: true,
+    discoverable: true
+  });
+}
+
+// Enhanced initialization with full ecosystem integration
 function init() {
-  console.log(`TapFit Puck.js initialized for ${MACHINE_CONFIG.machineId}`);
+  console.log(`Enhanced TapFit Puck.js v${firmwareVersion} initializing for ${MACHINE_CONFIG.machineId}`);
+  sessionStartTime = Date.now();
+  lastHeartbeat = Date.now();
   
-  // LED feedback - quick double blink on startup
-  LED1.write(1);
-  setTimeout(() => LED1.write(0), 100);
-  setTimeout(() => LED1.write(1), 200);
-  setTimeout(() => LED1.write(0), 300);
+  // Startup LED sequence - firmware identification
+  startupLEDSequence();
   
-  // Start accelerometer
+  // Initialize BLE services first
+  setupBLEServices();
+  
+  // Start accelerometer with enhanced settings
   Puck.accelOn(12.5); // 12.5Hz sampling rate
+  console.log("✅ Accelerometer initialized");
   
-  // Calibrate baseline
+  // Enhanced calibration with machine learning
   calibrateBaseline();
   
-  // Set up motion detection
+  // Set up all monitoring systems
   setupMotionDetection();
-  
-  // Set up button handlers
   setupButtonHandlers();
+  setupNFCHandlers();
+  setupConnectionMonitoring();
   
-  sessionStartTime = Date.now();
+  // Initial advertising
+  updateAdvertising();
+  
+  console.log(`🚀 TapFit ${MACHINE_CONFIG.machineId} ready for connection!`);
+}
+
+// Enhanced startup LED sequence for firmware identification
+function startupLEDSequence() {
+  // V2.0 identification sequence: R-G-B-R-G-B
+  const sequence = [
+    { led: LED1, duration: 150 }, // Red
+    { led: LED2, duration: 150 }, // Green  
+    { led: LED3, duration: 150 }, // Blue
+    { led: LED1, duration: 150 }, // Red
+    { led: LED2, duration: 150 }, // Green
+    { led: LED3, duration: 150 }  // Blue
+  ];
+  
+  sequence.forEach((step, i) => {
+    setTimeout(() => {
+      step.led.write(1);
+      setTimeout(() => step.led.write(0), step.duration);
+    }, i * 200);
+  });
+}
+
+// Handle incoming BLE commands
+function handleIncomingCommand(data) {
+  try {
+    const command = JSON.parse(String.fromCharCode.apply(null, data));
+    console.log("Received command:", command);
+    
+    switch(command.type) {
+      case 'calibrate':
+        calibrateBaseline();
+        break;
+      case 'reset':
+        repCount = 0;
+        sendRepData();
+        break;
+      case 'status':
+        sendStatusData();
+        break;
+      case 'configure':
+        if (command.config) {
+          updateConfiguration(command.config);
+        }
+        break;
+      default:
+        console.log("Unknown command:", command.type);
+    }
+  } catch (e) {
+    console.log("Command parse error:", e);
+  }
+}
+
+// Send comprehensive status data
+function sendStatusData() {
+  const statusData = {
+    type: 'status',
+    machineId: MACHINE_CONFIG.machineId,
+    firmwareVersion: firmwareVersion,
+    repCount: repCount,
+    battery: E.getBattery(),
+    sessionTime: Date.now() - sessionStartTime,
+    isCalibrated: !isCalibrating,
+    motionThreshold: MACHINE_CONFIG.motionThreshold,
+    lastActivity: lastRepTime,
+    connectionTime: isConnected ? Date.now() - lastHeartbeat : 0,
+    timestamp: Date.now()
+  };
+  
+  transmitData(statusData);
+}
+
+// Enhanced data transmission with multiple protocols
+function transmitData(data) {
+  const jsonString = JSON.stringify(data);
+  
+  // Primary: UART transmission
+  try {
+    Bluetooth.println(jsonString);
+  } catch (e) {
+    console.log("UART transmission failed:", e);
+  }
+  
+  // Secondary: Service notification
+  try {
+    const buffer = new Uint8Array(jsonString.split('').map(c => c.charCodeAt(0)).slice(0, 20));
+    NRF.updateServices({
+      [MACHINE_CONFIG.ble.serviceUUID]: {
+        [MACHINE_CONFIG.ble.rxCharUUID]: {
+          value: buffer,
+          notify: true
+        }
+      }
+    });
+  } catch (e) {
+    console.log("Service notification failed:", e);
+  }
+}
+
+// NFC event handlers for machine coordination
+function setupNFCHandlers() {
+  NRF.on('NFCTag', function() {
+    nfcTriggered = true;
+    console.log("📱 NFC triggered - TapFit app coordination active");
+    
+    // NFC tap feedback - specific pattern
+    LED1.write(1); LED2.write(1); LED3.write(1);
+    setTimeout(() => {
+      LED1.write(0); LED2.write(0); LED3.write(0);
+    }, 300);
+    
+    // Enhanced advertising after NFC tap
+    NRF.setAdvertising({
+      0x1809: [repCount],
+      0x180F: [E.getBattery()],
+      0x2A6E: Array.from(MACHINE_CONFIG.machineId.split('').map(c => c.charCodeAt(0))).slice(0,8),
+      0x1802: [0x01] // Immediate Alert to prioritize this device
+    }, {
+      name: deviceName,
+      interval: 100, // Faster advertising after NFC
+      connectable: true,
+      discoverable: true
+    });
+    
+    // Reset to normal advertising after 30 seconds
+    setTimeout(() => {
+      if (!isConnected) {
+        updateAdvertising();
+      }
+    }, 30000);
+  });
+}
+
+// Connection monitoring and recovery
+function setupConnectionMonitoring() {
+  setInterval(() => {
+    if (!isConnected && nfcTriggered) {
+      connectionAttempts++;
+      if (connectionAttempts < MAX_CONNECTION_ATTEMPTS) {
+        // Pulse LED to indicate waiting for connection
+        LED3.write(1);
+        setTimeout(() => LED3.write(0), 100);
+      }
+    }
+    
+    // Update battery in advertising every minute
+    if (Date.now() - lastHeartbeat > 60000) {
+      updateAdvertising();
+      lastHeartbeat = Date.now();
+    }
+  }, 5000);
 }
 
 // Calibrate baseline accelerometer values
@@ -153,30 +390,165 @@ function setupMotionDetection() {
   }, 80); // Check motion every 80ms (12.5Hz)
 }
 
-// Detect repetition based on motion patterns
+// Enhanced rep detection with adaptive learning
 function detectRep(motionMagnitude, accel) {
   const config = MACHINE_CONFIG.calibration[MACHINE_CONFIG.machineId];
   const now = Date.now();
   
-  // Check if enough time has passed since last rep
+  // Check cooldown period
   if (now - lastRepTime < MACHINE_CONFIG.repCooldown) {
     return;
   }
   
-  // Check if motion exceeds threshold
+  // Enhanced pattern detection based on machine type
   if (motionMagnitude > config.threshold) {
+    const patternDetected = analyzeMotionPattern(config);
     
-    // Look for motion pattern completion (peak and return to baseline)
-    if (motionHistory.length >= 5) {
-      const recent = motionHistory.slice(-5);
-      const hasPeak = recent.some(val => val > config.threshold);
-      const hasReturn = recent.slice(-2).every(val => val < config.threshold * 0.3);
-      
-      if (hasPeak && hasReturn) {
-        registerRep();
+    if (patternDetected) {
+      // Store pattern for adaptive learning
+      if (MACHINE_CONFIG.adaptiveLearning) {
+        storeRepPattern(motionMagnitude, now - lastRepTime);
       }
+      registerRep();
     }
   }
+}
+
+// Analyze motion patterns based on machine type
+function analyzeMotionPattern(config) {
+  if (motionHistory.length < 8) return false;
+  
+  const recent = motionHistory.slice(-8);
+  const peak = Math.max(...recent);
+  const valley = Math.min(...recent);
+  const range = peak - valley;
+  
+  // Machine-specific pattern analysis
+  switch (config.pattern) {
+    case 'push-pull':
+      return analyzePushPullPattern(recent, config.threshold);
+    case 'pull-return':
+      return analyzePullReturnPattern(recent, config.threshold);
+    case 'press-release':
+      return analyzePressReleasePattern(recent, config.threshold);
+    case 'press-lower':
+      return analyzePressLowerPattern(recent, config.threshold);
+    case 'step-cycle':
+      return analyzeStepCyclePattern(recent, config.threshold);
+    case 'pedal-cycle':
+      return analyzePedalCyclePattern(recent, config.threshold);
+    default:
+      return analyzeGenericPattern(recent, config.threshold);
+  }
+}
+
+// Pattern analysis functions for different machine types
+function analyzePushPullPattern(data, threshold) {
+  const hasUpward = data.slice(0, 4).some(val => val > threshold);
+  const hasDownward = data.slice(4, 8).some(val => val < threshold * 0.3);
+  return hasUpward && hasDownward;
+}
+
+function analyzePullReturnPattern(data, threshold) {
+  const hasPull = data.slice(0, 3).some(val => val > threshold);
+  const hasReturn = data.slice(-3).every(val => val < threshold * 0.4);
+  return hasPull && hasReturn;
+}
+
+function analyzePressReleasePattern(data, threshold) {
+  const hasPress = data.slice(2, 6).some(val => val > threshold);
+  const hasRelease = data.slice(-2).every(val => val < threshold * 0.2);
+  return hasPress && hasRelease;
+}
+
+function analyzePressLowerPattern(data, threshold) {
+  const peak = Math.max(...data.slice(0, 5));
+  const valley = Math.min(...data.slice(-3));
+  return peak > threshold && valley < threshold * 0.3;
+}
+
+function analyzeStepCyclePattern(data, threshold) {
+  const peaks = data.filter(val => val > threshold * 0.8).length;
+  return peaks >= 2 && peaks <= 4; // Multiple steps in cycle
+}
+
+function analyzePedalCyclePattern(data, threshold) {
+  const oscillations = countOscillations(data, threshold * 0.6);
+  return oscillations >= 1 && oscillations <= 3; // Smooth pedaling motion
+}
+
+function analyzeGenericPattern(data, threshold) {
+  const peak = Math.max(...data);
+  const valley = Math.min(...data.slice(-3));
+  return peak > threshold && valley < threshold * 0.3;
+}
+
+// Helper function to count oscillations
+function countOscillations(data, threshold) {
+  let oscillations = 0;
+  let wasAbove = false;
+  
+  for (let i = 0; i < data.length; i++) {
+    const isAbove = data[i] > threshold;
+    if (isAbove && !wasAbove) oscillations++;
+    wasAbove = isAbove;
+  }
+  return oscillations;
+}
+
+// Store rep patterns for adaptive learning
+function storeRepPattern(magnitude, duration) {
+  const pattern = {
+    magnitude: magnitude,
+    duration: duration,
+    timestamp: Date.now(),
+    machineId: MACHINE_CONFIG.machineId
+  };
+  
+  repPatterns.push(pattern);
+  if (repPatterns.length > PATTERN_BUFFER_SIZE) {
+    repPatterns.shift();
+  }
+  
+  // Adaptive threshold adjustment every 10 reps
+  if (repCount % 10 === 0 && repPatterns.length >= 10) {
+    adaptiveThresholdAdjustment();
+  }
+}
+
+// Adaptive threshold adjustment based on learned patterns
+function adaptiveThresholdAdjustment() {
+  const recentPatterns = repPatterns.slice(-20);
+  const avgMagnitude = recentPatterns.reduce((sum, p) => sum + p.magnitude, 0) / recentPatterns.length;
+  const avgDuration = recentPatterns.reduce((sum, p) => sum + p.duration, 0) / recentPatterns.length;
+  
+  // Adjust threshold based on consistency
+  const config = MACHINE_CONFIG.calibration[MACHINE_CONFIG.machineId];
+  const variance = recentPatterns.reduce((sum, p) => sum + Math.pow(p.magnitude - avgMagnitude, 2), 0) / recentPatterns.length;
+  
+  if (variance < 0.1) { // Low variance = consistent reps
+    config.threshold = Math.max(0.3, config.threshold * 0.95); // Slightly more sensitive
+  } else if (variance > 0.5) { // High variance = inconsistent
+    config.threshold = Math.min(2.0, config.threshold * 1.05); // Slightly less sensitive
+  }
+  
+  console.log(`Adaptive learning: threshold adjusted to ${config.threshold.toFixed(2)}`);
+}
+
+// Dynamic configuration updates
+function updateConfiguration(newConfig) {
+  if (newConfig.motionThreshold) {
+    MACHINE_CONFIG.motionThreshold = newConfig.motionThreshold;
+  }
+  if (newConfig.repCooldown) {
+    MACHINE_CONFIG.repCooldown = newConfig.repCooldown;
+  }
+  if (newConfig.calibration && newConfig.calibration[MACHINE_CONFIG.machineId]) {
+    Object.assign(MACHINE_CONFIG.calibration[MACHINE_CONFIG.machineId], newConfig.calibration[MACHINE_CONFIG.machineId]);
+  }
+  
+  console.log("Configuration updated:", newConfig);
+  sendStatusData();
 }
 
 // Register a new repetition
@@ -288,33 +660,70 @@ function setupButtonHandlers() {
   }, BTN, { edge: "falling", repeat: true });
 }
 
-// Handle BLE connection events
+// Enhanced BLE connection handling
 NRF.on('connect', function(addr) {
-  console.log("Connected to", addr);
-  LED3.write(1); // Blue LED on when connected
+  isConnected = true;
+  connectionAttempts = 0;
+  console.log(`✅ Connected to TapFit app: ${addr}`);
   
-  // Send initial status
-  const statusData = {
-    type: 'status',
-    machineId: MACHINE_CONFIG.machineId,
-    repCount: repCount,
-    battery: E.getBattery(),
-    sessionTime: Date.now() - sessionStartTime,
-    timestamp: Date.now()
-  };
+  // Connection success LED pattern - blue solid
+  LED3.write(1);
   
+  // Send comprehensive initial status
   setTimeout(() => {
-    try {
-      Bluetooth.println(JSON.stringify(statusData));
-    } catch (e) {
-      console.log("Status send failed:", e);
+    sendStatusData();
+    
+    // Send device capabilities
+    const capabilitiesData = {
+      type: 'capabilities',
+      machineId: MACHINE_CONFIG.machineId,
+      firmwareVersion: firmwareVersion,
+      features: {
+        adaptiveLearning: MACHINE_CONFIG.adaptiveLearning,
+        nfcEnabled: true,
+        batteryMonitoring: true,
+        motionPatterns: Object.keys(MACHINE_CONFIG.calibration),
+        maxRepCount: 9999
+      },
+      calibration: MACHINE_CONFIG.calibration[MACHINE_CONFIG.machineId],
+      timestamp: Date.now()
+    };
+    
+    transmitData(capabilitiesData);
+  }, 500);
+  
+  // Send heartbeat every 30 seconds while connected
+  const heartbeatInterval = setInterval(() => {
+    if (isConnected) {
+      const heartbeat = {
+        type: 'heartbeat',
+        machineId: MACHINE_CONFIG.machineId,
+        repCount: repCount,
+        battery: E.getBattery(),
+        uptime: Date.now() - sessionStartTime,
+        timestamp: Date.now()
+      };
+      transmitData(heartbeat);
+    } else {
+      clearInterval(heartbeatInterval);
     }
-  }, 1000);
+  }, 30000);
 });
 
 NRF.on('disconnect', function() {
-  console.log("Disconnected");
-  LED3.write(0); // Blue LED off when disconnected
+  isConnected = false;
+  console.log("❌ Disconnected from TapFit app");
+  
+  // Disconnection LED feedback - blue off
+  LED3.write(0);
+  
+  // Resume advertising for reconnection
+  setTimeout(() => {
+    if (!isConnected) {
+      updateAdvertising();
+      console.log("📡 Resuming advertising for reconnection...");
+    }
+  }, 2000);
 });
 
 // Battery monitoring
