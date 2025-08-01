@@ -1,29 +1,29 @@
-// Enhanced TapFit Puck.js Firmware v3.0
-// Modular, efficient BLE integration with robust motion detection
+// Enhanced TapFit Puck.js Firmware v4.0
+// Clean, Espruino-compatible version with robust JSON-based BLE integration
 // Upload this code to your Puck.js devices using the Espruino Web IDE
 
 // ============== CONFIGURATION ==============
-const CONFIG = {
-  machineId: 'chest-press', // Change for each machine: chest-press, lat-pulldown, leg-press, etc.
+var CONFIG = {
+  machineId: "chest-press",
   motionThreshold: 0.8,
   repCooldown: 500,
-  sampleRate: 12.5, // Hz
-  deviceName: 'TapFit-Puck',
-  firmwareVersion: '3.0'
+  sampleRate: 12.5,
+  deviceName: "TapFit-Puck",
+  firmwareVersion: "4.0"
 };
 
 // Machine profiles for optimized detection
-const MACHINE_PROFILES = {
-  'chest-press': { threshold: 0.8, axis: 'y', pattern: 'push-pull', cooldown: 600 },
-  'lat-pulldown': { threshold: 1.0, axis: 'y', pattern: 'pull-return', cooldown: 700 },
-  'leg-press': { threshold: 1.2, axis: 'z', pattern: 'press-release', cooldown: 800 },
-  'shoulder-press': { threshold: 0.9, axis: 'y', pattern: 'press-lower', cooldown: 500 },
-  'treadmill': { threshold: 0.6, axis: 'all', pattern: 'step-cycle', cooldown: 300 },
-  'bike': { threshold: 0.5, axis: 'y', pattern: 'pedal-cycle', cooldown: 400 }
+var MACHINE_PROFILES = {
+  "chest-press": { threshold: 0.8, axis: "y", pattern: "push-pull", cooldown: 600 },
+  "lat-pulldown": { threshold: 1.0, axis: "y", pattern: "pull-return", cooldown: 700 },
+  "leg-press": { threshold: 1.2, axis: "z", pattern: "press-release", cooldown: 800 },
+  "shoulder-press": { threshold: 0.9, axis: "y", pattern: "press-lower", cooldown: 500 },
+  "treadmill": { threshold: 0.6, axis: "all", pattern: "step-cycle", cooldown: 300 },
+  "bike": { threshold: 0.5, axis: "y", pattern: "pedal-cycle", cooldown: 400 }
 };
 
 // ============== STATE MANAGEMENT ==============
-let state = {
+var state = {
   repCount: 0,
   sessionStartTime: 0,
   lastRepTime: 0,
@@ -37,7 +37,7 @@ let state = {
 
 // ============== INITIALIZATION ==============
 function init() {
-  console.log(`TapFit v${CONFIG.firmwareVersion} starting for ${CONFIG.machineId}`);
+  console.log("TapFit v" + CONFIG.firmwareVersion + " starting for " + CONFIG.machineId);
   
   state.sessionStartTime = Date.now();
   state.batteryLevel = E.getBattery();
@@ -55,38 +55,42 @@ function init() {
   calibrateBaseline();
   startMonitoring();
   
-  console.log("✅ TapFit ready for connection!");
+  console.log("TapFit ready for connection!");
 }
 
 // ============== BLE SYSTEM ==============
 function setupBLE() {
   // Configure Nordic UART service
-  NRF.setServices({
-    '6E400001-B5A3-F393-E0A9-E50E24DCCA9E': {
-      '6E400002-B5A3-F393-E0A9-E50E24DCCA9E': {
-        value: [0],
-        maxLen: 20,
-        writable: true,
-        onWrite: handleBLECommand
-      },
-      '6E400003-B5A3-F393-E0A9-E50E24DCCA9E': {
-        value: [0],
-        maxLen: 20,
-        readable: true,
-        notify: true
-      }
+  var serviceConfig = {};
+  serviceConfig["6E400001-B5A3-F393-E0A9-E50E24DCCA9E"] = {
+    "6E400002-B5A3-F393-E0A9-E50E24DCCA9E": {
+      value: [0],
+      maxLen: 20,
+      writable: true,
+      onWrite: handleBLECommand
+    },
+    "6E400003-B5A3-F393-E0A9-E50E24DCCA9E": {
+      value: [0],
+      maxLen: 20,
+      readable: true,
+      notify: true
     }
-  }, { advertise: ['6E400001-B5A3-F393-E0A9-E50E24DCCA9E'] });
+  };
+  
+  NRF.setServices(serviceConfig, { 
+    advertise: ["6E400001-B5A3-F393-E0A9-E50E24DCCA9E"] 
+  });
   
   updateAdvertising();
 }
 
 function updateAdvertising() {
-  NRF.setAdvertising({
-    0x1809: [state.repCount & 0xFF], // Rep count
-    0x180F: [state.batteryLevel], // Battery level
-  }, {
-    name: `${CONFIG.deviceName}-${CONFIG.machineId}`,
+  var advertising = {};
+  advertising[0x1809] = [state.repCount & 0xFF];
+  advertising[0x180F] = [state.batteryLevel];
+  
+  NRF.setAdvertising(advertising, {
+    name: CONFIG.deviceName + "-" + CONFIG.machineId,
     interval: state.nfcTriggered ? 100 : 500,
     connectable: true,
     discoverable: true
@@ -95,77 +99,86 @@ function updateAdvertising() {
 
 function handleBLECommand(evt) {
   try {
-    const cmd = JSON.parse(String.fromCharCode.apply(null, evt.data));
-    console.log("BLE command:", cmd.type);
+    var cmdStr = "";
+    for (var i = 0; i < evt.data.length; i++) {
+      cmdStr += String.fromCharCode(evt.data[i]);
+    }
     
-    switch(cmd.type) {
-      case 'reset':
-        resetSession();
-        break;
-      case 'calibrate':
-        calibrateBaseline();
-        break;
-      case 'status':
-        sendStatus();
-        break;
+    var cmd = JSON.parse(cmdStr);
+    console.log("BLE command: " + cmd.type);
+    
+    if (cmd.type === "reset") {
+      resetSession();
+    } else if (cmd.type === "calibrate") {
+      calibrateBaseline();
+    } else if (cmd.type === "status") {
+      sendStatus();
+    } else if (cmd.type === "configure" && cmd.machineId) {
+      CONFIG.machineId = cmd.machineId;
+      console.log("Machine configured: " + CONFIG.machineId);
+      sendStatus();
     }
   } catch(e) {
-    console.log("Command error:", e);
+    console.log("Command error: " + e);
   }
 }
 
 function transmitData(data) {
-  const json = JSON.stringify(data);
+  var json = JSON.stringify(data);
   
   // Send via UART
   try {
     Bluetooth.println(json);
   } catch(e) {
-    console.log("UART failed:", e);
+    console.log("UART failed: " + e);
   }
   
   // Update service characteristic
   try {
-    const bytes = json.split('').map(c => c.charCodeAt(0)).slice(0, 20);
-    NRF.updateServices({
-      '6E400001-B5A3-F393-E0A9-E50E24DCCA9E': {
-        '6E400003-B5A3-F393-E0A9-E50E24DCCA9E': {
-          value: bytes,
-          notify: true
-        }
-      }
-    });
+    var bytes = [];
+    for (var i = 0; i < json.length && i < 20; i++) {
+      bytes.push(json.charCodeAt(i));
+    }
+    
+    var serviceUpdate = {};
+    serviceUpdate["6E400001-B5A3-F393-E0A9-E50E24DCCA9E"] = {};
+    serviceUpdate["6E400001-B5A3-F393-E0A9-E50E24DCCA9E"]["6E400003-B5A3-F393-E0A9-E50E24DCCA9E"] = {
+      value: bytes,
+      notify: true
+    };
+    
+    NRF.updateServices(serviceUpdate);
   } catch(e) {
-    console.log("Service update failed:", e);
+    console.log("Service update failed: " + e);
   }
 }
 
 // ============== NFC SYSTEM ==============
 function setupNFC() {
   try {
-    NRF.nfcURL(`https://tapfit-ai-sync.lovable.app/machine/${CONFIG.machineId}`);
-    console.log("NFC configured for:", CONFIG.machineId);
+    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/machine/" + CONFIG.machineId);
+    console.log("NFC configured for: " + CONFIG.machineId);
   } catch(e) {
-    console.log("NFC setup failed:", e);
+    console.log("NFC setup failed: " + e);
   }
 }
 
 // ============== MOTION DETECTION ==============
 function setupAccelerometer() {
   Puck.accelOn(CONFIG.sampleRate);
-  console.log("Accelerometer started at", CONFIG.sampleRate, "Hz");
+  console.log("Accelerometer started at " + CONFIG.sampleRate + " Hz");
 }
 
 function calibrateBaseline() {
   state.isCalibrating = true;
   console.log("Calibrating...");
   
-  let samples = [];
-  let count = 0;
-  const targetSamples = 30;
+  var samples = [];
+  var count = 0;
+  var targetSamples = 30;
   
-  const calibrateInterval = setInterval(() => {
-    const accel = Puck.accel();
+  var calibrateInterval = setInterval(function() {
+    var accel = Puck.accel();
     samples.push(accel);
     count++;
     
@@ -176,26 +189,33 @@ function calibrateBaseline() {
       clearInterval(calibrateInterval);
       
       // Calculate baseline
-      state.baseline.x = samples.reduce((sum, s) => sum + s.x, 0) / targetSamples;
-      state.baseline.y = samples.reduce((sum, s) => sum + s.y, 0) / targetSamples;
-      state.baseline.z = samples.reduce((sum, s) => sum + s.z, 0) / targetSamples;
+      var sumX = 0, sumY = 0, sumZ = 0;
+      for (var i = 0; i < samples.length; i++) {
+        sumX += samples[i].x;
+        sumY += samples[i].y;
+        sumZ += samples[i].z;
+      }
+      
+      state.baseline.x = sumX / targetSamples;
+      state.baseline.y = sumY / targetSamples;
+      state.baseline.z = sumZ / targetSamples;
       
       state.isCalibrating = false;
       LED2.write(0);
       
       // Success feedback
       flashSuccess();
-      console.log("Calibration complete:", state.baseline);
+      console.log("Calibration complete");
     }
   }, 50);
 }
 
 function startMonitoring() {
-  setInterval(() => {
+  setInterval(function() {
     if (state.isCalibrating) return;
     
-    const accel = Puck.accel();
-    const motion = calculateMotion(accel);
+    var accel = Puck.accel();
+    var motion = calculateMotion(accel);
     
     // Add to buffer
     state.motionBuffer.push(motion);
@@ -209,7 +229,7 @@ function startMonitoring() {
     // Send motion data
     if (state.isConnected) {
       transmitData({
-        type: 'motion',
+        type: "motion",
         value: motion,
         timestamp: Date.now()
       });
@@ -219,25 +239,35 @@ function startMonitoring() {
 }
 
 function calculateMotion(accel) {
-  const profile = MACHINE_PROFILES[CONFIG.machineId];
+  var profile = MACHINE_PROFILES[CONFIG.machineId];
+  if (!profile) {
+    profile = MACHINE_PROFILES["chest-press"]; // fallback
+  }
   
   // Calculate delta from baseline
-  const dx = Math.abs(accel.x - state.baseline.x);
-  const dy = Math.abs(accel.y - state.baseline.y);
-  const dz = Math.abs(accel.z - state.baseline.z);
+  var dx = Math.abs(accel.x - state.baseline.x);
+  var dy = Math.abs(accel.y - state.baseline.y);
+  var dz = Math.abs(accel.z - state.baseline.z);
   
   // Focus on primary axis for this machine
-  switch(profile.axis) {
-    case 'x': return dx;
-    case 'y': return dy;
-    case 'z': return dz;
-    default: return Math.sqrt(dx*dx + dy*dy + dz*dz);
+  if (profile.axis === "x") {
+    return dx;
+  } else if (profile.axis === "y") {
+    return dy;
+  } else if (profile.axis === "z") {
+    return dz;
+  } else {
+    return Math.sqrt(dx*dx + dy*dy + dz*dz);
   }
 }
 
 function checkForRep(motion) {
-  const profile = MACHINE_PROFILES[CONFIG.machineId];
-  const now = Date.now();
+  var profile = MACHINE_PROFILES[CONFIG.machineId];
+  if (!profile) {
+    profile = MACHINE_PROFILES["chest-press"]; // fallback
+  }
+  
+  var now = Date.now();
   
   // Check cooldown
   if (now - state.lastRepTime < profile.cooldown) return;
@@ -246,9 +276,9 @@ function checkForRep(motion) {
   if (motion > profile.threshold) {
     // Simple pattern check: look for motion peak followed by return to low
     if (state.motionBuffer.length >= 5) {
-      const recent = state.motionBuffer.slice(-5);
-      const peak = Math.max(...recent.slice(0, 3));
-      const valley = Math.min(...recent.slice(-2));
+      var recent = state.motionBuffer.slice(-5);
+      var peak = Math.max.apply(Math, recent.slice(0, 3));
+      var valley = Math.min.apply(Math, recent.slice(-2));
       
       if (peak > profile.threshold && valley < profile.threshold * 0.3) {
         registerRep();
@@ -261,15 +291,15 @@ function registerRep() {
   state.repCount++;
   state.lastRepTime = Date.now();
   
-  console.log("Rep registered:", state.repCount);
+  console.log("Rep registered: " + state.repCount);
   
   // Visual feedback
   LED1.write(1);
-  setTimeout(() => LED1.write(0), 150);
+  setTimeout(function() { LED1.write(0); }, 150);
   
   // Send rep data
   transmitData({
-    type: 'rep',
+    type: "rep",
     count: state.repCount,
     timestamp: state.lastRepTime,
     sessionTime: state.lastRepTime - state.sessionStartTime
@@ -281,38 +311,44 @@ function registerRep() {
 
 // ============== UI & FEEDBACK ==============
 function setupButtons() {
-  setWatch(() => {
+  setWatch(function() {
     console.log("Button pressed - resetting session");
     resetSession();
   }, BTN, { edge: "rising", repeat: true, debounce: 50 });
 }
 
 function startupSequence() {
-  // V3.0 signature: Blue-Green-Blue pattern
-  const leds = [LED3, LED2, LED3];
-  leds.forEach((led, i) => {
-    setTimeout(() => {
-      led.write(1);
-      setTimeout(() => led.write(0), 100);
-    }, i * 150);
-  });
+  // V4.0 signature: Blue-Green-Blue pattern
+  var leds = [LED3, LED2, LED3];
+  for (var i = 0; i < leds.length; i++) {
+    (function(led, delay) {
+      setTimeout(function() {
+        led.write(1);
+        setTimeout(function() { led.write(0); }, 100);
+      }, delay);
+    })(leds[i], i * 150);
+  }
 }
 
 function flashSuccess() {
-  for (let i = 0; i < 3; i++) {
-    setTimeout(() => {
-      LED2.write(1);
-      setTimeout(() => LED2.write(0), 100);
-    }, i * 200);
+  for (var i = 0; i < 3; i++) {
+    (function(delay) {
+      setTimeout(function() {
+        LED2.write(1);
+        setTimeout(function() { LED2.write(0); }, 100);
+      }, delay);
+    })(i * 200);
   }
 }
 
 function flashError() {
-  for (let i = 0; i < 2; i++) {
-    setTimeout(() => {
-      LED1.write(1);
-      setTimeout(() => LED1.write(0), 200);
-    }, i * 400);
+  for (var i = 0; i < 2; i++) {
+    (function(delay) {
+      setTimeout(function() {
+        LED1.write(1);
+        setTimeout(function() { LED1.write(0); }, 200);
+      }, delay);
+    })(i * 400);
   }
 }
 
@@ -327,7 +363,7 @@ function resetSession() {
   flashSuccess();
   
   transmitData({
-    type: 'reset',
+    type: "reset",
     timestamp: Date.now()
   });
   
@@ -336,7 +372,7 @@ function resetSession() {
 
 function sendStatus() {
   transmitData({
-    type: 'status',
+    type: "status",
     machineId: CONFIG.machineId,
     firmware: CONFIG.firmwareVersion,
     repCount: state.repCount,
@@ -352,27 +388,27 @@ function updateBattery() {
   state.batteryLevel = E.getBattery();
   if (state.batteryLevel < 20) {
     // Low battery warning
-    console.log("⚠️ Low battery:", state.batteryLevel + "%");
+    console.log("Low battery: " + state.batteryLevel + "%");
     flashError();
   }
 }
 
 // ============== CONNECTION EVENTS ==============
-NRF.on('connect', function(addr) {
+NRF.on("connect", function(addr) {
   state.isConnected = true;
-  console.log("📱 Connected to:", addr);
+  console.log("Connected to: " + addr);
   
   // Connection feedback
   LED3.write(1);
-  setTimeout(() => LED3.write(0), 500);
+  setTimeout(function() { LED3.write(0); }, 500);
   
   // Send initial status
   sendStatus();
 });
 
-NRF.on('disconnect', function() {
+NRF.on("disconnect", function() {
   state.isConnected = false;
-  console.log("📱 Disconnected");
+  console.log("Disconnected");
   
   // Reset advertising to normal
   state.nfcTriggered = false;
@@ -380,13 +416,13 @@ NRF.on('disconnect', function() {
 });
 
 // NFC tap event
-NRF.on('NFCTag', function() {
+NRF.on("NFCTag", function() {
   state.nfcTriggered = true;
-  console.log("📱 NFC tapped!");
+  console.log("NFC tapped!");
   
   // NFC feedback - all LEDs flash
   LED1.write(1); LED2.write(1); LED3.write(1);
-  setTimeout(() => {
+  setTimeout(function() {
     LED1.write(0); LED2.write(0); LED3.write(0);
   }, 300);
   
@@ -394,7 +430,7 @@ NRF.on('NFCTag', function() {
   updateAdvertising();
   
   // Reset to normal after 30 seconds
-  setTimeout(() => {
+  setTimeout(function() {
     if (!state.isConnected) {
       state.nfcTriggered = false;
       updateAdvertising();
@@ -407,13 +443,13 @@ NRF.on('NFCTag', function() {
 setInterval(updateBattery, 60000); // Check every minute
 
 // Heartbeat for debugging
-setInterval(() => {
-  console.log(`💓 Reps: ${state.repCount}, Battery: ${state.batteryLevel}%, Connected: ${state.isConnected}`);
+setInterval(function() {
+  console.log("Reps: " + state.repCount + ", Battery: " + state.batteryLevel + "%, Connected: " + state.isConnected);
 }, 30000);
 
 // Error handling
-process.on('uncaughtException', function(e) {
-  console.log("❌ Error:", e);
+process.on("uncaughtException", function(e) {
+  console.log("Error: " + e);
   flashError();
 });
 
