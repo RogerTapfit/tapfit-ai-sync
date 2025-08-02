@@ -140,7 +140,7 @@ const WorkoutHub = () => {
       id: "9", 
       name: "Lat Pulldown Machine", 
       muscleGroup: "Back", 
-      image: "photo-1581091226825-a6a2a5aee158",
+      image: "/lovable-uploads/f42105be-a95d-44b0-8d72-a77b6cbffee1.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-12",
