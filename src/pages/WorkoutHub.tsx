@@ -276,7 +276,7 @@ const WorkoutHub = () => {
       id: "19", 
       name: "Leg Curl Machine", 
       muscleGroup: "Legs", 
-      image: "photo-1581091226825-a6a2a5aee158",
+      image: "/lovable-uploads/8b855abd-c6fe-4cef-9549-7c3a6cd70fae.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "12-15",
