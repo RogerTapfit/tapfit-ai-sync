@@ -181,7 +181,7 @@ const WorkoutHub = () => {
       id: "12", 
       name: "Shoulder Press Machine", 
       muscleGroup: "Shoulders", 
-      image: "photo-1498050108023-4b2e558d2937",
+      image: "/lovable-uploads/61f89507-de07-4a05-82a5-5114ac500e76.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-12",
