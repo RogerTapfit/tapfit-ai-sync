@@ -250,7 +250,7 @@ const WorkoutHub = () => {
       id: "17", 
       name: "Leg Press Machine", 
       muscleGroup: "Legs", 
-      image: "photo-1486312338219-ce6862c6f44d",
+      image: "/lovable-uploads/f62a3fb2-b5ea-4582-b7ff-550a03b3c767.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "12-15",
