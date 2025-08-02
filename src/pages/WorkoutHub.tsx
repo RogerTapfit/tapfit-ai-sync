@@ -291,7 +291,7 @@ const WorkoutHub = () => {
       id: "20", 
       name: "Treadmill", 
       muscleGroup: "Cardio", 
-      image: "photo-1485827404703-89b55fcc595e",
+      image: "/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png",
       exerciseType: "Cardio",
       sets: 1,
       reps: "20-30 min",
