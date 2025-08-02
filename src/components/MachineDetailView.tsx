@@ -105,11 +105,11 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-start gap-4">
-            <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
               <img 
                 src={machineImageUrl} 
                 alt={exercise.machine}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-background/50"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.svg';
                 }}
