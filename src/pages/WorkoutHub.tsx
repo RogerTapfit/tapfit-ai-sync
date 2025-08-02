@@ -484,24 +484,7 @@ const WorkoutHub = () => {
                       }}
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{machine.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      {isDeveloperMode && (
-                        <NFCMachinePopup machineId={machine.id} machineName={machine.name}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
-                          >
-                            <Smartphone className="h-3 w-3 mr-1" />
-                            NFC
-                          </Button>
-                        </NFCMachinePopup>
-                      )}
-                      <span className="text-xl">{getMuscleGroupIcon(machine.muscleGroup)}</span>
-                    </div>
-                  </div>
+                  <CardTitle className="text-lg">{machine.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">{machine.description}</p>
@@ -526,9 +509,22 @@ const WorkoutHub = () => {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <Badge className={`${getDifficultyColor(machine.difficulty)} text-white`}>
-                      {machine.difficulty}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${getDifficultyColor(machine.difficulty)} text-white`}>
+                        {machine.difficulty}
+                      </Badge>
+                      {isDeveloperMode && (
+                        <NFCMachinePopup machineId={machine.id} machineName={machine.name}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
+                          >
+                            <Smartphone className="h-3 w-3" />
+                          </Button>
+                        </NFCMachinePopup>
+                      )}
+                    </div>
                     <Badge variant="outline">
                       {machine.equipment}
                     </Badge>
