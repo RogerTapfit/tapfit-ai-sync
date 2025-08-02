@@ -317,7 +317,7 @@ const WorkoutHub = () => {
       id: "22", 
       name: "Stairmaster", 
       muscleGroup: "Cardio", 
-      image: "photo-1498050108023-4b2e558d2937",
+      image: "/lovable-uploads/53858814-478c-431c-8c54-feecf0b00e19.png",
       exerciseType: "Cardio",
       sets: 1,
       reps: "15-20 min",
