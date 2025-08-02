@@ -34,7 +34,7 @@ const WorkoutHub = () => {
       id: "1", 
       name: "Chest Press Machine", 
       muscleGroup: "Chest", 
-      image: "photo-1581090464777-f3220bbe1b8b",
+      image: "/lovable-uploads/72acfefe-3a0e-4d74-b92f-ce88b0a38d7e.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-12",
@@ -47,7 +47,7 @@ const WorkoutHub = () => {
       id: "2", 
       name: "Pec Deck (Butterfly) Machine", 
       muscleGroup: "Chest", 
-      image: "photo-1488590528505-98d2b5aba04b",
+      image: "/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "10-15",
@@ -60,7 +60,7 @@ const WorkoutHub = () => {
       id: "3", 
       name: "Incline Chest Press Machine", 
       muscleGroup: "Chest", 
-      image: "photo-1486312338219-ce6862c6f44d",
+      image: "/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-12",
@@ -73,7 +73,7 @@ const WorkoutHub = () => {
       id: "4", 
       name: "Cable Crossover Machine", 
       muscleGroup: "Chest", 
-      image: "photo-1461749280684-dccba630e2f6",
+      image: "/lovable-uploads/ee18485a-269f-4a98-abe3-54fab538f201.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "12-15",
@@ -82,10 +82,62 @@ const WorkoutHub = () => {
       equipment: "Cable",
       description: "Versatile chest isolation with adjustable angles. Great for chest definition."
     },
+    { 
+      id: "5", 
+      name: "Decline Chest Press Machine", 
+      muscleGroup: "Chest", 
+      image: "/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png",
+      exerciseType: "Compound",
+      sets: 3,
+      reps: "8-12",
+      restTime: 90,
+      difficulty: "Intermediate",
+      equipment: "Machine",
+      description: "Lower chest focus with controlled decline movement. Builds lower pectoral mass."
+    },
+    { 
+      id: "6", 
+      name: "Smith Machine (Flat Bench Press)", 
+      muscleGroup: "Chest", 
+      image: "/lovable-uploads/55d72a0c-1e5a-4d6f-abfa-edfe80701063.png",
+      exerciseType: "Compound",
+      sets: 3,
+      reps: "6-10",
+      restTime: 120,
+      difficulty: "Advanced",
+      equipment: "Machine",
+      description: "Heavy chest pressing with safety rails. Great for strength building."
+    },
+    { 
+      id: "7", 
+      name: "Seated Dip Machine", 
+      muscleGroup: "Chest", 
+      image: "/lovable-uploads/2659df27-2ead-4acf-ace3-edd4b33cad78.png",
+      exerciseType: "Compound",
+      sets: 3,
+      reps: "8-12",
+      restTime: 90,
+      difficulty: "Intermediate",
+      equipment: "Machine",
+      description: "Chest-focused dip movement with adjustable assistance. Targets lower chest."
+    },
+    { 
+      id: "8", 
+      name: "Assisted Chest Dips Machine", 
+      muscleGroup: "Chest", 
+      image: "/lovable-uploads/0d9b2a95-f255-4a68-a040-7998a9ffb1cf.png",
+      exerciseType: "Compound",
+      sets: 3,
+      reps: "8-15",
+      restTime: 90,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "Assisted dip movement perfect for beginners. Builds chest and tricep strength."
+    },
     
     // Back Machines
     { 
-      id: "5", 
+      id: "9", 
       name: "Lat Pulldown Machine", 
       muscleGroup: "Back", 
       image: "photo-1581091226825-a6a2a5aee158",
@@ -98,7 +150,7 @@ const WorkoutHub = () => {
       description: "Primary back width builder. Essential for V-taper development."
     },
     { 
-      id: "6", 
+      id: "10", 
       name: "Seated Cable Row", 
       muscleGroup: "Back", 
       image: "photo-1485827404703-89b55fcc595e",
@@ -111,7 +163,7 @@ const WorkoutHub = () => {
       description: "Back thickness and posture improvement. Targets rhomboids and mid-traps."
     },
     { 
-      id: "7", 
+      id: "11", 
       name: "T-Bar Row Machine", 
       muscleGroup: "Back", 
       image: "photo-1487058792275-0ad4aaf24ca7",
@@ -126,7 +178,7 @@ const WorkoutHub = () => {
 
     // Shoulders
     { 
-      id: "8", 
+      id: "12", 
       name: "Shoulder Press Machine", 
       muscleGroup: "Shoulders", 
       image: "photo-1498050108023-4b2e558d2937",
@@ -139,7 +191,7 @@ const WorkoutHub = () => {
       description: "Safe overhead pressing for shoulder development. Targets all deltoid heads."
     },
     { 
-      id: "9", 
+      id: "13", 
       name: "Lateral Raise Machine", 
       muscleGroup: "Shoulders", 
       image: "photo-1434494878577-86c23bcb06b9",
@@ -154,7 +206,7 @@ const WorkoutHub = () => {
 
     // Arms
     { 
-      id: "10", 
+      id: "14", 
       name: "Bicep Curl Machine", 
       muscleGroup: "Arms", 
       image: "photo-1581090464777-f3220bbe1b8b",
@@ -167,7 +219,7 @@ const WorkoutHub = () => {
       description: "Isolated bicep development with controlled movement path."
     },
     { 
-      id: "11", 
+      id: "15", 
       name: "Tricep Dip Machine", 
       muscleGroup: "Arms", 
       image: "photo-1483058712412-4245e9b90334",
@@ -180,7 +232,7 @@ const WorkoutHub = () => {
       description: "Tricep mass building with assisted or weighted resistance."
     },
     { 
-      id: "12", 
+      id: "16", 
       name: "Preacher Curl Machine", 
       muscleGroup: "Arms", 
       image: "photo-1488590528505-98d2b5aba04b",
@@ -195,7 +247,7 @@ const WorkoutHub = () => {
 
     // Legs
     { 
-      id: "13", 
+      id: "17", 
       name: "Leg Press Machine", 
       muscleGroup: "Legs", 
       image: "photo-1486312338219-ce6862c6f44d",
@@ -208,7 +260,7 @@ const WorkoutHub = () => {
       description: "Quad and glute development with heavy loading capacity."
     },
     { 
-      id: "14", 
+      id: "18", 
       name: "Leg Extension Machine", 
       muscleGroup: "Legs", 
       image: "photo-1461749280684-dccba630e2f6",
@@ -221,7 +273,7 @@ const WorkoutHub = () => {
       description: "Quad isolation for definition and strength. Great for knee rehabilitation."
     },
     { 
-      id: "15", 
+      id: "19", 
       name: "Leg Curl Machine", 
       muscleGroup: "Legs", 
       image: "photo-1581091226825-a6a2a5aee158",
@@ -236,7 +288,7 @@ const WorkoutHub = () => {
 
     // Cardio
     { 
-      id: "16", 
+      id: "20", 
       name: "Treadmill", 
       muscleGroup: "Cardio", 
       image: "photo-1485827404703-89b55fcc595e",
@@ -249,7 +301,7 @@ const WorkoutHub = () => {
       description: "Walking, jogging, and incline training for cardiovascular health."
     },
     { 
-      id: "17", 
+      id: "21", 
       name: "Rowing Machine", 
       muscleGroup: "Cardio", 
       image: "photo-1487058792275-0ad4aaf24ca7",
@@ -262,7 +314,7 @@ const WorkoutHub = () => {
       description: "Full-body cardio and strength combination. Low impact, high efficiency."
     },
     { 
-      id: "18", 
+      id: "22", 
       name: "Stairmaster", 
       muscleGroup: "Cardio", 
       image: "photo-1498050108023-4b2e558d2937",
@@ -400,7 +452,9 @@ const WorkoutHub = () => {
                 <CardHeader className="pb-2">
                   <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg mb-3 flex items-center justify-center">
                     <img 
-                      src={`https://images.unsplash.com/${machine.image}?auto=format&fit=crop&w=400&q=80`}
+                      src={machine.image.startsWith('/lovable-uploads/') 
+                        ? machine.image 
+                        : `https://images.unsplash.com/${machine.image}?auto=format&fit=crop&w=400&q=80`}
                       alt={machine.name}
                       className="w-full h-full object-cover rounded-lg"
                       onError={(e) => {
