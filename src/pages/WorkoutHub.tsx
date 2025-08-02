@@ -304,7 +304,7 @@ const WorkoutHub = () => {
       id: "21", 
       name: "Rowing Machine", 
       muscleGroup: "Cardio", 
-      image: "photo-1487058792275-0ad4aaf24ca7",
+      image: "/lovable-uploads/ac6dd467-37ab-4e6a-9ecc-d7e6ecb97913.png",
       exerciseType: "Cardio",
       sets: 1,
       reps: "15-25 min",
