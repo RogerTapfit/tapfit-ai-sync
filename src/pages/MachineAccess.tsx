@@ -113,7 +113,12 @@ const MachineAccess = () => {
   };
 
   const handleBack = () => {
-    navigate('/');
+    // Use browser history to go back one page, fallback to dashboard
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
   const handleExerciseComplete = () => {
