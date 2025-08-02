@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -28,6 +29,7 @@ interface NavigationProps {
 
 const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -105,7 +107,11 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
                     isActive ? 'glow-button' : 'hover:bg-accent'
                   }`}
                   onClick={() => {
-                    onPageChange(item.id);
+                    if (item.id === 'workouts') {
+                      navigate('/workouts');
+                    } else {
+                      onPageChange(item.id);
+                    }
                     setIsMenuOpen(false);
                   }}
                 >
