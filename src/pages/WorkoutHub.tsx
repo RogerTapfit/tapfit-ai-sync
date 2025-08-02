@@ -153,7 +153,7 @@ const WorkoutHub = () => {
       id: "10", 
       name: "Seated Cable Row", 
       muscleGroup: "Back", 
-      image: "photo-1485827404703-89b55fcc595e",
+      image: "/lovable-uploads/c38c89e5-0aa7-45e8-954a-109f4e471db7.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-12",
