@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat, Check } from 'lucide-react';
+import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat, Check, Smartphone } from 'lucide-react';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import { LiveWorkoutSession } from './LiveWorkoutSession';
+import { NFCMachinePopup } from './NFCMachinePopup';
 
 interface MachineDetailViewProps {
   exercise: WorkoutExercise;
@@ -124,6 +125,15 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
                 <Badge variant="outline" className="text-xs">
                   {exercise.intensity || 'Medium'} Intensity
                 </Badge>
+                <NFCMachinePopup machineId={exercise.machine.toLowerCase().replace(/\s+/g, '-')} machineName={exercise.machine}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
+                  >
+                    <Smartphone className="h-3 w-3" />
+                  </Button>
+                </NFCMachinePopup>
               </div>
             </div>
           </div>

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
+import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 
 interface WorkoutMachine {
   id: string;
@@ -324,8 +325,18 @@ const WorkoutList = () => {
                   </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="flex items-center gap-2">
                 {getStatusBadge(workout.completed)}
+                <NFCMachinePopup machineId={workout.name.toLowerCase().replace(/\s+/g, '-')} machineName={workout.name}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Smartphone className="h-3 w-3" />
+                  </Button>
+                </NFCMachinePopup>
               </div>
             </div>
           </Card>

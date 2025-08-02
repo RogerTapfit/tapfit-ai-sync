@@ -17,10 +17,12 @@ import {
   TrendingUp,
   Repeat,
   Timer,
-  Compass
+  Compass,
+  Smartphone
 } from 'lucide-react';
 import { ScheduledWorkout, WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import MachineDetailView from './MachineDetailView';
+import { NFCMachinePopup } from './NFCMachinePopup';
 
 interface WorkoutBreakdownProps {
   workout: ScheduledWorkout | null;
@@ -79,9 +81,20 @@ const MachineCard: React.FC<MachineCardProps> = ({ exercise, index, onMachineCli
                   Primary: {exercise.exercise_type || 'Strength Training'}
                 </p>
               </div>
-              <Badge variant="secondary" className="text-xs ml-2">
-                #{index + 1}
-              </Badge>
+              <div className="flex items-center gap-2 ml-2">
+                <Badge variant="secondary" className="text-xs">
+                  #{index + 1}
+                </Badge>
+                <NFCMachinePopup machineId={exercise.machine.toLowerCase().replace(/\s+/g, '-')} machineName={exercise.machine}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
+                  >
+                    <Smartphone className="h-3 w-3" />
+                  </Button>
+                </NFCMachinePopup>
+              </div>
             </div>
             
             <div className="flex items-center gap-4 mt-3">
