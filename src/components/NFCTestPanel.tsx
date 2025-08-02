@@ -20,7 +20,7 @@ export const NFCTestPanel: React.FC = () => {
 
   const testUrls = Object.keys(MACHINE_IDS).map(machineId => ({
     machineId: machineId as MachineId,
-    url: `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${machineId}?forceHideBadge=true`,
+    url: `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/?forceHideBadge=true#/machine/${machineId}`,
     machine: MACHINE_IDS[machineId as MachineId]
   }));
 

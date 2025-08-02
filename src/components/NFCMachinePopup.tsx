@@ -76,7 +76,7 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
 
   const machineDetails = MACHINE_IDS[nfcMachineId];
   const nativeUrl = `tapfit://machine/${nfcMachineId}`;
-  const webUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${nfcMachineId}?forceHideBadge=true`;
+  const webUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/?forceHideBadge=true#/machine/${nfcMachineId}`;
 
   const copyToClipboard = async (text: string, label: string) => {
     try {

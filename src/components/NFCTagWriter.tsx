@@ -44,7 +44,7 @@ const NFCTagWriter = () => {
   const getManualInstructions = () => {
     if (!selectedMachine) return null;
 
-    const universalUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/machine/${selectedMachine}?forceHideBadge=true`;
+    const universalUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/?forceHideBadge=true#/machine/${selectedMachine}`;
     const fallbackUrl = universalUrl;
 
     return (
