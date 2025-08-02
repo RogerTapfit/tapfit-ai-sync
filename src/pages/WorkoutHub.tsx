@@ -513,17 +513,15 @@ const WorkoutHub = () => {
                       <Badge className={`${getDifficultyColor(machine.difficulty)} text-white`}>
                         {machine.difficulty}
                       </Badge>
-                      {isDeveloperMode && (
-                        <NFCMachinePopup machineId={machine.id} machineName={machine.name}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
-                          >
-                            <Smartphone className="h-3 w-3" />
-                          </Button>
-                        </NFCMachinePopup>
-                      )}
+                      <NFCMachinePopup machineId={machine.id} machineName={machine.name}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
+                        >
+                          <Smartphone className="h-3 w-3" />
+                        </Button>
+                      </NFCMachinePopup>
                     </div>
                     <Badge variant="outline">
                       {machine.equipment}
