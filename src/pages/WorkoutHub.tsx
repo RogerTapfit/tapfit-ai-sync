@@ -194,7 +194,7 @@ const WorkoutHub = () => {
       id: "13", 
       name: "Lateral Raise Machine", 
       muscleGroup: "Shoulders", 
-      image: "photo-1434494878577-86c23bcb06b9",
+      image: "/lovable-uploads/28009a8a-51b5-4196-bd00-c1ad68b67bc0.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "12-15",
