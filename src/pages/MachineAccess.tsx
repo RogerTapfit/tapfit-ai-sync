@@ -113,10 +113,18 @@ const MachineAccess = () => {
   };
 
   const handleBack = () => {
-    // Use browser history to go back one page, fallback to dashboard
-    if (window.history.length > 1) {
+    // Try to go back, with fallback to dashboard if it doesn't work
+    try {
       navigate(-1);
-    } else {
+      
+      // Fallback to dashboard if navigate(-1) doesn't work
+      setTimeout(() => {
+        // If still on the same page after a brief delay, go to dashboard
+        if (window.location.hash.includes('/machine/')) {
+          navigate('/');
+        }
+      }, 100);
+    } catch (error) {
       navigate('/');
     }
   };
