@@ -14,13 +14,15 @@ import {
   RotateCcw, 
   Edit3,
   HelpCircle,
-  Activity
+  Activity,
+  Smartphone
 } from "lucide-react";
 import { useWorkoutPlan } from "@/hooks/useWorkoutPlan";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 
 interface WorkoutSet {
   id: number;
@@ -40,6 +42,25 @@ const WorkoutDetail = () => {
   const [isResting, setIsResting] = useState(false);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isDeveloperMode, setIsDeveloperMode] = useState(() => 
+    localStorage.getItem('developerMode') === 'true'
+  );
+
+  // Developer mode toggle with keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        const newMode = !isDeveloperMode;
+        setIsDeveloperMode(newMode);
+        localStorage.setItem('developerMode', newMode.toString());
+        toast.success(`Developer mode ${newMode ? 'enabled' : 'disabled'}`);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDeveloperMode]);
 
   // Static workout data
   const workoutData: Record<string, any> = {
@@ -335,9 +356,19 @@ const WorkoutDetail = () => {
             Chest Workout • {workout.sets} sets × {workout.reps} reps
           </p>
         </div>
-        <Badge variant="outline">
-          Chest
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isDeveloperMode && workoutId && (
+            <NFCMachinePopup machineId={workoutId} machineName={workout.name}>
+              <Button variant="outline" size="sm" className="text-xs">
+                <Smartphone className="h-3 w-3 mr-1" />
+                NFC
+              </Button>
+            </NFCMachinePopup>
+          )}
+          <Badge variant="outline">
+            Chest
+          </Badge>
+        </div>
       </div>
 
       {/* Exercise Progress */}
