@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Search, Dumbbell, Activity, Clock, Users, Target } from "lucide-react";
+import { ArrowLeft, Search, Dumbbell, Activity, Clock, Users, Target, Smartphone } from "lucide-react";
+import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 
 interface WorkoutMachine {
   id: string;
@@ -26,6 +27,27 @@ const WorkoutHub = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
+  const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+
+  // Check for developer mode flag in localStorage
+  useEffect(() => {
+    const devMode = localStorage.getItem('tapfit-developer-mode') === 'true';
+    setIsDeveloperMode(devMode);
+
+    // Add keyboard shortcut: Ctrl+Shift+D to toggle developer mode
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        const newDevMode = !isDeveloperMode;
+        setIsDeveloperMode(newDevMode);
+        localStorage.setItem('tapfit-developer-mode', newDevMode.toString());
+        console.log('Developer mode:', newDevMode ? 'enabled' : 'disabled');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDeveloperMode]);
 
   // Comprehensive workout machine data
   const workoutMachines: WorkoutMachine[] = [
@@ -464,7 +486,21 @@ const WorkoutHub = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{machine.name}</CardTitle>
-                    <span className="text-xl">{getMuscleGroupIcon(machine.muscleGroup)}</span>
+                    <div className="flex items-center gap-2">
+                      {isDeveloperMode && (
+                        <NFCMachinePopup machineId={machine.id} machineName={machine.name}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
+                          >
+                            <Smartphone className="h-3 w-3 mr-1" />
+                            NFC
+                          </Button>
+                        </NFCMachinePopup>
+                      )}
+                      <span className="text-xl">{getMuscleGroupIcon(machine.muscleGroup)}</span>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
