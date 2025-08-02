@@ -12,16 +12,55 @@ interface NFCMachinePopupProps {
   children: React.ReactNode;
 }
 
-// Map workout machine IDs to NFC machine IDs
+// Map workout machine IDs and names to NFC machine IDs
 const WORKOUT_TO_NFC_MAPPING: Record<string, MachineId | null> = {
-  "1": "chest-press",      // Chest Press Machine
-  "9": "lat-pulldown",     // Lat Pulldown Machine  
-  "17": "leg-press",       // Leg Press Machine
-  "12": "shoulder-press",  // Shoulder Press Machine
-  "14": null,              // Bicep Curl Machine - no NFC support yet
-  "15": null,              // Tricep Dip Machine - no NFC support yet
-  "16": null,              // Preacher Curl Machine - no NFC support yet
-  // Add more mappings as NFC support is added
+  // Numeric IDs (original mapping)
+  "1": "chest-press",
+  "2": "pec-deck",
+  "3": "incline-chest-press",
+  "4": "cable-crossover",
+  "5": "decline-chest-press",
+  "6": "smith-machine",
+  "7": "seated-dip",
+  "8": "assisted-chest-dips",
+  "9": "lat-pulldown",
+  "10": "seated-cable-row",
+  "11": "t-bar-row",
+  "12": "shoulder-press",
+  "13": "lateral-raise",
+  "14": "bicep-curl",
+  "15": "tricep-dip",
+  "16": "preacher-curl",
+  "17": "leg-press",
+  "18": "leg-extension",
+  "19": "leg-curl",
+  "20": "treadmill",
+  "21": "rowing-machine",
+  "22": "stairmaster",
+  
+  // Kebab-case names (for exercise.machine conversion)
+  "chest-press-machine": "chest-press",
+  "pec-deck-(butterfly)-machine": "pec-deck",
+  "incline-chest-press-machine": "incline-chest-press",
+  "cable-crossover-machine": "cable-crossover",
+  "decline-chest-press-machine": "decline-chest-press",
+  "smith-machine-(flat-bench-press)": "smith-machine",
+  "seated-dip-machine": "seated-dip",
+  "assisted-chest-dips-machine": "assisted-chest-dips",
+  "lat-pulldown-machine": "lat-pulldown",
+  "seated-cable-row": "seated-cable-row",
+  "t-bar-row-machine": "t-bar-row",
+  "shoulder-press-machine": "shoulder-press",
+  "lateral-raise-machine": "lateral-raise",
+  "bicep-curl-machine": "bicep-curl",
+  "tricep-dip-machine": "tricep-dip",
+  "preacher-curl-machine": "preacher-curl",
+  "leg-press-machine": "leg-press",
+  "leg-extension-machine": "leg-extension",
+  "leg-curl-machine": "leg-curl",
+  "treadmill": "treadmill",
+  "rowing-machine": "rowing-machine",
+  "stairmaster": "stairmaster"
 };
 
 export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachinePopupProps) => {

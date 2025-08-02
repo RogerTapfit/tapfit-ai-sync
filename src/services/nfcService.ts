@@ -35,6 +35,62 @@ export const MACHINE_IDS = {
     defaultReps: 12,
     restSeconds: 90
   },
+  'pec-deck': {
+    machine: 'Pec Deck (Butterfly) Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 60
+  },
+  'incline-chest-press': {
+    machine: 'Incline Chest Press Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 90
+  },
+  'cable-crossover': {
+    machine: 'Cable Crossover Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 60
+  },
+  'decline-chest-press': {
+    machine: 'Decline Chest Press Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 90
+  },
+  'smith-machine': {
+    machine: 'Smith Machine (Flat Bench Press)',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 10,
+    restSeconds: 120
+  },
+  'seated-dip': {
+    machine: 'Seated Dip Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 90
+  },
+  'assisted-chest-dips': {
+    machine: 'Assisted Chest Dips Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Chest',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 90
+  },
   'lat-pulldown': {
     machine: 'Lat Pulldown Machine',
     exerciseType: 'strength', 
@@ -43,12 +99,20 @@ export const MACHINE_IDS = {
     defaultReps: 12,
     restSeconds: 90
   },
-  'leg-press': {
-    machine: 'Leg Press Machine',
+  'seated-cable-row': {
+    machine: 'Seated Cable Row',
     exerciseType: 'strength',
-    muscleGroup: 'Legs',
+    muscleGroup: 'Back',
     defaultSets: 3,
-    defaultReps: 15,
+    defaultReps: 12,
+    restSeconds: 90
+  },
+  't-bar-row': {
+    machine: 'T-Bar Row Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Back',
+    defaultSets: 3,
+    defaultReps: 10,
     restSeconds: 120
   },
   'shoulder-press': {
@@ -58,6 +122,86 @@ export const MACHINE_IDS = {
     defaultSets: 3,
     defaultReps: 12,
     restSeconds: 90
+  },
+  'lateral-raise': {
+    machine: 'Lateral Raise Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Shoulders',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 60
+  },
+  'bicep-curl': {
+    machine: 'Bicep Curl Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Arms',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 60
+  },
+  'tricep-dip': {
+    machine: 'Tricep Dip Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Arms',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 90
+  },
+  'preacher-curl': {
+    machine: 'Preacher Curl Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Arms',
+    defaultSets: 3,
+    defaultReps: 12,
+    restSeconds: 60
+  },
+  'leg-press': {
+    machine: 'Leg Press Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Legs',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 120
+  },
+  'leg-extension': {
+    machine: 'Leg Extension Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Legs',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 60
+  },
+  'leg-curl': {
+    machine: 'Leg Curl Machine',
+    exerciseType: 'strength',
+    muscleGroup: 'Legs',
+    defaultSets: 3,
+    defaultReps: 15,
+    restSeconds: 60
+  },
+  'treadmill': {
+    machine: 'Treadmill',
+    exerciseType: 'cardio',
+    muscleGroup: 'Cardio',
+    defaultSets: 1,
+    defaultReps: 25,
+    restSeconds: 0
+  },
+  'rowing-machine': {
+    machine: 'Rowing Machine',
+    exerciseType: 'cardio',
+    muscleGroup: 'Cardio',
+    defaultSets: 1,
+    defaultReps: 20,
+    restSeconds: 0
+  },
+  'stairmaster': {
+    machine: 'Stairmaster',
+    exerciseType: 'cardio',
+    muscleGroup: 'Cardio',
+    defaultSets: 1,
+    defaultReps: 18,
+    restSeconds: 0
   }
 } as const;
 
