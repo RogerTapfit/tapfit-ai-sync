@@ -235,7 +235,7 @@ const WorkoutHub = () => {
       id: "16", 
       name: "Preacher Curl Machine", 
       muscleGroup: "Arms", 
-      image: "photo-1488590528505-98d2b5aba04b",
+      image: "/lovable-uploads/9b6efa63-f917-4f9e-8b82-31076b66aff5.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "10-12",
