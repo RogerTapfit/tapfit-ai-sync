@@ -343,9 +343,20 @@ const WorkoutDetail = () => {
           variant="outline"
           size="icon"
           onClick={async () => {
+            console.log('Back button clicked');
+            console.log('Current URL:', window.location.href);
+            console.log('History length:', window.history.length);
+            
             const { audioManager } = await import('@/utils/audioUtils');
             await audioManager.playButtonClick();
-            navigate(-1);
+            
+            try {
+              navigate(-1);
+              console.log('navigate(-1) called');
+            } catch (error) {
+              console.error('Navigation error:', error);
+              navigate('/');
+            }
           }}
         >
           <ArrowLeft className="h-4 w-4" />
