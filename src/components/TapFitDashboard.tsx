@@ -187,7 +187,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
 
       {/* 1. Today's Performance - Right after hero image */}
       <TodaysPerformance 
-        todayStats={todayStats} 
         onStartWorkout={handleStartWorkout} 
       />
 
