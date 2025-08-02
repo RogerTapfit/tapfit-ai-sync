@@ -263,7 +263,7 @@ const WorkoutHub = () => {
       id: "18", 
       name: "Leg Extension Machine", 
       muscleGroup: "Legs", 
-      image: "photo-1461749280684-dccba630e2f6",
+      image: "/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "12-15",
