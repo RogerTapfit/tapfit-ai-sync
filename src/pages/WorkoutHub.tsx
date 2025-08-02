@@ -209,7 +209,7 @@ const WorkoutHub = () => {
       id: "14", 
       name: "Bicep Curl Machine", 
       muscleGroup: "Arms", 
-      image: "/lovable-uploads/17d0bcc0-6b5c-4941-bd0e-5d2e09a889bf.png",
+      image: "/lovable-uploads/461c8b1b-3cee-4b38-b257-23671d035d6d.png",
       exerciseType: "Isolation",
       sets: 3,
       reps: "10-15",
