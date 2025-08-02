@@ -166,7 +166,7 @@ const WorkoutHub = () => {
       id: "11", 
       name: "T-Bar Row Machine", 
       muscleGroup: "Back", 
-      image: "photo-1487058792275-0ad4aaf24ca7",
+      image: "/lovable-uploads/29c29f8b-9b3a-4013-ac88-068a86133fae.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-10",
