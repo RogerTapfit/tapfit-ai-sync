@@ -222,7 +222,7 @@ const WorkoutHub = () => {
       id: "15", 
       name: "Tricep Dip Machine", 
       muscleGroup: "Arms", 
-      image: "/lovable-uploads/1b75edb0-0fe1-4905-a0ab-694547805885.png",
+      image: "/lovable-uploads/81dac889-b82f-4359-a3a6-a77b066d007c.png",
       exerciseType: "Compound",
       sets: 3,
       reps: "8-12",
