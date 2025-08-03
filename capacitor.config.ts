@@ -26,7 +26,11 @@ const config: CapacitorConfig = {
   ios: {
     scheme: "tapfit",
     preferredContentMode: "mobile",
-    orientation: "portrait"
+    orientation: "portrait",
+    infoPlist: {
+      NSHealthShareUsageDescription: "This app uses HealthKit to display your heart rate, blood oxygen, and activity data during workouts.",
+      NSHealthUpdateUsageDescription: "This app may write workout data to HealthKit."
+    }
   },
   android: {
     orientation: "portrait"
