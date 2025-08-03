@@ -1236,6 +1236,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: number
       }
+      cleanup_old_food_entries: {
+        Args: { _days_to_keep?: number }
+        Returns: undefined
+      }
       complete_user_calibration: {
         Args: { _user_id: string }
         Returns: boolean
