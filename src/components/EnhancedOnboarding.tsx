@@ -162,6 +162,8 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                   type="number"
                   value={profile.age}
                   onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 25)}
+                  min="13"
+                  max="100"
                 />
               </div>
               <div className="space-y-2">
@@ -199,8 +201,8 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                   type="number"
                   value={profile.height_feet}
                   onChange={(e) => handleInputChange('height_feet', parseInt(e.target.value) || 5)}
-                  min="0"
-                  max="8"
+                  min="3"
+                  max="9"
                 />
               </div>
               <div className="space-y-2">
