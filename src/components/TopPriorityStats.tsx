@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
+import { useHealthKit } from "@/hooks/useHealthKit";
+import { HeartRateScanModal } from "./HeartRateScanModal";
 
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
@@ -12,6 +15,16 @@ interface TodaysPerformanceProps {
 export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) => {
   const { user } = useAuth();
   const stats = useDailyStats(user?.id);
+  const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
+  const [showScanModal, setShowScanModal] = useState(false);
+
+  const handleHeartRateClick = () => {
+    setShowScanModal(true);
+  };
+
+  const handleScan = () => {
+    scanHeartRate();
+  };
   
   return (
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
@@ -75,15 +88,27 @@ export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) =>
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
-            <Heart className="h-6 w-6 text-stats-heart" />
-          </div>
+          <button 
+            onClick={handleHeartRateClick}
+            className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit hover:bg-stats-heart/10 hover:border-stats-heart/30 transition-all duration-200 group cursor-pointer"
+          >
+            <Heart className="h-6 w-6 text-stats-heart group-hover:animate-pulse" />
+          </button>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={stats.loading ? 0 : stats.avgHeartRate} duration={2800} />
           </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
       </div>
+
+      <HeartRateScanModal
+        isOpen={showScanModal}
+        onClose={() => setShowScanModal(false)}
+        isScanning={isScanning}
+        scanResult={lastScanResult}
+        onScan={handleScan}
+        avgHeartRate={stats.avgHeartRate}
+      />
     </Card>
   );
 };

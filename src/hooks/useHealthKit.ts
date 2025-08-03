@@ -9,6 +9,8 @@ export const useHealthKit = () => {
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
   const [alerts, setAlerts] = useState<HealthAlert[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [lastScanResult, setLastScanResult] = useState<{ heartRate: number; timestamp: Date } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -165,6 +167,47 @@ export const useHealthKit = () => {
     }
   };
 
+  // Scan heart rate on demand
+  const scanHeartRate = async () => {
+    if (isScanning) return;
+
+    setIsScanning(true);
+    
+    try {
+      // Haptic feedback for scan start
+      await Haptics.impact({ style: ImpactStyle.Light });
+      
+      const result = await healthKitService.scanHeartRateNow();
+      
+      if (result) {
+        setLastScanResult(result);
+        
+        // Success haptic feedback
+        await Haptics.impact({ style: ImpactStyle.Medium });
+        
+        toast({
+          title: "Heart Rate Scanned ❤️",
+          description: `Current heart rate: ${result.heartRate} BPM`,
+        });
+      } else {
+        toast({
+          title: "Scan Failed",
+          description: "Unable to get heart rate reading. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error scanning heart rate:', error);
+      toast({
+        title: "Scan Error",
+        description: "Failed to scan heart rate. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   // Export health data
   const exportHealthData = async (startDate: Date, endDate: Date) => {
     try {
@@ -194,11 +237,14 @@ export const useHealthKit = () => {
     hasPermissions,
     isAvailable,
     alerts,
+    isScanning,
+    lastScanResult,
     
     // Actions
     requestPermissions,
     startMonitoring,
     stopMonitoring,
+    scanHeartRate,
     clearAlert,
     clearAllAlerts,
     exportHealthData,
