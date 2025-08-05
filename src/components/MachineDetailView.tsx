@@ -7,6 +7,7 @@ import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat, Check, Smartpho
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import { LiveWorkoutSession } from './LiveWorkoutSession';
 import { NFCMachinePopup } from './NFCMachinePopup';
+import { getMachineImageUrl } from '@/utils/machineImageUtils';
 
 interface MachineDetailViewProps {
   exercise: WorkoutExercise;
@@ -84,8 +85,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
 
   const allSetsCompleted = completedSets === sets.length;
 
-  // Machine image fallback
-  const machineImageUrl = '/placeholder.svg'; // Will be updated when machine images are available
+  const machineImageUrl = getMachineImageUrl(exercise.machine);
 
   return (
     <div className="space-y-6">
@@ -105,13 +105,13 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-start gap-4">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-muted rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center shadow-md">
               <img 
                 src={machineImageUrl} 
                 alt={exercise.machine}
-                className="w-full h-full object-contain bg-background/50"
+                className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = '/placeholder.svg';
+                  e.currentTarget.src = '/lovable-uploads/f62a3fb2-b5ea-4582-b7ff-550a03b3c767.png';
                 }}
               />
             </div>
