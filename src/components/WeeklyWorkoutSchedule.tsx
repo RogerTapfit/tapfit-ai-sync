@@ -47,15 +47,15 @@ const WeeklyWorkoutSchedule = () => {
   };
 
   const getStatusColor = (workout: ScheduledWorkout) => {
-    if (workout.status === 'completed') return 'bg-green-50 border-green-200';
-    if (workout.status === 'missed') return 'bg-red-50 border-red-200';
+    if (workout.status === 'completed') return 'bg-card border-green-500/30 text-card-foreground';
+    if (workout.status === 'missed') return 'bg-card border-red-500/30 text-card-foreground';
     if (workout.scheduled_date && isPast(new Date(workout.scheduled_date)) && workout.status === 'scheduled') {
-      return 'bg-amber-50 border-amber-200';
+      return 'bg-card border-amber-500/30 text-card-foreground';
     }
     if (workout.scheduled_date && isToday(new Date(workout.scheduled_date))) {
-      return 'bg-blue-50 border-blue-200';
+      return 'bg-card border-blue-500/30 text-card-foreground';
     }
-    return 'bg-card border-border';
+    return 'bg-card border-border text-card-foreground';
   };
 
   const formatMuscleGroup = (muscleGroup: string) => {
