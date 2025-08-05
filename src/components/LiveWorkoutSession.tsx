@@ -16,6 +16,8 @@ import {
   Timer,
   Zap
 } from 'lucide-react';
+import { AvatarDisplay } from './AvatarDisplay';
+import { useAvatar } from '@/hooks/useAvatar';
 
 interface LiveWorkoutSessionProps {
   autoConnect?: boolean;
@@ -23,6 +25,7 @@ interface LiveWorkoutSessionProps {
 
 export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConnect = false }) => {
   const navigate = useNavigate();
+  const { avatarData } = useAvatar();
   const {
     connectionStatus,
     isConnected,
@@ -207,6 +210,29 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
           <CardContent>
             {isSessionActive && currentSession ? (
               <div className="space-y-6">
+                {/* Motivational Avatar */}
+                <div className="flex justify-center mb-6">
+                  {avatarData && (
+                    <div className="relative">
+                      <AvatarDisplay 
+                        avatarData={avatarData} 
+                        size="medium" 
+                        showAnimation={true}
+                        emotion={lastMotionTime && (Date.now() - lastMotionTime.getTime()) < 5000 ? 'excited' : 'focused'}
+                        pose={lastMotionTime && (Date.now() - lastMotionTime.getTime()) < 5000 ? 'workout' : 'idle'}
+                      />
+                      <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg px-3 py-1 text-xs font-bold shadow-lg border-2 border-primary">
+                        {realtimeReps === 0 ? "Let's go!" : 
+                         realtimeReps < 10 ? "Great start!" :
+                         realtimeReps < 25 ? "Keep it up!" :
+                         realtimeReps < 50 ? "You're on fire!" :
+                         "Amazing work!"}
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Main Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">

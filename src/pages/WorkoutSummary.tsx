@@ -21,11 +21,14 @@ import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
 import { AnimatedCoinCounter } from "@/components/AnimatedCoinCounter";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { AvatarDisplay } from "@/components/AvatarDisplay";
+import { useAvatar } from "@/hooks/useAvatar";
 
 const WorkoutSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { awardCoins } = useTapCoins();
+  const { avatarData } = useAvatar();
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -98,11 +101,19 @@ const WorkoutSummary = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-          <Trophy className="h-8 w-8 text-yellow-500" />
-        </div>
+      {/* Header with Celebrating Avatar */}
+      <div className="text-center space-y-4">
+        {avatarData && (
+          <div className="flex justify-center mb-4">
+            <AvatarDisplay 
+              avatarData={avatarData} 
+              size="large" 
+              showAnimation={true}
+              emotion="celebrating"
+              pose="victory"
+            />
+          </div>
+        )}
         <h1 className="text-3xl font-bold">Workout Complete!</h1>
         <p className="text-muted-foreground">Great job on finishing your {workoutData.name} workout</p>
       </div>

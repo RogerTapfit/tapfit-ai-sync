@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Coins, Lock, Check, Star, Crown, Sparkles } from 'lucide-react';
+import { Coins, Lock, Check, Star, Crown, Sparkles, Eye } from 'lucide-react';
 import { AvatarDisplay } from './AvatarDisplay';
-import { useAvatar } from '@/hooks/useAvatar';
+import { useAvatar, AvatarData } from '@/hooks/useAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { toast } from 'sonner';
 
@@ -17,6 +17,7 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
   const { avatarData, purchaseAvatarItem, canUseItem } = useAvatar();
   const { storeItems, balance } = useTapCoins();
   const [selectedCategory, setSelectedCategory] = useState('featured');
+  const [previewData, setPreviewData] = useState<AvatarData | null>(null);
 
   if (!avatarData) return null;
 
@@ -68,14 +69,31 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
     return 'Common';
   };
 
+  const handlePreview = (item: any) => {
+    if (!avatarData) return;
+    
+    const categoryKey = item.category.replace('avatar_', '') as keyof AvatarData;
+    const itemValue = item.name.toLowerCase().replace(/\s+/g, '_');
+    
+    setPreviewData({
+      ...avatarData,
+      [categoryKey]: itemValue
+    });
+  };
+
+  const clearPreview = () => {
+    setPreviewData(null);
+  };
+
   const ItemCard = ({ item }: { item: any }) => {
     const owned = canUseItem(item.name, item.category);
     const canAfford = balance >= item.coin_cost;
     const rarity = getRarityColor(item.coin_cost);
     const rarityLabel = getRarityLabel(item.coin_cost);
+    const isPreviewing = previewData && previewData[item.category.replace('avatar_', '') as keyof AvatarData] === item.name.toLowerCase().replace(/\s+/g, '_');
 
     return (
-      <Card className={`glow-card hover:scale-105 transition-all duration-200 ${rarity.includes('purple') ? 'bg-gradient-to-br from-purple-500/5 to-pink-500/5' : ''}`}>
+      <Card className={`glow-card hover:scale-105 transition-all duration-200 ${rarity.includes('purple') ? 'bg-gradient-to-br from-purple-500/5 to-pink-500/5' : ''} ${isPreviewing ? 'ring-2 ring-primary' : ''}`}>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <div>
@@ -96,8 +114,23 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <p className="text-xs text-muted-foreground mb-3">{item.description}</p>
+        <CardContent className="pt-0 space-y-2">
+          <p className="text-xs text-muted-foreground">{item.description}</p>
+          
+          {/* Preview Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full"
+            onMouseEnter={() => handlePreview(item)}
+            onMouseLeave={clearPreview}
+            onClick={() => handlePreview(item)}
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            Try On
+          </Button>
+          
+          {/* Purchase Button */}
           <Button
             size="sm"
             className="w-full"
@@ -111,7 +144,7 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
                 Owned
               </>
             ) : canAfford ? (
-              'Purchase'
+              'Purchase & Equip'
             ) : (
               <>
                 <Lock className="h-3 w-3 mr-1" />
@@ -152,15 +185,42 @@ export const AvatarShop = ({ onClose }: AvatarShopProps) => {
           <div className="lg:col-span-1">
             <Card className="glow-card p-6 sticky top-4">
               <CardHeader>
-                <CardTitle className="text-center">Your Avatar</CardTitle>
+                <CardTitle className="text-center flex items-center justify-center gap-2">
+                  {previewData ? (
+                    <>
+                      <Eye className="h-4 w-4" />
+                      Preview
+                    </>
+                  ) : (
+                    'Your Avatar'
+                  )}
+                </CardTitle>
+                {previewData && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    Hover over items to try them on!
+                  </p>
+                )}
               </CardHeader>
               <CardContent className="flex justify-center">
                 <AvatarDisplay 
-                  avatarData={avatarData} 
+                  avatarData={previewData || avatarData} 
                   size="large" 
                   showAnimation={true}
+                  emotion={previewData ? 'excited' : 'happy'}
+                  pose={previewData ? 'flexing' : 'idle'}
                 />
               </CardContent>
+              {previewData && (
+                <div className="text-center mt-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearPreview}
+                  >
+                    Clear Preview
+                  </Button>
+                </div>
+              )}
             </Card>
           </div>
 
