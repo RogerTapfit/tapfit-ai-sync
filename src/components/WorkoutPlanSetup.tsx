@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, Clock, Target, Calendar, AlertTriangle, Dumbbell, Zap, Heart, Users, Settings } from 'lucide-react';
+import { Brain, Clock, Target, Calendar, AlertTriangle, Dumbbell, Zap, Heart, Users, Settings, CheckSquare } from 'lucide-react';
 import { useWorkoutPlan, FitnessPreferences } from '@/hooks/useWorkoutPlan';
 
 const WorkoutPlanSetup = () => {
@@ -125,6 +125,17 @@ const WorkoutPlanSetup = () => {
     const updated = current.includes(equipment)
       ? current.filter(eq => eq !== equipment)
       : [...current, equipment];
+    
+    setFormData({ ...formData, available_equipment: updated });
+  };
+
+  const handleSelectAllEquipment = () => {
+    const allEquipment = gymEquipment.map(eq => eq.value);
+    const currentEquipment = formData.available_equipment || [];
+    
+    // If all equipment is selected, deselect all. Otherwise, select all.
+    const isAllSelected = allEquipment.every(eq => currentEquipment.includes(eq));
+    const updated = isAllSelected ? [] : allEquipment;
     
     setFormData({ ...formData, available_equipment: updated });
   };
@@ -306,6 +317,23 @@ const WorkoutPlanSetup = () => {
                 <p className="text-sm text-muted-foreground">
                   Select equipment available at your gym (24 Hour Fitness standard equipment).
                 </p>
+                
+                <div className="flex justify-end mb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelectAllEquipment}
+                    className="flex items-center gap-2"
+                  >
+                    <CheckSquare className="h-4 w-4" />
+                    {(() => {
+                      const allEquipment = gymEquipment.map(eq => eq.value);
+                      const currentEquipment = formData.available_equipment || [];
+                      const isAllSelected = allEquipment.every(eq => currentEquipment.includes(eq));
+                      return isAllSelected ? 'Deselect All' : 'Select All';
+                    })()}
+                  </Button>
+                </div>
                 
                 {/* Equipment by Category */}
                 {['chest', 'back', 'shoulders', 'legs', 'glutes', 'arms', 'abs', 'cardio', 'full_body'].map(category => (
