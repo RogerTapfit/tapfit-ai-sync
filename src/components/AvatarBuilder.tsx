@@ -60,13 +60,6 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     animation: 'idle'
   } as RobotAvatarData);
 
-  // Initialize preview when avatar data loads
-  useEffect(() => {
-    if (avatarData && !previewData.chassis_type) {
-      initializeAvatar(avatarData);
-    }
-  }, [avatarData, previewData.chassis_type, initializeAvatar]);
-
   // Debounced save function
   const debouncedSave = useCallback(async (dataToSave: RobotAvatarData) => {
     startSave();
@@ -81,6 +74,52 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
       failSave(error instanceof Error ? error.message : 'Unknown error occurred');
     }
   }, [startSave, updateAvatar, completeSave, failSave]);
+
+  const handleNext = useCallback(() => {
+    if (currentStep < builderSteps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      onClose();
+    }
+  }, [currentStep, onClose]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
+  const handleItemSelect = useCallback(async (item: any, categoryKey: string) => {
+    const itemValue = item.name.toLowerCase().replace(/\s+/g, '_');
+    
+    if (canUseItem(item.name, item.category)) {
+      const updates = { [categoryKey]: itemValue };
+      updatePreview(updates as Partial<RobotAvatarData>);
+      toast.success(`Applied ${item.name}!`);
+    } else {
+      if (balance >= item.coin_cost) {
+        const success = await purchaseRobotItem(item.id, item.category, itemValue);
+        if (success) {
+          const updates = { [categoryKey]: itemValue };
+          updatePreview(updates as Partial<RobotAvatarData>);
+          toast.success(`Purchased and equipped ${item.name}!`);
+        }
+      } else {
+        toast.error(`You need ${item.coin_cost - balance} more Tap Coins!`);
+      }
+    }
+  }, [canUseItem, balance, purchaseRobotItem, updatePreview]);
+
+  const handleBasicOption = useCallback((category: string, value: any) => {
+    updatePreview({ [category]: value } as Partial<RobotAvatarData>);
+  }, [updatePreview]);
+
+  // Initialize preview when avatar data loads
+  useEffect(() => {
+    if (avatarData && !previewData.chassis_type) {
+      initializeAvatar(avatarData);
+    }
+  }, [avatarData, previewData.chassis_type, initializeAvatar]);
 
   // Auto-save changes when preview data changes with debounce
   useEffect(() => {
@@ -133,44 +172,6 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     return robotItems.filter(item => item.category === category);
   };
 
-  const handleNext = useCallback(() => {
-    if (currentStep < builderSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onClose();
-    }
-  }, [currentStep, onClose]);
-
-  const handlePrevious = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  }, [currentStep]);
-
-  const handleItemSelect = useCallback(async (item: any, categoryKey: string) => {
-    const itemValue = item.name.toLowerCase().replace(/\s+/g, '_');
-    
-    if (canUseItem(item.name, item.category)) {
-      const updates = { [categoryKey]: itemValue };
-      updatePreview(updates as Partial<RobotAvatarData>);
-      toast.success(`Applied ${item.name}!`);
-    } else {
-      if (balance >= item.coin_cost) {
-        const success = await purchaseRobotItem(item.id, item.category, itemValue);
-        if (success) {
-          const updates = { [categoryKey]: itemValue };
-          updatePreview(updates as Partial<RobotAvatarData>);
-          toast.success(`Purchased and equipped ${item.name}!`);
-        }
-      } else {
-        toast.error(`You need ${item.coin_cost - balance} more Tap Coins!`);
-      }
-    }
-  }, [canUseItem, balance, purchaseRobotItem, updatePreview]);
-
-  const handleBasicOption = useCallback((category: string, value: any) => {
-    updatePreview({ [category]: value } as Partial<RobotAvatarData>);
-  }, [updatePreview]);
 
   const renderStepContent = () => {
     switch (step.id) {
