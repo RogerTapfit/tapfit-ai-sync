@@ -52,7 +52,13 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     failSave,
     resetToSaved,
     clearError
-  } = useAvatarPreview(avatarData);
+  } = useAvatarPreview(avatarData || {
+    chassis_type: 'slim_bot',
+    color_scheme: { primary: "hsl(0, 84%, 60%)", secondary: "hsl(0, 0%, 15%)", accent: "hsl(0, 100%, 70%)" },
+    tech_modules: [],
+    energy_core: 'standard',
+    animation: 'idle'
+  } as RobotAvatarData);
 
   // Initialize preview when avatar data loads
   useEffect(() => {
