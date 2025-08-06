@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, ArrowRight, Coins, Sparkles } from 'lucide-react';
 import { RobotAvatarDisplay } from './RobotAvatarDisplay';
 import { useRobotAvatar, RobotAvatarData } from '@/hooks/useRobotAvatar';
@@ -145,34 +147,73 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     switch (step.id) {
       case 'chassis':
         return (
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold mb-3">Robot Chassis Type</h4>
-               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: 'Fitness Trainer Bot', value: 'slim_bot', description: 'Sleek, agile build perfect for cardio', icon: '🏃‍♂️' },
-                  { name: 'Strength Coach Bot', value: 'bulky_bot', description: 'Powerful build with dumbbell attachments', icon: '🏋️‍♂️' },
-                  { name: 'Athletic Runner Bot', value: 'agile_bot', description: 'Dynamic pose with running gear', icon: '⚡' },
-                  { name: 'Tall Performance Bot', value: 'tall_bot', description: 'Imposing and motivational', icon: '🏀' },
-                  { name: 'Cute Companion Bot', value: 'compact_bot', description: 'Friendly motivational fitness buddy', icon: '🤖' }
-                ].map((option) => (
-                  <Card
-                    key={option.value}
-                    className={`p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                      previewData?.chassis_type === option.value ? 'ring-2 ring-primary bg-primary/5' : ''
-                    }`}
-                    onClick={() => handleBasicOption('chassis_type', option.value)}
-                  >
-                    <div className="text-center space-y-2">
-                      <div className="text-2xl">{option.icon}</div>
-                      <div className="font-semibold">{option.name}</div>
-                      <div className="text-xs text-muted-foreground">{option.description}</div>
+          <TooltipProvider>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold mb-3">Robot Chassis Type</h4>
+                
+                {/* Mobile: Horizontal scroll */}
+                <div className="block sm:hidden">
+                  <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                    <div className="flex w-max space-x-4 p-4">
+                      {[
+                        { name: 'Fitness Trainer Bot', value: 'slim_bot', description: 'Sleek, agile build perfect for cardio', icon: '🏃‍♂️' },
+                        { name: 'Strength Coach Bot', value: 'bulky_bot', description: 'Powerful build with dumbbell attachments', icon: '🏋️‍♂️' },
+                        { name: 'Athletic Runner Bot', value: 'agile_bot', description: 'Dynamic pose with running gear', icon: '⚡' },
+                        { name: 'Tall Performance Bot', value: 'tall_bot', description: 'Imposing and motivational', icon: '🏀' },
+                        { name: 'Cute Companion Bot', value: 'compact_bot', description: 'Friendly motivational fitness buddy', icon: '🤖' }
+                      ].map((option) => (
+                        <Tooltip key={option.value}>
+                          <TooltipTrigger asChild>
+                            <Card
+                              className={`min-w-[140px] p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                                previewData?.chassis_type === option.value ? 'ring-2 ring-primary bg-primary/5' : ''
+                              }`}
+                              onClick={() => handleBasicOption('chassis_type', option.value)}
+                            >
+                              <div className="text-center space-y-2">
+                                <div className="text-2xl">{option.icon}</div>
+                                <div className="font-semibold text-sm">{option.name}</div>
+                              </div>
+                            </Card>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{option.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
                     </div>
-                  </Card>
-                ))}
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </div>
+
+                {/* Desktop: Responsive grid */}
+                <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { name: 'Fitness Trainer Bot', value: 'slim_bot', description: 'Sleek, agile build perfect for cardio', icon: '🏃‍♂️' },
+                    { name: 'Strength Coach Bot', value: 'bulky_bot', description: 'Powerful build with dumbbell attachments', icon: '🏋️‍♂️' },
+                    { name: 'Athletic Runner Bot', value: 'agile_bot', description: 'Dynamic pose with running gear', icon: '⚡' },
+                    { name: 'Tall Performance Bot', value: 'tall_bot', description: 'Imposing and motivational', icon: '🏀' },
+                    { name: 'Cute Companion Bot', value: 'compact_bot', description: 'Friendly motivational fitness buddy', icon: '🤖' }
+                  ].map((option) => (
+                    <Card
+                      key={option.value}
+                      className={`p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 min-h-24 ${
+                        previewData?.chassis_type === option.value ? 'ring-2 ring-primary bg-primary/5' : ''
+                      }`}
+                      onClick={() => handleBasicOption('chassis_type', option.value)}
+                    >
+                      <div className="text-center space-y-2">
+                        <div className="text-2xl">{option.icon}</div>
+                        <div className="font-semibold text-sm">{option.name}</div>
+                        <div className="text-xs text-muted-foreground leading-tight">{option.description}</div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </TooltipProvider>
         );
 
       case 'colors':
@@ -180,7 +221,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold mb-3">Color Schemes</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { 
                     name: 'TapFit Red', 
@@ -206,7 +247,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   <Button
                     key={option.name}
                     variant={JSON.stringify(previewData?.color_scheme) === JSON.stringify(option.value) ? "default" : "outline"}
-                    className="h-20 flex-col gap-2 p-4"
+                    className="min-h-20 flex-col gap-2 p-4"
                     onClick={() => handleBasicOption('color_scheme', option.value)}
                   >
                     <span className="font-semibold">{option.name}</span>
@@ -224,40 +265,85 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
 
       case 'tech':
         return (
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold mb-3">Available Tech Modules</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: 'Basic Scanner', value: 'basic_scanner', description: '📡 Basic sensor array' },
-                  { name: 'Heart Monitor', value: 'heart_monitor', description: '💓 Advanced biometrics' },
-                  { name: 'Power Boost', value: 'power_boost', description: '⚡ Enhanced performance' },
-                  { name: 'Data Logger', value: 'data_logger', description: '📊 Workout analytics' },
-                  { name: 'AI Assistant', value: 'ai_assistant', description: '🤖 Smart coaching' },
-                  { name: 'Stealth Mode', value: 'stealth_mode', description: '👻 Ninja protocols' }
-                ].map((module) => {
-                  const isEquipped = previewData?.tech_modules?.includes(module.value) || false;
-                  return (
-                    <Button
-                      key={module.value}
-                      variant={isEquipped ? "default" : "outline"}
-                      className="h-20 flex-col gap-2 p-4"
-                      onClick={() => {
-                        const currentModules = previewData?.tech_modules || [];
-                        const newModules = isEquipped 
-                          ? currentModules.filter(m => m !== module.value)
-                          : [...currentModules, module.value];
-                        handleBasicOption('tech_modules', newModules);
-                      }}
-                    >
-                      <span className="font-semibold">{module.name}</span>
-                      <span className="text-xs text-muted-foreground text-center">{module.description}</span>
-                    </Button>
-                  );
-                })}
+          <TooltipProvider>
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-semibold mb-3">Available Tech Modules</h4>
+                
+                {/* Mobile: Horizontal scroll */}
+                <div className="block sm:hidden">
+                  <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                    <div className="flex w-max space-x-4 p-4">
+                      {[
+                        { name: 'Basic Scanner', value: 'basic_scanner', description: '📡 Basic sensor array' },
+                        { name: 'Heart Monitor', value: 'heart_monitor', description: '💓 Advanced biometrics' },
+                        { name: 'Power Boost', value: 'power_boost', description: '⚡ Enhanced performance' },
+                        { name: 'Data Logger', value: 'data_logger', description: '📊 Workout analytics' },
+                        { name: 'AI Assistant', value: 'ai_assistant', description: '🤖 Smart coaching' },
+                        { name: 'Stealth Mode', value: 'stealth_mode', description: '👻 Ninja protocols' }
+                      ].map((module) => {
+                        const isEquipped = previewData?.tech_modules?.includes(module.value) || false;
+                        return (
+                          <Tooltip key={module.value}>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant={isEquipped ? "default" : "outline"}
+                                className="min-w-[120px] min-h-20 flex-col gap-2 p-4"
+                                onClick={() => {
+                                  const currentModules = previewData?.tech_modules || [];
+                                  const newModules = isEquipped 
+                                    ? currentModules.filter(m => m !== module.value)
+                                    : [...currentModules, module.value];
+                                  handleBasicOption('tech_modules', newModules);
+                                }}
+                              >
+                                <span className="font-semibold text-sm">{module.name}</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{module.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </div>
+
+                {/* Desktop: Responsive grid */}
+                <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { name: 'Basic Scanner', value: 'basic_scanner', description: '📡 Basic sensor array' },
+                    { name: 'Heart Monitor', value: 'heart_monitor', description: '💓 Advanced biometrics' },
+                    { name: 'Power Boost', value: 'power_boost', description: '⚡ Enhanced performance' },
+                    { name: 'Data Logger', value: 'data_logger', description: '📊 Workout analytics' },
+                    { name: 'AI Assistant', value: 'ai_assistant', description: '🤖 Smart coaching' },
+                    { name: 'Stealth Mode', value: 'stealth_mode', description: '👻 Ninja protocols' }
+                  ].map((module) => {
+                    const isEquipped = previewData?.tech_modules?.includes(module.value) || false;
+                    return (
+                      <Button
+                        key={module.value}
+                        variant={isEquipped ? "default" : "outline"}
+                        className="min-h-20 flex-col gap-2 p-4"
+                        onClick={() => {
+                          const currentModules = previewData?.tech_modules || [];
+                          const newModules = isEquipped 
+                            ? currentModules.filter(m => m !== module.value)
+                            : [...currentModules, module.value];
+                          handleBasicOption('tech_modules', newModules);
+                        }}
+                      >
+                        <span className="font-semibold text-sm">{module.name}</span>
+                        <span className="text-xs text-muted-foreground text-center leading-tight">{module.description}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          </TooltipProvider>
         );
 
       case 'core':
@@ -265,7 +351,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold mb-3">Energy Core Type</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   { name: 'Standard Core', value: 'standard', description: '🔋 Reliable power', free: true },
                   { name: 'Fusion Core', value: 'fusion', description: '⚛️ High-energy output' },
@@ -276,11 +362,11 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   <Button
                     key={core.value}
                     variant={previewData?.energy_core === core.value ? "default" : "outline"}
-                    className="h-20 flex-col gap-2 p-4"
+                    className="min-h-20 flex-col gap-2 p-4"
                     onClick={() => handleBasicOption('energy_core', core.value)}
                   >
-                    <span className="font-semibold">{core.name}</span>
-                    <span className="text-xs text-muted-foreground text-center">{core.description}</span>
+                    <span className="font-semibold text-sm">{core.name}</span>
+                    <span className="text-xs text-muted-foreground text-center leading-tight">{core.description}</span>
                     {core.free && <span className="text-xs text-green-500">Free</span>}
                   </Button>
                 ))}
@@ -320,7 +406,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold mb-3">Robot Animations</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   { name: 'Power Up', value: 'power_up', description: '⚡ Boot sequence' },
                   { name: 'Idle', value: 'idle', description: '🤖 Standby mode' },
@@ -332,11 +418,11 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   <Button
                     key={animation.value}
                     variant={previewData?.animation === animation.value ? "default" : "outline"}
-                    className="h-20 flex-col gap-2 p-4"
+                    className="min-h-20 flex-col gap-2 p-4"
                     onClick={() => handleBasicOption('animation', animation.value)}
                   >
-                    <span className="font-semibold">{animation.name}</span>
-                    <span className="text-xs text-muted-foreground text-center">{animation.description}</span>
+                    <span className="font-semibold text-sm">{animation.name}</span>
+                    <span className="text-xs text-muted-foreground text-center leading-tight">{animation.description}</span>
                   </Button>
                 ))}
               </div>
@@ -344,7 +430,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
 
             <div>
               <h4 className="font-semibold mb-3">Background</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { name: 'Tech Lab', value: 'tech_lab', description: '🔬 Research facility' },
                   { name: 'Gym Floor', value: 'gym', description: '🏋️ Training ground' },
@@ -354,11 +440,11 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   <Button
                     key={bg.value}
                     variant={previewData?.background === bg.value ? "default" : "outline"}
-                    className="h-16 flex-col gap-1 p-3"
+                    className="min-h-16 flex-col gap-1 p-3"
                     onClick={() => handleBasicOption('background', bg.value)}
                   >
                     <span className="font-semibold text-sm">{bg.name}</span>
-                    <span className="text-xs text-muted-foreground text-center">{bg.description}</span>
+                    <span className="text-xs text-muted-foreground text-center leading-tight">{bg.description}</span>
                   </Button>
                 ))}
               </div>
