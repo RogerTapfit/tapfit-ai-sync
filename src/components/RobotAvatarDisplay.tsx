@@ -19,16 +19,17 @@ export const RobotAvatarDisplay = ({
   emotion = 'happy',
   pose = 'idle'
 }: RobotAvatarDisplayProps) => {
+  // Mobile-responsive size classes
   const sizeClasses = {
-    small: 'w-16 h-16',
-    medium: 'w-32 h-32',
-    large: 'w-48 h-48'
+    small: 'w-16 h-16 min-w-16 min-h-16',
+    medium: 'w-24 h-24 min-w-24 min-h-24 sm:w-32 sm:h-32 sm:min-w-32 sm:min-h-32',
+    large: 'w-32 h-32 min-w-32 min-h-32 sm:w-48 sm:h-48 sm:min-w-48 sm:min-h-48'
   };
 
   const bodySize = {
-    small: { body: 'w-8 h-12', head: 'w-6 h-6', core: 'w-3 h-3' },
-    medium: { body: 'w-12 h-16', head: 'w-8 h-8', core: 'w-4 h-4' },
-    large: { body: 'w-18 h-24', head: 'w-12 h-12', core: 'w-6 h-6' }
+    small: { body: 'w-6 h-8', head: 'w-4 h-4', core: 'w-2 h-2' },
+    medium: { body: 'w-8 h-10 sm:w-12 sm:h-16', head: 'w-6 h-6 sm:w-8 sm:h-8', core: 'w-3 h-3 sm:w-4 sm:h-4' },
+    large: { body: 'w-12 h-16 sm:w-18 sm:h-24', head: 'w-8 h-8 sm:w-12 sm:h-12', core: 'w-4 h-4 sm:w-6 sm:h-6' }
   };
 
   const getBackgroundGradient = (background: string) => {
@@ -115,21 +116,21 @@ export const RobotAvatarDisplay = ({
   const getAnimationClass = (animation: string, emotion: string) => {
     if (!showAnimation) return '';
     
-    const baseClass = 'transition-all duration-300';
+    const baseClass = 'transition-all duration-500 ease-in-out';
     
     switch (animation) {
       case 'power_up':
         return `${baseClass} animate-pulse`;
       case 'victory':
-        return `${baseClass} animate-bounce`;
+        return `${baseClass}`;
       case 'scan_mode':
-        return `${baseClass} animate-[ping_2s_ease-in-out_infinite]`;
+        return `${baseClass}`;
       case 'workout':
-        return `${baseClass} animate-[bounce_1s_ease-in-out_infinite]`;
+        return `${baseClass}`;
       case 'champion':
-        return `${baseClass} animate-[wiggle_1s_ease-in-out_infinite]`;
+        return `${baseClass}`;
       default:
-        return emotion === 'celebrating' ? `${baseClass} animate-[swing_2s_ease-in-out_infinite]` : baseClass;
+        return baseClass;
     }
   };
 
@@ -158,8 +159,7 @@ export const RobotAvatarDisplay = ({
 
   return (
     <Card 
-      key={`${avatarData.chassis_type}-${avatarData.color_scheme.primary}-${avatarData.tech_modules.join(',')}`}
-      className={`${sizeClasses[size]} ${className} relative border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-500 flex items-center justify-center overflow-visible`}
+      className={`${sizeClasses[size]} ${className} relative border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-300 flex items-center justify-center overflow-hidden`}
       style={{ 
         boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20` 
       }}
@@ -174,8 +174,7 @@ export const RobotAvatarDisplay = ({
 
         {/* Main Robot Body */}
         <div 
-          className={`relative ${getAnimationClass(currentPose, emotion)}`}
-          style={{ transform: getChassisStyle(avatarData.chassis_type).includes('scale') ? getChassisStyle(avatarData.chassis_type).match(/scale-\w+/)?.[0] || 'scale-100' : 'scale-100' }}
+          className={`relative ${getAnimationClass(currentPose, emotion)} ${getChassisStyle(avatarData.chassis_type)}`}
         >
           {/* Robot Head */}
           <div 

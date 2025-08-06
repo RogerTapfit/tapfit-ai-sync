@@ -37,13 +37,13 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
   const [previewData, setPreviewData] = useState<RobotAvatarData | null>(null);
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
-  // Update preview when avatar data loads
+  // Update preview when avatar data loads or changes
   React.useEffect(() => {
-    if (avatarData && !previewData) {
+    if (avatarData) {
       console.log('Setting preview data:', avatarData);
       setPreviewData(avatarData);
     }
-  }, [avatarData, previewData]);
+  }, [avatarData]);
 
   // Show loading state instead of black screen
   if (loading) {
@@ -122,9 +122,12 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
   };
 
   const handleBasicOption = (category: string, value: any) => {
+    if (!previewData) return;
+    
     // Instant preview update
     const updateData = { [category]: value };
-    setPreviewData({ ...previewData!, ...updateData });
+    const newPreviewData = { ...previewData, ...updateData };
+    setPreviewData(newPreviewData);
     
     // Debounced database save
     if (saveTimeoutId) {
@@ -133,7 +136,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     
     const newTimeoutId = setTimeout(() => {
       updateAvatar(updateData as Partial<RobotAvatarData>);
-    }, 300); // 300ms delay for debouncing
+    }, 500); // Increased delay for better performance
     
     setSaveTimeoutId(newTimeoutId);
   };
@@ -397,8 +400,8 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-2 sm:p-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -427,65 +430,68 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           {/* Avatar Preview */}
-          <div className="lg:col-span-1">
-            <Card className="glow-card p-6 sticky top-4 border-2 border-primary/30">
-              <CardHeader>
-                <CardTitle className="text-center flex items-center justify-center gap-2">
-                  Live Preview 
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center space-y-3">
+          <Card className="lg:sticky lg:top-4 lg:h-fit">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center justify-center gap-2">
+                Live Preview 
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border-2 border-primary/20 flex items-center justify-center p-4">
                 <RobotAvatarDisplay 
                   avatarData={previewData!} 
                   size="large" 
                   showAnimation={true}
                   emotion="excited"
                   pose="power_up"
-                  key={`preview-${previewData?.chassis_type}-${previewData?.color_scheme?.primary}-${Date.now()}`}
+                  className="max-w-full max-h-full"
                 />
-                <div className="text-sm text-muted-foreground text-center">
-                  <div className="font-semibold">
-                    {previewData?.chassis_type?.replace(/_/g, ' ').toUpperCase() || 'ROBOT'}
-                  </div>
-                  <div className="text-xs">
-                    Power: {previewData?.power_level || 25}% | Modules: {previewData?.tech_modules?.length || 0}
-                  </div>
+              </div>
+              <div className="text-sm text-muted-foreground text-center mt-2">
+                <div className="font-semibold">
+                  {previewData?.chassis_type?.replace(/_/g, ' ').toUpperCase() || 'ROBOT'}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div className="text-xs">
+                  Power: {previewData?.power_level || 25}% | Modules: {previewData?.tech_modules?.length || 0}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Step Content */}
-          <div className="lg:col-span-2">
-            <Card className="glow-card">
-              <CardHeader>
-                <CardTitle>{step.title}</CardTitle>
-                <p className="text-muted-foreground">{step.description}</p>
-              </CardHeader>
-              <CardContent>
-                {renderStepContent()}
-              </CardContent>
-            </Card>
+          {/* Customization Panel */}
+          <Card className="border-2 border-primary/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3">
+                <span className="text-2xl">🤖</span>
+                <div>
+                  <h3 className="text-xl font-bold">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between mt-6">
-              <Button 
-                variant="outline" 
-                onClick={handlePrevious}
-                disabled={currentStep === 0}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
-              <Button onClick={handleNext}>
-                {currentStep === builderSteps.length - 1 ? 'Finish' : 'Next'}
-                {currentStep !== builderSteps.length - 1 && <ArrowRight className="h-4 w-4 ml-2" />}
-              </Button>
-            </div>
-          </div>
+        {/* Navigation */}
+        <div className="flex justify-between mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handlePrevious}
+            disabled={currentStep === 0}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+          <Button onClick={handleNext}>
+            {currentStep === builderSteps.length - 1 ? 'Finish' : 'Next'}
+            {currentStep !== builderSteps.length - 1 && <ArrowRight className="h-4 w-4 ml-2" />}
+          </Button>
         </div>
       </div>
     </div>
