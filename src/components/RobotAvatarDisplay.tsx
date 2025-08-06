@@ -44,11 +44,11 @@ export const RobotAvatarDisplay = ({
 
   const getChassisStyle = (chassisType: string) => {
     switch (chassisType) {
-      case 'bulky_bot': return 'scale-125 font-bold transform rotate-2 shadow-2xl';
-      case 'agile_bot': return 'scale-90 transform -skew-y-2 shadow-lg';
-      case 'tall_bot': return 'scale-y-150 scale-x-85 shadow-xl';
-      case 'compact_bot': return 'scale-75 rounded-2xl shadow-md';
-      case 'slim_bot': return 'scale-y-110 scale-x-90 transform skew-y-1';
+      case 'bulky_bot': return 'scale-110';
+      case 'agile_bot': return 'scale-95';
+      case 'tall_bot': return 'scale-y-125 scale-x-95';
+      case 'compact_bot': return 'scale-90';
+      case 'slim_bot': return 'scale-y-105 scale-x-95';
       default: return 'scale-100';
     }
   };
@@ -59,56 +59,40 @@ export const RobotAvatarDisplay = ({
     switch (chassisType) {
       case 'bulky_bot':
         return (
-          <>
-            <div className={`absolute -left-2 top-1/3 transform -translate-y-1/2 ${iconSize} animate-bounce`}>
-              🏋️ {/* Dumbbell attachment */}
-            </div>
-            <div className={`absolute -right-2 top-2/3 transform -translate-y-1/2 ${iconSize} animate-bounce delay-100`}>
-              💪 {/* Strength indicator */}
-            </div>
-          </>
+          <div className={`${iconSize} animate-bounce text-orange-400`}>
+            🏋️💪
+          </div>
         );
       case 'agile_bot':
         return (
-          <>
-            <div className={`absolute -right-2 top-1/4 ${iconSize} animate-pulse`}>
-              🎧 {/* Headphones for music */}
-            </div>
-            <div className={`absolute -left-2 top-3/4 ${iconSize} animate-ping`}>
-              ⚡ {/* Speed indicator */}
-            </div>
-          </>
+          <div className={`${iconSize} animate-pulse text-cyan-400`}>
+            ⚡🏃‍♂️
+          </div>
         );
       case 'tall_bot':
         return (
-          <>
-            <div className={`absolute top-0 left-1/4 transform -translate-y-1/2 ${iconSize} animate-pulse`}>
-              🏀 {/* Height indicator */}
-            </div>
-            <div className={`absolute top-0 right-1/4 transform -translate-y-1/2 ${iconSize} animate-pulse delay-75`}>
-              👑 {/* Leadership symbol */}
-            </div>
-          </>
+          <div className={`${iconSize} animate-pulse text-yellow-400`}>
+            🏀👑
+          </div>
         );
       case 'compact_bot':
         return (
-          <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${iconSize} animate-bounce`}>
-            💝 {/* Heart symbol for motivation */}
+          <div className={`${iconSize} animate-bounce text-pink-400`}>
+            💝🤖
           </div>
         );
       case 'slim_bot':
         return (
-          <>
-            <div className={`absolute -right-1 top-1/3 ${iconSize} animate-pulse`}>
-              🏃‍♂️ {/* Running indicator */}
-            </div>
-            <div className={`absolute -left-1 top-2/3 ${iconSize} animate-pulse delay-100`}>
-              🔥 {/* Cardio indicator */}
-            </div>
-          </>
+          <div className={`${iconSize} animate-pulse text-green-400`}>
+            🏃‍♂️🔥
+          </div>
         );
       default:
-        return null;
+        return (
+          <div className={`${iconSize} text-blue-400`}>
+            🤖
+          </div>
+        );
     }
   };
 
@@ -175,24 +159,48 @@ export const RobotAvatarDisplay = ({
   return (
     <Card 
       key={`${avatarData.chassis_type}-${avatarData.color_scheme.primary}-${avatarData.tech_modules.join(',')}`}
-      className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-500`}
+      className={`${sizeClasses[size]} ${className} relative border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-500 flex items-center justify-center overflow-visible`}
       style={{ 
         boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20` 
       }}
     >
-      {/* Robot Figure */}
-      <div className="absolute inset-0 flex items-end justify-center p-2">
-        <div className={`${getAnimationClass(currentPose, emotion)} ${getChassisStyle(avatarData.chassis_type)}`}>
-          
-          {/* Robot Body - Main Chassis */}
+      {/* Robot Figure Container */}
+      <div className="relative flex flex-col items-center justify-center h-full w-full">
+        
+        {/* Chassis Type Label */}
+        <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded text-xs font-bold text-white">
+          {avatarData.chassis_type.replace('_', ' ').toUpperCase()}
+        </div>
+
+        {/* Main Robot Body */}
+        <div 
+          className={`relative ${getAnimationClass(currentPose, emotion)}`}
+          style={{ transform: getChassisStyle(avatarData.chassis_type).includes('scale') ? getChassisStyle(avatarData.chassis_type).match(/scale-\w+/)?.[0] || 'scale-100' : 'scale-100' }}
+        >
+          {/* Robot Head */}
           <div 
-            className={`${currentBodySize.body} rounded-lg relative border-2 border-white/20 shadow-lg overflow-hidden`}
+            className={`${currentBodySize.head} rounded-lg border-2 border-white/20 shadow-lg mb-1 mx-auto relative`}
+            style={{ 
+              background: `linear-gradient(135deg, ${primary}, ${secondary})`,
+              boxShadow: `0 0 8px ${accent}40`
+            }}
+          >
+            {/* Robot Eyes */}
+            <div className="flex gap-1 absolute top-1/3 left-1/2 transform -translate-x-1/2">
+              <div className={`${size === 'small' ? 'w-1.5 h-1.5' : size === 'medium' ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-white/20`} />
+              <div className={`${size === 'small' ? 'w-1.5 h-1.5' : size === 'medium' ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-white/20`} />
+            </div>
+          </div>
+
+          {/* Robot Body */}
+          <div 
+            className={`${currentBodySize.body} rounded-lg border-2 border-white/20 shadow-lg mx-auto relative mb-1`}
             style={{ 
               background: `linear-gradient(135deg, ${primary}, ${secondary})`,
               boxShadow: `0 0 10px ${accent}60`
             }}
           >
-            {/* Energy Core with Fitness Heart Symbol */}
+            {/* Energy Core */}
             <div 
               className={`absolute top-2 left-1/2 transform -translate-x-1/2 ${currentBodySize.core} rounded-full border border-white/40 flex items-center justify-center`}
               style={{ 
@@ -206,98 +214,48 @@ export const RobotAvatarDisplay = ({
               </span>
             </div>
 
-            {/* Chassis-Specific Features */}
-            {getChassisSpecialFeatures(avatarData.chassis_type, size)}
-
             {/* Circuit Patterns */}
             <div className="absolute inset-1 opacity-30">
               <div className="w-full h-0.5 bg-white/40 mt-1" />
               <div className="w-0.5 h-full bg-white/40 ml-1" />
-              <div className="absolute bottom-1 right-1 w-2 h-2 border border-white/40 rounded-sm" />
             </div>
+          </div>
 
-            {/* Robot Head */}
+          {/* Robot Legs */}
+          <div className="flex gap-0.5 justify-center">
             <div 
-              className={`${currentBodySize.head} rounded-lg absolute ${size === 'small' ? '-top-5' : size === 'medium' ? '-top-6' : '-top-8'} left-1/2 transform -translate-x-1/2 border-2 border-white/20 shadow-lg overflow-hidden`}
-              style={{ 
-                background: `linear-gradient(135deg, ${primary}, ${secondary})`,
-                boxShadow: `0 0 8px ${accent}40`
-              }}
+              className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded border-2 border-white/20 shadow-lg`}
+              style={{ background: `linear-gradient(135deg, ${secondary}, ${primary})` }}
+            />
+            <div 
+              className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded border-2 border-white/20 shadow-lg`}
+              style={{ background: `linear-gradient(135deg, ${secondary}, ${primary})` }}
+            />
+          </div>
+
+          {/* Robot Feet */}
+          <div className="flex gap-0.5 justify-center mt-0.5">
+            <div 
+              className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded border-2 border-white/20 shadow-lg relative`}
+              style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
             >
-              {/* Visor/Scanner Array */}
-              {avatarData.visor_type && (
-                <div 
-                  className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60`}
-                  style={{ 
-                    animation: emotion === 'scanning' ? 'pulse 1s infinite' : 'none'
-                  }}
-                />
-              )}
-              
-              {/* Robot Eyes - LED Display */}
-              <div className={`flex ${size === 'small' ? 'gap-0.5' : 'gap-1'} absolute ${size === 'small' ? 'top-1.5 left-1' : size === 'medium' ? 'top-2 left-1.5' : 'top-3 left-2.5'}`}>
-                <div className={`${size === 'small' ? 'w-1.5 h-1.5' : size === 'medium' ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-white/20 shadow-inner`} />
-                <div className={`${size === 'small' ? 'w-1.5 h-1.5' : size === 'medium' ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-white/20 shadow-inner`} />
-              </div>
-
-              {/* LED Pattern Display */}
-              {avatarData.led_patterns.includes('matrix') && (
-                <div className={`absolute ${size === 'small' ? 'bottom-1 left-1/2' : size === 'medium' ? 'bottom-1.5 left-1/2' : 'bottom-2 left-1/2'} transform -translate-x-1/2`}>
-                  <div className={`grid grid-cols-3 gap-0.5 ${size === 'small' ? 'text-xs' : 'text-sm'}`}>
-                    <div className="w-0.5 h-0.5 bg-green-400 rounded-full animate-pulse" />
-                    <div className="w-0.5 h-0.5 bg-green-400 rounded-full animate-pulse delay-100" />
-                    <div className="w-0.5 h-0.5 bg-green-400 rounded-full animate-pulse delay-200" />
-                  </div>
-                </div>
+              {avatarData.shoes === 'hover_boots' && (
+                <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-60 animate-pulse" />
               )}
             </div>
-
-            {/* Tech Module Indicators */}
-            {avatarData.tech_modules.length > 0 && (
-              <div className={`absolute ${size === 'small' ? 'bottom-1 right-1' : size === 'medium' ? 'bottom-2 right-2' : 'bottom-3 right-3'} flex flex-col gap-0.5`}>
-                {getTechModuleBadges(avatarData.tech_modules).map((icon, index) => (
-                  <div 
-                    key={index}
-                    className={`${size === 'small' ? 'w-2 h-2 text-xs' : size === 'medium' ? 'w-3 h-3 text-sm' : 'w-4 h-4 text-base'} bg-black/40 rounded border border-white/20 flex items-center justify-center`}
-                    style={{ fontSize: size === 'small' ? '6px' : size === 'medium' ? '8px' : '10px' }}
-                  >
-                    {icon}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Robot Legs - Hydraulic/Mechanical */}
-            <div className={`absolute ${size === 'small' ? '-bottom-4 left-0.5' : size === 'medium' ? '-bottom-6 left-0.5' : '-bottom-8 left-1'} flex gap-0.5`}>
-              <div 
-                className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded border-2 border-white/20 shadow-lg`}
-                style={{ background: `linear-gradient(135deg, ${secondary}, ${primary})` }}
-              />
-              <div 
-                className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded border-2 border-white/20 shadow-lg`}
-                style={{ background: `linear-gradient(135deg, ${secondary}, ${primary})` }}
-              />
+            <div 
+              className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded border-2 border-white/20 shadow-lg relative`}
+              style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
+            >
+              {avatarData.shoes === 'hover_boots' && (
+                <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-60 animate-pulse" />
+              )}
             </div>
+          </div>
 
-            {/* Robot Feet - Hover/Tech Boots */}
-            <div className={`absolute ${size === 'small' ? '-bottom-5 left-0' : size === 'medium' ? '-bottom-7 left-0' : '-bottom-9 left-0.5'} flex gap-0.5`}>
-              <div 
-                className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded border-2 border-white/20 shadow-lg relative overflow-hidden`}
-                style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
-              >
-                {avatarData.shoes === 'hover_boots' && (
-                  <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-60 animate-pulse" />
-                )}
-              </div>
-              <div 
-                className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded border-2 border-white/20 shadow-lg relative overflow-hidden`}
-                style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
-              >
-                {avatarData.shoes === 'hover_boots' && (
-                  <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-60 animate-pulse" />
-                )}
-              </div>
-            </div>
+          {/* Chassis Special Features */}
+          <div className="absolute -right-4 top-1/2 transform -translate-y-1/2">
+            {getChassisSpecialFeatures(avatarData.chassis_type, size)}
           </div>
         </div>
       </div>
