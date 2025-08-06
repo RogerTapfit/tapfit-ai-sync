@@ -159,22 +159,52 @@ export const RobotAvatarDisplay = ({
 
   return (
     <Card 
-      className={`${sizeClasses[size]} ${className} relative border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-300 flex items-center justify-center overflow-hidden`}
+      className={`${sizeClasses[size]} ${className} border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-300 flex flex-col overflow-visible`}
       style={{ 
         boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20`,
         objectFit: 'contain',
         maxHeight: '100%'
       }}
     >
-      {/* Robot Figure Container */}
-      <div className="relative flex flex-col items-center justify-center h-full w-full">
-        
-        {/* Chassis Type Label */}
-        <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded text-xs font-bold text-white">
-          {avatarData.chassis_type.replace('_', ' ').toUpperCase()}
+      {/* Header Section: Labels, Power Level, Status */}
+      <div className="relative flex justify-between items-start p-2 z-10 min-h-6">
+        {/* Left: Chassis Label and Power Level */}
+        <div className="flex flex-col gap-1">
+          <div className="bg-black/60 px-2 py-1 rounded text-xs font-bold text-white">
+            {avatarData.chassis_type.replace('_', ' ').toUpperCase()}
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-8 h-1 bg-black/40 rounded-full overflow-hidden border border-white/20">
+              <div 
+                className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300"
+                style={{ width: `${avatarData.power_level}%` }}
+              />
+            </div>
+            <span className="text-xs text-white/80 font-mono">{avatarData.power_level}%</span>
+          </div>
         </div>
+        
+        {/* Right: Status Badge and Special Features */}
+        <div className="flex flex-col items-end gap-1">
+          {showAnimation && (currentPose !== 'idle' || emotion !== 'happy') && (
+            <Badge className="text-xs animate-pulse z-20" style={{ backgroundColor: accent }}>
+              {currentPose === 'power_up' ? '⚡' :
+               currentPose === 'victory' ? '🏆' :
+               currentPose === 'scan_mode' ? '📡' :
+               currentPose === 'workout' ? '🏃' :
+               currentPose === 'champion' ? '👑' :
+               emotion === 'celebrating' ? '🎉' :
+               emotion === 'excited' ? '⚡' :
+               emotion === 'scanning' ? '🔍' :
+               emotion === 'charging' ? '🔋' : '🤖'}
+            </Badge>
+          )}
+          {getChassisSpecialFeatures(avatarData.chassis_type, size)}
+        </div>
+      </div>
 
-        {/* Main Robot Body */}
+      {/* Main Robot Section */}
+      <div className="flex-1 flex items-center justify-center p-2 z-5">
         <div 
           className={`relative ${getAnimationClass(currentPose, emotion)} ${getChassisStyle(avatarData.chassis_type)}`}
         >
@@ -253,70 +283,32 @@ export const RobotAvatarDisplay = ({
               )}
             </div>
           </div>
-
-          {/* Chassis Special Features */}
-          <div className="absolute -right-4 top-1/2 transform -translate-y-1/2">
-            {getChassisSpecialFeatures(avatarData.chassis_type, size)}
-          </div>
         </div>
       </div>
 
-      {/* Power Level Indicator */}
-      <div className="absolute top-1 left-1">
-        <div className="flex items-center gap-1">
-          <div className="w-8 h-1 bg-black/40 rounded-full overflow-hidden border border-white/20">
-            <div 
-              className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300"
-              style={{ width: `${avatarData.power_level}%` }}
-            />
+      {/* Footer Section: Speech Bubbles */}
+      <div className="relative z-20 min-h-8 flex justify-center items-start">
+        {emotion === 'celebrating' && (
+          <div className="bg-green-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-green-400/40 animate-bounce text-white max-w-40 text-center">
+            Great workout! 💪 Keep it up!
           </div>
-          <span className="text-xs text-white/80 font-mono">{avatarData.power_level}%</span>
-        </div>
+        )}
+        {emotion === 'excited' && (
+          <div className="bg-orange-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-orange-400/40 animate-pulse text-white max-w-40 text-center">
+            Let's crush this workout! 🔥
+          </div>
+        )}
+        {emotion === 'scanning' && (
+          <div className="bg-blue-900/80 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-cyan-400/40 animate-pulse text-cyan-100 max-w-40 text-center">
+            Analyzing your form... 📊
+          </div>
+        )}
+        {currentPose === 'workout' && (
+          <div className="bg-purple-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-purple-400/40 animate-bounce text-white max-w-40 text-center">
+            You got this! 💪
+          </div>
+        )}
       </div>
-
-      {/* Status Badge */}
-      {showAnimation && (currentPose !== 'idle' || emotion !== 'happy') && (
-        <Badge className="absolute top-1 right-1 text-xs animate-pulse" style={{ backgroundColor: accent }}>
-          {currentPose === 'power_up' ? '⚡' :
-           currentPose === 'victory' ? '🏆' :
-           currentPose === 'scan_mode' ? '📡' :
-           currentPose === 'workout' ? '🏃' :
-           currentPose === 'champion' ? '👑' :
-           emotion === 'celebrating' ? '🎉' :
-           emotion === 'excited' ? '⚡' :
-           emotion === 'scanning' ? '🔍' :
-           emotion === 'charging' ? '🔋' : '🤖'}
-        </Badge>
-      )}
-
-      {/* Motivational Speech Bubble */}
-      {emotion === 'celebrating' && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-green-400/40 animate-bounce text-white">
-          Great workout! 💪 Keep it up!
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-green-600/90" />
-        </div>
-      )}
-
-      {emotion === 'excited' && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-orange-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-orange-400/40 animate-pulse text-white">
-          Let's crush this workout! 🔥
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-600/90" />
-        </div>
-      )}
-
-      {emotion === 'scanning' && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-900/80 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-cyan-400/40 animate-pulse text-cyan-100">
-          Analyzing your form... 📊
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-900/80" />
-        </div>
-      )}
-
-      {currentPose === 'workout' && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-purple-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-purple-400/40 animate-bounce text-white">
-          You got this! 💪
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-600/90" />
-        </div>
-      )}
     </Card>
   );
 };
