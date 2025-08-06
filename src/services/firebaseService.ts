@@ -288,3 +288,18 @@ export const initializeFirebaseAuth = async (): Promise<string | null> => {
     return null;
   }
 };
+
+// Export service instance
+export const firebaseService = {
+  saveAvatarState,
+  getAvatarState,
+  updateAvatarState,
+  uploadAnimationAsset,
+  getAnimationAssets,
+  saveNFTMetadata,
+  getNFTMetadata,
+  getUserNFTs,
+  saveAvatarAchievement,
+  getUserAchievements,
+  initializeFirebaseAuth
+};

@@ -3,6 +3,7 @@ import { readyPlayerMeService, ReadyPlayerMeAvatar } from '@/services/readyPlaye
 import { firebaseService } from '@/services/firebaseService';
 import { useTapCoins } from './useTapCoins';
 import { supabase } from '@/integrations/supabase/client';
+import type { AvatarData } from '@/types/avatar';
 
 export const useReadyPlayerMe = () => {
   const [avatar, setAvatar] = useState<ReadyPlayerMeAvatar | null>(null);
@@ -26,9 +27,10 @@ export const useReadyPlayerMe = () => {
         .eq('id', user.id)
         .single();
 
-      if (profile.data?.avatar_data?.readyPlayerMeId) {
+      const avatarData = profile.data?.avatar_data as AvatarData;
+      if (avatarData?.readyPlayerMeId) {
         const existingAvatar = await readyPlayerMeService.getAvatar(
-          profile.data.avatar_data.readyPlayerMeId
+          avatarData.readyPlayerMeId
         );
         setAvatar(existingAvatar);
       } else {
@@ -61,13 +63,23 @@ export const useReadyPlayerMe = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    const avatarDataToSave: AvatarData = {
+      readyPlayerMeId: avatarData.id,
+      modelUrl: avatarData.modelUrl,
+      imageUrl: avatarData.imageUrl,
+      customizations: avatarData.customizations,
+      metadata: {
+        createdAt: avatarData.metadata.createdAt.toISOString(),
+        lastModified: avatarData.metadata.lastModified.toISOString(),
+        fitnessLevel: avatarData.metadata.fitnessLevel,
+        achievements: avatarData.metadata.achievements
+      }
+    };
+
     await supabase
       .from('profiles')
       .update({
-        avatar_data: {
-          readyPlayerMeId: avatarData.id,
-          ...avatarData
-        }
+        avatar_data: avatarDataToSave as any
       })
       .eq('id', user.id);
   };
