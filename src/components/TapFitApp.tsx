@@ -102,6 +102,7 @@ const TapFitApp = () => {
   );
 
   const renderContent = () => {
+    console.log('TapFitApp rendering content for page:', currentPage);
     const content = (() => {
       switch (currentPage) {
         case 'dashboard':
@@ -123,9 +124,11 @@ const TapFitApp = () => {
         case 'subscription':
           return <SubscriptionPlans />;
         case 'avatar':
+          console.log('Rendering AvatarBuilder component');
           return <AvatarBuilder onClose={() => setCurrentPage('dashboard')} />;
         default:
-          return <TapFitDashboard />;
+          console.log('Rendering default dashboard');
+          return <TapFitDashboard onPageChange={setCurrentPage} />;
       }
     })();
 
