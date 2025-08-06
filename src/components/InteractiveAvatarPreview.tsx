@@ -78,11 +78,14 @@ export const InteractiveAvatarPreview: React.FC<InteractiveAvatarPreviewProps> =
     resetHideControlsTimer();
   }, [resetHideControlsTimer]);
 
-  const gestureRef = useGestures({
+  // Memoize gesture handlers to prevent hook dependency changes
+  const gestureHandlers = useMemo(() => ({
     onZoom: handleZoom,
     onRotate: handleRotate,
     onReset: handleReset,
-  });
+  }), [handleZoom, handleRotate, handleReset]);
+
+  const gestureRef = useGestures(gestureHandlers);
 
   // Size-based styling
   const containerSizes = {
