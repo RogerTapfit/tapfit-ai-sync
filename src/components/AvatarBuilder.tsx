@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, ArrowRight, Coins, Sparkles } from 'lucide-react';
-import { AvatarDisplay } from './AvatarDisplay';
-import { useAvatar, AvatarData } from '@/hooks/useAvatar';
+import { RobotAvatarDisplay } from './RobotAvatarDisplay';
+import { useRobotAvatar, RobotAvatarData } from '@/hooks/useRobotAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { toast } from 'sonner';
 
@@ -17,35 +17,35 @@ interface BuilderStep {
   id: string;
   title: string;
   description: string;
-  category: keyof AvatarData | 'complete';
+  category: keyof RobotAvatarData | 'complete';
 }
 
 const builderSteps: BuilderStep[] = [
-  { id: 'appearance', title: 'Appearance', description: 'Choose your skin tone', category: 'skin_tone' },
-  { id: 'hair', title: 'Hair Style', description: 'Pick your hairstyle and color', category: 'hair_style' },
-  { id: 'outfit', title: 'Outfit', description: 'Select your outfit', category: 'outfit' },
-  { id: 'accessories', title: 'Accessories', description: 'Add some style', category: 'accessory' },
-  { id: 'animation', title: 'Personality', description: 'Choose your vibe', category: 'animation' },
-  { id: 'complete', title: 'Complete', description: 'Your avatar is ready!', category: 'complete' }
+  { id: 'chassis', title: 'Chassis', description: 'Select your robot frame', category: 'chassis_type' },
+  { id: 'colors', title: 'Color Scheme', description: 'Pick your robot colors', category: 'color_scheme' },
+  { id: 'tech', title: 'Tech Modules', description: 'Add technology modules', category: 'tech_modules' },
+  { id: 'core', title: 'Energy Core', description: 'Choose your power source', category: 'energy_core' },
+  { id: 'animation', title: 'Personality', description: 'Choose your robot style', category: 'animation' },
+  { id: 'complete', title: 'Complete', description: 'Your robot is ready!', category: 'complete' }
 ];
 
 export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderProps) => {
-  const { avatarData, updateAvatar, purchaseAvatarItem, canUseItem } = useAvatar();
+  const { avatarData, updateAvatar, purchaseRobotItem, canUseItem } = useRobotAvatar();
   const { storeItems, balance } = useTapCoins();
   const [currentStep, setCurrentStep] = useState(0);
-  const [previewData, setPreviewData] = useState<AvatarData | null>(avatarData);
+  const [previewData, setPreviewData] = useState<RobotAvatarData | null>(avatarData);
 
   if (!avatarData || !previewData) return null;
 
   const progress = ((currentStep + 1) / builderSteps.length) * 100;
   const step = builderSteps[currentStep];
 
-  const avatarItems = storeItems.filter(item => 
-    item.category.startsWith('avatar_')
+  const robotItems = storeItems.filter(item => 
+    item.category.startsWith('robot_') || item.category.startsWith('avatar_')
   );
 
   const getItemsByCategory = (category: string) => {
-    return avatarItems.filter(item => item.category === category);
+    return robotItems.filter(item => item.category === category);
   };
 
   const handleNext = () => {
@@ -66,16 +66,16 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     const itemValue = item.name.toLowerCase().replace(/\s+/g, '_');
     
     if (canUseItem(item.name, item.category)) {
-      const newData = { ...previewData, [categoryKey]: itemValue };
-      setPreviewData(newData);
-      await updateAvatar({ [categoryKey]: itemValue });
+      const updateData = { [categoryKey]: itemValue };
+      setPreviewData({ ...previewData!, ...updateData });
+      await updateAvatar(updateData as Partial<RobotAvatarData>);
       toast.success(`Applied ${item.name}!`);
     } else {
       if (balance >= item.coin_cost) {
-        const success = await purchaseAvatarItem(item.id, item.category, itemValue);
+        const success = await purchaseRobotItem(item.id, item.category, itemValue);
         if (success) {
-          const newData = { ...previewData, [categoryKey]: itemValue };
-          setPreviewData(newData);
+          const updateData = { [categoryKey]: itemValue };
+          setPreviewData({ ...previewData!, ...updateData });
           toast.success(`Purchased and equipped ${item.name}!`);
         }
       } else {
@@ -84,220 +84,230 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     }
   };
 
-  const handleBasicOption = async (category: string, value: string) => {
-    const newData = { ...previewData, [category]: value };
-    setPreviewData(newData);
-    await updateAvatar({ [category]: value });
+  const handleBasicOption = async (category: string, value: any) => {
+    const updateData = { [category]: value };
+    setPreviewData({ ...previewData!, ...updateData });
+    await updateAvatar(updateData as Partial<RobotAvatarData>);
   };
 
   const renderStepContent = () => {
     switch (step.id) {
-      case 'appearance':
+      case 'chassis':
         return (
           <div className="space-y-6">
             <div>
-              <h4 className="font-semibold mb-3">Skin Tone</h4>
+              <h4 className="font-semibold mb-3">Robot Chassis Type</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { name: 'Light', value: 'light', color: '#fdbcb4' },
-                  { name: 'Medium', value: 'medium', color: '#e1906b' },
-                  { name: 'Tan', value: 'tan', color: '#deb887' },
-                  { name: 'Dark', value: 'dark', color: '#8d5524' }
+                  { name: 'Slim Bot', value: 'slim_bot', description: 'Agile and lightweight' },
+                  { name: 'Bulky Bot', value: 'bulky_bot', description: 'Heavy-duty and strong' },
+                  { name: 'Agile Bot', value: 'agile_bot', description: 'Fast and flexible' },
+                  { name: 'Tall Bot', value: 'tall_bot', description: 'Imposing and tall' },
+                  { name: 'Compact Bot', value: 'compact_bot', description: 'Small but powerful' }
                 ].map((option) => (
                   <Button
                     key={option.value}
-                    variant={previewData.skin_tone === option.value ? "default" : "outline"}
-                    className="h-16 flex-col gap-2"
-                    onClick={() => handleBasicOption('skin_tone', option.value)}
+                    variant={previewData?.chassis_type === option.value ? "default" : "outline"}
+                    className="h-20 flex-col gap-2 p-4"
+                    onClick={() => handleBasicOption('chassis_type', option.value)}
                   >
-                    <div 
-                      className="w-8 h-8 rounded-full border-2 border-white"
-                      style={{ backgroundColor: option.color }}
-                    />
-                    {option.name}
+                    <span className="font-semibold">{option.name}</span>
+                    <span className="text-xs text-muted-foreground">{option.description}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'colors':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold mb-3">Color Schemes</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { 
+                    name: 'TapFit Red', 
+                    value: { primary: "hsl(0, 84%, 60%)", secondary: "hsl(0, 0%, 15%)", accent: "hsl(0, 100%, 70%)" },
+                    colors: ["bg-red-500", "bg-gray-800", "bg-red-400"]
+                  },
+                  { 
+                    name: 'Electric Blue', 
+                    value: { primary: "hsl(220, 84%, 60%)", secondary: "hsl(220, 20%, 20%)", accent: "hsl(220, 100%, 80%)" },
+                    colors: ["bg-blue-500", "bg-blue-900", "bg-blue-300"]
+                  },
+                  { 
+                    name: 'Cyber Green', 
+                    value: { primary: "hsl(120, 84%, 50%)", secondary: "hsl(120, 20%, 15%)", accent: "hsl(120, 100%, 70%)" },
+                    colors: ["bg-green-500", "bg-green-900", "bg-green-300"]
+                  },
+                  { 
+                    name: 'Neon Purple', 
+                    value: { primary: "hsl(280, 84%, 60%)", secondary: "hsl(280, 20%, 20%)", accent: "hsl(280, 100%, 80%)" },
+                    colors: ["bg-purple-500", "bg-purple-900", "bg-purple-300"]
+                  }
+                ].map((option) => (
+                  <Button
+                    key={option.name}
+                    variant={JSON.stringify(previewData?.color_scheme) === JSON.stringify(option.value) ? "default" : "outline"}
+                    className="h-20 flex-col gap-2 p-4"
+                    onClick={() => handleBasicOption('color_scheme', option.value)}
+                  >
+                    <span className="font-semibold">{option.name}</span>
+                    <div className="flex gap-1">
+                      {option.colors.map((color, i) => (
+                        <div key={i} className={`w-4 h-4 rounded ${color}`} />
+                      ))}
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'tech':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold mb-3">Available Tech Modules</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { name: 'Basic Scanner', value: 'basic_scanner', description: '📡 Basic sensor array' },
+                  { name: 'Heart Monitor', value: 'heart_monitor', description: '💓 Advanced biometrics' },
+                  { name: 'Power Boost', value: 'power_boost', description: '⚡ Enhanced performance' },
+                  { name: 'Data Logger', value: 'data_logger', description: '📊 Workout analytics' },
+                  { name: 'AI Assistant', value: 'ai_assistant', description: '🤖 Smart coaching' },
+                  { name: 'Stealth Mode', value: 'stealth_mode', description: '👻 Ninja protocols' }
+                ].map((module) => {
+                  const isEquipped = previewData?.tech_modules?.includes(module.value) || false;
+                  return (
+                    <Button
+                      key={module.value}
+                      variant={isEquipped ? "default" : "outline"}
+                      className="h-20 flex-col gap-2 p-4"
+                      onClick={() => {
+                        const currentModules = previewData?.tech_modules || [];
+                        const newModules = isEquipped 
+                          ? currentModules.filter(m => m !== module.value)
+                          : [...currentModules, module.value];
+                        handleBasicOption('tech_modules', newModules);
+                      }}
+                    >
+                      <span className="font-semibold">{module.name}</span>
+                      <span className="text-xs text-muted-foreground text-center">{module.description}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'core':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold mb-3">Energy Core Type</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { name: 'Standard Core', value: 'standard', description: '🔋 Reliable power', free: true },
+                  { name: 'Fusion Core', value: 'fusion', description: '⚛️ High-energy output' },
+                  { name: 'Quantum Core', value: 'quantum', description: '🌌 Unlimited potential' },
+                  { name: 'Solar Core', value: 'solar', description: '☀️ Eco-friendly power' },
+                  { name: 'Arc Reactor', value: 'arc_reactor', description: '💎 Premium technology' }
+                ].map((core) => (
+                  <Button
+                    key={core.value}
+                    variant={previewData?.energy_core === core.value ? "default" : "outline"}
+                    className="h-20 flex-col gap-2 p-4"
+                    onClick={() => handleBasicOption('energy_core', core.value)}
+                  >
+                    <span className="font-semibold">{core.name}</span>
+                    <span className="text-xs text-muted-foreground text-center">{core.description}</span>
+                    {core.free && <span className="text-xs text-green-500">Free</span>}
                   </Button>
                 ))}
               </div>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-3">Eye Color</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: 'Brown', value: 'brown' },
-                  { name: 'Blue', value: 'blue' },
-                  { name: 'Green', value: 'green' },
-                  { name: 'Hazel', value: 'hazel' }
-                ].map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={previewData.eye_color === option.value ? "default" : "outline"}
-                    onClick={() => handleBasicOption('eye_color', option.value)}
-                  >
-                    {option.name}
-                  </Button>
-                ))}
+              <h4 className="font-semibold mb-3">Power Level: {previewData?.power_level || 25}%</h4>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newLevel = Math.max(0, (previewData?.power_level || 25) - 10);
+                    handleBasicOption('power_level', newLevel);
+                  }}
+                  disabled={(previewData?.power_level || 25) <= 0}
+                >
+                  -10%
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newLevel = Math.min(100, (previewData?.power_level || 25) + 10);
+                    handleBasicOption('power_level', newLevel);
+                  }}
+                  disabled={(previewData?.power_level || 25) >= 100}
+                >
+                  +10%
+                </Button>
               </div>
             </div>
-          </div>
-        );
-
-      case 'hair':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold mb-3">Hair Color</h4>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { name: 'Brown', value: 'brown' },
-                  { name: 'Black', value: 'black' },
-                  { name: 'Blonde', value: 'blonde' },
-                  { name: 'Red', value: 'red' },
-                  { name: 'Gray', value: 'gray' }
-                ].map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={previewData.hair_color === option.value ? "default" : "outline"}
-                    onClick={() => handleBasicOption('hair_color', option.value)}
-                  >
-                    {option.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-3">Hair Style</h4>
-              <div className="space-y-3">
-                {getItemsByCategory('avatar_hair').map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <h5 className="font-medium">{item.name}</h5>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {!canUseItem(item.name, item.category) && (
-                        <div className="flex items-center gap-1">
-                          <Coins className="h-4 w-4 text-yellow-500" />
-                          <span className="font-bold text-sm">{item.coin_cost}</span>
-                        </div>
-                      )}
-                      <Button
-                        size="sm"
-                        variant={canUseItem(item.name, item.category) ? "default" : "outline"}
-                        onClick={() => handleItemSelect(item, 'hair_style')}
-                        disabled={!canUseItem(item.name, item.category) && balance < item.coin_cost}
-                      >
-                        {canUseItem(item.name, item.category) ? 'Select' : 'Buy'}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'outfit':
-        return (
-          <div className="space-y-3">
-            {getItemsByCategory('avatar_outfit').map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                <div>
-                  <h5 className="font-medium">{item.name}</h5>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {!canUseItem(item.name, item.category) && item.coin_cost > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Coins className="h-4 w-4 text-yellow-500" />
-                      <span className="font-bold text-sm">{item.coin_cost}</span>
-                    </div>
-                  )}
-                  <Button
-                    size="sm"
-                    variant={canUseItem(item.name, item.category) ? "default" : "outline"}
-                    onClick={() => handleItemSelect(item, 'outfit')}
-                    disabled={!canUseItem(item.name, item.category) && balance < item.coin_cost}
-                  >
-                    {canUseItem(item.name, item.category) ? 'Select' : item.coin_cost > 0 ? 'Buy' : 'Free'}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-
-      case 'accessories':
-        return (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <h5 className="font-medium">No Accessory</h5>
-                <p className="text-sm text-muted-foreground">Keep it simple</p>
-              </div>
-              <Button
-                size="sm"
-                variant={!previewData.accessory ? "default" : "outline"}
-                onClick={() => handleBasicOption('accessory', '')}
-              >
-                Select
-              </Button>
-            </div>
-            {getItemsByCategory('avatar_accessory').map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <h5 className="font-medium">{item.name}</h5>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {!canUseItem(item.name, item.category) && (
-                    <div className="flex items-center gap-1">
-                      <Coins className="h-4 w-4 text-yellow-500" />
-                      <span className="font-bold text-sm">{item.coin_cost}</span>
-                    </div>
-                  )}
-                  <Button
-                    size="sm"
-                    variant={canUseItem(item.name, item.category) ? "default" : "outline"}
-                    onClick={() => handleItemSelect(item, 'accessory')}
-                    disabled={!canUseItem(item.name, item.category) && balance < item.coin_cost}
-                  >
-                    {canUseItem(item.name, item.category) ? 'Select' : 'Buy'}
-                  </Button>
-                </div>
-              </div>
-            ))}
           </div>
         );
 
       case 'animation':
         return (
-          <div className="space-y-3">
-            {getItemsByCategory('avatar_animation').map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                <div>
-                  <h5 className="font-medium">{item.name}</h5>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {!canUseItem(item.name, item.category) && item.coin_cost > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Coins className="h-4 w-4 text-yellow-500" />
-                      <span className="font-bold text-sm">{item.coin_cost}</span>
-                    </div>
-                  )}
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-semibold mb-3">Robot Animations</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { name: 'Power Up', value: 'power_up', description: '⚡ Boot sequence' },
+                  { name: 'Idle', value: 'idle', description: '🤖 Standby mode' },
+                  { name: 'Victory', value: 'victory', description: '🏆 Celebration' },
+                  { name: 'Training', value: 'training', description: '💪 Workout mode' },
+                  { name: 'Scan Mode', value: 'scan', description: '👁️ Analysis mode' },
+                  { name: 'Sleep Mode', value: 'sleep', description: '😴 Power saving' }
+                ].map((animation) => (
                   <Button
-                    size="sm"
-                    variant={canUseItem(item.name, item.category) ? "default" : "outline"}
-                    onClick={() => handleItemSelect(item, 'animation')}
-                    disabled={!canUseItem(item.name, item.category) && balance < item.coin_cost}
+                    key={animation.value}
+                    variant={previewData?.animation === animation.value ? "default" : "outline"}
+                    className="h-20 flex-col gap-2 p-4"
+                    onClick={() => handleBasicOption('animation', animation.value)}
                   >
-                    {canUseItem(item.name, item.category) ? 'Select' : item.coin_cost > 0 ? 'Buy' : 'Free'}
+                    <span className="font-semibold">{animation.name}</span>
+                    <span className="text-xs text-muted-foreground text-center">{animation.description}</span>
                   </Button>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-3">Background</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { name: 'Tech Lab', value: 'tech_lab', description: '🔬 Research facility' },
+                  { name: 'Gym Floor', value: 'gym', description: '🏋️ Training ground' },
+                  { name: 'Cyber Space', value: 'cyber_space', description: '🌐 Digital realm' },
+                  { name: 'Factory', value: 'factory', description: '🏭 Manufacturing' }
+                ].map((bg) => (
+                  <Button
+                    key={bg.value}
+                    variant={previewData?.background === bg.value ? "default" : "outline"}
+                    className="h-16 flex-col gap-1 p-3"
+                    onClick={() => handleBasicOption('background', bg.value)}
+                  >
+                    <span className="font-semibold text-sm">{bg.name}</span>
+                    <span className="text-xs text-muted-foreground text-center">{bg.description}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         );
 
@@ -308,20 +318,22 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
               <Sparkles className="h-16 w-16 text-yellow-500" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold mb-2">Your Avatar is Ready!</h3>
+              <h3 className="text-2xl font-bold mb-2">Your Robot is Ready!</h3>
               <p className="text-muted-foreground">
                 {isFirstTime 
-                  ? "Welcome to TapFit! Your avatar will represent you throughout your fitness journey."
-                  : "Your avatar has been updated successfully!"
+                  ? "Welcome to TapFit! Your robot avatar will be your companion throughout your fitness journey."
+                  : "Your robot avatar has been updated successfully!"
                 }
               </p>
             </div>
             <div className="bg-muted/50 p-4 rounded-lg">
               <p className="text-sm">
-                💪 Your avatar will appear on leaderboards<br/>
+                🤖 Your robot will appear on leaderboards<br/>
                 🏆 Show off in challenges and rewards<br/>
                 👥 Be seen by friends and fellow athletes<br/>
-                🎮 Unlock new items with Tap Coins
+                🎮 Unlock new upgrades with Tap Coins<br/>
+                ⚡ Power level: {previewData?.power_level || 25}%<br/>
+                🔧 Tech modules: {previewData?.tech_modules?.length || 1}
               </p>
             </div>
           </div>
@@ -343,7 +355,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
             </Button>
             <div>
               <h1 className="text-2xl font-bold">
-                {isFirstTime ? 'Create Your Avatar' : 'Avatar Builder'}
+                {isFirstTime ? 'Build Your Robot' : 'Robot Builder'}
               </h1>
               <p className="text-muted-foreground">Step {currentStep + 1} of {builderSteps.length}</p>
             </div>
@@ -371,8 +383,8 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                 <CardTitle className="text-center">Live Preview</CardTitle>
               </CardHeader>
               <CardContent className="flex justify-center">
-                <AvatarDisplay 
-                  avatarData={previewData} 
+                <RobotAvatarDisplay 
+                  avatarData={previewData!} 
                   size="large" 
                   showAnimation={true}
                 />
