@@ -44,11 +44,38 @@ export const RobotAvatarDisplay = ({
 
   const getChassisStyle = (chassisType: string) => {
     switch (chassisType) {
-      case 'bulky_bot': return 'scale-110 font-bold';
-      case 'agile_bot': return 'scale-95 transform skew-y-1';
+      case 'bulky_bot': return 'scale-110 font-bold transform rotate-1';
+      case 'agile_bot': return 'scale-95 transform -skew-y-1';
       case 'tall_bot': return 'scale-y-125 scale-x-95';
-      case 'compact_bot': return 'scale-90 rounded-lg';
+      case 'compact_bot': return 'scale-90 rounded-xl';
       default: return 'scale-100';
+    }
+  };
+
+  const getChassisSpecialFeatures = (chassisType: string, size: string) => {
+    const iconSize = size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : 'text-base';
+    
+    switch (chassisType) {
+      case 'bulky_bot':
+        return (
+          <div className={`absolute -left-1 top-1/2 transform -translate-y-1/2 ${iconSize}`}>
+            🏋️ {/* Dumbbell attachment */}
+          </div>
+        );
+      case 'agile_bot':
+        return (
+          <div className={`absolute -right-1 top-1/4 ${iconSize}`}>
+            🎧 {/* Headphones for music */}
+          </div>
+        );
+      case 'compact_bot':
+        return (
+          <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${iconSize}`}>
+            💝 {/* Heart symbol for motivation */}
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -93,12 +120,16 @@ export const RobotAvatarDisplay = ({
     const moduleIcons: { [key: string]: string } = {
       'basic_scanner': '📡',
       'neural_processor': '🧠',
-      'biometric_scanner': '❤️',
-      'audio_core': '🔊',
-      'data_vault': '💾',
-      'recovery_module': '⚕️',
+      'biometric_scanner': '💓',
+      'audio_core': '🎵',
+      'data_vault': '📊',
+      'recovery_module': '🏥',
       'power_amplifier': '⚡',
-      'shield_generator': '🛡️'
+      'shield_generator': '🛡️',
+      'fitness_tracker': '⌚',
+      'hydration_reminder': '💧',
+      'nutrition_analyzer': '🥗',
+      'form_checker': '✅'
     };
 
     return techModules.map(module => moduleIcons[module] || '⚙️').slice(0, 3);
@@ -127,15 +158,22 @@ export const RobotAvatarDisplay = ({
               boxShadow: `0 0 10px ${accent}60`
             }}
           >
-            {/* Energy Core */}
+            {/* Energy Core with Fitness Heart Symbol */}
             <div 
-              className={`absolute top-2 left-1/2 transform -translate-x-1/2 ${currentBodySize.core} rounded-full border border-white/40`}
+              className={`absolute top-2 left-1/2 transform -translate-x-1/2 ${currentBodySize.core} rounded-full border border-white/40 flex items-center justify-center`}
               style={{ 
                 background: `radial-gradient(circle, ${accent}, ${primary})`,
                 animation: avatarData.energy_core === 'quantum' ? 'pulse 2s infinite' : 
                           avatarData.energy_core === 'fusion' ? 'ping 3s infinite' : 'none'
               }}
-            />
+            >
+              <span className={`${size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : 'text-base'} text-white`}>
+                ❤️
+              </span>
+            </div>
+
+            {/* Chassis-Specific Features */}
+            {getChassisSpecialFeatures(avatarData.chassis_type, size)}
 
             {/* Circuit Patterns */}
             <div className="absolute inset-1 opacity-30">
@@ -260,16 +298,30 @@ export const RobotAvatarDisplay = ({
 
       {/* Motivational Speech Bubble */}
       {emotion === 'celebrating' && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/80 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-white/20 animate-bounce text-white">
-          System: Achievement Unlocked! 🎉
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80" />
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-green-400/40 animate-bounce text-white">
+          Great workout! 💪 Keep it up!
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-green-600/90" />
+        </div>
+      )}
+
+      {emotion === 'excited' && (
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-orange-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-orange-400/40 animate-pulse text-white">
+          Let's crush this workout! 🔥
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-orange-600/90" />
         </div>
       )}
 
       {emotion === 'scanning' && (
         <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-900/80 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-cyan-400/40 animate-pulse text-cyan-100">
-          Analyzing workout data... 📊
+          Analyzing your form... 📊
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-blue-900/80" />
+        </div>
+      )}
+
+      {currentPose === 'workout' && (
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-purple-600/90 rounded-lg px-2 py-1 text-xs font-bold shadow-lg border border-purple-400/40 animate-bounce text-white">
+          You got this! 💪
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-purple-600/90" />
         </div>
       )}
     </Card>

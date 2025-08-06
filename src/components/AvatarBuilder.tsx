@@ -119,10 +119,24 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     }
   };
 
-  const handleBasicOption = async (category: string, value: any) => {
+  // Debounced database save to avoid blocking preview updates
+  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  const handleBasicOption = (category: string, value: any) => {
+    // Instant preview update
     const updateData = { [category]: value };
     setPreviewData({ ...previewData!, ...updateData });
-    await updateAvatar(updateData as Partial<RobotAvatarData>);
+    
+    // Debounced database save
+    if (saveTimeoutId) {
+      clearTimeout(saveTimeoutId);
+    }
+    
+    const newTimeoutId = setTimeout(() => {
+      updateAvatar(updateData as Partial<RobotAvatarData>);
+    }, 300); // 300ms delay for debouncing
+    
+    setSaveTimeoutId(newTimeoutId);
   };
 
   const renderStepContent = () => {
@@ -132,23 +146,27 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
           <div className="space-y-6">
             <div>
               <h4 className="font-semibold mb-3">Robot Chassis Type</h4>
-              <div className="grid grid-cols-2 gap-3">
+               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { name: 'Slim Bot', value: 'slim_bot', description: 'Agile and lightweight' },
-                  { name: 'Bulky Bot', value: 'bulky_bot', description: 'Heavy-duty and strong' },
-                  { name: 'Agile Bot', value: 'agile_bot', description: 'Fast and flexible' },
-                  { name: 'Tall Bot', value: 'tall_bot', description: 'Imposing and tall' },
-                  { name: 'Compact Bot', value: 'compact_bot', description: 'Small but powerful' }
+                  { name: 'Fitness Trainer Bot', value: 'slim_bot', description: 'Sleek, agile build perfect for cardio', icon: '🏃‍♂️' },
+                  { name: 'Strength Coach Bot', value: 'bulky_bot', description: 'Powerful build with dumbbell attachments', icon: '🏋️‍♂️' },
+                  { name: 'Athletic Runner Bot', value: 'agile_bot', description: 'Dynamic pose with running gear', icon: '⚡' },
+                  { name: 'Tall Performance Bot', value: 'tall_bot', description: 'Imposing and motivational', icon: '🏀' },
+                  { name: 'Cute Companion Bot', value: 'compact_bot', description: 'Friendly motivational fitness buddy', icon: '🤖' }
                 ].map((option) => (
-                  <Button
+                  <Card
                     key={option.value}
-                    variant={previewData?.chassis_type === option.value ? "default" : "outline"}
-                    className="h-20 flex-col gap-2 p-4"
+                    className={`p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                      previewData?.chassis_type === option.value ? 'ring-2 ring-primary bg-primary/5' : ''
+                    }`}
                     onClick={() => handleBasicOption('chassis_type', option.value)}
                   >
-                    <span className="font-semibold">{option.name}</span>
-                    <span className="text-xs text-muted-foreground">{option.description}</span>
-                  </Button>
+                    <div className="text-center space-y-2">
+                      <div className="text-2xl">{option.icon}</div>
+                      <div className="font-semibold">{option.name}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </Card>
                 ))}
               </div>
             </div>
