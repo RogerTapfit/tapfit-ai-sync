@@ -99,18 +99,16 @@ export const RobotAvatarDisplay = ({
   };
 
   const getRobotEyeDisplay = (emotion: string, eyeColor: string) => {
-    const baseEyeColor = eyeColor === 'blue_led' ? 'bg-blue-400' : 
-                        eyeColor === 'red_led' ? 'bg-red-400' :
-                        eyeColor === 'green_led' ? 'bg-green-400' :
-                        eyeColor === 'yellow_led' ? 'bg-yellow-400' : 'bg-cyan-400';
+    // Always use cyan glowing eyes for the modern look
+    const baseEyeColor = 'bg-cyan-400 shadow-cyan-400/50';
     
     switch (emotion) {
-      case 'excited': return `${baseEyeColor} animate-pulse`;
-      case 'celebrating': return `${baseEyeColor} animate-bounce`;
-      case 'focused': return `${baseEyeColor} brightness-150`;
-      case 'scanning': return `${baseEyeColor} animate-ping`;
-      case 'charging': return `${baseEyeColor} animate-pulse opacity-60`;
-      default: return `${baseEyeColor}`;
+      case 'excited': return `${baseEyeColor} animate-pulse shadow-lg`;
+      case 'celebrating': return `${baseEyeColor} animate-bounce shadow-lg`;
+      case 'focused': return `${baseEyeColor} brightness-150 shadow-lg`;
+      case 'scanning': return `${baseEyeColor} animate-ping shadow-lg`;
+      case 'charging': return `${baseEyeColor} animate-pulse opacity-60 shadow-lg`;
+      default: return `${baseEyeColor} shadow-lg`;
     }
   };
 
@@ -211,77 +209,122 @@ export const RobotAvatarDisplay = ({
         >
           {/* Robot Head */}
           <div 
-            className={`${currentBodySize.head} rounded-lg border-2 border-white/20 shadow-lg mb-1 mx-auto relative`}
+            className={`${currentBodySize.head} rounded-xl border border-slate-600 shadow-2xl mb-1 mx-auto relative overflow-hidden`}
             style={{ 
-              background: `linear-gradient(135deg, ${primary}, ${secondary})`,
-              boxShadow: `0 0 8px ${accent}40`
+              background: `linear-gradient(135deg, hsl(210, 15%, 15%), hsl(210, 10%, 25%), hsl(210, 15%, 20%))`,
+              boxShadow: `0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.8)`
             }}
           >
-            {/* Robot Eyes */}
-            <div className="flex gap-1 absolute top-1/3 left-1/2 transform -translate-x-1/2">
-              <div className={`${size === 'small' ? 'w-1.5 h-1.5' : size === 'medium' ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-white/20`} />
-              <div className={`${size === 'small' ? 'w-1.5 h-1.5' : size === 'medium' ? 'w-2 h-2' : 'w-3 h-3'} rounded-sm ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-white/20`} />
+            {/* Helmet visor effect */}
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-transparent via-slate-900/50 to-black/80" />
+            
+            {/* Robot Eyes - Large oval glowing eyes */}
+            <div className="flex gap-2 absolute top-1/3 left-1/2 transform -translate-x-1/2">
+              <div 
+                className={`${size === 'small' ? 'w-2 h-3' : size === 'medium' ? 'w-3 h-4' : 'w-4 h-5'} rounded-full ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-cyan-300/30`}
+                style={{ 
+                  background: 'radial-gradient(ellipse at center, #00ffff, #0088ff)',
+                  boxShadow: '0 0 15px cyan, inset 0 0 10px rgba(0, 255, 255, 0.5)'
+                }}
+              />
+              <div 
+                className={`${size === 'small' ? 'w-2 h-3' : size === 'medium' ? 'w-3 h-4' : 'w-4 h-5'} rounded-full ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-cyan-300/30`}
+                style={{ 
+                  background: 'radial-gradient(ellipse at center, #00ffff, #0088ff)',
+                  boxShadow: '0 0 15px cyan, inset 0 0 10px rgba(0, 255, 255, 0.5)'
+                }}
+              />
             </div>
+            
+            {/* Head details - subtle panel lines */}
+            <div className="absolute inset-2 border border-slate-500/30 rounded-lg" />
           </div>
 
           {/* Robot Body */}
           <div 
-            className={`${currentBodySize.body} rounded-lg border-2 border-white/20 shadow-lg mx-auto relative mb-1`}
+            className={`${currentBodySize.body} rounded-xl border border-slate-600 shadow-2xl mx-auto relative mb-1 overflow-hidden`}
             style={{ 
-              background: `linear-gradient(135deg, ${primary}, ${secondary})`,
-              boxShadow: `0 0 10px ${accent}60`
+              background: `linear-gradient(135deg, hsl(210, 15%, 12%), hsl(210, 10%, 22%), hsl(210, 15%, 18%))`,
+              boxShadow: `0 0 25px rgba(0, 255, 255, 0.2), inset 0 0 30px rgba(0, 0, 0, 0.9)`
             }}
           >
-            {/* Energy Core */}
+            {/* Body armor plating effect */}
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-transparent via-slate-800/30 to-black/60" />
+            
+            {/* Chest Energy Core - Rectangular glowing panel */}
             <div 
-              className={`absolute top-2 left-1/2 transform -translate-x-1/2 ${currentBodySize.core} rounded-full border border-white/40 flex items-center justify-center`}
+              className={`absolute top-2 left-1/2 transform -translate-x-1/2 ${currentBodySize.core} rounded border border-cyan-400/50 flex items-center justify-center`}
               style={{ 
-                background: `radial-gradient(circle, ${accent}, ${primary})`,
+                background: `linear-gradient(135deg, rgba(0, 255, 255, 0.8), rgba(0, 136, 255, 0.6))`,
+                boxShadow: '0 0 20px cyan, inset 0 0 15px rgba(0, 255, 255, 0.3)',
                 animation: avatarData.energy_core === 'quantum' ? 'pulse 2s infinite' : 
-                          avatarData.energy_core === 'fusion' ? 'ping 3s infinite' : 'none'
+                          avatarData.energy_core === 'fusion' ? 'ping 3s infinite' : 'pulse 3s infinite'
               }}
             >
-              <span className={`${size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : 'text-base'} text-white`}>
-                ❤️
-              </span>
+              <div className="w-full h-full bg-gradient-to-b from-cyan-300/50 to-cyan-500/50 rounded" />
             </div>
 
-            {/* Circuit Patterns */}
-            <div className="absolute inset-1 opacity-30">
-              <div className="w-full h-0.5 bg-white/40 mt-1" />
-              <div className="w-0.5 h-full bg-white/40 ml-1" />
-            </div>
+            {/* Body panel details and joints */}
+            <div className="absolute inset-1 border border-slate-500/20 rounded-lg" />
+            <div className="absolute top-1/2 left-1 right-1 h-0.5 bg-slate-500/30" />
+            <div className="absolute top-1/4 bottom-1/4 left-1/2 w-0.5 bg-slate-500/30" />
+            
+            {/* Shoulder joints */}
+            <div className="absolute top-1 left-0 w-1 h-1 bg-slate-400 rounded-full border border-slate-600" />
+            <div className="absolute top-1 right-0 w-1 h-1 bg-slate-400 rounded-full border border-slate-600" />
           </div>
 
           {/* Robot Legs */}
-          <div className="flex gap-0.5 justify-center">
+          <div className="flex gap-1 justify-center">
             <div 
-              className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded border-2 border-white/20 shadow-lg`}
-              style={{ background: `linear-gradient(135deg, ${secondary}, ${primary})` }}
-            />
+              className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded-lg border border-slate-600 shadow-xl relative overflow-hidden`}
+              style={{ 
+                background: `linear-gradient(135deg, hsl(210, 15%, 15%), hsl(210, 10%, 25%))`,
+                boxShadow: `0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.9)`
+              }}
+            >
+              <div className="absolute inset-0.5 border border-slate-500/20 rounded" />
+              <div className="absolute top-1/3 left-0 right-0 h-0.5 bg-slate-500/30" />
+            </div>
             <div 
-              className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded border-2 border-white/20 shadow-lg`}
-              style={{ background: `linear-gradient(135deg, ${secondary}, ${primary})` }}
-            />
+              className={`${size === 'small' ? 'w-3 h-4' : size === 'medium' ? 'w-4 h-6' : 'w-6 h-8'} rounded-lg border border-slate-600 shadow-xl relative overflow-hidden`}
+              style={{ 
+                background: `linear-gradient(135deg, hsl(210, 15%, 15%), hsl(210, 10%, 25%))`,
+                boxShadow: `0 0 15px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.9)`
+              }}
+            >
+              <div className="absolute inset-0.5 border border-slate-500/20 rounded" />
+              <div className="absolute top-1/3 left-0 right-0 h-0.5 bg-slate-500/30" />
+            </div>
           </div>
 
           {/* Robot Feet */}
-          <div className="flex gap-0.5 justify-center mt-0.5">
+          <div className="flex gap-1 justify-center mt-0.5">
             <div 
-              className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded border-2 border-white/20 shadow-lg relative`}
-              style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
+              className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded-lg border border-slate-600 shadow-xl relative overflow-hidden`}
+              style={{ 
+                background: `linear-gradient(135deg, hsl(210, 12%, 18%), hsl(210, 8%, 28%))`,
+                boxShadow: `0 0 10px rgba(0, 0, 0, 0.8), inset 0 0 8px rgba(0, 0, 0, 0.9)`
+              }}
             >
               {avatarData.shoes === 'hover_boots' && (
-                <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-60 animate-pulse" />
+                <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-80 animate-pulse shadow-cyan-400/50" 
+                     style={{ boxShadow: '0 0 8px cyan' }} />
               )}
+              <div className="absolute inset-0.5 border border-slate-500/20 rounded" />
             </div>
             <div 
-              className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded border-2 border-white/20 shadow-lg relative`}
-              style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
+              className={`${size === 'small' ? 'w-3.5 h-2' : size === 'medium' ? 'w-5 h-3' : 'w-7 h-4'} rounded-lg border border-slate-600 shadow-xl relative overflow-hidden`}
+              style={{ 
+                background: `linear-gradient(135deg, hsl(210, 12%, 18%), hsl(210, 8%, 28%))`,
+                boxShadow: `0 0 10px rgba(0, 0, 0, 0.8), inset 0 0 8px rgba(0, 0, 0, 0.9)`
+              }}
             >
               {avatarData.shoes === 'hover_boots' && (
-                <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-60 animate-pulse" />
+                <div className="absolute bottom-0 inset-x-0 h-0.5 bg-cyan-400 opacity-80 animate-pulse shadow-cyan-400/50" 
+                     style={{ boxShadow: '0 0 8px cyan' }} />
               )}
+              <div className="absolute inset-0.5 border border-slate-500/20 rounded" />
             </div>
           </div>
         </div>
