@@ -56,6 +56,117 @@ export type Database = {
         }
         Relationships: []
       }
+      avatar_achievements: {
+        Row: {
+          achievement_data: Json
+          achievement_type: string
+          avatar_reward: Json | null
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_data: Json
+          achievement_type: string
+          avatar_reward?: Json | null
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_data?: Json
+          achievement_type?: string
+          avatar_reward?: Json | null
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      avatar_nfts: {
+        Row: {
+          avatar_config: Json
+          blockchain_address: string | null
+          created_at: string
+          id: string
+          minted_at: string | null
+          nft_metadata: Json
+          rarity_tier: string
+          serial_number: number | null
+          token_id: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_config: Json
+          blockchain_address?: string | null
+          created_at?: string
+          id?: string
+          minted_at?: string | null
+          nft_metadata: Json
+          rarity_tier?: string
+          serial_number?: number | null
+          token_id?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_config?: Json
+          blockchain_address?: string | null
+          created_at?: string
+          id?: string
+          minted_at?: string | null
+          nft_metadata?: Json
+          rarity_tier?: string
+          serial_number?: number | null
+          token_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      avatar_power_ups: {
+        Row: {
+          app_functionality: Json
+          coin_cost: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          power_type: string
+          rarity_tier: string
+          token_cost: number | null
+          unlock_condition: Json | null
+          visual_component: string | null
+        }
+        Insert: {
+          app_functionality: Json
+          coin_cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          power_type: string
+          rarity_tier?: string
+          token_cost?: number | null
+          unlock_condition?: Json | null
+          visual_component?: string | null
+        }
+        Update: {
+          app_functionality?: Json
+          coin_cost?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          power_type?: string
+          rarity_tier?: string
+          token_cost?: number | null
+          unlock_condition?: Json | null
+          visual_component?: string | null
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           bonus_coin_reward: number | null
@@ -283,6 +394,42 @@ export type Database = {
         }
         Relationships: []
       }
+      loot_boxes: {
+        Row: {
+          created_at: string
+          description: string | null
+          guaranteed_rewards: Json
+          id: string
+          is_active: boolean
+          name: string
+          possible_rewards: Json
+          rarity_tier: string
+          tap_token_cost: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          guaranteed_rewards?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          possible_rewards?: Json
+          rarity_tier?: string
+          tap_token_cost: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          guaranteed_rewards?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          possible_rewards?: Json
+          rarity_tier?: string
+          tap_token_cost?: number
+        }
+        Relationships: []
+      }
       machines: {
         Row: {
           brand: string | null
@@ -432,6 +579,7 @@ export type Database = {
           preferred_equipment_type: string | null
           primary_goal: string | null
           tap_coins_balance: number
+          tap_tokens_balance: number
           target_carbs_grams: number | null
           target_daily_calories: number | null
           target_fat_grams: number | null
@@ -457,6 +605,7 @@ export type Database = {
           preferred_equipment_type?: string | null
           primary_goal?: string | null
           tap_coins_balance?: number
+          tap_tokens_balance?: number
           target_carbs_grams?: number | null
           target_daily_calories?: number | null
           target_fat_grams?: number | null
@@ -482,6 +631,7 @@ export type Database = {
           preferred_equipment_type?: string | null
           primary_goal?: string | null
           tap_coins_balance?: number
+          tap_tokens_balance?: number
           target_carbs_grams?: number | null
           target_daily_calories?: number | null
           target_fat_grams?: number | null
@@ -624,6 +774,36 @@ export type Database = {
         Relationships: []
       }
       tap_coins_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          reference_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tap_tokens_transactions: {
         Row: {
           amount: number
           created_at: string
@@ -798,6 +978,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_loot_openings: {
+        Row: {
+          id: string
+          loot_box_id: string
+          opened_at: string
+          rewards_received: Json
+          tokens_spent: number
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          loot_box_id: string
+          opened_at?: string
+          rewards_received: Json
+          tokens_spent: number
+          user_id: string
+        }
+        Update: {
+          id?: string
+          loot_box_id?: string
+          opened_at?: string
+          rewards_received?: Json
+          tokens_spent?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_power_levels: {
         Row: {
           created_at: string
@@ -824,6 +1031,33 @@ export type Database = {
           id?: string
           last_calculated_at?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_power_ups: {
+        Row: {
+          id: string
+          is_equipped: boolean
+          power_up_id: string
+          unlocked_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_equipped?: boolean
+          power_up_id: string
+          unlocked_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_equipped?: boolean
+          power_up_id?: string
+          unlocked_at?: string
+          usage_count?: number | null
           user_id?: string
         }
         Relationships: []
@@ -1205,6 +1439,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      add_tap_tokens: {
+        Args: {
+          _user_id: string
+          _amount: number
+          _transaction_type: string
+          _description: string
+          _reference_id?: string
+        }
+        Returns: boolean
+      }
       award_challenge_coins: {
         Args: {
           _user_id: string
@@ -1248,6 +1492,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      generate_nft_metadata: {
+        Args: { _avatar_config: Json; _serial_number: number }
+        Returns: Json
+      }
       get_power_level_tier: {
         Args: { _score: number }
         Returns: string
@@ -1284,6 +1532,16 @@ export type Database = {
         Returns: undefined
       }
       spend_tap_coins: {
+        Args: {
+          _user_id: string
+          _amount: number
+          _transaction_type: string
+          _description: string
+          _reference_id?: string
+        }
+        Returns: boolean
+      }
+      spend_tap_tokens: {
         Args: {
           _user_id: string
           _amount: number

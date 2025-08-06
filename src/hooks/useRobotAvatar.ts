@@ -1,0 +1,207 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useTapCoins } from './useTapCoins';
+
+export interface RobotAvatarData {
+  // Robot chassis and build
+  chassis_type: 'slim_bot' | 'bulky_bot' | 'agile_bot' | 'tall_bot' | 'compact_bot';
+  color_scheme: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+  
+  // Tech modules and equipment
+  tech_modules: string[];
+  power_level: number;
+  led_patterns: string[];
+  energy_core: string;
+  
+  // Classic avatar properties (backward compatible)
+  body_type: string;
+  skin_tone: string;
+  hair_style: string;
+  hair_color: string;
+  eye_color: string;
+  outfit: string;
+  accessory: string | null;
+  shoes: string;
+  animation: string;
+  background: string;
+  
+  // Robot-specific features
+  visor_type?: string;
+  sensor_array?: string[];
+  workout_modules?: string[];
+  ai_personality?: string;
+}
+
+export const useRobotAvatar = () => {
+  const [avatarData, setAvatarData] = useState<RobotAvatarData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { purchaseItem, hasPurchased } = useTapCoins();
+
+  useEffect(() => {
+    fetchAvatarData();
+  }, []);
+
+  const fetchAvatarData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('avatar_data')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      const defaultRobotAvatar: RobotAvatarData = {
+        chassis_type: "slim_bot",
+        color_scheme: {
+          primary: "hsl(0, 84%, 60%)", // TapFit red
+          secondary: "hsl(0, 0%, 15%)", // Dark metallic
+          accent: "hsl(0, 100%, 70%)" // Bright accent
+        },
+        tech_modules: ["basic_scanner"],
+        power_level: 25,
+        led_patterns: ["steady"],
+        energy_core: "standard",
+        // Backward compatible properties
+        body_type: "robot",
+        skin_tone: "metallic",
+        hair_style: "none",
+        hair_color: "none",
+        eye_color: "blue_led",
+        outfit: "chassis_armor",
+        accessory: "data_port",
+        shoes: "hover_boots",
+        animation: "power_up",
+        background: "tech_lab"
+      };
+      
+      if (profile?.avatar_data && 
+          typeof profile.avatar_data === 'object' && 
+          !Array.isArray(profile.avatar_data) &&
+          profile.avatar_data !== null) {
+        // Merge existing data with robot defaults for backward compatibility
+        const existingData = profile.avatar_data as any;
+        const robotData: RobotAvatarData = {
+          ...defaultRobotAvatar,
+          ...existingData,
+          // Ensure robot-specific properties exist
+          chassis_type: existingData.chassis_type || defaultRobotAvatar.chassis_type,
+          color_scheme: existingData.color_scheme || defaultRobotAvatar.color_scheme,
+          tech_modules: existingData.tech_modules || defaultRobotAvatar.tech_modules,
+          power_level: existingData.power_level || defaultRobotAvatar.power_level,
+          led_patterns: existingData.led_patterns || defaultRobotAvatar.led_patterns,
+          energy_core: existingData.energy_core || defaultRobotAvatar.energy_core
+        };
+        setAvatarData(robotData);
+      } else {
+        setAvatarData(defaultRobotAvatar);
+      }
+    } catch (error) {
+      console.error('Error fetching robot avatar data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateAvatar = async (newAvatarData: Partial<RobotAvatarData>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !avatarData) return false;
+
+      const updatedData = { ...avatarData, ...newAvatarData };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_data: updatedData })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setAvatarData(updatedData);
+      return true;
+    } catch (error) {
+      console.error('Error updating robot avatar:', error);
+      return false;
+    }
+  };
+
+  const purchaseRobotItem = async (itemId: string, itemType: string, itemValue: string) => {
+    const success = await purchaseItem(itemId);
+    if (success) {
+      // Handle robot-specific updates
+      if (itemType === 'chassis_type') {
+        await updateAvatar({ chassis_type: itemValue as any });
+      } else if (itemType === 'tech_module') {
+        const currentModules = avatarData?.tech_modules || [];
+        await updateAvatar({ tech_modules: [...currentModules, itemValue] });
+      } else if (itemType === 'color_scheme') {
+        // Parse color scheme from itemValue
+        try {
+          const colorScheme = JSON.parse(itemValue);
+          await updateAvatar({ color_scheme: colorScheme });
+        } catch {
+          console.error('Invalid color scheme format');
+        }
+      } else {
+        // Handle classic avatar properties
+        const updateKey = itemType.replace('avatar_', '') as keyof RobotAvatarData;
+        await updateAvatar({ [updateKey]: itemValue } as any);
+      }
+    }
+    return success;
+  };
+
+  const canUseItem = (itemName: string, category: string) => {
+    // Free robot items
+    if (itemName === 'Basic Chassis' || itemName === 'Standard Core' || 
+        itemName === 'Power Up Animation' || itemName === 'Tech Lab') {
+      return true;
+    }
+    return hasPurchased(itemName);
+  };
+
+  const upgradePowerLevel = async (amount: number) => {
+    if (!avatarData) return false;
+    
+    const newPowerLevel = Math.min(100, avatarData.power_level + amount);
+    return await updateAvatar({ power_level: newPowerLevel });
+  };
+
+  const equipTechModule = async (module: string) => {
+    if (!avatarData) return false;
+    
+    const currentModules = avatarData.tech_modules || [];
+    if (!currentModules.includes(module)) {
+      const updatedModules = [...currentModules, module];
+      return await updateAvatar({ tech_modules: updatedModules });
+    }
+    return true;
+  };
+
+  const unequipTechModule = async (module: string) => {
+    if (!avatarData) return false;
+    
+    const currentModules = avatarData.tech_modules || [];
+    const updatedModules = currentModules.filter(m => m !== module);
+    return await updateAvatar({ tech_modules: updatedModules });
+  };
+
+  return {
+    avatarData,
+    loading,
+    updateAvatar,
+    purchaseRobotItem,
+    canUseItem,
+    fetchAvatarData,
+    upgradePowerLevel,
+    equipTechModule,
+    unequipTechModule
+  };
+};
