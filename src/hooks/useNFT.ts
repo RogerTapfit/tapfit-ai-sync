@@ -50,7 +50,7 @@ export const useNFT = () => {
     const serialNumber = (count || 0) + 1;
 
     const { data, error } = await supabase.rpc('generate_nft_metadata', {
-      _avatar_config: avatarConfig,
+      _avatar_config: avatarConfig as any,
       _serial_number: serialNumber
     });
 
