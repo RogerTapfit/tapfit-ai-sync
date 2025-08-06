@@ -47,8 +47,13 @@ export const useRobotAvatar = () => {
 
   const fetchAvatarData = async () => {
     try {
+      console.log('Fetching avatar data...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error('No authenticated user found');
+        setLoading(false);
+        return;
+      }
 
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -56,7 +61,12 @@ export const useRobotAvatar = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Profile data received:', profile);
 
       const defaultRobotAvatar: RobotAvatarData = {
         chassis_type: "slim_bot",
@@ -88,19 +98,23 @@ export const useRobotAvatar = () => {
           profile.avatar_data !== null) {
         // Merge existing data with robot defaults for backward compatibility
         const existingData = profile.avatar_data as any;
+        console.log('Existing avatar data:', existingData);
+        
         const robotData: RobotAvatarData = {
           ...defaultRobotAvatar,
           ...existingData,
-          // Ensure robot-specific properties exist
+          // Ensure robot-specific properties exist with proper fallbacks
           chassis_type: existingData.chassis_type || defaultRobotAvatar.chassis_type,
           color_scheme: existingData.color_scheme || defaultRobotAvatar.color_scheme,
           tech_modules: existingData.tech_modules || defaultRobotAvatar.tech_modules,
-          power_level: existingData.power_level || defaultRobotAvatar.power_level,
+          power_level: typeof existingData.power_level === 'number' ? existingData.power_level : defaultRobotAvatar.power_level,
           led_patterns: existingData.led_patterns || defaultRobotAvatar.led_patterns,
           energy_core: existingData.energy_core || defaultRobotAvatar.energy_core
         };
+        console.log('Merged robot data:', robotData);
         setAvatarData(robotData);
       } else {
+        console.log('Using default robot avatar');
         setAvatarData(defaultRobotAvatar);
       }
     } catch (error) {

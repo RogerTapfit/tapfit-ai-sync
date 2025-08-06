@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -30,12 +30,47 @@ const builderSteps: BuilderStep[] = [
 ];
 
 export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderProps) => {
-  const { avatarData, updateAvatar, purchaseRobotItem, canUseItem } = useRobotAvatar();
+  const { avatarData, loading, updateAvatar, purchaseRobotItem, canUseItem } = useRobotAvatar();
   const { storeItems, balance } = useTapCoins();
   const [currentStep, setCurrentStep] = useState(0);
-  const [previewData, setPreviewData] = useState<RobotAvatarData | null>(avatarData);
+  const [previewData, setPreviewData] = useState<RobotAvatarData | null>(null);
 
-  if (!avatarData || !previewData) return null;
+  // Update preview when avatar data loads
+  React.useEffect(() => {
+    if (avatarData && !previewData) {
+      console.log('Setting preview data:', avatarData);
+      setPreviewData(avatarData);
+    }
+  }, [avatarData, previewData]);
+
+  // Show loading state instead of black screen
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 flex items-center justify-center">
+        <Card className="p-8">
+          <CardContent className="text-center space-y-4">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+            <p>Loading your robot avatar...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if no data after loading
+  if (!avatarData || !previewData) {
+    console.error('Avatar data missing:', { avatarData, previewData });
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4 flex items-center justify-center">
+        <Card className="p-8">
+          <CardContent className="text-center space-y-4">
+            <p className="text-destructive">Failed to load avatar data</p>
+            <Button onClick={onClose}>Close Builder</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const progress = ((currentStep + 1) / builderSteps.length) * 100;
   const step = builderSteps[currentStep];
