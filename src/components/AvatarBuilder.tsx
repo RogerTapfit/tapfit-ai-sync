@@ -9,7 +9,7 @@ import { InteractiveAvatarPreview } from './InteractiveAvatarPreview';
 import { useRobotAvatar, RobotAvatarData } from '@/hooks/useRobotAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useAvatarPreview } from '@/hooks/useAvatarPreview';
-import { useDebounceCallback } from '@/hooks/useDebounceCallback';
+
 import { toast } from 'sonner';
 
 interface AvatarBuilderProps {
@@ -62,27 +62,28 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
   }, [avatarData, previewData.chassis_type, initializeAvatar]);
 
   // Debounced save function
-  const { debouncedCallback: debouncedSave } = useDebounceCallback(
-    async (dataToSave: RobotAvatarData) => {
-      startSave();
-      try {
-        const success = await updateAvatar(dataToSave);
-        if (success) {
-          completeSave(dataToSave);
-        } else {
-          failSave('Failed to save avatar changes');
-        }
-      } catch (error) {
-        failSave(error instanceof Error ? error.message : 'Unknown error occurred');
+  const debouncedSave = useCallback(async (dataToSave: RobotAvatarData) => {
+    startSave();
+    try {
+      const success = await updateAvatar(dataToSave);
+      if (success) {
+        completeSave(dataToSave);
+      } else {
+        failSave('Failed to save avatar changes');
       }
-    },
-    { delay: 1000, maxWait: 3000 }
-  );
+    } catch (error) {
+      failSave(error instanceof Error ? error.message : 'Unknown error occurred');
+    }
+  }, [startSave, updateAvatar, completeSave, failSave]);
 
-  // Auto-save changes when preview data changes
+  // Auto-save changes when preview data changes with debounce
   useEffect(() => {
     if (hasUnsavedChanges && previewData) {
-      debouncedSave(previewData);
+      const timeoutId = setTimeout(() => {
+        debouncedSave(previewData);
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [hasUnsavedChanges, previewData, debouncedSave]);
 
