@@ -19,11 +19,11 @@ export const RobotAvatarDisplay = ({
   emotion = 'happy',
   pose = 'idle'
 }: RobotAvatarDisplayProps) => {
-  // Mobile-responsive size classes
+  // Container-responsive size classes
   const sizeClasses = {
     small: 'w-16 h-16 min-w-16 min-h-16',
-    medium: 'w-24 h-24 min-w-24 min-h-24 sm:w-32 sm:h-32 sm:min-w-32 sm:min-h-32',
-    large: 'w-32 h-32 min-w-32 min-h-32 sm:w-48 sm:h-48 sm:min-w-48 sm:min-h-48'
+    medium: 'w-24 h-24 min-w-24 min-h-24 sm:w-32 sm:h-32',
+    large: 'w-full h-full max-w-full max-h-full min-w-32 min-h-32'
   };
 
   const bodySize = {
@@ -161,7 +161,9 @@ export const RobotAvatarDisplay = ({
     <Card 
       className={`${sizeClasses[size]} ${className} relative border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-300 flex items-center justify-center overflow-hidden`}
       style={{ 
-        boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20` 
+        boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20`,
+        objectFit: 'contain',
+        maxHeight: '100%'
       }}
     >
       {/* Robot Figure Container */}

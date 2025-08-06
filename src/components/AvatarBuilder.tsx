@@ -439,16 +439,18 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border-2 border-primary/20 flex items-center justify-center p-4">
-                <RobotAvatarDisplay 
-                  avatarData={previewData!} 
-                  size="large" 
-                  showAnimation={true}
-                  emotion="excited"
-                  pose="power_up"
-                  className="max-w-full max-h-full"
-                />
+            <CardContent className="p-6">
+              <div className="relative w-full min-h-[280px] max-h-[400px] aspect-square mx-auto bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border-2 border-primary/20 flex items-center justify-center p-6 overflow-hidden">
+                <div className="w-full h-full max-w-full max-h-full flex items-center justify-center">
+                  <RobotAvatarDisplay 
+                    avatarData={previewData!} 
+                    size="large" 
+                    showAnimation={true}
+                    emotion="excited"
+                    pose="power_up"
+                    className="w-full h-full max-w-full max-h-full object-contain"
+                  />
+                </div>
               </div>
               <div className="text-sm text-muted-foreground text-center mt-2">
                 <div className="font-semibold">
