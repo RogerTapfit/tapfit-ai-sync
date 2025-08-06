@@ -30,10 +30,12 @@ const builderSteps: BuilderStep[] = [
 ];
 
 export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderProps) => {
+  // All hooks must be declared first, before any conditional returns
   const { avatarData, loading, updateAvatar, purchaseRobotItem, canUseItem } = useRobotAvatar();
   const { storeItems, balance } = useTapCoins();
   const [currentStep, setCurrentStep] = useState(0);
   const [previewData, setPreviewData] = useState<RobotAvatarData | null>(null);
+  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   // Update preview when avatar data loads
   React.useEffect(() => {
@@ -118,9 +120,6 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
       }
     }
   };
-
-  // Debounced database save to avoid blocking preview updates
-  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
   const handleBasicOption = (category: string, value: any) => {
     // Instant preview update
