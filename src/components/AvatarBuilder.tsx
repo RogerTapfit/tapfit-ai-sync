@@ -430,16 +430,30 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Avatar Preview */}
           <div className="lg:col-span-1">
-            <Card className="glow-card p-6 sticky top-4">
+            <Card className="glow-card p-6 sticky top-4 border-2 border-primary/30">
               <CardHeader>
-                <CardTitle className="text-center">Live Preview</CardTitle>
+                <CardTitle className="text-center flex items-center justify-center gap-2">
+                  Live Preview 
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                </CardTitle>
               </CardHeader>
-              <CardContent className="flex justify-center">
+              <CardContent className="flex flex-col items-center space-y-3">
                 <RobotAvatarDisplay 
                   avatarData={previewData!} 
                   size="large" 
                   showAnimation={true}
+                  emotion="excited"
+                  pose="power_up"
+                  key={`preview-${previewData?.chassis_type}-${previewData?.color_scheme?.primary}-${Date.now()}`}
                 />
+                <div className="text-sm text-muted-foreground text-center">
+                  <div className="font-semibold">
+                    {previewData?.chassis_type?.replace(/_/g, ' ').toUpperCase() || 'ROBOT'}
+                  </div>
+                  <div className="text-xs">
+                    Power: {previewData?.power_level || 25}% | Modules: {previewData?.tech_modules?.length || 0}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -44,10 +44,11 @@ export const RobotAvatarDisplay = ({
 
   const getChassisStyle = (chassisType: string) => {
     switch (chassisType) {
-      case 'bulky_bot': return 'scale-110 font-bold transform rotate-1';
-      case 'agile_bot': return 'scale-95 transform -skew-y-1';
-      case 'tall_bot': return 'scale-y-125 scale-x-95';
-      case 'compact_bot': return 'scale-90 rounded-xl';
+      case 'bulky_bot': return 'scale-125 font-bold transform rotate-2 shadow-2xl';
+      case 'agile_bot': return 'scale-90 transform -skew-y-2 shadow-lg';
+      case 'tall_bot': return 'scale-y-150 scale-x-85 shadow-xl';
+      case 'compact_bot': return 'scale-75 rounded-2xl shadow-md';
+      case 'slim_bot': return 'scale-y-110 scale-x-90 transform skew-y-1';
       default: return 'scale-100';
     }
   };
@@ -58,21 +59,53 @@ export const RobotAvatarDisplay = ({
     switch (chassisType) {
       case 'bulky_bot':
         return (
-          <div className={`absolute -left-1 top-1/2 transform -translate-y-1/2 ${iconSize}`}>
-            🏋️ {/* Dumbbell attachment */}
-          </div>
+          <>
+            <div className={`absolute -left-2 top-1/3 transform -translate-y-1/2 ${iconSize} animate-bounce`}>
+              🏋️ {/* Dumbbell attachment */}
+            </div>
+            <div className={`absolute -right-2 top-2/3 transform -translate-y-1/2 ${iconSize} animate-bounce delay-100`}>
+              💪 {/* Strength indicator */}
+            </div>
+          </>
         );
       case 'agile_bot':
         return (
-          <div className={`absolute -right-1 top-1/4 ${iconSize}`}>
-            🎧 {/* Headphones for music */}
-          </div>
+          <>
+            <div className={`absolute -right-2 top-1/4 ${iconSize} animate-pulse`}>
+              🎧 {/* Headphones for music */}
+            </div>
+            <div className={`absolute -left-2 top-3/4 ${iconSize} animate-ping`}>
+              ⚡ {/* Speed indicator */}
+            </div>
+          </>
+        );
+      case 'tall_bot':
+        return (
+          <>
+            <div className={`absolute top-0 left-1/4 transform -translate-y-1/2 ${iconSize} animate-pulse`}>
+              🏀 {/* Height indicator */}
+            </div>
+            <div className={`absolute top-0 right-1/4 transform -translate-y-1/2 ${iconSize} animate-pulse delay-75`}>
+              👑 {/* Leadership symbol */}
+            </div>
+          </>
         );
       case 'compact_bot':
         return (
-          <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${iconSize}`}>
+          <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${iconSize} animate-bounce`}>
             💝 {/* Heart symbol for motivation */}
           </div>
+        );
+      case 'slim_bot':
+        return (
+          <>
+            <div className={`absolute -right-1 top-1/3 ${iconSize} animate-pulse`}>
+              🏃‍♂️ {/* Running indicator */}
+            </div>
+            <div className={`absolute -left-1 top-2/3 ${iconSize} animate-pulse delay-100`}>
+              🔥 {/* Cardio indicator */}
+            </div>
+          </>
         );
       default:
         return null;
@@ -141,7 +174,8 @@ export const RobotAvatarDisplay = ({
 
   return (
     <Card 
-      className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)}`}
+      key={`${avatarData.chassis_type}-${avatarData.color_scheme.primary}-${avatarData.tech_modules.join(',')}`}
+      className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-500`}
       style={{ 
         boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20` 
       }}
