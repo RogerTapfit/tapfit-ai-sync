@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RobotAvatarData } from '@/hooks/useRobotAvatar';
@@ -312,3 +313,15 @@ export const RobotAvatarDisplay = ({
     </Card>
   );
 };
+
+export default React.memo(RobotAvatarDisplay, (prevProps, nextProps) => {
+  // Custom comparison for React.memo
+  return (
+    JSON.stringify(prevProps.avatarData) === JSON.stringify(nextProps.avatarData) &&
+    prevProps.size === nextProps.size &&
+    prevProps.showAnimation === nextProps.showAnimation &&
+    prevProps.className === nextProps.className &&
+    prevProps.emotion === nextProps.emotion &&
+    prevProps.pose === nextProps.pose
+  );
+});

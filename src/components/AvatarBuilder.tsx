@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ArrowLeft, ArrowRight, Coins, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Coins, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { RobotAvatarDisplay } from './RobotAvatarDisplay';
 import { useRobotAvatar, RobotAvatarData } from '@/hooks/useRobotAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
+import { useAvatarPreview } from '@/hooks/useAvatarPreview';
+import { useDebounceCallback } from '@/hooks/useDebounceCallback';
 import { toast } from 'sonner';
 
 interface AvatarBuilderProps {
@@ -32,20 +34,57 @@ const builderSteps: BuilderStep[] = [
 ];
 
 export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderProps) => {
-  // All hooks must be declared first, before any conditional returns
+  const [currentStep, setCurrentStep] = useState(0);
+  
   const { avatarData, loading, updateAvatar, purchaseRobotItem, canUseItem } = useRobotAvatar();
   const { storeItems, balance } = useTapCoins();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [previewData, setPreviewData] = useState<RobotAvatarData | null>(null);
-  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  
+  // Initialize avatar preview state
+  const {
+    avatarData: previewData,
+    isSaving,
+    error,
+    hasUnsavedChanges,
+    initializeAvatar,
+    updatePreview,
+    startSave,
+    completeSave,
+    failSave,
+    resetToSaved,
+    clearError
+  } = useAvatarPreview(avatarData);
 
-  // Update preview when avatar data loads or changes
-  React.useEffect(() => {
-    if (avatarData) {
-      console.log('Setting preview data:', avatarData);
-      setPreviewData(avatarData);
+  // Initialize preview when avatar data loads
+  useEffect(() => {
+    if (avatarData && !previewData.chassis_type) {
+      initializeAvatar(avatarData);
     }
-  }, [avatarData]);
+  }, [avatarData, previewData.chassis_type, initializeAvatar]);
+
+  // Debounced save function
+  const { debouncedCallback: debouncedSave } = useDebounceCallback(
+    async (dataToSave: RobotAvatarData) => {
+      startSave();
+      try {
+        const success = await updateAvatar(dataToSave);
+        if (success) {
+          completeSave(dataToSave);
+        } else {
+          failSave('Failed to save avatar changes');
+        }
+      } catch (error) {
+        failSave(error instanceof Error ? error.message : 'Unknown error occurred');
+      }
+    },
+    { delay: 1000, maxWait: 3000 }
+  );
+
+  // Auto-save changes when preview data changes
+  useEffect(() => {
+    if (hasUnsavedChanges && previewData) {
+      debouncedSave(previewData);
+    }
+  }, [hasUnsavedChanges, previewData, debouncedSave]);
 
   // Show loading state instead of black screen
   if (loading) {
@@ -87,61 +126,44 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     return robotItems.filter(item => item.category === category);
   };
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentStep < builderSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       onClose();
     }
-  };
+  }, [currentStep, onClose]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
-  };
+  }, [currentStep]);
 
-  const handleItemSelect = async (item: any, categoryKey: string) => {
+  const handleItemSelect = useCallback(async (item: any, categoryKey: string) => {
     const itemValue = item.name.toLowerCase().replace(/\s+/g, '_');
     
     if (canUseItem(item.name, item.category)) {
-      const updateData = { [categoryKey]: itemValue };
-      setPreviewData({ ...previewData!, ...updateData });
-      await updateAvatar(updateData as Partial<RobotAvatarData>);
+      const updates = { [categoryKey]: itemValue };
+      updatePreview(updates as Partial<RobotAvatarData>);
       toast.success(`Applied ${item.name}!`);
     } else {
       if (balance >= item.coin_cost) {
         const success = await purchaseRobotItem(item.id, item.category, itemValue);
         if (success) {
-          const updateData = { [categoryKey]: itemValue };
-          setPreviewData({ ...previewData!, ...updateData });
+          const updates = { [categoryKey]: itemValue };
+          updatePreview(updates as Partial<RobotAvatarData>);
           toast.success(`Purchased and equipped ${item.name}!`);
         }
       } else {
         toast.error(`You need ${item.coin_cost - balance} more Tap Coins!`);
       }
     }
-  };
+  }, [canUseItem, balance, purchaseRobotItem, updatePreview]);
 
-  const handleBasicOption = (category: string, value: any) => {
-    if (!previewData) return;
-    
-    // Instant preview update
-    const updateData = { [category]: value };
-    const newPreviewData = { ...previewData, ...updateData };
-    setPreviewData(newPreviewData);
-    
-    // Debounced database save
-    if (saveTimeoutId) {
-      clearTimeout(saveTimeoutId);
-    }
-    
-    const newTimeoutId = setTimeout(() => {
-      updateAvatar(updateData as Partial<RobotAvatarData>);
-    }, 500); // Increased delay for better performance
-    
-    setSaveTimeoutId(newTimeoutId);
-  };
+  const handleBasicOption = useCallback((category: string, value: any) => {
+    updatePreview({ [category]: value } as Partial<RobotAvatarData>);
+  }, [updatePreview]);
 
   const renderStepContent = () => {
     switch (step.id) {
@@ -500,10 +522,32 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
               </h1>
               <p className="text-muted-foreground">Step {currentStep + 1} of {builderSteps.length}</p>
             </div>
+            {isSaving && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </div>
+            )}
+            {error && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertCircle className="w-4 h-4" />
+                {error}
+                <Button variant="ghost" size="sm" onClick={clearError}>
+                  ×
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <Coins className="h-5 w-5 text-yellow-500" />
-            <span className="font-bold text-lg">{balance.toLocaleString()}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Coins className="h-5 h-5 text-yellow-500" />
+              <span className="font-bold text-lg">{balance.toLocaleString()}</span>
+            </div>
+            {hasUnsavedChanges && (
+              <Button variant="ghost" size="sm" onClick={resetToSaved}>
+                Reset Changes
+              </Button>
+            )}
           </div>
         </div>
 
