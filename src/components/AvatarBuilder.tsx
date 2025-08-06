@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ArrowLeft, ArrowRight, Coins, Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { RobotAvatarDisplay } from './RobotAvatarDisplay';
+import { InteractiveAvatarPreview } from './InteractiveAvatarPreview';
 import { useRobotAvatar, RobotAvatarData } from '@/hooks/useRobotAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useAvatarPreview } from '@/hooks/useAvatarPreview';
@@ -571,16 +571,13 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
             </CardHeader>
             <CardContent className="p-6">
               <div className="relative w-full min-h-[280px] max-h-[400px] aspect-square mx-auto bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border-2 border-primary/20 flex items-center justify-center p-6 overflow-hidden">
-                <div className="w-full h-full max-w-full max-h-full flex items-center justify-center">
-                  <RobotAvatarDisplay 
-                    avatarData={previewData!} 
-                    size="large" 
-                    showAnimation={true}
-                    emotion="excited"
-                    pose="power_up"
-                    className="w-full h-full max-w-full max-h-full object-contain"
-                  />
-                </div>
+                <InteractiveAvatarPreview
+                  avatarData={previewData!}
+                  size="lg"
+                  showControls
+                  showStatusIndicators
+                  className="w-full h-full"
+                />
               </div>
               <div className="text-sm text-muted-foreground text-center mt-2">
                 <div className="font-semibold">
