@@ -103,10 +103,16 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      if (!user) {
+        toast.error("Please sign in to continue");
+        setLoading(false);
+        return;
+      }
+
+      console.log('💾 Saving enhanced profile data:', profile);
 
       // Update profile with enhanced data
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
           age: profile.age,
@@ -121,23 +127,39 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         })
         .eq('id', user.id);
 
-      if (error) throw error;
-
-      // Complete calibration process
-      const { error: calibrationError } = await supabase.rpc('complete_user_calibration', {
-        _user_id: user.id
-      });
-
-      if (calibrationError) {
-        console.error('Calibration error:', calibrationError);
-        // Don't fail the onboarding if calibration has issues
+      if (profileError) {
+        console.error('❌ Error updating profile:', profileError);
+        toast.error(`Failed to save profile: ${profileError.message}`);
+        setLoading(false);
+        return;
       }
 
+      console.log('✅ Profile saved successfully, starting calibration...');
+
+      // Complete calibration process
+      const { data: calibrationResult, error: calibrationError } = await supabase
+        .rpc('complete_user_calibration', { _user_id: user.id });
+
+      if (calibrationError) {
+        console.error('❌ Calibration error:', calibrationError);
+        toast.error(`Calibration failed: ${calibrationError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      if (!calibrationResult) {
+        console.error('❌ Calibration returned false');
+        toast.error("Calibration failed. Please check your profile data.");
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Calibration completed successfully');
       toast.success('Profile setup complete! Your personalized workout plans are ready.');
       onComplete();
     } catch (error) {
-      console.error('Error completing onboarding:', error);
-      toast.error('Failed to save profile. Please try again.');
+      console.error('❌ Unexpected error:', error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
