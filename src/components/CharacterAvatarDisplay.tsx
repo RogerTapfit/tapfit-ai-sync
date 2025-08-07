@@ -31,7 +31,9 @@ export const CharacterAvatarDisplay = ({
     // Check for custom uploaded image first
     const customImages = avatarData.custom_character_images || {};
     if (customImages[characterType]) {
-      return customImages[characterType];
+      const customUrl = customImages[characterType];
+      console.log(`🎨 Using custom image for ${characterType}:`, customUrl);
+      return customUrl;
     }
 
     // Fallback to default character images
@@ -95,11 +97,15 @@ export const CharacterAvatarDisplay = ({
   console.log('CharacterAvatarDisplay rendering:', {
     characterType: avatarData.character_type,
     characterImage,
-    character: character.name
+    character: character.name,
+    customImages: avatarData.custom_character_images
   });
 
   // Add cache-busting parameter to force fresh image load
-  const imageUrlWithCacheBust = `${characterImage}?t=${Date.now()}`;
+  const isCustomImage = avatarData.custom_character_images?.[avatarData.character_type];
+  const imageUrlWithCacheBust = isCustomImage 
+    ? `${characterImage}?t=${Date.now()}` 
+    : characterImage;
 
   return (
     <Card className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 shadow-xl transition-all duration-300 ${showAnimation ? 'hover:scale-105' : ''}`}>
@@ -108,6 +114,7 @@ export const CharacterAvatarDisplay = ({
       <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
           {character.emoji} {character.name}
+          {isCustomImage && <span className="ml-1 text-primary">🎨</span>}
         </Badge>
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
           ⚡{avatarData.power_level}%

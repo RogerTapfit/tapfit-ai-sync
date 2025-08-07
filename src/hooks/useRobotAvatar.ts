@@ -60,10 +60,10 @@ export const useRobotAvatar = () => {
 
   const fetchAvatarData = async () => {
     try {
-      console.log('Fetching avatar data...');
+      console.log('🔄 Fetching avatar data...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('No authenticated user found');
+        console.error('❌ No authenticated user found');
         setLoading(false);
         return;
       }
@@ -79,7 +79,11 @@ export const useRobotAvatar = () => {
         throw error;
       }
 
-      console.log('Profile data received:', profile);
+      console.log('📊 Profile data received:', profile);
+      
+      // Safe type casting for avatar_data
+      const avatarDataRaw = profile?.avatar_data as any;
+      console.log('🎨 Custom images in profile:', avatarDataRaw?.custom_character_images);
 
       const defaultRobotAvatar: RobotAvatarData = {
         character_type: "steel_warrior",
@@ -134,10 +138,11 @@ export const useRobotAvatar = () => {
           led_patterns: existingData.led_patterns || defaultRobotAvatar.led_patterns,
           energy_core: existingData.energy_core || defaultRobotAvatar.energy_core
         };
-        console.log('Merged robot data:', robotData);
+        console.log('✅ Merged robot data:', robotData);
+        console.log('🎯 Custom images merged:', robotData.custom_character_images);
         setAvatarData(robotData);
       } else {
-        console.log('Using default robot avatar');
+        console.log('📝 Using default robot avatar');
         setAvatarData(defaultRobotAvatar);
       }
     } catch (error) {

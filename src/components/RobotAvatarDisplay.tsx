@@ -23,8 +23,13 @@ export const RobotAvatarDisplay = ({
 }: RobotAvatarDisplayProps) => {
   // Use new CharacterAvatarDisplay if character_type is present
   if (avatarData.character_type) {
+    // Create a key that changes when custom images update to force re-render
+    const customImageKey = avatarData.custom_character_images?.[avatarData.character_type] || 'default';
+    const renderKey = `${avatarData.character_type}-${customImageKey}-${Date.now()}`;
+    
     return (
       <CharacterAvatarDisplay
+        key={renderKey}
         avatarData={avatarData}
         size={size}
         showAnimation={showAnimation}

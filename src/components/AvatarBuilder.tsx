@@ -38,6 +38,7 @@ const builderSteps: BuilderStep[] = [
 
 export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderProps) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [previewKey, setPreviewKey] = useState(Date.now()); // Force re-render key
   
   const { avatarData, loading, updateAvatar, purchaseRobotItem, canUseItem, fetchAvatarData } = useRobotAvatar();
   const { storeItems, balance } = useTapCoins();
@@ -530,9 +531,31 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   showStatusIndicators
                   className="w-full h-full"
                   onImageUploaded={async () => {
-                    // Refresh avatar data to pick up the new custom image
-                    await fetchAvatarData();
-                    toast.success('Custom image uploaded successfully!');
+                    console.log('🎯 Image uploaded, refreshing avatar data...');
+                    
+                    // Add loading state
+                    const loadingToast = toast.loading('Processing custom image...');
+                    
+                    try {
+                      // Wait a moment for database to update
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                      
+                      // Refresh avatar data
+                      await fetchAvatarData();
+                      
+                      // Force a key change to ensure component re-renders
+                      setPreviewKey(Date.now());
+                      
+                      // Success feedback
+                      toast.dismiss(loadingToast);
+                      toast.success('Custom image uploaded and preview updated!');
+                      
+                      console.log('✅ Avatar data refreshed successfully');
+                    } catch (error) {
+                      console.error('❌ Error refreshing avatar data:', error);
+                      toast.dismiss(loadingToast);
+                      toast.error('Image uploaded but preview failed to update');
+                    }
                   }}
                 />
               </div>

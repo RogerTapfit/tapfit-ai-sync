@@ -247,6 +247,7 @@ export const InteractiveAvatarPreview: React.FC<InteractiveAvatarPreviewProps> =
         whileTap={{ scale: 0.98 }}
       >
           <RobotAvatarDisplay
+            key={`avatar-${avatarData.character_type}-${avatarData.custom_character_images?.[avatarData.character_type] || 'default'}`}
             avatarData={avatarData}
             size={size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium'}
             showAnimation={!isAutoRotating}
