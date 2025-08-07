@@ -36,7 +36,7 @@ export const CharacterAvatarDisplay = ({
       mystic_fox: '/lovable-uploads/5cd8a425-4161-4a2f-99a6-6fe7f4285ccc.png', // Purple fox robot
       iron_guardian: '/lovable-uploads/6ba39a66-8012-413c-8358-7eff61357bb3.png', // Red guardian robot
       cosmic_bunny: '/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png', // Purple/dark bunny robot
-      steel_warrior: '/lovable-uploads/bf98b1da-27e2-4cdc-8063-5ef37fabfca7.png', // Red armored warrior robot
+      steel_warrior: '/lovable-uploads/efcad6cd-72c1-458e-9093-41800e485d05.png', // Red armored warrior robot
       cyber_dragon: '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png', // Gray dragon robot with horns
       gorilla_guardian: '/lovable-uploads/81dac889-b82f-4359-a3a6-a77b066d007c.png', // Gray gorilla robot
       demon_bull: '/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png' // Red/black bull robot
