@@ -39,7 +39,7 @@ const builderSteps: BuilderStep[] = [
 export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   
-  const { avatarData, loading, updateAvatar, purchaseRobotItem, canUseItem } = useRobotAvatar();
+  const { avatarData, loading, updateAvatar, purchaseRobotItem, canUseItem, fetchAvatarData } = useRobotAvatar();
   const { storeItems, balance } = useTapCoins();
   
   // Initialize avatar preview state
@@ -529,9 +529,10 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   showControls
                   showStatusIndicators
                   className="w-full h-full"
-                  onImageUploaded={() => {
+                  onImageUploaded={async () => {
                     // Refresh avatar data to pick up the new custom image
-                    window.location.reload();
+                    await fetchAvatarData();
+                    toast.success('Custom image uploaded successfully!');
                   }}
                 />
               </div>
