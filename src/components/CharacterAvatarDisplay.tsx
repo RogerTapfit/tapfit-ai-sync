@@ -29,12 +29,12 @@ export const CharacterAvatarDisplay = ({
   // Character image mapping to actual robot images
   const getCharacterImage = (characterType: string) => {
     const characterImages = {
-      shadow_eagle: '/lovable-uploads/461c8b1b-3cee-4b38-b257-23671d035d6d.png', // Blue eagle robot
-      emerald_chameleon: '/lovable-uploads/55d72a0c-1e5a-4d6f-abfa-edfe80701063.png', // Green chameleon robot
-      cyber_panda: '/lovable-uploads/53858814-478c-431c-8c54-feecf0b00e19.png', // Panda robot
-      lightning_cheetah: '/lovable-uploads/72acfefe-3a0e-4d74-b92f-ce88b0a38d7e.png', // Cheetah robot
-      mystic_fox: '/lovable-uploads/ee18485a-269f-4a98-abe3-54fab538f201.png', // Fox robot
-      iron_guardian: '/lovable-uploads/8b855abd-c6fe-4cef-9549-7c3a6cd70fae.png', // Guardian robot
+      shadow_eagle: '/lovable-uploads/27cddadb-e225-480e-a614-c725b169ba44.png', // Blue eagle robot
+      emerald_chameleon: '/lovable-uploads/2a0aaf68-4405-4647-a95b-730174a6fe3a.png', // Green chameleon robot
+      cyber_panda: '/lovable-uploads/79a266e1-e0f4-4558-9496-c75a57fe4fec.png', // Panda robot
+      lightning_cheetah: '/lovable-uploads/11650ae8-731f-445a-8014-4248533521a7.png', // Cheetah robot
+      mystic_fox: '/lovable-uploads/5cd8a425-4161-4a2f-99a6-6fe7f4285ccc.png', // Purple fox robot
+      iron_guardian: '/lovable-uploads/6ba39a66-8012-413c-8358-7eff61357bb3.png', // Red guardian robot
       cosmic_bunny: '/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png', // Purple/dark bunny robot
       steel_warrior: '/lovable-uploads/f62a3fb2-b5ea-4582-b7ff-550a03b3c767.png', // Silver/white bunny robot
       cyber_dragon: '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png', // Gray dragon robot with horns
