@@ -9,6 +9,9 @@ import { InteractiveAvatarPreview } from './InteractiveAvatarPreview';
 import { useRobotAvatar, RobotAvatarData } from '@/hooks/useRobotAvatar';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useAvatarPreview } from '@/hooks/useAvatarPreview';
+import { CharacterSelector, CHARACTER_OPTIONS } from './CharacterSelector';
+import { HueCustomizer } from './HueCustomizer';
+import { RobotAvatarDisplay } from './RobotAvatarDisplay';
 
 import { toast } from 'sonner';
 
@@ -25,8 +28,8 @@ interface BuilderStep {
 }
 
 const builderSteps: BuilderStep[] = [
-  { id: 'chassis', title: 'Chassis', description: 'Select your robot frame', category: 'chassis_type' },
-  { id: 'colors', title: 'Color Scheme', description: 'Pick your robot colors', category: 'color_scheme' },
+  { id: 'character', title: 'Character', description: 'Choose your robot character', category: 'character_type' },
+  { id: 'colors', title: 'Color Scheme', description: 'Customize your character colors', category: 'base_hue' },
   { id: 'tech', title: 'Tech Modules', description: 'Add technology modules', category: 'tech_modules' },
   { id: 'core', title: 'Energy Core', description: 'Choose your power source', category: 'energy_core' },
   { id: 'animation', title: 'Personality', description: 'Choose your robot style', category: 'animation' },
@@ -175,121 +178,47 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
 
   const renderStepContent = () => {
     switch (step.id) {
-      case 'chassis':
-        return (
-          <TooltipProvider>
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-semibold mb-3">Robot Chassis Type</h4>
-                
-                {/* Mobile: Horizontal scroll */}
-                <div className="block sm:hidden">
-                  <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                    <div className="flex w-max space-x-4 p-4">
-                      {[
-                        { name: 'Fitness Trainer Bot', value: 'slim_bot', description: 'Sleek, agile build perfect for cardio', icon: '🏃‍♂️' },
-                        { name: 'Strength Coach Bot', value: 'bulky_bot', description: 'Powerful build with dumbbell attachments', icon: '🏋️‍♂️' },
-                        { name: 'Athletic Runner Bot', value: 'agile_bot', description: 'Dynamic pose with running gear', icon: '⚡' },
-                        { name: 'Tall Performance Bot', value: 'tall_bot', description: 'Imposing and motivational', icon: '🏀' },
-                        { name: 'Cute Companion Bot', value: 'compact_bot', description: 'Friendly motivational fitness buddy', icon: '🤖' }
-                      ].map((option) => (
-                        <Tooltip key={option.value}>
-                          <TooltipTrigger asChild>
-                            <Card
-                              className={`min-w-[140px] p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                                previewData?.chassis_type === option.value ? 'ring-2 ring-primary bg-primary/5' : ''
-                              }`}
-                              onClick={() => handleBasicOption('chassis_type', option.value)}
-                            >
-                              <div className="text-center space-y-2">
-                                <div className="text-2xl">{option.icon}</div>
-                                <div className="font-semibold text-sm">{option.name}</div>
-                              </div>
-                            </Card>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{option.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </div>
+      case 'character':
+        const ownedCharacters = CHARACTER_OPTIONS
+          .filter(char => char.unlockCost === 0 || canUseItem(char.name, 'character'))
+          .map(char => char.id);
 
-                {/* Desktop: Responsive grid */}
-                <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[
-                    { name: 'Fitness Trainer Bot', value: 'slim_bot', description: 'Sleek, agile build perfect for cardio', icon: '🏃‍♂️' },
-                    { name: 'Strength Coach Bot', value: 'bulky_bot', description: 'Powerful build with dumbbell attachments', icon: '🏋️‍♂️' },
-                    { name: 'Athletic Runner Bot', value: 'agile_bot', description: 'Dynamic pose with running gear', icon: '⚡' },
-                    { name: 'Tall Performance Bot', value: 'tall_bot', description: 'Imposing and motivational', icon: '🏀' },
-                    { name: 'Cute Companion Bot', value: 'compact_bot', description: 'Friendly motivational fitness buddy', icon: '🤖' }
-                  ].map((option) => (
-                    <Card
-                      key={option.value}
-                      className={`p-4 cursor-pointer transition-all hover:shadow-lg hover:scale-105 min-h-24 ${
-                        previewData?.chassis_type === option.value ? 'ring-2 ring-primary bg-primary/5' : ''
-                      }`}
-                      onClick={() => handleBasicOption('chassis_type', option.value)}
-                    >
-                      <div className="text-center space-y-2">
-                        <div className="text-2xl">{option.icon}</div>
-                        <div className="font-semibold text-sm">{option.name}</div>
-                        <div className="text-xs text-muted-foreground leading-tight">{option.description}</div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </TooltipProvider>
+        return (
+          <div className="space-y-6">
+            <CharacterSelector
+              selectedCharacter={previewData?.character_type}
+              onCharacterSelect={(characterId) => handleBasicOption('character_type', characterId)}
+              ownedCharacters={ownedCharacters}
+              canAfford={(cost) => balance >= cost}
+              onPurchase={async (characterId, cost) => {
+                const success = await purchaseRobotItem(characterId, 'character_type', characterId);
+                if (success) {
+                  handleBasicOption('character_type', characterId);
+                  toast.success(`Unlocked ${CHARACTER_OPTIONS.find(c => c.id === characterId)?.name}!`);
+                } else {
+                  toast.error('Purchase failed. Please try again.');
+                }
+              }}
+            />
+          </div>
         );
 
       case 'colors':
         return (
           <div className="space-y-6">
-            <div>
-              <h4 className="font-semibold mb-3">Color Schemes</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  { 
-                    name: 'TapFit Red', 
-                    value: { primary: "hsl(0, 84%, 60%)", secondary: "hsl(0, 0%, 15%)", accent: "hsl(0, 100%, 70%)" },
-                    colors: ["bg-red-500", "bg-gray-800", "bg-red-400"]
-                  },
-                  { 
-                    name: 'Electric Blue', 
-                    value: { primary: "hsl(220, 84%, 60%)", secondary: "hsl(220, 20%, 20%)", accent: "hsl(220, 100%, 80%)" },
-                    colors: ["bg-blue-500", "bg-blue-900", "bg-blue-300"]
-                  },
-                  { 
-                    name: 'Cyber Green', 
-                    value: { primary: "hsl(120, 84%, 50%)", secondary: "hsl(120, 20%, 15%)", accent: "hsl(120, 100%, 70%)" },
-                    colors: ["bg-green-500", "bg-green-900", "bg-green-300"]
-                  },
-                  { 
-                    name: 'Neon Purple', 
-                    value: { primary: "hsl(280, 84%, 60%)", secondary: "hsl(280, 20%, 20%)", accent: "hsl(280, 100%, 80%)" },
-                    colors: ["bg-purple-500", "bg-purple-900", "bg-purple-300"]
-                  }
-                ].map((option) => (
-                  <Button
-                    key={option.name}
-                    variant={JSON.stringify(previewData?.color_scheme) === JSON.stringify(option.value) ? "default" : "outline"}
-                    className="min-h-20 flex-col gap-2 p-4"
-                    onClick={() => handleBasicOption('color_scheme', option.value)}
-                  >
-                    <span className="font-semibold">{option.name}</span>
-                    <div className="flex gap-1">
-                      {option.colors.map((color, i) => (
-                        <div key={i} className={`w-4 h-4 rounded ${color}`} />
-                      ))}
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </div>
+            <HueCustomizer
+              currentHue={previewData?.base_hue || 0}
+              onHueChange={(hue) => handleBasicOption('base_hue', hue)}
+              characterType={previewData?.character_type || 'steel_warrior'}
+              previewComponent={
+                <RobotAvatarDisplay
+                  avatarData={previewData!}
+                  size="small"
+                  showAnimation={true}
+                  emotion="happy"
+                />
+              }
+            />
           </div>
         );
 

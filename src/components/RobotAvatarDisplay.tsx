@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RobotAvatarData } from '@/hooks/useRobotAvatar';
+import { CharacterAvatarDisplay } from './CharacterAvatarDisplay';
 
 interface RobotAvatarDisplayProps {
   avatarData: RobotAvatarData;
@@ -20,6 +21,21 @@ export const RobotAvatarDisplay = ({
   emotion = 'happy',
   pose = 'idle'
 }: RobotAvatarDisplayProps) => {
+  // Use new CharacterAvatarDisplay if character_type is present
+  if (avatarData.character_type) {
+    return (
+      <CharacterAvatarDisplay
+        avatarData={avatarData}
+        size={size}
+        showAnimation={showAnimation}
+        className={className}
+        emotion={emotion}
+        pose={pose}
+      />
+    );
+  }
+
+  // Legacy robot display for backward compatibility
   // Container-responsive size classes
   const sizeClasses = {
     small: 'w-16 h-16 min-w-16 min-h-16',

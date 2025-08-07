@@ -3,8 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTapCoins } from './useTapCoins';
 
 export interface RobotAvatarData {
-  // Robot chassis and build
-  chassis_type: 'slim_bot' | 'bulky_bot' | 'agile_bot' | 'tall_bot' | 'compact_bot';
+  // Character selection (replaces chassis_type)
+  character_type: 'shadow_eagle' | 'emerald_chameleon' | 'cyber_panda' | 'lightning_cheetah' | 
+                  'mystic_fox' | 'iron_guardian' | 'cosmic_bunny' | 'steel_warrior' | 
+                  'cyber_dragon' | 'gorilla_guardian' | 'demon_bull';
+  
+  // Character customization
+  base_hue: number; // 0-360 degree hue for color shifting
+  character_species: string;
+  special_features: string[]; // wings, horns, tail, spots, etc.
+  personality_traits: string[]; // fierce, wise, playful, protective, etc.
+  
   color_scheme: {
     primary: string;
     secondary: string;
@@ -18,6 +27,7 @@ export interface RobotAvatarData {
   energy_core: string;
   
   // Classic avatar properties (backward compatible)
+  chassis_type?: string; // for backward compatibility
   body_type: string;
   skin_tone: string;
   hair_style: string;
@@ -69,7 +79,11 @@ export const useRobotAvatar = () => {
       console.log('Profile data received:', profile);
 
       const defaultRobotAvatar: RobotAvatarData = {
-        chassis_type: "slim_bot",
+        character_type: "steel_warrior",
+        base_hue: 0,
+        character_species: "humanoid",
+        special_features: ["armor_plating", "led_visor"],
+        personality_traits: ["determined", "reliable", "focused"],
         color_scheme: {
           primary: "hsl(0, 84%, 60%)", // TapFit red
           secondary: "hsl(0, 0%, 15%)", // Dark metallic
@@ -80,6 +94,7 @@ export const useRobotAvatar = () => {
         led_patterns: ["steady"],
         energy_core: "standard",
         // Backward compatible properties
+        chassis_type: "slim_bot", // for migration
         body_type: "robot",
         skin_tone: "metallic",
         hair_style: "none",
@@ -103,8 +118,13 @@ export const useRobotAvatar = () => {
         const robotData: RobotAvatarData = {
           ...defaultRobotAvatar,
           ...existingData,
+          // Migrate old chassis_type to character_type if needed
+          character_type: existingData.character_type || (existingData.chassis_type === 'slim_bot' ? 'steel_warrior' : 'steel_warrior'),
+          base_hue: existingData.base_hue || 0,
+          character_species: existingData.character_species || 'humanoid',
+          special_features: existingData.special_features || ['armor_plating'],
+          personality_traits: existingData.personality_traits || ['determined'],
           // Ensure robot-specific properties exist with proper fallbacks
-          chassis_type: existingData.chassis_type || defaultRobotAvatar.chassis_type,
           color_scheme: existingData.color_scheme || defaultRobotAvatar.color_scheme,
           tech_modules: existingData.tech_modules || defaultRobotAvatar.tech_modules,
           power_level: typeof existingData.power_level === 'number' ? existingData.power_level : defaultRobotAvatar.power_level,
@@ -150,8 +170,20 @@ export const useRobotAvatar = () => {
     const success = await purchaseItem(itemId);
     if (success) {
       // Handle robot-specific updates
-      if (itemType === 'chassis_type') {
-        await updateAvatar({ chassis_type: itemValue as any });
+      if (itemType === 'character_type') {
+        await updateAvatar({ character_type: itemValue as any });
+      } else if (itemType === 'chassis_type') {
+        // Legacy support - convert chassis to character
+        const characterMap: Record<string, any> = {
+          'slim_bot': 'steel_warrior',
+          'bulky_bot': 'iron_guardian',
+          'agile_bot': 'lightning_cheetah',
+          'tall_bot': 'gorilla_guardian',
+          'compact_bot': 'cosmic_bunny'
+        };
+        await updateAvatar({ character_type: characterMap[itemValue] || 'steel_warrior' });
+      } else if (itemType === 'base_hue') {
+        await updateAvatar({ base_hue: parseInt(itemValue) });
       } else if (itemType === 'tech_module') {
         const currentModules = avatarData?.tech_modules || [];
         await updateAvatar({ tech_modules: [...currentModules, itemValue] });
