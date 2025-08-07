@@ -84,6 +84,16 @@ export const CharacterAvatarDisplay = ({
   const currentPose = getCurrentPose(pose);
   const characterImage = getCharacterImage(avatarData.character_type);
 
+  // Debug logging
+  console.log('CharacterAvatarDisplay rendering:', {
+    characterType: avatarData.character_type,
+    characterImage,
+    character: character.name
+  });
+
+  // Add cache-busting parameter to force fresh image load
+  const imageUrlWithCacheBust = `${characterImage}?t=${Date.now()}`;
+
   return (
     <Card className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 shadow-xl transition-all duration-300 ${showAnimation ? 'hover:scale-105' : ''}`}>
       
@@ -100,24 +110,38 @@ export const CharacterAvatarDisplay = ({
       {/* Robot Image Display */}
       <div className={`absolute inset-0 flex items-center justify-center p-2 ${currentPose} transition-transform duration-300`}>
         <img 
-          src={characterImage}
+          src={imageUrlWithCacheBust}
           alt={`${character.name} robot avatar`}
           className="w-full h-full object-contain rounded-lg"
           style={getHueRotation(avatarData.base_hue || 0)}
+          onLoad={(e) => {
+            console.log(`✅ Image loaded successfully for ${character.name}:`, characterImage);
+            const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-emoji');
+            if (fallback) {
+              (fallback as HTMLElement).style.display = 'none';
+            }
+          }}
           onError={(e) => {
-            // Fallback to a default robot image or emoji
+            console.error(`❌ Image failed to load for ${character.name}:`, characterImage);
+            console.error('Full image URL:', imageUrlWithCacheBust);
+            
+            // Fallback to emoji display
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
             const fallback = target.parentElement?.querySelector('.fallback-emoji');
             if (fallback) {
               (fallback as HTMLElement).style.display = 'flex';
+              console.log(`🔄 Showing fallback emoji for ${character.name}`);
             }
           }}
         />
         
-        {/* Fallback emoji display */}
-        <div className="fallback-emoji hidden w-full h-full items-center justify-center text-4xl">
-          {character.emoji}
+        {/* Fallback emoji display - enhanced */}
+        <div className="fallback-emoji hidden w-full h-full items-center justify-center text-4xl bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
+          <div className="text-center">
+            <div className="text-6xl mb-2">{character.emoji}</div>
+            <div className="text-xs text-muted-foreground">Image Loading...</div>
+          </div>
         </div>
       </div>
 
