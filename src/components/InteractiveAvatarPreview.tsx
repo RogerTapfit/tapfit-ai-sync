@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ZoomIn, ZoomOut, RotateCcw, RotateCw, ArrowUp, ArrowDown, Home, Play, Pause } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, RotateCw, ArrowUp, ArrowDown, Home, Play, Pause, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RobotAvatarDisplay } from '@/components/RobotAvatarDisplay';
 import { useGestures } from '@/hooks/useGestures';
 import { RobotAvatarData } from '@/hooks/useRobotAvatar';
+import { ImageUploadService } from '@/services/imageUploadService';
+import { toast } from 'sonner';
 
 interface TransformState {
   zoom: number;
@@ -19,6 +21,7 @@ interface InteractiveAvatarPreviewProps {
   className?: string;
   showControls?: boolean;
   showStatusIndicators?: boolean;
+  onImageUploaded?: () => void;
 }
 
 const ZOOM_MIN = 0.5;
@@ -32,6 +35,7 @@ export const InteractiveAvatarPreview: React.FC<InteractiveAvatarPreviewProps> =
   className = '',
   showControls = true,
   showStatusIndicators = true,
+  onImageUploaded,
 }) => {
   const [transform, setTransform] = useState<TransformState>({
     zoom: 1,
@@ -41,6 +45,8 @@ export const InteractiveAvatarPreview: React.FC<InteractiveAvatarPreviewProps> =
   const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [showControlsUI, setShowControlsUI] = useState(true);
   const [hideControlsTimeout, setHideControlsTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Auto-hide controls on mobile after inactivity
   const resetHideControlsTimer = useCallback(() => {
@@ -77,6 +83,55 @@ export const InteractiveAvatarPreview: React.FC<InteractiveAvatarPreviewProps> =
     setIsAutoRotating(false);
     resetHideControlsTimer();
   }, [resetHideControlsTimer]);
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+    resetHideControlsTimer();
+  }, [resetHideControlsTimer]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (!imageFile) {
+      toast.error('Please drop an image file');
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const result = await ImageUploadService.uploadCharacterImage(imageFile, avatarData.character_type);
+      
+      if (result.success && result.url) {
+        const updateSuccess = await ImageUploadService.updateCharacterImage(avatarData.character_type, result.url);
+        
+        if (updateSuccess) {
+          toast.success('Character image updated successfully!');
+          onImageUploaded?.();
+        } else {
+          toast.error('Failed to save character image');
+        }
+      } else {
+        toast.error(result.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      toast.error('Error uploading image');
+      console.error('Upload error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  }, [avatarData.character_type, onImageUploaded]);
 
   // Memoize gesture handlers to prevent hook dependency changes
   const gestureHandlers = useMemo(() => ({
@@ -129,10 +184,49 @@ export const InteractiveAvatarPreview: React.FC<InteractiveAvatarPreviewProps> =
 
   return (
     <div 
-      className={`relative ${containerSizes[size]} ${className}`}
+      className={`relative ${containerSizes[size]} ${className} ${
+        isDragOver ? 'ring-2 ring-primary ring-offset-2' : ''
+      } transition-all duration-200`}
       onMouseEnter={resetHideControlsTimer}
       onTouchStart={resetHideControlsTimer}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* Drag Overlay */}
+      <AnimatePresence>
+        {isDragOver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-primary/20 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-50"
+          >
+            <div className="text-center">
+              <Upload className="w-8 h-8 mx-auto mb-2 text-primary" />
+              <p className="text-sm font-medium text-primary">Drop image to update character</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Upload Loading Overlay */}
+      <AnimatePresence>
+        {isUploading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-50"
+          >
+            <div className="text-center">
+              <div className="w-8 h-8 mx-auto mb-2 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+              <p className="text-sm font-medium">Uploading image...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main Avatar Container */}
       <div
       ref={gestureRef as React.RefObject<HTMLDivElement>}

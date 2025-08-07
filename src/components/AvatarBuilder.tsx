@@ -529,6 +529,10 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   showControls
                   showStatusIndicators
                   className="w-full h-full"
+                  onImageUploaded={() => {
+                    // Refresh avatar data to pick up the new custom image
+                    window.location.reload();
+                  }}
                 />
               </div>
               <div className="text-sm text-muted-foreground text-center mt-2">

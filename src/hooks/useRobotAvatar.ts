@@ -44,6 +44,9 @@ export interface RobotAvatarData {
   sensor_array?: string[];
   workout_modules?: string[];
   ai_personality?: string;
+  
+  // Custom character images
+  custom_character_images?: Record<string, string>;
 }
 
 export const useRobotAvatar = () => {

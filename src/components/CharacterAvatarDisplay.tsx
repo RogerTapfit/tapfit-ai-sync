@@ -28,6 +28,13 @@ export const CharacterAvatarDisplay = ({
 
   // Character image mapping to actual robot images
   const getCharacterImage = (characterType: string) => {
+    // Check for custom uploaded image first
+    const customImages = avatarData.custom_character_images || {};
+    if (customImages[characterType]) {
+      return customImages[characterType];
+    }
+
+    // Fallback to default character images
     const characterImages = {
       shadow_eagle: '/lovable-uploads/27cddadb-e225-480e-a614-c725b169ba44.png', // Blue eagle robot
       emerald_chameleon: '/lovable-uploads/2a0aaf68-4405-4647-a95b-730174a6fe3a.png', // Green chameleon robot
