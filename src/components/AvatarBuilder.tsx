@@ -121,6 +121,16 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     updatePreview({ [category]: value } as Partial<RobotAvatarData>);
   }, [updatePreview, previewData]);
 
+  const handleCharacterPreview = useCallback((characterId: string) => {
+    const character = CHARACTER_OPTIONS.find(c => c.id === characterId);
+    if (character) {
+      updatePreview({ 
+        character_type: characterId,
+        base_hue: character.defaultHue
+      } as Partial<RobotAvatarData>);
+    }
+  }, [updatePreview]);
+
   // Initialize preview when avatar data loads
   useEffect(() => {
     if (avatarData && !previewData.chassis_type) {
@@ -203,6 +213,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
                   toast.error('Purchase failed. Please try again.');
                 }
               }}
+              onPreview={handleCharacterPreview}
             />
           </div>
         );

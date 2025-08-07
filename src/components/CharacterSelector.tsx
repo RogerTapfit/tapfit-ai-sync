@@ -158,6 +158,7 @@ interface CharacterSelectorProps {
   ownedCharacters: string[];
   canAfford: (cost: number) => boolean;
   onPurchase: (characterId: string, cost: number) => void;
+  onPreview?: (characterId: string) => void; // For preview updates
 }
 
 export const CharacterSelector = ({
@@ -165,7 +166,8 @@ export const CharacterSelector = ({
   onCharacterSelect,
   ownedCharacters,
   canAfford,
-  onPurchase
+  onPurchase,
+  onPreview
 }: CharacterSelectorProps) => {
   
   const getRarityColor = (rarity: string) => {
@@ -204,7 +206,16 @@ export const CharacterSelector = ({
             className={`relative cursor-pointer transition-all duration-200 hover:scale-105 ${
               selected ? 'ring-2 ring-primary shadow-lg' : ''
             } ${owned ? '' : 'opacity-75'}`}
-            onClick={() => owned && onCharacterSelect(character.id)}
+            onClick={() => {
+              // Always allow preview updates when clicking any character
+              if (onPreview) {
+                onPreview(character.id);
+              }
+              // Only allow selection if owned
+              if (owned) {
+                onCharacterSelect(character.id);
+              }
+            }}
           >
             <CardContent className="p-4 text-center space-y-2">
               
