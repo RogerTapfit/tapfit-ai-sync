@@ -57,10 +57,13 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
     clearError
   } = useAvatarPreview(avatarData || {
     chassis_type: 'slim_bot',
+    character_type: 'steel_warrior',
+    base_hue: 0,
     color_scheme: { primary: "hsl(0, 84%, 60%)", secondary: "hsl(0, 0%, 15%)", accent: "hsl(0, 100%, 70%)" },
     tech_modules: [],
     energy_core: 'standard',
-    animation: 'idle'
+    animation: 'idle',
+    power_level: 25
   } as RobotAvatarData);
 
   // Debounced save function
@@ -114,8 +117,9 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
   }, [canUseItem, balance, purchaseRobotItem, updatePreview]);
 
   const handleBasicOption = useCallback((category: string, value: any) => {
+    console.log('handleBasicOption called:', { category, value, currentPreviewData: previewData });
     updatePreview({ [category]: value } as Partial<RobotAvatarData>);
-  }, [updatePreview]);
+  }, [updatePreview, previewData]);
 
   // Initialize preview when avatar data loads
   useEffect(() => {
@@ -518,10 +522,13 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
               </div>
               <div className="text-sm text-muted-foreground text-center mt-2">
                 <div className="font-semibold">
-                  {previewData?.chassis_type?.replace(/_/g, ' ').toUpperCase() || 'ROBOT'}
+                  {previewData?.character_type?.replace(/_/g, ' ').toUpperCase() || 
+                   previewData?.chassis_type?.replace(/_/g, ' ').toUpperCase() || 'ROBOT'}
                 </div>
                 <div className="text-xs">
-                  Power: {previewData?.power_level || 25}% | Modules: {previewData?.tech_modules?.length || 0}
+                  Power: {previewData?.power_level || 25}% | 
+                  Hue: {previewData?.base_hue || 0}° | 
+                  Modules: {previewData?.tech_modules?.length || 0}
                 </div>
               </div>
             </CardContent>
