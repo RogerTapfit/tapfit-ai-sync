@@ -8,7 +8,7 @@ interface UploadResult {
 
 export class ImageUploadService {
   private static readonly BUCKET_NAME = 'character-images';
-  private static readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  private static readonly MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
   private static readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
   /**
@@ -40,7 +40,7 @@ export class ImageUploadService {
     }
 
     if (file.size > this.MAX_FILE_SIZE) {
-      return { valid: false, error: 'File too large. Maximum size is 5MB.' };
+      return { valid: false, error: 'File too large. Maximum size is 25MB.' };
     }
 
     return { valid: true };
