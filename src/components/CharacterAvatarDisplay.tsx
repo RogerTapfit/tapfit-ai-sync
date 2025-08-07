@@ -35,11 +35,11 @@ export const CharacterAvatarDisplay = ({
       lightning_cheetah: '/lovable-uploads/72acfefe-3a0e-4d74-b92f-ce88b0a38d7e.png', // Cheetah robot
       mystic_fox: '/lovable-uploads/ee18485a-269f-4a98-abe3-54fab538f201.png', // Fox robot
       iron_guardian: '/lovable-uploads/8b855abd-c6fe-4cef-9549-7c3a6cd70fae.png', // Guardian robot
-      cosmic_bunny: '/lovable-uploads/28009a8a-51b5-4196-bd00-c1ad68b67bc0.png', // Purple bunny robot
-      steel_warrior: '/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png', // Silver warrior robot
-      cyber_dragon: '/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png', // Dragon robot
-      gorilla_guardian: '/lovable-uploads/c38c89e5-0aa7-45e8-954a-109f4e471db7.png', // Gorilla robot
-      demon_bull: '/lovable-uploads/ac6dd467-37ab-4e6a-9ecc-d7e6ecb97913.png' // Red bull robot
+      cosmic_bunny: '/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png', // Purple/dark bunny robot
+      steel_warrior: '/lovable-uploads/f62a3fb2-b5ea-4582-b7ff-550a03b3c767.png', // Silver/white bunny robot
+      cyber_dragon: '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png', // Gray dragon robot with horns
+      gorilla_guardian: '/lovable-uploads/81dac889-b82f-4359-a3a6-a77b066d007c.png', // Gray gorilla robot
+      demon_bull: '/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png' // Red/black bull robot
     };
 
     return characterImages[characterType as keyof typeof characterImages] || characterImages.steel_warrior;
