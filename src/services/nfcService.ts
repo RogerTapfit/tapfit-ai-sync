@@ -330,20 +330,18 @@ export class NFCService {
       throw new Error('NFC not available on this device');
     }
 
-    // Use custom URL scheme for native app, HTTP URL for web fallback
-    const nativeUrl = `tapfit://machine/${machineId}`;
-    const webUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/?forceHideBadge=true#/machine/${machineId}`;
-    
-    // For native platforms, use the custom scheme
-    const targetUrl = Capacitor.isNativePlatform() ? nativeUrl : webUrl;
+    // Always write TapFit custom scheme URI so native apps can intercept directly
+    const tapfitUri = `tapfit://machine/${machineId}?autoConnect=puck`;
 
     try {
-      await NFC.write([{
-        type: 'url',
-        payload: targetUrl
-      }]);
-      
-      console.log('NFC tag written successfully:', targetUrl);
+      await NFC.write([
+        {
+          type: 'url',
+          payload: tapfitUri,
+        },
+      ]);
+
+      console.log('NFC tag written successfully (custom scheme):', tapfitUri);
     } catch (error) {
       console.error('Failed to write NFC tag:', error);
       throw error;

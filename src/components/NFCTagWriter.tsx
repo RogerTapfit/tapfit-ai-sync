@@ -44,8 +44,8 @@ const NFCTagWriter = () => {
   const getManualInstructions = () => {
     if (!selectedMachine) return null;
 
-    const universalUrl = `https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com/?forceHideBadge=true#/machine/${selectedMachine}`;
-    const fallbackUrl = universalUrl;
+    const tapfitUri = `tapfit://machine/${selectedMachine}?autoConnect=puck`;
+    const fallbackUrl = tapfitUri;
 
     return (
       <Card className="mt-4">
@@ -63,7 +63,7 @@ const NFCTagWriter = () => {
             <p><strong>4.</strong> Choose "URL/URI"</p>
             <p><strong>5.</strong> Use this universal URL that will open the app:</p>
             <div className="bg-muted p-2 rounded text-xs font-mono break-all">
-              {universalUrl}
+              {tapfitUri}
             </div>
             <p><strong>6.</strong> Tap "Write" and hold your NFC tag near your phone</p>
           </div>
@@ -73,7 +73,7 @@ const NFCTagWriter = () => {
               variant="outline" 
               size="sm"
               onClick={() => {
-                navigator.clipboard.writeText(universalUrl);
+                navigator.clipboard.writeText(tapfitUri);
                 toast.success('URL copied to clipboard!');
               }}
             >
