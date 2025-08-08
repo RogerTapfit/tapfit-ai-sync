@@ -15,6 +15,7 @@ import {
   Edit3,
   HelpCircle,
   Activity,
+  Heart,
   Smartphone
 } from "lucide-react";
 import { useWorkoutPlan } from "@/hooks/useWorkoutPlan";
@@ -25,6 +26,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import { blePuckUtil, type ConnectedDevice } from "@/services/blePuckUtil";
 import { MobileActionBar } from "@/components/MobileActionBar";
+import { Capacitor } from "@capacitor/core";
+import { useHeartRate } from "@/hooks/useHeartRate";
 interface WorkoutSet {
   id: number;
   reps: number;
@@ -61,6 +64,18 @@ const WorkoutDetail = () => {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPuckRepRef = useRef(0);
+  // iOS native quick actions support (Apple Watch Live HR)
+  const isIOS = Capacitor.getPlatform() === 'ios';
+  const { start: startHR } = useHeartRate();
+  const handleLiveHR = async () => {
+    try {
+      toast('Starting Live HR…');
+      await startHR('functionalStrengthTraining');
+      toast.success('Live HR started');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Failed to start live HR');
+    }
+  };
   // Developer mode toggle with keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -531,6 +546,26 @@ const WorkoutDetail = () => {
           </Badge>
         </div>
       </div>
+
+      {/* iOS native Quick Actions */}
+      {isIOS && (
+        <div className="md:hidden sticky top-0 z-30 -mx-4 px-4 bg-background/95 backdrop-blur border-b supports-[backdrop-filter]:bg-background/70">
+          <div className="py-3 flex items-center justify-between gap-2">
+            <Button onClick={startWorkout} className="flex-1">
+              <Activity className="h-4 w-4 mr-2" />
+              Start
+            </Button>
+            <Button variant="outline" onClick={onRep} className="flex-1">
+              <Target className="h-4 w-4 mr-2" />
+              Rep Test
+            </Button>
+            <Button variant="secondary" onClick={handleLiveHR} className="flex-1">
+              <Heart className="h-4 w-4 mr-2" />
+              Live HR
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isReconnecting && (
         <div className="w-full text-center text-amber-600 text-sm">Puck disconnected – reconnecting…</div>

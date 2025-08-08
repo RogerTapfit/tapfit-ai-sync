@@ -27,7 +27,7 @@ export const MobileActionBar: React.FC<MobileActionBarProps> = ({ canStart, canR
 
   return (
     <div className="md:hidden fixed inset-x-0 bottom-0 z-40">
-      <div className="bg-background/95 border-t shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="bg-background/95 border-t shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <Button onClick={onStart} disabled={!canStart} className="flex-1">
             <Activity className="h-4 w-4 mr-2" />
