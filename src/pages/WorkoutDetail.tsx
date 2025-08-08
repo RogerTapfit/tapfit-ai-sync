@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
-
+import { blePuckUtil, type ConnectedDevice } from "@/services/blePuckUtil";
 interface WorkoutSet {
   id: number;
   reps: number;
@@ -52,6 +52,10 @@ const WorkoutDetail = () => {
   const [autoFlowActive, setAutoFlowActive] = useState(false);
   const [setIndexAuto, setSetIndexAuto] = useState(1); // 1..sets.length
   const [reps, setReps] = useState(0); // 0..10
+
+  // Smart Puck BLE
+  const [puckDevice, setPuckDevice] = useState<ConnectedDevice | null>(null);
+  const [stopNotify, setStopNotify] = useState<null | (() => Promise<void>)>(null);
 
   // Developer mode toggle with keyboard shortcut
   useEffect(() => {
@@ -239,12 +243,57 @@ const WorkoutDetail = () => {
 
   // Automated Start Workout flow
   const MAX_REPS = 10;
+  const SERVICE = 'FFE0';
+  const CHAR = 'FFE1';
+
+  const resetPuckCounter = async () => {
+    await blePuckUtil.writeSafe(puckDevice?.deviceId, SERVICE, CHAR, new Uint8Array([0x00]));
+  };
+
+  const onBleNotify = (buf: ArrayBuffer) => {
+    try {
+      const u = new Uint8Array(buf);
+      if (u.length === 0) return;
+      if (u[0] === 0x01) {
+        onRep();
+        return;
+      }
+      if (u.length === 1 && u[0] > 0 && u[0] <= MAX_REPS) {
+        onRep();
+        return;
+      }
+      try {
+        const str = new TextDecoder().decode(u);
+        if (str.includes('"rep"') || str.includes('"type":"rep"')) {
+          onRep();
+        }
+      } catch {}
+    } catch {}
+  };
+
+  const connectPuck = async () => {
+    try {
+      const dev = await blePuckUtil.connectFirst({
+        service: SERVICE,
+        onDisconnect: () => {
+          // Minimal: handle later if needed
+        },
+      });
+      setPuckDevice(dev);
+      const stop = await blePuckUtil.subscribe(dev.deviceId, SERVICE, CHAR, onBleNotify);
+      setStopNotify(() => stop);
+      await resetPuckCounter();
+    } catch (e) {
+      console.warn('Puck connect failed', e);
+    }
+  };
 
   const startWorkout = async () => {
     setAutoFlowActive(true);
     setMode('inset');
     setSetIndexAuto(1);
     setReps(0);
+    connectPuck(); // fire-and-forget BLE connection
     const { audioManager } = await import('@/utils/audioUtils');
     await audioManager.playButtonClick();
   };
@@ -296,6 +345,8 @@ const WorkoutDetail = () => {
     // Start rest timer
     setRestTime(workout.restTime);
     setIsResting(true);
+    // Reset puck counter during rest
+    resetPuckCounter();
 
     toast.success(`Set ${setIndex + 1} completed!`);
   };
@@ -387,6 +438,14 @@ const WorkoutDetail = () => {
       return () => clearTimeout(timer);
     }
   }, [completedSets, totalSets, autoFlowActive]);
+
+  // Cleanup BLE on unmount
+  useEffect(() => {
+    return () => {
+      try { stopNotify?.(); } catch {}
+      blePuckUtil.disconnect(puckDevice?.deviceId);
+    };
+  }, [stopNotify, puckDevice?.deviceId]);
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
