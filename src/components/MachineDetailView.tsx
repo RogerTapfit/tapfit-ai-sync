@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Timer, CheckCircle2, Target, Weight, Repeat, Check, Smartphone } from 'lucide-react';
+import { ArrowLeft, Timer, Target, Smartphone } from 'lucide-react';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import { LiveWorkoutSession } from './LiveWorkoutSession';
 import { NFCMachinePopup } from './NFCMachinePopup';
@@ -168,96 +168,8 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
         </CardContent>
       </Card>
 
+      {/* Smart Puck Workout Runner */}
       <div className="space-y-3">
-        <h3 className="font-semibold">Sets</h3>
-        {sets.map((set, index) => (
-          <Card key={index} className={`${set.completed ? 'bg-green-50 border-green-200' : ''}`}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                    set.completed 
-                      ? 'bg-green-500 border-green-500 text-white' 
-                      : 'border-muted-foreground/30'
-                  }`}>
-                    {set.completed ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      <span className="text-sm font-medium">{set.setNumber}</span>
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-medium">Set {set.setNumber}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Target: {set.targetReps} reps
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <Repeat className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <input
-                      type="number"
-                      value={set.actualReps}
-                      onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                      className="w-14 px-2 py-1 text-sm border rounded text-foreground bg-background"
-                      disabled={set.completed}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Weight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <input
-                      type="number"
-                      value={set.weight}
-                      onChange={(e) => handleSetEdit(index, 'weight', parseInt(e.target.value) || 0)}
-                      className="w-14 px-2 py-1 text-sm border rounded text-foreground bg-background"
-                      disabled={set.completed}
-                    />
-                    <span className="text-xs text-muted-foreground flex-shrink-0">lbs</span>
-                  </div>
-                  {!set.completed && (
-                    <Button
-                      size="icon"
-                      onClick={() => handleSetComplete(index)}
-                      className="flex-shrink-0 h-8 w-8"
-                      aria-label="Complete set"
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <h3 className="font-semibold">Smart Puck Workout</h3>
+        <SmartPuckWorkoutRunner autoConnect={autoConnect} onDone={handleCompleteExercise} />
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Training Notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Focus on proper form and controlled movements. Warm up with lighter weight before increasing intensity.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* BLE Sensor Integration */}
-      <LiveWorkoutSession autoConnect={autoConnect} />
-
-      {allSetsCompleted && (
-        <Button 
-          onClick={handleCompleteExercise}
-          className="w-full"
-          size="lg"
-        >
-          Complete Exercise
-        </Button>
-      )}
-    </div>
-  );
-};
-
-export default MachineDetailView;
