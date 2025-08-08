@@ -66,6 +66,18 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const { todaysProgress } = useWorkoutLogger();
   const { user } = useAuth();
 
+  // Derive a friendly first name for greeting
+  const greetingName = (() => {
+    const meta: any = user?.user_metadata || {};
+    const first = typeof meta.first_name === 'string' ? meta.first_name.trim() : '';
+    if (first) return first.split(' ')[0];
+    const full = typeof meta.full_name === 'string' ? meta.full_name.trim() : '';
+    if (full) return full.split(' ')[0];
+    const profileName = typeof (userProfile as any)?.full_name === 'string' ? (userProfile as any).full_name : '';
+    if (profileName) return profileName.split(' ')[0];
+    return '';
+  })();
+
   // Fetch user profile data
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -130,13 +142,13 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               <div className="absolute inset-0 bg-background/40 blur-sm rounded-lg -m-2" />
               <div className="relative">
                 <h1 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-lg">
-                  Welcome Back{userProfile?.full_name ? `, ${userProfile.full_name.split(' ')[0]}` : ''}
+                  Welcome Back{greetingName ? `, ${greetingName}` : ''}
                 </h1>
                 <p className="text-foreground/90 text-sm md:text-base drop-shadow-sm">Ready to crush today's workout?</p>
               </div>
             </div>
             {avatarData && (
-              <div className="hidden md:block relative">
+              <div className="block relative">
                 <AvatarDisplay avatarData={avatarData} size="small" />
                 <Button
                   size="sm"
