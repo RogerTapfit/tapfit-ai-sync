@@ -5,6 +5,7 @@ import { audioManager } from '@/utils/audioUtils';
 export type WorkoutState =
   | { kind: 'idle' }
   | { kind: 'connecting' }
+  | { kind: 'awaitStart' }
   | { kind: 'inSet'; setIndex: 1|2|3|4; reps: number }
   | { kind: 'rest'; setIndex: 1|2|3|4; seconds: number }
   | { kind: 'done' };
@@ -109,7 +110,7 @@ export function usePuckWorkout(autoStart = false) {
     }, 1000);
   }, [audio, device?.deviceId]);
 
-  const startWorkout = useCallback(async () => {
+  const handshake = useCallback(async () => {
     setState({ kind: 'connecting' });
     try {
       const conn = await blePuckUtil.connectFirst({ service: SERVICE, onDisconnect: () => handleDisconnect() });
@@ -118,12 +119,28 @@ export function usePuckWorkout(autoStart = false) {
       // Reset reps on connect
       await blePuckUtil.writeSafe(conn.deviceId, SERVICE, CHAR, Uint8Array.from([0x00]));
       lastRepRef.current = 0;
+      setState({ kind: 'awaitStart' });
+    } catch (e) {
+      console.error('Failed to handshake', e);
+      setState({ kind: 'idle' });
+    }
+  }, [handleDisconnect, onNotify]);
+
+  const startWorkout = useCallback(async () => {
+    if (!device?.deviceId) {
+      await handshake();
+    }
+    try {
+      if (device?.deviceId) {
+        await blePuckUtil.writeSafe(device.deviceId, SERVICE, CHAR, Uint8Array.from([0x00]));
+      }
+      lastRepRef.current = 0;
       setState({ kind: 'inSet', setIndex: 1, reps: 0 });
     } catch (e) {
       console.error('Failed to start workout', e);
       setState({ kind: 'idle' });
     }
-  }, [handleDisconnect, onNotify]);
+  }, [device?.deviceId, handshake]);
 
   const endWorkout = useCallback(async () => {
     await cleanup();
@@ -134,7 +151,8 @@ export function usePuckWorkout(autoStart = false) {
 
   useEffect(() => {
     if (autoStart && state.kind === 'idle') {
-      startWorkout();
+      // Backwards-compat: autoStart triggers full flow
+      handshake().then(() => startWorkout()).catch(() => setState({ kind: 'idle' }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart]);
@@ -142,6 +160,7 @@ export function usePuckWorkout(autoStart = false) {
   return {
     state,
     isReconnecting,
+    handshake,
     startWorkout,
     endWorkout,
   } as const;

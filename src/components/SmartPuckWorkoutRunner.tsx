@@ -12,12 +12,17 @@ interface SmartPuckWorkoutRunnerProps {
 }
 
 export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ autoConnect, onDone, onStart }) => {
-  const { state, isReconnecting, startWorkout, endWorkout } = usePuckWorkout(false);
+  const { state, isReconnecting, startWorkout, endWorkout, handshake } = usePuckWorkout(false);
   const location = useLocation();
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const shouldAuto = autoConnect || params.get('autoConnect') === 'puck';
-    if (shouldAuto) startWorkout();
+    const ac = autoConnect || params.get('autoConnect') === 'puck' || params.get('autoConnect') === '1';
+    const as = params.get('autoStart') === '1' || params.get('autoStart') === 'true';
+    if (ac) {
+      handshake().then(() => {
+        if (as) startWorkout();
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoConnect, location.search]);
 
@@ -63,12 +68,16 @@ export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ 
           <div className="w-full text-center text-amber-600 text-sm">Puck disconnected – reconnecting…</div>
         )}
 
-        {state.kind === 'idle' && (
+        {(state.kind === 'idle' || state.kind === 'awaitStart') && (
           <div className="flex flex-col items-center gap-3">
             <Button size="lg" onClick={() => (onStart ? onStart() : startWorkout())}>
               Start Workout
             </Button>
-            <p className="text-xs text-muted-foreground">We'll connect to your puck and reset reps</p>
+            {state.kind === 'awaitStart' ? (
+              <p className="text-xs text-muted-foreground">Connected — tap Start when you're ready.</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">We'll connect to your puck and reset reps</p>
+            )}
           </div>
         )}
 
