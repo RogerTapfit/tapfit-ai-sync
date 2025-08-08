@@ -8,9 +8,10 @@ import { useLocation } from 'react-router-dom';
 interface SmartPuckWorkoutRunnerProps {
   autoConnect?: boolean;
   onDone?: () => void;
+  onStart?: () => void;
 }
 
-export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ autoConnect, onDone }) => {
+export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ autoConnect, onDone, onStart }) => {
   const { state, isReconnecting, startWorkout, endWorkout } = usePuckWorkout(false);
   const location = useLocation();
   useEffect(() => {
@@ -64,7 +65,7 @@ export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ 
 
         {state.kind === 'idle' && (
           <div className="flex flex-col items-center gap-3">
-            <Button size="lg" onClick={startWorkout}>
+            <Button size="lg" onClick={() => (onStart ? onStart() : startWorkout())}>
               Start Workout
             </Button>
             <p className="text-xs text-muted-foreground">We'll connect to your puck and reset reps</p>

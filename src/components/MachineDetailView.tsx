@@ -9,6 +9,7 @@ import { SmartPuckWorkoutRunner } from './SmartPuckWorkoutRunner';
 import { NFCMachinePopup } from './NFCMachinePopup';
 import { getMachineImageUrl } from '@/utils/machineImageUtils';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
+import { useNavigate } from 'react-router-dom';
 
 interface MachineDetailViewProps {
   exercise: WorkoutExercise;
@@ -49,6 +50,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
 
   // Workout logging
   const { currentWorkoutLog, startWorkout, logExercise, completeWorkout } = useWorkoutLogger();
+  const navigate = useNavigate();
 
   const completedSets = sets.filter(set => set.completed).length;
   const progressPercentage = (completedSets / sets.length) * 100;
@@ -102,6 +104,36 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
     } finally {
       onExerciseComplete(exercise);
       onBack();
+    }
+  };
+
+  const getWorkoutIdForMachine = (name: string): string | null => {
+    const n = name.toLowerCase();
+    if (n.includes('pec deck')) return '2';
+    if (n.includes('incline') && n.includes('press')) return '3';
+    if (n.includes('decline') && n.includes('press')) return '4';
+    if (n.includes('cable') && n.includes('crossover')) return '5';
+    if (n.includes('smith')) return '6';
+    if (n.includes('seated dip')) return '7';
+    if (n.includes('assisted') && n.includes('dip')) return '8';
+    if (n.includes('chest press')) return '1';
+    return null;
+  };
+
+  const handleStart = async () => {
+    try {
+      if (!currentWorkoutLog) {
+        await startWorkout('Ad-hoc Workout', exercise.exercise_type || 'strength', 1);
+      }
+      const id = getWorkoutIdForMachine(exercise.machine);
+      if (id) {
+        navigate(`/workout/${id}?autoConnect=puck`);
+      } else {
+        navigate('/workout-list');
+      }
+    } catch (e) {
+      console.error('Failed to start ad-hoc workout', e);
+      navigate('/workout-list');
     }
   };
 
@@ -193,7 +225,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
       {/* Smart Puck Workout Runner */}
       <div className="space-y-3">
         <h3 className="font-semibold">Smart Puck Workout</h3>
-        <SmartPuckWorkoutRunner autoConnect={autoConnect} onDone={handleCompleteExercise} />
+        <SmartPuckWorkoutRunner autoConnect={autoConnect} onDone={handleCompleteExercise} onStart={handleStart} />
       </div>
 
     </div>
