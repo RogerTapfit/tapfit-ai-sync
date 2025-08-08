@@ -12,6 +12,13 @@ export function useHeartRate() {
     return () => { subPromise.then((s) => s.remove()); };
   }, []);
 
+  useEffect(() => {
+    // Pre-check availability to show pairing status early
+    TapfitHealth.isAvailable()
+      .then(({ watchPaired }) => setConnected(!!watchPaired))
+      .catch(() => setConnected(false));
+  }, []);
+
   const start = useCallback(async (activityType: string = 'functionalStrengthTraining') => {
     setLoading(true); setError(null);
     try {
