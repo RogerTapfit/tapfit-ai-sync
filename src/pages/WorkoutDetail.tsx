@@ -46,6 +46,13 @@ const WorkoutDetail = () => {
     localStorage.getItem('developerMode') === 'true'
   );
 
+  // Start Workout flow state
+  type Mode = 'idle' | 'inset' | 'rest' | 'done';
+  const [mode, setMode] = useState<Mode>('idle');
+  const [autoFlowActive, setAutoFlowActive] = useState(false);
+  const [setIndexAuto, setSetIndexAuto] = useState(1); // 1..sets.length
+  const [reps, setReps] = useState(0); // 0..10
+
   // Developer mode toggle with keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -171,21 +178,39 @@ const WorkoutDetail = () => {
           audioManager.playCountdownBeep();
         });
       }
-      
+
       timer = setTimeout(() => {
         setRestTime(restTime - 1);
       }, 1000);
     } else if (isResting && restTime === 0) {
       setIsResting(false);
-      toast.success("Rest time complete! Ready for next set");
-      
       // Play rest complete sound
-      import('@/utils/audioUtils').then(({ audioManager }) => {
-        audioManager.playRestComplete();
+      import('@/utils/audioUtils').then(async ({ audioManager }) => {
+        await audioManager.playRestComplete();
       });
+
+      if (autoFlowActive) {
+        if (setIndexAuto < sets.length) {
+          // Advance to next set
+          setMode('inset');
+          setSetIndexAuto(prev => prev + 1);
+          setReps(0);
+        } else {
+          // Finalize workout after last rest
+          (async () => {
+            const { audioManager } = await import('@/utils/audioUtils');
+            await audioManager.playWorkoutComplete();
+            setMode('done');
+            setAutoFlowActive(false);
+            await completeWorkout();
+          })();
+        }
+      } else {
+        toast.success("Rest time complete! Ready for next set");
+      }
     }
     return () => clearTimeout(timer);
-  }, [isResting, restTime]);
+  }, [isResting, restTime, autoFlowActive, setIndexAuto, sets.length]);
 
   const initializeSets = () => {
     if (!workout) return;
@@ -210,6 +235,33 @@ const WorkoutDetail = () => {
       });
     }
     setSets(newSets);
+  };
+
+  // Automated Start Workout flow
+  const MAX_REPS = 10;
+
+  const startWorkout = async () => {
+    setAutoFlowActive(true);
+    setMode('inset');
+    setSetIndexAuto(1);
+    setReps(0);
+    const { audioManager } = await import('@/utils/audioUtils');
+    await audioManager.playButtonClick();
+  };
+
+  const onRep = async () => {
+    if (mode !== 'inset') return;
+    const next = Math.min(reps + 1, MAX_REPS);
+    setReps(next);
+    // Reflect current reps in the active set row
+    setSets(prev => prev.map(s => s.id === setIndexAuto ? { ...s, actualReps: next } : s));
+    if (next === MAX_REPS) {
+      const { audioManager } = await import('@/utils/audioUtils');
+      await audioManager.playSetComplete();
+      // Mark set complete and start rest
+      await handleSetComplete(setIndexAuto - 1);
+      setMode('rest');
+    }
   };
 
   const handleSetComplete = async (setIndex: number) => {
@@ -325,15 +377,16 @@ const WorkoutDetail = () => {
     }
   };
 
-  // Auto-complete when all sets are done
+  // Auto-complete when all sets are done (disabled during automated flow)
   useEffect(() => {
+    if (autoFlowActive) return;
     if (completedSets === totalSets && totalSets > 0) {
       const timer = setTimeout(() => {
         completeWorkout();
       }, 2000); // 2 second delay to show completion
       return () => clearTimeout(timer);
     }
-  }, [completedSets, totalSets]);
+  }, [completedSets, totalSets, autoFlowActive]);
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
@@ -426,6 +479,9 @@ const WorkoutDetail = () => {
           <div className="text-3xl font-bold text-primary mb-4">
             {formatTime(restTime)}
           </div>
+          <div className="text-sm text-muted-foreground mb-4">
+            {autoFlowActive ? `Next: Set ${Math.min(setIndexAuto + 1, sets.length)}` : ''}
+          </div>
           <Button 
             variant="outline" 
             onClick={() => {
@@ -502,23 +558,46 @@ const WorkoutDetail = () => {
 
       {/* Sets */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Sets</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Sets</h3>
+          <Button id="start-workout" onClick={startWorkout} disabled={mode !== 'idle'}>
+            Start Workout
+          </Button>
+        </div>
         {sets.map((set, index) => (
           <Card 
             key={set.id} 
             className={`glow-card p-4 ${set.completed ? 'border-green-500 bg-green-500/5' : ''}`}
           >
             <div className="space-y-4">
-              {/* Set header */}
-              <div className="flex items-center justify-between">
-                <div className="text-lg font-semibold">Set {set.id}</div>
-                {set.completed && (
-                  <Badge variant="default" className="bg-green-500">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Complete
-                  </Badge>
-                )}
-              </div>
+                {/* Set header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      id="rep-test"
+                      aria-label="Rep Test"
+                      size="icon"
+                      variant="outline"
+                      onClick={onRep}
+                      disabled={mode !== 'inset' || isResting || set.id !== setIndexAuto}
+                    >
+                      <Target className="h-4 w-4" />
+                    </Button>
+                    <div
+                      className="px-3 py-1 rounded-full bg-secondary text-foreground text-sm font-semibold"
+                      data-testid="rep-counter"
+                    >
+                      {mode === 'inset' && set.id === setIndexAuto ? reps : 0}
+                    </div>
+                    <div className="text-lg font-semibold">Set {set.id}</div>
+                  </div>
+                  {set.completed && (
+                    <Badge variant="default" className="bg-green-500">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Complete
+                    </Badge>
+                  )}
+                </div>
               
               {/* Inputs and button - responsive layout */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -531,7 +610,7 @@ const WorkoutDetail = () => {
                       value={set.actualReps}
                       onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
                       className="w-full h-10"
-                      disabled={set.completed}
+                      disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
                     />
                     <span className="text-sm text-muted-foreground whitespace-nowrap">reps</span>
                   </div>
@@ -542,7 +621,7 @@ const WorkoutDetail = () => {
                       value={set.actualWeight}
                       onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
                       className="w-full h-10"
-                      disabled={set.completed}
+                      disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
                     />
                     <span className="text-sm text-muted-foreground whitespace-nowrap">lbs</span>
                   </div>
@@ -552,11 +631,11 @@ const WorkoutDetail = () => {
                 {!set.completed && (
                   <Button
                     onClick={() => handleSetComplete(index)}
-                    disabled={isResting}
-                    className="w-full sm:w-auto sm:min-w-[120px] h-10"
-                  >
-                    Complete Set
-                  </Button>
+                      disabled={isResting || autoFlowActive}
+                      className="w-full sm:w-auto sm:min-w-[120px] h-10"
+                    >
+                      Complete Set
+                    </Button>
                 )}
               </div>
             </div>
