@@ -16,9 +16,11 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
   <style>
-    :root { --safe-top: env(safe-area-inset-top); }
+    :root { --safe-top: env(safe-area-inset-top); --safe-left: env(safe-area-inset-left); }
     .safe-pad-top { padding-top: max(var(--safe-top), 12px); }
     .safe-top { top: max(var(--safe-top), 8px); }
+    .safe-top-md { top: calc(max(var(--safe-top), 8px) + 10px); }
+    .safe-left { left: max(var(--safe-left), 16px); }
     .touch-target { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; }
   </style>
   </head>

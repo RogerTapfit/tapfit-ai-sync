@@ -47,10 +47,11 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
   return (
     <>
       {/* Mobile Menu Button */}
-      <div className="md:hidden fixed safe-top left-4 z-[100]">
+      <div className="md:hidden fixed safe-top-md safe-left z-[100]">
         <Button
           variant="outline"
           size="icon"
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="touch-target glow-card bg-background border-border shadow-lg"
         >
