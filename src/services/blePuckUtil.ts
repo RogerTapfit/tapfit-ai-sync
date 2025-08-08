@@ -54,7 +54,12 @@ export const blePuckUtil = {
   },
 
   async subscribe(deviceId: string, service: string, characteristic: string, cb: (data: ArrayBuffer) => void): Promise<() => Promise<void>> {
-    await BleClient.startNotifications(deviceId, service, characteristic, (value) => cb(value.buffer));
+    await BleClient.startNotifications(deviceId, service, characteristic, (value) => {
+      // Ensure we pass only the exact bytes from the DataView (handles offset/length correctly)
+      const view = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+      const copy = view.slice();
+      cb(copy.buffer);
+    });
     return async () => {
       try { await BleClient.stopNotifications(deviceId, service, characteristic); } catch {}
     };

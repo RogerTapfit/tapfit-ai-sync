@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ interface WorkoutSet {
 const WorkoutDetail = () => {
   const navigate = useNavigate();
   const { workoutId } = useParams();
+  const location = useLocation();
   const { logExercise, currentWorkoutLog } = useWorkoutLogger();
   const [sets, setSets] = useState<WorkoutSet[]>([]);
   const [restTime, setRestTime] = useState(0);
@@ -56,7 +57,9 @@ const WorkoutDetail = () => {
   // Smart Puck BLE
   const [puckDevice, setPuckDevice] = useState<ConnectedDevice | null>(null);
   const [stopNotify, setStopNotify] = useState<null | (() => Promise<void>)>(null);
-
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPuckRepRef = useRef(0);
   // Developer mode toggle with keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -247,6 +250,7 @@ const WorkoutDetail = () => {
   const CHAR = 'FFE1';
 
   const resetPuckCounter = async () => {
+    lastPuckRepRef.current = 0;
     await blePuckUtil.writeSafe(puckDevice?.deviceId, SERVICE, CHAR, new Uint8Array([0x00]));
   };
 
@@ -254,10 +258,17 @@ const WorkoutDetail = () => {
     try {
       const u = new Uint8Array(buf);
       if (u.length === 0) return;
+      // Preferred: absolute rep count payload [0x01, repCount]
       if (u[0] === 0x01) {
-        onRep();
+        const target = Math.min(u[1] ?? 0, MAX_REPS);
+        if (target > lastPuckRepRef.current) {
+          const delta = target - lastPuckRepRef.current;
+          lastPuckRepRef.current = target;
+          for (let i = 0; i < delta; i++) onRep();
+        }
         return;
       }
+      // Fallbacks: various single-byte or JSON formats
       if (u.length === 1 && u[0] > 0 && u[0] <= MAX_REPS) {
         onRep();
         return;
@@ -276,7 +287,24 @@ const WorkoutDetail = () => {
       const dev = await blePuckUtil.connectFirst({
         service: SERVICE,
         onDisconnect: () => {
-          // Minimal: handle later if needed
+          setIsReconnecting(true);
+          if (reconnectTimerRef.current) return;
+          reconnectTimerRef.current = setTimeout(async () => {
+            reconnectTimerRef.current = null;
+            try {
+              await connectPuck();
+              setIsReconnecting(false);
+            } catch (e) {
+              console.warn('Puck reconnect failed', e);
+              // try again in 2s
+              if (!reconnectTimerRef.current) {
+                reconnectTimerRef.current = setTimeout(async () => {
+                  reconnectTimerRef.current = null;
+                  try { await connectPuck(); setIsReconnecting(false); } catch {}
+                }, 2000);
+              }
+            }
+          }, 1500);
         },
       });
       setPuckDevice(dev);
@@ -297,6 +325,14 @@ const WorkoutDetail = () => {
     const { audioManager } = await import('@/utils/audioUtils');
     await audioManager.playButtonClick();
   };
+
+  // Auto-connect from deep links (?autoConnect=puck)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('autoConnect') === 'puck' && mode === 'idle') {
+      startWorkout();
+    }
+  }, [location.search, mode]);
 
   const onRep = async () => {
     if (mode !== 'inset') return;
@@ -443,6 +479,7 @@ const WorkoutDetail = () => {
   useEffect(() => {
     return () => {
       try { stopNotify?.(); } catch {}
+      if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null; }
       blePuckUtil.disconnect(puckDevice?.deviceId);
     };
   }, [stopNotify, puckDevice?.deviceId]);
@@ -493,6 +530,10 @@ const WorkoutDetail = () => {
           </Badge>
         </div>
       </div>
+
+      {isReconnecting && (
+        <div className="w-full text-center text-amber-600 text-sm">Puck disconnected – reconnecting…</div>
+      )}
 
       {/* Exercise Progress */}
       <Card className="glow-card p-6">
