@@ -11,9 +11,10 @@ import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
+  onCaloriesConsumedClick?: () => void;
 }
 
-export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) => {
+export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
   const { user } = useAuth();
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
@@ -53,8 +54,20 @@ export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) =>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </div>
 
-        <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => onCaloriesConsumedClick?.()}
+          role="button"
+          aria-label="View logged meals"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onCaloriesConsumedClick?.();
+            }
+          }}
+        >
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-200">
             <Utensils className="h-6 w-6 text-green-500" />
           </div>
           <p className="text-2xl font-bold text-white">

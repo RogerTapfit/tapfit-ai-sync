@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,15 @@ const NutritionDashboard = () => {
   const { nutritionGoals, dailySummary, metabolismReadings, refreshData } = useNutrition();
   const [activeTab, setActiveTab] = useState('overview');
   const [showFoodEntries, setShowFoodEntries] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('tapfit-open-food-entries') === 'true') {
+        setShowFoodEntries(true);
+        localStorage.removeItem('tapfit-open-food-entries');
+      }
+    } catch {}
+  }, []);
 
   const handleDataRefresh = () => {
     refreshData();

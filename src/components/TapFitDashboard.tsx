@@ -121,6 +121,12 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     navigate('/workout-list');
   };
 
+  const handleCaloriesConsumedClick = () => {
+    try {
+      localStorage.setItem('tapfit-open-food-entries', 'true');
+    } catch {}
+    onPageChange?.('nutrition');
+  };
 
   if (showAvatarBuilder) {
     return <AvatarBuilder onClose={() => setShowAvatarBuilder(false)} />;
@@ -195,7 +201,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
 
       {/* 1. Today's Performance - Right after hero image */}
       <TodaysPerformance 
-        onStartWorkout={handleStartWorkout} 
+        onStartWorkout={handleStartWorkout}
+        onCaloriesConsumedClick={handleCaloriesConsumedClick}
       />
 
       {/* 2. Tap Coins Widget */}
