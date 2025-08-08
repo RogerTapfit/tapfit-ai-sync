@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { usePuckWorkout } from '@/hooks/usePuckWorkout';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 interface SmartPuckWorkoutRunnerProps {
   autoConnect?: boolean;
@@ -13,8 +13,6 @@ interface SmartPuckWorkoutRunnerProps {
 export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ autoConnect, onDone }) => {
   const { state, isReconnecting, startWorkout, endWorkout } = usePuckWorkout(false);
   const location = useLocation();
-  const navigate = useNavigate();
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const shouldAuto = autoConnect || params.get('autoConnect') === 'puck';
@@ -25,10 +23,8 @@ export const SmartPuckWorkoutRunner: React.FC<SmartPuckWorkoutRunnerProps> = ({ 
   useEffect(() => {
     if (state.kind === 'done') {
       onDone?.();
-      // Navigate back after short delay
-      setTimeout(() => navigate(-1), 800);
     }
-  }, [state.kind, navigate, onDone]);
+  }, [state.kind, onDone]);
 
   const RestView = () => {
     if (state.kind !== 'rest') return null;

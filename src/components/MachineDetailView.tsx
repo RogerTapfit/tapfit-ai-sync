@@ -8,6 +8,7 @@ import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import { SmartPuckWorkoutRunner } from './SmartPuckWorkoutRunner';
 import { NFCMachinePopup } from './NFCMachinePopup';
 import { getMachineImageUrl } from '@/utils/machineImageUtils';
+import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 
 interface MachineDetailViewProps {
   exercise: WorkoutExercise;
@@ -46,6 +47,9 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
 
+  // Workout logging
+  const { currentWorkoutLog, startWorkout, logExercise, completeWorkout } = useWorkoutLogger();
+
   const completedSets = sets.filter(set => set.completed).length;
   const progressPercentage = (completedSets / sets.length) * 100;
 
@@ -78,9 +82,27 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
     setSets(newSets);
   };
 
-  const handleCompleteExercise = () => {
-    onExerciseComplete(exercise);
-    onBack();
+  const handleCompleteExercise = async () => {
+    try {
+      const weightUsed = sets[0]?.weight ?? (exercise as any).calculated_weight ?? exercise.weight;
+      const activeLog = currentWorkoutLog ?? await startWorkout(exercise.machine, exercise.exercise_type || 'strength', 1);
+      if (activeLog) {
+        await logExercise(
+          activeLog.id,
+          exercise.machine,
+          exercise.machine,
+          4,
+          40,
+          weightUsed ? Math.round(weightUsed) : undefined
+        );
+        await completeWorkout(activeLog.id);
+      }
+    } catch (e) {
+      console.error('Failed to persist workout session', e);
+    } finally {
+      onExerciseComplete(exercise);
+      onBack();
+    }
   };
 
   const allSetsCompleted = completedSets === sets.length;
