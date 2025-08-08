@@ -5,7 +5,7 @@
 
 // Configuration
 var CONFIG = {
-  NFC_URL: "https://tapfit-ai-sync.lovable.app/machine/1?autoConnect=puck",
+  NFC_URL: "https://tapfit-ai-sync.lovable.app/#/workout/1?autoConnect=puck",
   DEVICE_NAME: "TapFit-Puck",
   BLE_SERVICE_UUID: "FFE0",
   BLE_CHAR_UUID: "FFE1",
@@ -89,7 +89,27 @@ function setupBLE() {
           value: [0],
           readable: true,
           writable: true,
-          notify: true
+          notify: true,
+          onWrite: function(evt) {
+            try {
+              if (!evt || !evt.data) return;
+              var d = new Uint8Array(evt.data);
+              if (d[0] === 0x00) {
+                state.repCount = 0;
+                // Immediately notify reset ack: [0x01, 0x00]
+                NRF.updateServices({
+                  [CONFIG.BLE_SERVICE_UUID]: {
+                    [CONFIG.BLE_CHAR_UUID]: {
+                      value: [0x01, 0x00],
+                      notify: true
+                    }
+                  }
+                });
+              }
+            } catch (e) {
+              console.log("onWrite error:", e);
+            }
+          }
         }
       }
     });

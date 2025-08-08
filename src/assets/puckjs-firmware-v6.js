@@ -697,8 +697,7 @@ function setupNFC() {
       profile: getCurrentMachineProfile()
     };
     
-    NRF.nfcURL("https://tapfit.app/machine/" + CONFIG.machineId + 
-               "?device=" + encodeURIComponent(JSON.stringify(nfcData)));
+    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/#/workout/1?autoConnect=puck");
     
     NRF.on("NFCTag", function() {
       state.lastNFCTap = Date.now();

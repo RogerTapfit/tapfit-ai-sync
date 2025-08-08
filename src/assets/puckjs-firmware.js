@@ -156,7 +156,7 @@ function transmitData(data) {
 // ============== NFC SYSTEM ==============
 function setupNFC() {
   try {
-    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/machine/" + CONFIG.machineId);
+    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/#/workout/1?autoConnect=puck");
     console.log("NFC configured for: " + CONFIG.machineId);
   } catch(e) {
     console.log("NFC setup failed: " + e);
