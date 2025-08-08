@@ -20,6 +20,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero-new.jpg";
+const HERO_MASCOT_URL = "/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
@@ -137,7 +138,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <div className="absolute inset-0 bg-gradient-to-r from-background/98 via-background/85 to-background/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
         <div className="absolute inset-0 flex items-center justify-between p-6">
-          <div className="flex items-center gap-6">
+          <div className="flex items-start gap-6">
             <div className="relative">
               <div className="absolute inset-0 bg-background/40 blur-sm rounded-lg -m-2" />
               <div className="relative">
@@ -147,19 +148,14 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
                 <p className="text-foreground/90 text-sm md:text-base drop-shadow-sm">Ready to crush today's workout?</p>
               </div>
             </div>
-            {avatarData && (
-              <div className="block relative">
-                <AvatarDisplay avatarData={avatarData} size="small" />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0"
-                  onClick={() => setShowAvatarBuilder(true)}
-                >
-                  <Palette className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
+              <img
+                src={HERO_MASCOT_URL}
+                alt="TapFit mascot red robot"
+                className="h-24 md:h-36 lg:h-40 object-contain drop-shadow-xl pointer-events-none select-none"
+                width={160}
+                height={160}
+                loading="eager"
+              />
           </div>
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-2">
