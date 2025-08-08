@@ -47,7 +47,9 @@ export class PuckClient {
   async reset() {
     if (!this.deviceId) return;
     this.lastRep = 0;
-    await BleClient.write(this.deviceId, SERVICE, CHAR, numbersToDataView([0x00]));
+    const bytes = new Uint8Array([0x00]);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    await BleClient.write(this.deviceId, SERVICE, CHAR, view);
   }
 
   async disconnect() {
