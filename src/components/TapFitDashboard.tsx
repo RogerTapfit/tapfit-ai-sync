@@ -20,7 +20,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero-new.jpg";
-const HERO_MASCOT_URL = "/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png";
+const HERO_MASCOT_URL = "/lovable-uploads/e3f47cfe-bdb8-47c1-a1d6-4df0229e046f.png";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
