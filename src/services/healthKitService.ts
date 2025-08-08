@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { TapfitHealth } from '@/lib/tapfitHealth';
 
 // Define HealthKit interface for native calls
 interface HealthKitPlugin {
@@ -405,40 +406,49 @@ class HealthKitService {
       return null;
     }
 
+    console.log('Scanning heart rate now via TapfitHealth...');
+
     try {
-      console.log('Scanning heart rate now...');
-      
-      if (HealthKit && this.hasPermissions) {
-        // Try to get real-time heart rate from Apple Watch
-        const now = new Date();
-        const thirtySecondsAgo = new Date(now.getTime() - 30 * 1000);
-        
-        const heartRateData = await HealthKit.queryQuantitySamples({
-          quantityType: 'HKQuantityTypeIdentifierHeartRate',
-          startDate: thirtySecondsAgo.toISOString(),
-          endDate: now.toISOString(),
-          limit: 1
-        });
-        
-        if (heartRateData.samples.length > 0) {
-          return {
-            heartRate: Math.round(heartRateData.samples[0].value),
-            timestamp: new Date(heartRateData.samples[0].endDate)
-          };
-        }
+      // Ensure Apple Watch is paired and watch app installed
+      const { watchPaired } = await TapfitHealth.isAvailable();
+      if (!watchPaired) {
+        throw new Error('Apple Watch not paired or TapFit watch app not installed');
       }
-      
-      // Fallback to simulated real-time heart rate
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate scan time
-      
-      return {
-        heartRate: this.generateRealisticHeartRate(),
-        timestamp: new Date()
-      };
-      
+
+      // Request Health permissions and start a lightweight workout to get live HR
+      await TapfitHealth.requestAuthorization();
+
+      // Start workout (functional strength training by default)
+      await TapfitHealth.startWorkout({ activityType: 'functionalStrengthTraining' });
+
+      // Wait for the first live heart rate sample from the watch (up to 10s)
+      const reading = await new Promise<{ heartRate: number; timestamp: Date }>((resolve, reject) => {
+        let settled = false as boolean;
+        let timeout: any;
+
+        TapfitHealth.addListener('heartRate', ({ bpm, timestamp }) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          resolve({ heartRate: Math.round(bpm), timestamp: new Date(timestamp) });
+        }).then(sub => {
+          // Timeout safeguard
+          timeout = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            try { sub.remove(); } catch {}
+            reject(new Error('Timed out waiting for heart rate'));
+          }, 10000);
+        }).catch(err => reject(err));
+      });
+
+      return reading;
     } catch (error) {
-      console.error('Error scanning heart rate:', error);
+      console.error('Error scanning heart rate via TapfitHealth:', error);
       return null;
+    } finally {
+      // Always try to stop the workout to conserve battery
+      try { await TapfitHealth.stopWorkout(); } catch {}
     }
   }
 
