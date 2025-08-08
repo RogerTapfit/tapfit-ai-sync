@@ -36,7 +36,19 @@ const config: CapacitorConfig = {
       NSHealthUpdateUsageDescription: "This app may write workout data to HealthKit.",
       NSBluetoothAlwaysUsageDescription: "TapFit connects to your Smart Puck over Bluetooth to track reps during workouts.",
       NSBluetoothPeripheralUsageDescription: "TapFit uses Bluetooth to connect to fitness sensors.",
-      NFCReaderUsageDescription: "TapFit can read NFC to quickly open workouts from your Smart Puck."
+      NFCReaderUsageDescription: "TapFit can read NFC to quickly open workouts from your Smart Puck.",
+      UIApplicationSceneManifest: {
+        UIApplicationSupportsMultipleScenes: false,
+        UISceneConfigurations: {
+          UIWindowSceneSessionRoleApplication: [
+            {
+              UISceneConfigurationName: "Default Configuration",
+              UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).SceneDelegate",
+              UISceneClassName: "UIWindowScene",
+            },
+          ],
+        },
+      },
     }
   },
   android: {
