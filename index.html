@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>TapFit - AI-Powered Fitness Tracking</title>
     <meta name="description" content="Revolutionary fitness app with smart machine integration, AI coaching, and wearable sync" />
     <meta name="author" content="TapFit" />
@@ -15,6 +15,12 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <style>
+    :root { --safe-top: env(safe-area-inset-top); }
+    .safe-pad-top { padding-top: max(var(--safe-top), 12px); }
+    .safe-top { top: max(var(--safe-top), 8px); }
+    .touch-target { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  </style>
   </head>
 
   <body>

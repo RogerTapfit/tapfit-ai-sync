@@ -21,6 +21,10 @@ const config: CapacitorConfig = {
           "android.permission.WRITE_EXTERNAL_STORAGE"
         ]
       }
+    },
+    StatusBar: {
+      overlaysWebView: false,
+      style: 'DARK'
     }
   },
   ios: {
