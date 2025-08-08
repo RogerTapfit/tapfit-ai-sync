@@ -30,7 +30,7 @@ export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) =>
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
-        <Button className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
+        <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
           <Activity className="h-4 w-4 mr-2" />
           Start Workout
         </Button>

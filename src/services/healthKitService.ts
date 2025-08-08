@@ -72,8 +72,8 @@ class HealthKitService {
   }
 
   private async initialize() {
-    // Check if we're on iOS and HealthKit is available
-    this.isAvailable = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+    // Check if we're on iOS (native or PWA) so we can at least provide simulated readings
+    this.isAvailable = Capacitor.getPlatform() === 'ios';
     
     if (!this.isAvailable) {
       console.log('HealthKit not available on this platform');

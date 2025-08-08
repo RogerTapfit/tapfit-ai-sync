@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import { blePuckUtil, type ConnectedDevice } from "@/services/blePuckUtil";
+import { MobileActionBar } from "@/components/MobileActionBar";
 interface WorkoutSet {
   id: number;
   reps: number;
@@ -820,6 +821,17 @@ const WorkoutDetail = () => {
           </Button>
         )}
       </div>
+
+      {/* Spacer for sticky action bar on mobile */}
+      <div className="h-24 md:hidden" />
+
+      {/* Mobile sticky action bar */}
+      <MobileActionBar
+        canStart={mode === 'idle'}
+        canRep={mode === 'inset' && !isResting}
+        onStart={startWorkout}
+        onRep={onRep}
+      />
     </div>
   );
 };
