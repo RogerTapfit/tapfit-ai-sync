@@ -7,7 +7,8 @@ import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
 import { useHealthKit } from "@/hooks/useHealthKit";
 import { HeartRateScanModal } from "./HeartRateScanModal";
-
+import { Capacitor } from "@capacitor/core";
+import { useHeartRate } from "@/hooks/useHeartRate";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
 }
@@ -17,15 +18,20 @@ export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) =>
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
   const [showScanModal, setShowScanModal] = useState(false);
+  const { bpm, start: startHR } = useHeartRate();
+  const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
-  const handleHeartRateClick = () => {
-    setShowScanModal(true);
+  const handleHeartRateClick = async () => {
+    if (isIOSNative) {
+      await startHR('functionalStrengthTraining');
+    } else {
+      setShowScanModal(true);
+    }
   };
 
   const handleScan = () => {
     scanHeartRate();
   };
-  
   return (
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
@@ -87,15 +93,24 @@ export const TodaysPerformance = ({ onStartWorkout }: TodaysPerformanceProps) =>
           <p className="text-sm text-muted-foreground">Exercises Done</p>
         </div>
 
-        <div className="text-center space-y-2">
-          <button 
-            onClick={handleHeartRateClick}
-            className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit hover:bg-stats-heart/10 hover:border-stats-heart/30 transition-all duration-200 group cursor-pointer"
-          >
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={handleHeartRateClick}
+          role="button"
+          aria-label="Start live heart rate"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleHeartRateClick();
+            }
+          }}
+        >
+          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit hover:bg-stats-heart/10 hover:border-stats-heart/30 transition-all duration-200 group">
             <Heart className="h-6 w-6 text-stats-heart group-hover:animate-pulse" />
-          </button>
+          </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={stats.loading ? 0 : stats.avgHeartRate} duration={2800} />
+            <AnimatedNumber finalValue={bpm ?? (stats.loading ? 0 : stats.avgHeartRate)} duration={2800} />
           </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
