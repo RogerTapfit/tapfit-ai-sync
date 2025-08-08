@@ -29,7 +29,10 @@ const config: CapacitorConfig = {
     orientation: "portrait",
     infoPlist: {
       NSHealthShareUsageDescription: "This app uses HealthKit to display your heart rate, blood oxygen, and activity data during workouts.",
-      NSHealthUpdateUsageDescription: "This app may write workout data to HealthKit."
+      NSHealthUpdateUsageDescription: "This app may write workout data to HealthKit.",
+      NSBluetoothAlwaysUsageDescription: "TapFit connects to your Smart Puck over Bluetooth to track reps during workouts.",
+      NSBluetoothPeripheralUsageDescription: "TapFit uses Bluetooth to connect to fitness sensors.",
+      NFCReaderUsageDescription: "TapFit can read NFC to quickly open workouts from your Smart Puck."
     }
   },
   android: {
