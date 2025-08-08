@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Timer, Target, Smartphone } from 'lucide-react';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
-import { LiveWorkoutSession } from './LiveWorkoutSession';
+import { SmartPuckWorkoutRunner } from './SmartPuckWorkoutRunner';
 import { NFCMachinePopup } from './NFCMachinePopup';
 import { getMachineImageUrl } from '@/utils/machineImageUtils';
 
@@ -173,3 +173,9 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
         <h3 className="font-semibold">Smart Puck Workout</h3>
         <SmartPuckWorkoutRunner autoConnect={autoConnect} onDone={handleCompleteExercise} />
       </div>
+
+    </div>
+  );
+};
+
+export default MachineDetailView;
