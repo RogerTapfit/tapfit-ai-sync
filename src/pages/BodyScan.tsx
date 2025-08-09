@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Camera as CamIcon, Shield, RefreshCw, CheckCircle } from "lucide-react";
+import { Camera as CamIcon, Shield, RefreshCw, CheckCircle, ArrowLeft } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import SEO from "@/components/SEO";
-
+import { Link } from "react-router-dom";
 interface ScanSlot {
   key: string;
   label: string;
@@ -102,6 +102,14 @@ const BodyScan = () => {
 
       <main className="min-h-screen bg-background p-4 md:p-8">
         <header className="mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <Link to="/" aria-label="Back to Dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-2xl md:text-3xl font-bold">Body Scan – AI Body Analyzer</h1>
           <p className="text-sm text-muted-foreground mt-1">All photos are processed on-device. Nothing leaves your phone.</p>
         </header>
