@@ -208,16 +208,17 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
 
-      {/* See Food Button - Prominent Standalone Food Scanner */}
-      <div className="my-8 flex justify-center">
+      {/* SEE FOOD and BODY SCAN - side by side on wide, stacked on small */}
+      <div className="my-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* SEE FOOD */}
         <Dialog>
           <DialogTrigger asChild>
             <Button 
               size="lg"
-              className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 hover:transition-transform hover:duration-200 animate-food-glow border-0 rounded-2xl"
+              className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 hover:transition-transform hover:duration-200 animate-food-glow border-0 rounded-2xl w-full"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center gap-4">
+              <div className="relative flex items-center gap-4 justify-center">
                 <Camera className="h-8 w-8" />
                 <div className="flex flex-col items-start">
                   <span className="text-2xl font-black">SEE FOOD</span>
@@ -233,6 +234,22 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
             <FoodPhotoAnalyzer onDataChange={() => {}} />
           </DialogContent>
         </Dialog>
+
+        {/* BODY SCAN */}
+        <Button
+          size="lg"
+          onClick={() => navigate('/body-scan')}
+          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-2xl hover:shadow-blue-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative flex items-center gap-4 justify-center">
+            <Camera className="h-8 w-8" />
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black">BODY SCAN</span>
+              <span className="text-sm font-normal opacity-90">AI Body Analyzer</span>
+            </div>
+          </div>
+        </Button>
       </div>
 
       {/* 3. Weekly Progress */}
