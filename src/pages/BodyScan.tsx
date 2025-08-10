@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -59,7 +60,8 @@ const BodyScan = () => {
     notes: string[];
   }>(null);
 
-  const allCaptured = useMemo(() => slots.every(s => !!s.image), [slots]);
+  // Allow processing with at least one photo captured
+  const canProcess = useMemo(() => slots.some(s => !!s.image), [slots]);
 
   const [sex, setSex] = useState<'male' | 'female'>("male");
   const [heightCm, setHeightCm] = useState<number | "">("");
@@ -170,9 +172,12 @@ const BodyScan = () => {
     setAnalyzing(true);
     setResult(null);
     try {
-      const photos = SLOTS.map(s => s.key);
+      // Only include captured views
+      const photos = slots.filter(s => !!s.image).map(s => s.key);
+
       const landmarks: Record<string, any[]> = {};
       const widthProfiles: Record<string, number[]> = {};
+
       photos.forEach(k => {
         const f = features[k];
         if (f) {
@@ -181,7 +186,12 @@ const BodyScan = () => {
         }
       });
 
-      const user = { sex, age: undefined as number | undefined, heightCm: typeof heightCm === 'number' ? heightCm : undefined, weightKnownKg: null as number | null };
+      // Debug summary of features being sent
+      const lmCounts = Object.fromEntries(Object.entries(landmarks).map(([k, arr]) => [k, (arr as any[]).length]));
+      const wpCounts = Object.fromEntries(Object.entries(widthProfiles).map(([k, arr]) => [k, (arr as number[]).length]));
+      console.log('[BodyScan] Sending for estimate', { photos, lmCounts, wpCounts, user: { sex, age, heightCm } });
+
+      const user = { sex, age, heightCm: typeof heightCm === 'number' ? heightCm : undefined, weightKnownKg: null as number | null };
 
       const estimateRes = await supabase.functions.invoke('body-scan', {
         body: { route: 'estimate', photos, landmarks, widthProfiles, user },
@@ -319,6 +329,7 @@ const BodyScan = () => {
                 <div>
                   <p className="font-medium">Privacy-first</p>
                   <p className="text-sm text-muted-foreground">Images stay on your device. Analysis is on-device.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Cloud-assisted summary is enabled for recommendations.</p>
                 </div>
               </div>
 
@@ -345,7 +356,7 @@ const BodyScan = () => {
               <div className="ml-auto flex gap-2 w-full md:w-auto">
                 <Button
                   size="lg"
-                  disabled={!allCaptured || analyzing}
+                  disabled={!canProcess || analyzing}
                   onClick={processScan}
                   className="w-full md:w-auto"
                 >
