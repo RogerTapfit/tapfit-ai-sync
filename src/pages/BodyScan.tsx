@@ -6,6 +6,8 @@ import { Capacitor } from "@capacitor/core";
 import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import SEO from "@/components/SEO";
 import BodyScanResults from "@/components/body-scan/BodyScanResults";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Link } from "react-router-dom";
 interface ScanSlot {
@@ -56,10 +58,46 @@ const BodyScan = () => {
 
   const allCaptured = useMemo(() => slots.every(s => !!s.image), [slots]);
 
+  const [sex, setSex] = useState<'male' | 'female'>('male');
+
   useEffect(() => {
     // Reset result if images change
     setResult(null);
   }, [slots.map(s => s.image).join(",")]);
+
+  useEffect(() => {
+    const initSex = async () => {
+      try {
+        const saved = localStorage.getItem('bodyScan.sex');
+        if (saved === 'male' || saved === 'female') {
+          setSex(saved as 'male' | 'female');
+          return;
+        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('gender')
+            .eq('id', user.id)
+            .single();
+          const g = (data?.gender || '').toString().toLowerCase();
+          if (g.startsWith('f')) setSex('female');
+          else if (g.startsWith('m')) setSex('male');
+        }
+      } catch {
+        // ignore
+      }
+    };
+    initSex();
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bodyScan.sex', sex);
+    } catch {
+      // ignore
+    }
+  }, [sex]);
 
   const handleCapture = async (slotKey: string) => {
     try {
@@ -103,15 +141,22 @@ const BodyScan = () => {
     // Simulate on-device processing time
     await new Promise(r => setTimeout(r, 1200));
 
+    const isFemale = sex === 'female';
+
+    const bodyFatRange = isFemale ? "24% – 32%" : "18% – 24%";
+    const muscleMass = isFemale ? "35.1 kg" : "42.3 kg";
+    const metabolicRate = isFemale ? 1680 : 1850;
+    const visceralFat = isFemale ? 6 : 7;
+
     // Placeholder heuristic results (no network, privacy-first)
     setResult({
-      bodyFatRange: "18% – 24%",
+      bodyFatRange,
       postureScore: 78,
       symmetryScore: 82,
-      muscleMass: "42.3 kg",
-      visceralFat: 7,
+      muscleMass,
+      visceralFat,
       bodyAge: 26,
-      metabolicRate: 1850,
+      metabolicRate,
       measurements: {
         chest: "102 cm",
         waist: "84 cm",
@@ -140,6 +185,7 @@ const BodyScan = () => {
         "Great stance — keep feet shoulder-width for consistency.",
         "Minor shoulder tilt detected; consider posture exercises.",
         "Lighting is good; avoid heavy shadows for best results.",
+        `Using ${isFemale ? "female" : "male"} reference ranges for body fat and BMR.`,
       ],
     });
     setAnalyzing(false);
@@ -215,6 +261,19 @@ const BodyScan = () => {
                   <p className="font-medium">Privacy-first</p>
                   <p className="text-sm text-muted-foreground">Images stay on your device. Analysis is on-device.</p>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label htmlFor="sex" className="text-sm text-muted-foreground">Sex for analysis</label>
+                <Select value={sex} onValueChange={(v) => setSex(v as 'male' | 'female')}>
+                  <SelectTrigger id="sex" className="w-[160px]">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="ml-auto flex gap-2 w-full md:w-auto">
