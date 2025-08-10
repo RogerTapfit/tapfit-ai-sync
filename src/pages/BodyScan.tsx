@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,8 +11,10 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { detectPose, type Keypoint } from "@/features/bodyScan/ml/pose";
 import { segmentBody } from "@/features/bodyScan/ml/mask";
+import { startScan, pollScanUntilDone } from "@/features/bodyScan/api";
 
 import { Link } from "react-router-dom";
+
 interface ScanSlot {
   key: string;
   label: string;
@@ -169,15 +170,17 @@ const BodyScan = () => {
   const clearSlot = (slotKey: string) => updateSlot(slotKey, null);
 
   const processScan = async () => {
+    if (!heightCm || typeof heightCm !== "number") {
+      alert("Please enter your height (cm) for accurate measurements.");
+      return;
+    }
     setAnalyzing(true);
     setResult(null);
     try {
-      // Only include captured views
+      // Build features payload from on-device ML (if available)
       const photos = slots.filter(s => !!s.image).map(s => s.key);
-
       const landmarks: Record<string, any[]> = {};
       const widthProfiles: Record<string, number[]> = {};
-
       photos.forEach(k => {
         const f = features[k];
         if (f) {
@@ -185,66 +188,65 @@ const BodyScan = () => {
           widthProfiles[k] = f.widthProfile || [];
         }
       });
+      console.log("[BodyScan] StartScan with views", { photos, sex, age, heightCm, lm: Object.keys(landmarks), wp: Object.keys(widthProfiles) });
 
-      // Debug summary of features being sent
-      const lmCounts = Object.fromEntries(Object.entries(landmarks).map(([k, arr]) => [k, (arr as any[]).length]));
-      const wpCounts = Object.fromEntries(Object.entries(widthProfiles).map(([k, arr]) => [k, (arr as number[]).length]));
-      console.log('[BodyScan] Sending for estimate', { photos, lmCounts, wpCounts, user: { sex, age, heightCm } });
+      // Prepare files map for available slots
+      const files: any = {};
+      slots.forEach(s => { if (s.image) files[s.key] = s.image; });
 
-      const user = { sex, age, heightCm: typeof heightCm === 'number' ? heightCm : undefined, weightKnownKg: null as number | null };
-
-      const estimateRes = await supabase.functions.invoke('body-scan', {
-        body: { route: 'estimate', photos, landmarks, widthProfiles, user },
-        headers: { 'x-route': 'estimate' }
+      const created = await startScan({
+        files,
+        heightCm: Number(heightCm),
+        sex,
+        age,
+        features: { landmarks, widthProfiles, photos }
       });
-      if (estimateRes.error) throw estimateRes.error;
-      const est = (estimateRes.data as any) || {};
 
-      const reportRes = await supabase.functions.invoke('body-scan', {
-        body: { route: 'report', estimates: est.estimates, user: { sex, goal: 'general_fitness' } },
-        headers: { 'x-route': 'report' }
+      const finalRow = await pollScanUntilDone(created.id, (row) => {
+        console.log("[BodyScan] Poll status:", row.status);
       });
-      if (reportRes.error) throw reportRes.error;
-      const rpt = (reportRes.data as any) || {};
 
-      const bf = est.estimates?.bodyFatPctRange || [18, 24];
-      const posturePct = Math.round(((est.estimates?.postureScore ?? 0.7) * 100));
-      const symmetryPct = Math.round(((est.estimates?.symmetryScore ?? 0.7) * 100));
+      // Map server metrics/summary to existing BodyScanResults UI shape
+      const m = finalRow.metrics || {};
+      const s = finalRow.summary || {};
+      const bfPct = typeof m.bf_percent === "number" ? m.bf_percent : 22;
+      const posturePct = Math.round(((m.posture?.spinal_curve_score ?? 0.75) * 100));
+      const symmetryPct = Math.round((100 - Math.abs((m.asymmetry?.left_right_delta_shoulder_cm ?? 0) * 2)));
 
       setResult({
-        bodyFatRange: `${(bf[0]*100 ? bf[0] : bf[0]).toFixed(0)}% – ${(bf[1]*100 ? bf[1] : bf[1]).toFixed(0)}%`,
+        bodyFatRange: `${Math.max(5, Math.round(bfPct - 3))}% – ${Math.min(50, Math.round(bfPct + 3))}%`,
         postureScore: posturePct,
         symmetryScore: symmetryPct,
-        muscleMass: `${est.estimates?.muscleMassKg?.toFixed?.(1) ?? '40.0'} kg`,
-        visceralFat: est.estimates?.visceralFatIndex ?? 7,
-        bodyAge: est.estimates?.bodyAge ?? 26,
-        metabolicRate: est.estimates?.bmr ?? 1800,
+        muscleMass: (typeof m.lean_mass_kg === "number" ? `${m.lean_mass_kg.toFixed(1)} kg` : "—"),
+        visceralFat:  m.visceral_fat_index ?? 7,
+        bodyAge: m.body_age ??  (m.posture?.spinal_curve_score ? Math.max(18, Math.min(80, Math.round((age ?? 30) + (0.8 - (m.posture?.spinal_curve_score ?? 0.7)) * 10))) : (age ?? 26)),
+        metabolicRate: m.bmr_kcal ?? 1800,
         measurements: {
-          chest: `${(est.estimates?.chestCm ?? 100).toFixed(1)} cm`,
-          waist: `${(est.estimates?.waistCm ?? 84).toFixed(1)} cm`,
-          hips: `${(est.estimates?.hipCm ?? 98).toFixed(1)} cm`,
-          shoulders: `${(est.estimates?.chestCm ? est.estimates.chestCm + 8 : 110).toFixed(1)} cm`,
-          thighs: `—`
+          chest: `${(m.circumferences_cm?.chest ?? 100).toFixed(1)} cm`,
+          waist: `${(m.circumferences_cm?.waist ?? 84).toFixed(1)} cm`,
+          hips: `${(m.circumferences_cm?.hips ?? 98).toFixed(1)} cm`,
+          shoulders: `${(((m.circumferences_cm?.chest ?? 100)) + 8).toFixed(1)} cm`,
+          thighs: (m.circumferences_cm?.thigh ? `${m.circumferences_cm.thigh.toFixed(1)} cm` : "—")
         },
         postureAnalysis: {
-          headAlignment: Math.max(60, 100 - Math.abs(est.estimates?.shoulderTiltDeg ?? 0) * 2),
-          shoulderLevel: Math.max(60, 100 - Math.abs(est.estimates?.shoulderTiltDeg ?? 0) * 2),
+          headAlignment: Math.max(60, 100 - Math.abs(m.posture?.head_tilt_deg ?? 0) * 2),
+          shoulderLevel: Math.max(60, 100 - Math.abs(m.posture?.shoulder_tilt_deg ?? 0) * 2),
           spinalCurvature: Math.round(posturePct * 0.9),
-          hipAlignment: Math.max(60, 100 - Math.abs(est.estimates?.pelvicTiltDeg ?? 0) * 2),
+          hipAlignment: Math.max(60, 100 - Math.abs(m.posture?.pelvic_tilt_deg ?? 0) * 2),
         },
         healthIndicators: {
           hydrationLevel: "Good",
           skinHealth: 78,
           overallFitness: symmetryPct > 80 ? "Above Average" : "Average"
         },
-        progressSuggestions: rpt.recommendations || [],
+        progressSuggestions: Array.isArray(s.recommendations) ? s.recommendations : [],
         notes: [
           ...(typeof heightCm === 'number' ? [] : ["Tip: Add height for higher accuracy."]),
-          ...(rpt.analysisNotes || [])
+          ...(Array.isArray(s.analysis_notes) ? s.analysis_notes : [])
         ],
       });
     } catch (e) {
-      console.error('Body scan processing failed', e);
+      console.error("Body scan processing failed", e);
     } finally {
       setAnalyzing(false);
     }

@@ -236,29 +236,56 @@ export type Database = {
       }
       body_scans: {
         Row: {
+          back_path: string | null
           created_at: string
+          error: string | null
+          front_path: string | null
           height_cm: number | null
           id: string
+          left_path: string | null
+          metrics: Json | null
           notes: string | null
+          right_path: string | null
           sex: string | null
+          status: Database["public"]["Enums"]["scan_status"]
+          summary: Json | null
+          updated_at: string
           user_id: string
           weight_known_kg: number | null
         }
         Insert: {
+          back_path?: string | null
           created_at?: string
+          error?: string | null
+          front_path?: string | null
           height_cm?: number | null
           id?: string
+          left_path?: string | null
+          metrics?: Json | null
           notes?: string | null
+          right_path?: string | null
           sex?: string | null
+          status?: Database["public"]["Enums"]["scan_status"]
+          summary?: Json | null
+          updated_at?: string
           user_id: string
           weight_known_kg?: number | null
         }
         Update: {
+          back_path?: string | null
           created_at?: string
+          error?: string | null
+          front_path?: string | null
           height_cm?: number | null
           id?: string
+          left_path?: string | null
+          metrics?: Json | null
           notes?: string | null
+          right_path?: string | null
           sex?: string | null
+          status?: Database["public"]["Enums"]["scan_status"]
+          summary?: Json | null
+          updated_at?: string
           user_id?: string
           weight_known_kg?: number | null
         }
@@ -1655,6 +1682,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "trainer" | "admin"
+      scan_status: "queued" | "processing" | "done" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1783,6 +1811,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "trainer", "admin"],
+      scan_status: ["queued", "processing", "done", "error"],
     },
   },
 } as const
