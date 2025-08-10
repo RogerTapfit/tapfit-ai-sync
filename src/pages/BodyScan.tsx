@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { detectPose, type Keypoint } from "@/features/bodyScan/ml/pose";
 import { segmentBody } from "@/features/bodyScan/ml/mask";
 import { startScan, pollScanUntilDone } from "@/features/bodyScan/api";
+import { useToast } from "@/components/ui/use-toast";
 
 import { Link } from "react-router-dom";
 
@@ -29,6 +30,7 @@ const SLOTS: ScanSlot[] = [
 ];
 
 const BodyScan = () => {
+  const { toast } = useToast();
   const [slots, setSlots] = useState<ScanSlot[]>(SLOTS);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<null | {
@@ -286,8 +288,10 @@ const BodyScan = () => {
           ...(Array.isArray(s.analysis_notes) ? s.analysis_notes : [])
         ].filter(Boolean),
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error("Body scan processing failed", e);
+      const errMessage = e?.value?.message || e?.message || "Analysis failed";
+      toast({ title: "Analysis failed", description: String(errMessage), variant: "destructive" });
     } finally {
       setAnalyzing(false);
     }

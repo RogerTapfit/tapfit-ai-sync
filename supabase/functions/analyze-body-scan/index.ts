@@ -56,10 +56,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  let scanId = "";
 
   try {
     const payload = (await req.json()) as Payload;
-    if (!payload?.scan_id || !payload?.height_cm || !payload?.sex) {
+    scanId = payload?.scan_id ?? "";
+    if (!scanId || !payload?.height_cm || !payload?.sex) {
       return new Response(
         JSON.stringify({ error: "scan_id, height_cm, sex required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -67,7 +69,7 @@ Deno.serve(async (req) => {
     }
 
     // Mark as processing (best-effort)
-    await supabase.from("body_scans").update({ status: "processing" }).eq("id", payload.scan_id);
+    await supabase.from("body_scans").update({ status: "processing" }).eq("id", scanId);
 
     // Load scan record
     const { data: scan, error: scanErr } = await supabase
@@ -122,8 +124,7 @@ Deno.serve(async (req) => {
         model: VISION_MODEL,
         messages: prompt,
         temperature: 0.2,
-        max_tokens: 800,
-        response_format: { type: "json_object" },
+        max_tokens: 800
       }),
     });
 
@@ -132,7 +133,16 @@ Deno.serve(async (req) => {
       throw new Error(`Vision call failed: ${visionRes.status} ${t}`);
     }
     const visionJson = await visionRes.json();
-    const content = JSON.parse(visionJson.choices?.[0]?.message?.content ?? "{}");
+    let raw = visionJson.choices?.[0]?.message?.content ?? "{}";
+    let content: any = {};
+    try {
+      content = JSON.parse(raw);
+    } catch {
+      const match = typeof raw === "string" ? raw.match(/{[\s\S]*}/) : null;
+      if (match) {
+        content = JSON.parse(match[0]);
+      }
+    }
 
     // Convert to metrics (heuristic)
     const height_cm = payload.height_cm;
@@ -173,7 +183,7 @@ Deno.serve(async (req) => {
         metrics,
         summary: { model: VISION_MODEL, at: new Date().toISOString() },
       })
-      .eq("id", payload.scan_id);
+      .eq("id", scanId);
 
     return new Response(JSON.stringify({ ok: true, metrics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -181,12 +191,14 @@ Deno.serve(async (req) => {
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);
     try {
-      await supabase
-        .from("body_scans")
-        .update({ status: "error", error: errMsg })
-        .eq("id", (await req.json())?.scan_id ?? "");
+      if (scanId) {
+        await supabase
+          .from("body_scans")
+          .update({ status: "error", error: errMsg })
+          .eq("id", scanId);
+      }
     } catch {}
-    console.error("analyze-body-scan error:", errMsg);
+    console.error("analyze-body-scan error:", { message: errMsg, stack: e instanceof Error ? e.stack : undefined });
     return new Response(JSON.stringify({ error: errMsg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
