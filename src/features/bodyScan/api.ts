@@ -53,7 +53,7 @@ export async function startScan(params: StartScanParams): Promise<BodyScanRow> {
     .from("body_scans")
     .insert({
       user_id: userId,
-      height_cm: params.heightCm,
+      height_cm: Math.round(params.heightCm),
       sex: params.sex,
       status: "queued"
     })
