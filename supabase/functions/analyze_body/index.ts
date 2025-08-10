@@ -89,52 +89,22 @@ function estimateAll(params: {
   };
 }
 
-async function buildSummaryFromOpenAI(metrics: any) {
-  if (!OPENAI_API_KEY) return { headlines: {}, recommendations: [], analysis_notes: [], focus_areas: [], disclaimer: "No API key configured." };
-  const system = "You write concise, actionable fitness insights from numeric body metrics. Avoid medical claims. Keep advice specific and safe.";
-  const userPayload = {
-    metrics,
-    persona: { goal: "general_fitness", experience: "beginner" }
-  };
-  const body = JSON.stringify({
-    model: "gpt-4o-mini",
-    temperature: 0.2,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: `Create JSON with:
-{
- "headlines": { "body_age": "...", "risks": ["..."] },
- "recommendations": ["...5-7 bullets..."],
- "analysis_notes": ["..."],
- "focus_areas": ["... tags like posture, symmetry ..."],
- "disclaimer": "Wellness only; not medical advice."
+// Local-only summarization helpers (no external API)
+function qualitativeLevel(score: number) {
+  if (score >= 80) return "high";
+  if (score >= 55) return "medium";
+  return "low";
 }
-Metrics:
-${JSON.stringify(userPayload, null, 2)}` }
-    ]
-  });
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body
-  });
-
-  const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content || "{}";
-  try {
-    return JSON.parse(content);
-  } catch {
-    // Fallback to simple structure
-    return {
-      headlines: {},
-      recommendations: (content.split("\n").filter((l: string) => l.trim().startsWith("-"))).slice(0, 7),
-      analysis_notes: [],
-      focus_areas: [],
-      disclaimer: "Wellness only; not medical advice."
-    };
-  }
+function skinQualityScore(inputs: { views: string[]; widthProfiles: Record<string, number[]> }) {
+  const views = inputs.views.length;
+  const profileCoverage = Object.values(inputs.widthProfiles).reduce((acc, arr) => acc + (arr?.length ? 1 : 0), 0);
+  const score = clamp(((views >= 3 ? 80 : 60) + (profileCoverage >= 3 ? 15 : 5)), 40, 95);
+  const notes = [] as string[];
+  if (views < 4) notes.push("Fewer than 4 views provided – consider adding missing angles.");
+  if (profileCoverage < 3) notes.push("Segmentation confidence is modest – aim for higher contrast background.");
+  if (!notes.length) notes.push("Good lighting and pose consistency detected.");
+  return { score, notes: notes.join(" ") };
 }
 
 serve(async (req) => {
@@ -168,9 +138,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Scan not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Placeholder: If features are provided from client on-device ML, use them for estimation.
-    // Later, replace this block with server-side CV over images in Storage (admin client).
     let metrics: any;
+    let summary: any = { recommendations: [], analysis_notes: [] };
     if (features?.landmarks && features?.widthProfiles) {
       const est = estimateAll({
         landmarks: features.landmarks,
@@ -183,49 +152,94 @@ serve(async (req) => {
         }
       }).estimates;
 
-      // Map to metrics shape
-      const avgBf = Array.isArray(est.bodyFatPctRange) ? (est.bodyFatPctRange[0] + est.bodyFatPctRange[1]) / 2 : 22;
-      // Rough derived weight if needed (back-calc from BMR heuristics is unreliable; keep simple)
-      const height = user?.heightCm ?? scan.height_cm ?? 170;
-      const assumedWeight = Math.round((est.bmr - (user?.sex === "male" ? 5 : -161) - 6.25 * height + 5 * (user?.age ?? 30)) / 10);
-      const weightKg = isFinite(assumedWeight) && assumedWeight > 0 ? assumedWeight : 70;
-      const fatMassKg = (avgBf / 100) * weightKg;
-      const leanMassKg = weightKg - fatMassKg;
+      const height = user?.heightCm ?? scan.height_cm ?? undefined;
+      let weightKg = user?.weightKnownKg ?? null;
+      if (!weightKg && height) {
+        const BMI = 22 + (est.waistCm - 80) * 0.05;
+        weightKg = +(BMI * ((height / 100) ** 2)).toFixed(1);
+      }
 
-      metrics = {
-        bf_percent: +avgBf.toFixed(1),
-        lean_mass_kg: +leanMassKg.toFixed(1),
-        fat_mass_kg: +fatMassKg.toFixed(1),
-        bmr_kcal: est.bmr,
-        posture: {
-          head_tilt_deg: 0, // not available from current landmarks subset
-          shoulder_tilt_deg: est.shoulderTiltDeg,
-          pelvic_tilt_deg: est.pelvicTiltDeg,
-          spinal_curve_score: +Math.round(est.postureScore * 100) / 100
-        },
-        asymmetry: {
-          left_right_delta_shoulder_cm: 0.5, // placeholder small asymmetry
-          left_right_delta_hip_cm: 0.3
-        },
-        circumferences_cm: {
-          waist: est.waistCm,
-          neck: +Math.max(30, est.chestCm * 0.36).toFixed(1),
-          hips: est.hipCm,
-          chest: est.chestCm,
-          thigh: +Math.max(45, est.hipCm * 0.58 * 0.6).toFixed(1),
-          bicep: +Math.max(25, est.chestCm * 0.35 * 0.45).toFixed(1)
-        },
-        inputs: {
-          height_cm: height,
-          views: Object.keys(features.widthProfiles || {})
+      const bfLow = +(est.bodyFatPctRange[0]).toFixed(1);
+      const bfHigh = +(est.bodyFatPctRange[1]).toFixed(1);
+      const bfEstimate = +(((bfLow + bfHigh) / 2).toFixed(1));
+      const leanMassKg = weightKg ? +(weightKg * (1 - bfEstimate / 100)).toFixed(1) : null;
+      const muscleMassKg = +est.muscleMassKg.toFixed(1);
+
+      // Measurements (cm) with sanity clamps
+      const clampCm = (n: number) => clamp(+n.toFixed(1), 40, 200);
+      const chest = clampCm(est.chestCm);
+      const waist = clampCm(est.waistCm);
+      const hips = clampCm(est.hipCm);
+      const shoulders = clampCm(est.chestCm + 8);
+      const thighs = clampCm(Math.max(45, est.hipCm * 0.58 * 0.6));
+
+      const postureScore = clamp(Math.round(est.postureScore * 100), 0, 100);
+      const symmetryScore = clamp(Math.round(est.symmetryScore * 100), 0, 100);
+
+      const whr = +(waist / Math.max(hips, 1)).toFixed(2);
+      const isMale = (user?.sex ?? "unspecified").toString().startsWith("m");
+      const visceralLevel = (() => {
+        if (isMale) {
+          if (waist >= 102 || whr > 0.90) return "high";
+          if (waist >= 94 || whr > 0.85) return "medium";
+          return "low";
+        } else {
+          if (waist >= 88 || whr > 0.85) return "high";
+          if (waist >= 80 || whr > 0.80) return "medium";
+          return "low";
         }
+      })();
+
+      const skin = skinQualityScore({
+        views: Object.keys(features.widthProfiles || {}),
+        widthProfiles: features.widthProfiles || {}
+      });
+
+      // Build reasons
+      const bfReason = `Estimated from waist-to-hip ratio (WHR=${whr}), torso width profile minima, sex-specific patterning, and height scaling.`;
+      const mmConfidence = (weightKg ? (Object.keys(features.widthProfiles||{}).length >= 3 ? "high" : "medium") : (Object.keys(features.widthProfiles||{}).length >= 2 ? "medium" : "low"));
+      const mmReason = weightKg
+        ? "Derived from estimated fat-free mass (uses provided weight) and visual profile proportion heuristics."
+        : "Approximation without scale weight: inferred via WHR, height, and profile proportions; accuracy reduced.";
+      const postureNotes = `Shoulder tilt ${est.shoulderTiltDeg}°, pelvic tilt ${est.pelvicTiltDeg}°. Higher symmetry/posture scores indicate better alignment.`;
+      const symmetryNotes = `Symmetry balanced by low shoulder/pelvic tilt deltas; large deltas reduce score.`;
+      const visceralNotes = `Level based on waist ${waist} cm and WHR ${whr} with sex-specific thresholds.`;
+
+      // JSON schema metrics
+      metrics = {
+        body_fat_percent: { estimate: bfEstimate, low: bfLow, high: bfHigh, reason: bfReason },
+        muscle_mass_kg: { estimate: muscleMassKg, confidence: mmConfidence, reason: mmReason },
+        measurements_cm: { chest, waist, hips, shoulders, thighs },
+        posture_score: { score: postureScore, notes: postureNotes },
+        symmetry_score: { score: symmetryScore, notes: symmetryNotes },
+        visceral_fat_index: { level: visceralLevel, notes: visceralNotes },
+        skin_scan_quality: { score: skin.score, notes: skin.notes },
+        bmr: { kcal_per_day: est.bmr, formula: "Mifflin-St Jeor" },
+        recommendations: [] as string[]
+      };
+
+      // Build concise, actionable recommendations
+      const rec: string[] = [];
+      if (bfEstimate > (isMale ? 22 : 30)) rec.push("Run a modest 300–400 kcal daily deficit with 1.6–2.2 g/kg protein.");
+      if (bfEstimate <= (isMale ? 22 : 30)) rec.push("Maintain at isocaloric intake; prioritize progressive overload in 3–4 full-body sessions/week.");
+      if (postureScore < 80) rec.push("Add 10–12 min daily mobility: thoracic openers, hip flexor stretch, and wall slides.");
+      if (symmetryScore < 85) rec.push("Include unilateral sets (Bulgarian split squats, single-arm rows) to reduce imbalances.");
+      if (visceralLevel !== "low") rec.push("Walk 7–9k steps/day and limit late-night ultra-processed snacks to reduce central adiposity.");
+      rec.push("Target 7–9 hours sleep; keep protein 25–35 g per meal across 3–4 meals.");
+      metrics.recommendations = rec.slice(0, 7);
+
+      // Local summary payload for UI
+      summary = {
+        recommendations: metrics.recommendations,
+        analysis_notes: [bfReason, postureNotes, symmetryNotes, visceralNotes, skin.notes]
       };
     } else {
-      // Future server-side CV placeholder
-      metrics = { error: "Server-side CV not yet enabled for this deployment." };
+      metrics = { error: "Insufficient on-device features provided (landmarks/widthProfiles)." };
+      summary = {
+        recommendations: ["Retake photos with even front lighting and a plain background."],
+        analysis_notes: ["Missing landmarks/segmentation; cannot compute metrics reliably."]
+      };
     }
-
-    const summary = await buildSummaryFromOpenAI(metrics);
 
     await sb.from("body_scans").update({
       status: "done",

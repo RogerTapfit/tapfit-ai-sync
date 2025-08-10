@@ -206,44 +206,70 @@ const BodyScan = () => {
         console.log("[BodyScan] Poll status:", row.status);
       });
 
-      // Map server metrics/summary to existing BodyScanResults UI shape
+      // Map server metrics/summary (new structured schema) to UI shape
       const m = finalRow.metrics || {};
       const s = finalRow.summary || {};
-      const bfPct = typeof m.bf_percent === "number" ? m.bf_percent : 22;
-      const posturePct = Math.round(((m.posture?.spinal_curve_score ?? 0.75) * 100));
-      const symmetryPct = Math.round((100 - Math.abs((m.asymmetry?.left_right_delta_shoulder_cm ?? 0) * 2)));
+
+      const bfLow = Number(m.body_fat_percent?.low);
+      const bfHigh = Number(m.body_fat_percent?.high);
+      const bodyFatRange = Number.isFinite(bfLow) && Number.isFinite(bfHigh)
+        ? `${bfLow}% – ${bfHigh}%`
+        : "—";
+
+      const postureScore = Number(m.posture_score?.score ?? 0);
+      const symmetryScore = Number(m.symmetry_score?.score ?? 0);
+
+      const muscleMassVal = m.muscle_mass_kg?.estimate;
+      const muscleMass = Number.isFinite(muscleMassVal) ? `${Number(muscleMassVal).toFixed(1)} kg` : "—";
+
+      const visceralLevel = m.visceral_fat_index?.level as ('low'|'medium'|'high'|undefined);
+      const visceralFat = visceralLevel === 'low' ? 5 : visceralLevel === 'high' ? 15 : visceralLevel === 'medium' ? 10 : 7;
+
+      const bmrKcal = Number(m.bmr?.kcal_per_day ?? 0);
+
+      const fmt = (n: any) => (Number.isFinite(Number(n)) ? `${Number(n).toFixed(1)} cm` : "—");
+      const meas = m.measurements_cm || {};
 
       setResult({
-        bodyFatRange: `${Math.max(5, Math.round(bfPct - 3))}% – ${Math.min(50, Math.round(bfPct + 3))}%`,
-        postureScore: posturePct,
-        symmetryScore: symmetryPct,
-        muscleMass: (typeof m.lean_mass_kg === "number" ? `${m.lean_mass_kg.toFixed(1)} kg` : "—"),
-        visceralFat:  m.visceral_fat_index ?? 7,
-        bodyAge: m.body_age ??  (m.posture?.spinal_curve_score ? Math.max(18, Math.min(80, Math.round((age ?? 30) + (0.8 - (m.posture?.spinal_curve_score ?? 0.7)) * 10))) : (age ?? 26)),
-        metabolicRate: m.bmr_kcal ?? 1800,
+        bodyFatRange,
+        postureScore,
+        symmetryScore,
+        muscleMass,
+        visceralFat,
+        bodyAge: (() => {
+          const base = age ?? 30;
+          const adj = (50 - postureScore) / 20 + (symmetryScore < 80 ? 2 : 0) + (visceralLevel === 'high' ? 3 : 0);
+          return Math.max(18, Math.min(80, Math.round(base + adj)));
+        })(),
+        metabolicRate: bmrKcal || 1800,
         measurements: {
-          chest: `${(m.circumferences_cm?.chest ?? 100).toFixed(1)} cm`,
-          waist: `${(m.circumferences_cm?.waist ?? 84).toFixed(1)} cm`,
-          hips: `${(m.circumferences_cm?.hips ?? 98).toFixed(1)} cm`,
-          shoulders: `${(((m.circumferences_cm?.chest ?? 100)) + 8).toFixed(1)} cm`,
-          thighs: (m.circumferences_cm?.thigh ? `${m.circumferences_cm.thigh.toFixed(1)} cm` : "—")
+          chest: fmt(meas.chest),
+          waist: fmt(meas.waist),
+          hips: fmt(meas.hips),
+          shoulders: fmt(meas.shoulders),
+          thighs: fmt(meas.thighs),
         },
         postureAnalysis: {
-          headAlignment: Math.max(60, 100 - Math.abs(m.posture?.head_tilt_deg ?? 0) * 2),
-          shoulderLevel: Math.max(60, 100 - Math.abs(m.posture?.shoulder_tilt_deg ?? 0) * 2),
-          spinalCurvature: Math.round(posturePct * 0.9),
-          hipAlignment: Math.max(60, 100 - Math.abs(m.posture?.pelvic_tilt_deg ?? 0) * 2),
+          headAlignment: Math.max(60, Math.min(100, postureScore)),
+          shoulderLevel: Math.max(60, Math.min(100, postureScore)),
+          spinalCurvature: Math.round(Math.max(60, Math.min(100, postureScore * 0.9))),
+          hipAlignment: Math.max(60, Math.min(100, symmetryScore)),
         },
         healthIndicators: {
           hydrationLevel: "Good",
-          skinHealth: 78,
-          overallFitness: symmetryPct > 80 ? "Above Average" : "Average"
+          skinHealth: Number(m.skin_scan_quality?.score ?? 78),
+          overallFitness: symmetryScore > 80 ? "Above Average" : "Average",
         },
-        progressSuggestions: Array.isArray(s.recommendations) ? s.recommendations : [],
+        progressSuggestions: Array.isArray(m.recommendations) ? m.recommendations : Array.isArray(s.recommendations) ? s.recommendations : [],
         notes: [
-          ...(typeof heightCm === 'number' ? [] : ["Tip: Add height for higher accuracy."]),
+          m.body_fat_percent?.reason,
+          m.muscle_mass_kg?.reason,
+          m.posture_score?.notes,
+          m.symmetry_score?.notes,
+          m.visceral_fat_index?.notes,
+          m.skin_scan_quality?.notes,
           ...(Array.isArray(s.analysis_notes) ? s.analysis_notes : [])
-        ],
+        ].filter(Boolean),
       });
     } catch (e) {
       console.error("Body scan processing failed", e);
@@ -329,9 +355,7 @@ const BodyScan = () => {
               <div className="flex items-center gap-3">
                 <Shield className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-medium">Privacy-first</p>
-                  <p className="text-sm text-muted-foreground">Images stay on your device. Analysis is on-device.</p>
-                  <p className="text-xs text-muted-foreground mt-1">Cloud-assisted summary is enabled for recommendations.</p>
+                  <p className="text-sm text-muted-foreground">Images are stored privately; analysis runs locally. No external sharing.</p>
                 </div>
               </div>
 
