@@ -63,6 +63,7 @@ const BodyScan = () => {
 
   const [sex, setSex] = useState<'male' | 'female'>("male");
   const [heightCm, setHeightCm] = useState<number | "">("");
+  const [age, setAge] = useState<number | undefined>(undefined);
   const [features, setFeatures] = useState<Record<string, { landmarks: Keypoint[]; widthProfile: number[]; ok: boolean }>>({});
   useEffect(() => {
     // Reset result if images change
@@ -72,11 +73,6 @@ const BodyScan = () => {
   useEffect(() => {
     const initProfile = async () => {
       try {
-        const savedSex = localStorage.getItem('bodyScan.sex');
-        const savedHeight = localStorage.getItem('bodyScan.heightCm');
-        if (savedSex === 'male' || savedSex === 'female') setSex(savedSex as 'male' | 'female');
-        if (savedHeight) setHeightCm(parseInt(savedHeight, 10));
-
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) {
           const { data } = await supabase
@@ -84,11 +80,19 @@ const BodyScan = () => {
             .select('gender, height_cm, age')
             .eq('id', user.id)
             .maybeSingle();
-          const g = (data?.gender || '').toString().toLowerCase();
-          if (g.startsWith('f')) setSex('female');
-          else if (g.startsWith('m')) setSex('male');
-          if (data?.height_cm && !savedHeight) setHeightCm(Number(data.height_cm));
+          if (data) {
+            const g = (data.gender || '').toString().toLowerCase();
+            if (g.startsWith('f')) setSex('female');
+            else if (g.startsWith('m')) setSex('male');
+            if (data.height_cm) setHeightCm(Number(data.height_cm));
+            if (data.age) setAge(Number(data.age));
+          }
         }
+        // Fallback to any previous local choice if profile missing
+        const savedSex = localStorage.getItem('bodyScan.sex');
+        const savedHeight = localStorage.getItem('bodyScan.heightCm');
+        if (savedSex && (savedSex === 'male' || savedSex === 'female')) setSex(savedSex as 'male' | 'female');
+        if (savedHeight && !heightCm) setHeightCm(parseInt(savedHeight, 10));
       } catch {
         // ignore
       }
