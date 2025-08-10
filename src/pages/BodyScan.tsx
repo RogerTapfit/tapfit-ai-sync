@@ -7,7 +7,10 @@ import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/
 import SEO from "@/components/SEO";
 import BodyScanResults from "@/components/body-scan/BodyScanResults";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { detectPose, type Keypoint } from "@/features/bodyScan/ml/pose";
+import { segmentBody } from "@/features/bodyScan/ml/mask";
 
 import { Link } from "react-router-dom";
 interface ScanSlot {
@@ -58,46 +61,49 @@ const BodyScan = () => {
 
   const allCaptured = useMemo(() => slots.every(s => !!s.image), [slots]);
 
-  const [sex, setSex] = useState<'male' | 'female'>('male');
-
+  const [sex, setSex] = useState<'male' | 'female'>("male");
+  const [heightCm, setHeightCm] = useState<number | "">("");
+  const [features, setFeatures] = useState<Record<string, { landmarks: Keypoint[]; widthProfile: number[]; ok: boolean }>>({});
   useEffect(() => {
     // Reset result if images change
     setResult(null);
   }, [slots.map(s => s.image).join(",")]);
 
   useEffect(() => {
-    const initSex = async () => {
+    const initProfile = async () => {
       try {
-        const saved = localStorage.getItem('bodyScan.sex');
-        if (saved === 'male' || saved === 'female') {
-          setSex(saved as 'male' | 'female');
-          return;
-        }
+        const savedSex = localStorage.getItem('bodyScan.sex');
+        const savedHeight = localStorage.getItem('bodyScan.heightCm');
+        if (savedSex === 'male' || savedSex === 'female') setSex(savedSex as 'male' | 'female');
+        if (savedHeight) setHeightCm(parseInt(savedHeight, 10));
+
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) {
           const { data } = await supabase
             .from('profiles')
-            .select('gender')
+            .select('gender, height_cm, age')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
           const g = (data?.gender || '').toString().toLowerCase();
           if (g.startsWith('f')) setSex('female');
           else if (g.startsWith('m')) setSex('male');
+          if (data?.height_cm && !savedHeight) setHeightCm(Number(data.height_cm));
         }
       } catch {
         // ignore
       }
     };
-    initSex();
+    initProfile();
   }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem('bodyScan.sex', sex);
+      if (heightCm) localStorage.setItem('bodyScan.heightCm', String(heightCm));
     } catch {
       // ignore
     }
-  }, [sex]);
+  }, [sex, heightCm]);
 
   const handleCapture = async (slotKey: string) => {
     try {
@@ -129,66 +135,105 @@ const BodyScan = () => {
     }
   };
 
-  const updateSlot = (slotKey: string, image: string | null) => {
+  const updateSlot = async (slotKey: string, image: string | null) => {
     setSlots(prev => prev.map(s => s.key === slotKey ? { ...s, image } : s));
+    if (image) {
+      try {
+        const [pose, seg] = await Promise.all([
+          detectPose(image),
+          segmentBody(image),
+        ]);
+        setFeatures((prev) => ({
+          ...prev,
+          [slotKey]: {
+            landmarks: pose.landmarks,
+            widthProfile: seg?.widthProfile ?? [],
+            ok: pose.ok && !!seg,
+          },
+        }));
+      } catch (e) {
+        console.warn('on-device ML failed', e);
+        setFeatures((prev) => ({ ...prev, [slotKey]: { landmarks: [], widthProfile: [], ok: false } }));
+      }
+    } else {
+      setFeatures((prev) => ({ ...prev, [slotKey]: { landmarks: [], widthProfile: [], ok: false } }));
+    }
   };
 
   const clearSlot = (slotKey: string) => updateSlot(slotKey, null);
 
-  const analyze = async () => {
+  const processScan = async () => {
     setAnalyzing(true);
     setResult(null);
-    // Simulate on-device processing time
-    await new Promise(r => setTimeout(r, 1200));
+    try {
+      const photos = SLOTS.map(s => s.key);
+      const landmarks: Record<string, any[]> = {};
+      const widthProfiles: Record<string, number[]> = {};
+      photos.forEach(k => {
+        const f = features[k];
+        if (f) {
+          landmarks[k] = f.landmarks.map(p => ({ x: p.x, y: p.y, v: p.v ?? 1 }));
+          widthProfiles[k] = f.widthProfile || [];
+        }
+      });
 
-    const isFemale = sex === 'female';
+      const user = { sex, age: undefined as number | undefined, heightCm: typeof heightCm === 'number' ? heightCm : undefined, weightKnownKg: null as number | null };
 
-    const bodyFatRange = isFemale ? "24% – 32%" : "18% – 24%";
-    const muscleMass = isFemale ? "35.1 kg" : "42.3 kg";
-    const metabolicRate = isFemale ? 1680 : 1850;
-    const visceralFat = isFemale ? 6 : 7;
+      const estimateRes = await supabase.functions.invoke('body-scan', {
+        body: { route: 'estimate', photos, landmarks, widthProfiles, user },
+        headers: { 'x-route': 'estimate' }
+      });
+      if (estimateRes.error) throw estimateRes.error;
+      const est = (estimateRes.data as any) || {};
 
-    // Placeholder heuristic results (no network, privacy-first)
-    setResult({
-      bodyFatRange,
-      postureScore: 78,
-      symmetryScore: 82,
-      muscleMass,
-      visceralFat,
-      bodyAge: 26,
-      metabolicRate,
-      measurements: {
-        chest: "102 cm",
-        waist: "84 cm",
-        hips: "98 cm",
-        shoulders: "112 cm",
-        thighs: "58 cm"
-      },
-      postureAnalysis: {
-        headAlignment: 85,
-        shoulderLevel: 72,
-        spinalCurvature: 88,
-        hipAlignment: 91
-      },
-      healthIndicators: {
-        hydrationLevel: "Good",
-        skinHealth: 78,
-        overallFitness: "Above Average"
-      },
-      progressSuggestions: [
-        "Focus on core strengthening to improve posture",
-        "Add resistance training to increase muscle mass",
-        "Consider yoga or stretching to improve shoulder alignment",
-        "Maintain current hydration and nutrition habits"
-      ],
-      notes: [
-        "Great stance — keep feet shoulder-width for consistency.",
-        "Minor shoulder tilt detected; consider posture exercises.",
-        "Lighting is good; avoid heavy shadows for best results.",
-        `Using ${isFemale ? "female" : "male"} reference ranges for body fat and BMR.`,
-      ],
-    });
-    setAnalyzing(false);
+      const reportRes = await supabase.functions.invoke('body-scan', {
+        body: { route: 'report', estimates: est.estimates, user: { sex, goal: 'general_fitness' } },
+        headers: { 'x-route': 'report' }
+      });
+      if (reportRes.error) throw reportRes.error;
+      const rpt = (reportRes.data as any) || {};
+
+      const bf = est.estimates?.bodyFatPctRange || [18, 24];
+      const posturePct = Math.round(((est.estimates?.postureScore ?? 0.7) * 100));
+      const symmetryPct = Math.round(((est.estimates?.symmetryScore ?? 0.7) * 100));
+
+      setResult({
+        bodyFatRange: `${(bf[0]*100 ? bf[0] : bf[0]).toFixed(0)}% – ${(bf[1]*100 ? bf[1] : bf[1]).toFixed(0)}%`,
+        postureScore: posturePct,
+        symmetryScore: symmetryPct,
+        muscleMass: `${est.estimates?.muscleMassKg?.toFixed?.(1) ?? '40.0'} kg`,
+        visceralFat: est.estimates?.visceralFatIndex ?? 7,
+        bodyAge: est.estimates?.bodyAge ?? 26,
+        metabolicRate: est.estimates?.bmr ?? 1800,
+        measurements: {
+          chest: `${(est.estimates?.chestCm ?? 100).toFixed(1)} cm`,
+          waist: `${(est.estimates?.waistCm ?? 84).toFixed(1)} cm`,
+          hips: `${(est.estimates?.hipCm ?? 98).toFixed(1)} cm`,
+          shoulders: `${(est.estimates?.chestCm ? est.estimates.chestCm + 8 : 110).toFixed(1)} cm`,
+          thighs: `—`
+        },
+        postureAnalysis: {
+          headAlignment: Math.max(60, 100 - Math.abs(est.estimates?.shoulderTiltDeg ?? 0) * 2),
+          shoulderLevel: Math.max(60, 100 - Math.abs(est.estimates?.shoulderTiltDeg ?? 0) * 2),
+          spinalCurvature: Math.round(posturePct * 0.9),
+          hipAlignment: Math.max(60, 100 - Math.abs(est.estimates?.pelvicTiltDeg ?? 0) * 2),
+        },
+        healthIndicators: {
+          hydrationLevel: "Good",
+          skinHealth: 78,
+          overallFitness: symmetryPct > 80 ? "Above Average" : "Average"
+        },
+        progressSuggestions: rpt.recommendations || [],
+        notes: [
+          ...(typeof heightCm === 'number' ? [] : ["Tip: Add height for higher accuracy."]),
+          ...(rpt.analysisNotes || [])
+        ],
+      });
+    } catch (e) {
+      console.error('Body scan processing failed', e);
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   return (
@@ -239,6 +284,16 @@ const BodyScan = () => {
                   </div>
                 )}
 
+                {slot.image && (
+                  <div className="text-sm text-muted-foreground">
+                    {features[slot.key]?.ok ? (
+                      <span className="text-primary">Landmarks detected ✅</span>
+                    ) : (
+                      <span>Detecting landmarks…</span>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Button variant="glow" className="flex-1" onClick={() => handleCapture(slot.key)}>
                     <CamIcon className="h-4 w-4 mr-2" /> Capture / Upload
@@ -276,20 +331,27 @@ const BodyScan = () => {
                 </Select>
               </div>
 
+              <div className="flex items-center gap-2">
+                <label htmlFor="height" className="text-sm text-muted-foreground">Height (cm)</label>
+                <Input id="height" type="number" inputMode="numeric" className="w-28" value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
+                  placeholder="e.g. 175" />
+              </div>
+
               <div className="ml-auto flex gap-2 w-full md:w-auto">
                 <Button
                   size="lg"
                   disabled={!allCaptured || analyzing}
-                  onClick={analyze}
+                  onClick={processScan}
                   className="w-full md:w-auto"
                 >
                   {analyzing ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing…
+                      Processing…
                     </>
                   ) : (
-                    <>Run On-Device Analysis</>
+                    <>Process Scan</>
                   )}
                 </Button>
               </div>

@@ -167,6 +167,103 @@ export type Database = {
         }
         Relationships: []
       }
+      body_scan_images: {
+        Row: {
+          created_at: string
+          id: string
+          landmarks: Json
+          mask_downsampled: string | null
+          scan_id: string
+          view: string
+          width_profile: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          landmarks?: Json
+          mask_downsampled?: string | null
+          scan_id: string
+          view: string
+          width_profile?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          landmarks?: Json
+          mask_downsampled?: string | null
+          scan_id?: string
+          view?: string
+          width_profile?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_scan_images_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "body_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_scan_metrics: {
+        Row: {
+          created_at: string
+          estimates: Json
+          id: string
+          scan_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimates: Json
+          id?: string
+          scan_id: string
+        }
+        Update: {
+          created_at?: string
+          estimates?: Json
+          id?: string
+          scan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_scan_metrics_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "body_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      body_scans: {
+        Row: {
+          created_at: string
+          height_cm: number | null
+          id: string
+          notes: string | null
+          sex: string | null
+          user_id: string
+          weight_known_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          height_cm?: number | null
+          id?: string
+          notes?: string | null
+          sex?: string | null
+          user_id: string
+          weight_known_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          height_cm?: number | null
+          id?: string
+          notes?: string | null
+          sex?: string | null
+          user_id?: string
+          weight_known_kg?: number | null
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           bonus_coin_reward: number | null

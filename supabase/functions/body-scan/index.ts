@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   const route = req.headers.get("x-route") || "estimate";
-  const sb = createClient(supabaseUrl!, supabaseAnonKey!);
+  const sb = createClient(supabaseUrl!, supabaseAnonKey!, { global: { headers: { Authorization: req.headers.get('Authorization') || '' } } });
 
   try {
     const body = await req.json();
