@@ -35,3 +35,6 @@ enable_signup = true
 
 [functions.sendWorkoutNotification]
 verify_jwt = false
+
+[functions.body-scan]
+verify_jwt = true
