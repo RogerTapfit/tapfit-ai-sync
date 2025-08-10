@@ -206,29 +206,42 @@ const BodyScan = () => {
         console.log("[BodyScan] Poll status:", row.status);
       });
 
-      // Map server metrics/summary (new structured schema) to UI shape
+      // Map server metrics/summary (supports both local and Vision schemas)
       const m = finalRow.metrics || {};
       const s = finalRow.summary || {};
 
-      const bfLow = Number(m.body_fat_percent?.low);
-      const bfHigh = Number(m.body_fat_percent?.high);
+      // Body fat range from either schema
+      let bfLow: number | null = null;
+      let bfHigh: number | null = null;
+      if (Array.isArray(m.body_fat_pct_range) && m.body_fat_pct_range.length === 2) {
+        bfLow = Number(m.body_fat_pct_range[0]);
+        bfHigh = Number(m.body_fat_pct_range[1]);
+      } else if (m.body_fat_percent?.low != null && m.body_fat_percent?.high != null) {
+        bfLow = Number(m.body_fat_percent.low);
+        bfHigh = Number(m.body_fat_percent.high);
+      }
       const bodyFatRange = Number.isFinite(bfLow) && Number.isFinite(bfHigh)
         ? `${bfLow}% – ${bfHigh}%`
         : "—";
 
-      const postureScore = Number(m.posture_score?.score ?? 0);
-      const symmetryScore = Number(m.symmetry_score?.score ?? 0);
+      const postureScore = Number(m.posture_score?.score ?? m.posture?.score_pct ?? 0);
+      const symmetryScore = Number(m.symmetry_score?.score ?? m.symmetry?.score_pct ?? 0);
 
-      const muscleMassVal = m.muscle_mass_kg?.estimate;
-      const muscleMass = Number.isFinite(muscleMassVal) ? `${Number(muscleMassVal).toFixed(1)} kg` : "—";
+      const muscleMassVal = m.muscle_mass_kg?.estimate ?? m.muscle_mass_kg_est;
+      const muscleMass = Number.isFinite(Number(muscleMassVal)) ? `${Number(muscleMassVal).toFixed(1)} kg` : "—";
 
-      const visceralLevel = m.visceral_fat_index?.level as ('low'|'medium'|'high'|undefined);
+      // Visceral fat fallback from BF range if needed
+      let visceralLevel: 'low'|'medium'|'high'|undefined = m.visceral_fat_index?.level as any;
+      if (!visceralLevel && Number.isFinite(bfHigh)) {
+        const hi = bfHigh as number;
+        visceralLevel = hi <= 15 ? 'low' : hi >= 25 ? 'high' : 'medium';
+      }
       const visceralFat = visceralLevel === 'low' ? 5 : visceralLevel === 'high' ? 15 : visceralLevel === 'medium' ? 10 : 7;
 
       const bmrKcal = Number(m.bmr?.kcal_per_day ?? 0);
 
       const fmt = (n: any) => (Number.isFinite(Number(n)) ? `${Number(n).toFixed(1)} cm` : "—");
-      const meas = m.measurements_cm || {};
+      const measSrc = m.measurements_cm || m.circumferences_cm || {};
 
       setResult({
         bodyFatRange,
@@ -243,11 +256,11 @@ const BodyScan = () => {
         })(),
         metabolicRate: bmrKcal || 1800,
         measurements: {
-          chest: fmt(meas.chest),
-          waist: fmt(meas.waist),
-          hips: fmt(meas.hips),
-          shoulders: fmt(meas.shoulders),
-          thighs: fmt(meas.thighs),
+          chest: fmt(measSrc.chest),
+          waist: fmt(measSrc.waist),
+          hips: fmt(measSrc.hips),
+          shoulders: fmt(measSrc.shoulders),
+          thighs: fmt(measSrc.thighs),
         },
         postureAnalysis: {
           headAlignment: Math.max(60, Math.min(100, postureScore)),
@@ -257,7 +270,7 @@ const BodyScan = () => {
         },
         healthIndicators: {
           hydrationLevel: "Good",
-          skinHealth: Number(m.skin_scan_quality?.score ?? 78),
+          skinHealth: Number(m.skin_scan_quality?.score ?? m.skin_health_pct ?? 78),
           overallFitness: symmetryScore > 80 ? "Above Average" : "Average",
         },
         progressSuggestions: Array.isArray(m.recommendations) ? m.recommendations : Array.isArray(s.recommendations) ? s.recommendations : [],
@@ -268,6 +281,8 @@ const BodyScan = () => {
           m.symmetry_score?.notes,
           m.visceral_fat_index?.notes,
           m.skin_scan_quality?.notes,
+          ...(Array.isArray(m.posture?.notes) ? m.posture.notes : []),
+          ...(Array.isArray(m.symmetry?.notes) ? m.symmetry.notes : []),
           ...(Array.isArray(s.analysis_notes) ? s.analysis_notes : [])
         ].filter(Boolean),
       });
@@ -297,7 +312,7 @@ const BodyScan = () => {
             </Link>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold">Body Scan – AI Body Analyzer</h1>
-          <p className="text-sm text-muted-foreground mt-1">All photos are processed on-device. Nothing leaves your phone.</p>
+          <p className="text-sm text-muted-foreground mt-1">Images are private; analysis uses OpenAI Vision via short‑lived signed URLs.</p>
         </header>
 
         <section aria-labelledby="capture" className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -355,7 +370,7 @@ const BodyScan = () => {
               <div className="flex items-center gap-3">
                 <Shield className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Images are stored privately; analysis runs locally. No external sharing.</p>
+                  <p className="text-sm text-muted-foreground">Images stay private; analysis may use OpenAI Vision with short‑lived links.</p>
                 </div>
               </div>
 

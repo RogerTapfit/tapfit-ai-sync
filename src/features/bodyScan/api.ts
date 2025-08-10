@@ -88,17 +88,17 @@ export async function startScan(params: StartScanParams): Promise<BodyScanRow> {
 
   if (updErr || !updated) throw new Error(updErr?.message || "Failed to update scan paths");
 
-  // 4) Kick off server analysis (send optional features + user info, images stay private)
-  const payload = {
-    scanId,
-    features: params.features ? {
-      landmarks: params.features.landmarks,
-      widthProfiles: params.features.widthProfiles
-    } : undefined,
-    user: { sex: params.sex, age: params.age, heightCm: params.heightCm, weightKnownKg: null as number | null }
-  };
-
-  const { data: fnData, error: fnErr } = await supabase.functions.invoke("analyze_body", { body: payload });
+  // 4) Kick off server analysis via Edge Function (images stay private; signed URLs only)
+  const { data: fnData, error: fnErr } = await supabase.functions.invoke(
+    "analyze-body-scan",
+    {
+      body: {
+        scan_id: scanId,
+        height_cm: params.heightCm,
+        sex: params.sex,
+      },
+    }
+  );
   if (fnErr) throw fnErr;
 
   return updated as BodyScanRow;
