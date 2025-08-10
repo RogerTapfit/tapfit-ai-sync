@@ -99,7 +99,12 @@ export async function startScan(params: StartScanParams): Promise<BodyScanRow> {
       },
     }
   );
-  if (fnErr) throw fnErr;
+  if (fnErr) throw new Error((fnErr as any)?.message || String(fnErr));
+  if (fnData && (fnData as any).ok === false) {
+    // Surface immediate function error instead of waiting for polling
+    const msg = (fnData as any).error || "Analysis failed to start";
+    throw new Error(msg);
+  }
 
   return updated as BodyScanRow;
 }

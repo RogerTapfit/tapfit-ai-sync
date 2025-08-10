@@ -189,17 +189,32 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    const errMsg = e instanceof Error ? e.message : String(e);
+    // Normalize error to a readable string (avoid "[object Object]")
+    let errStr = "Unknown error";
+    if (e instanceof Error) {
+      errStr = e.message || String(e);
+    } else if (typeof e === "string") {
+      errStr = e;
+    } else if (e && typeof e === "object") {
+      const anyErr: any = e as any;
+      errStr = anyErr?.message || anyErr?.msg || anyErr?.error?.message || anyErr?.error?.toString?.() || undefined;
+      if (!errStr) {
+        try { errStr = JSON.stringify(anyErr); } catch { errStr = String(anyErr); }
+      }
+    }
+    // Trim overly long errors
+    if (errStr.length > 800) errStr = errStr.slice(0, 800) + "…";
+
     try {
       if (scanId) {
         await supabase
           .from("body_scans")
-          .update({ status: "error", error: errMsg })
+          .update({ status: "error", error: errStr })
           .eq("id", scanId);
       }
     } catch {}
-    console.error("analyze-body-scan error:", { message: errMsg, stack: e instanceof Error ? e.stack : undefined });
-    return new Response(JSON.stringify({ ok: false, error: errMsg }), {
+    console.error("analyze-body-scan error:", { scanId, error: errStr, original: e });
+    return new Response(JSON.stringify({ ok: false, error: errStr, scan_id: scanId || null }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
