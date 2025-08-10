@@ -14,9 +14,7 @@ const VISION_MODEL = "gpt-4o-mini"; // fast + vision
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE_ROLE =
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
-const supabase = createClient(SB_URL, SB_SERVICE_ROLE, {
-  global: { headers: { "accept-profile": "public" } },
-});
+const supabase = createClient(SB_URL, SB_SERVICE_ROLE);
 
 const BUCKET = "body-scans";
 
@@ -69,15 +67,27 @@ Deno.serve(async (req) => {
     }
 
     // Mark as processing (best-effort)
-    await supabase.from("body_scans").update({ status: "processing" }).eq("id", scanId);
+    try {
+      console.log("analyze-body-scan: setting status=processing", { scanId });
+      await supabase.from("body_scans").update({ status: "processing" }).eq("id", scanId);
+    } catch (setErr) {
+      console.warn("analyze-body-scan: failed to set processing", { scanId, setErr });
+    }
 
     // Load scan record
     const { data: scan, error: scanErr } = await supabase
       .from("body_scans")
       .select("id, user_id, front_path, left_path, right_path, back_path")
       .eq("id", payload.scan_id)
-      .single();
-    if (scanErr || !scan) throw scanErr ?? new Error("Scan not found");
+      .maybeSingle();
+    if (scanErr) {
+      console.error("analyze-body-scan: select scan failed", { scanId, scanErr });
+      throw scanErr;
+    }
+    if (!scan) {
+      console.error("analyze-body-scan: scan not found", { scanId });
+      throw new Error("Scan not found");
+    }
 
     // Build signed URLs for available images
     const imgs: { label: string; url: string }[] = [];
