@@ -199,8 +199,8 @@ Deno.serve(async (req) => {
       }
     } catch {}
     console.error("analyze-body-scan error:", { message: errMsg, stack: e instanceof Error ? e.stack : undefined });
-    return new Response(JSON.stringify({ error: errMsg }), {
-      status: 500,
+    return new Response(JSON.stringify({ ok: false, error: errMsg }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
