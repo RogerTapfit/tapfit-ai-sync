@@ -12,6 +12,7 @@ export type StartScanParams = {
   features?: {
     landmarks: Record<string, any[]>;
     widthProfiles: Record<string, number[]>;
+    dims?: Record<string, { width: number; height: number }>;
     photos: string[];
   };
 };

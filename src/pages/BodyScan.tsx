@@ -70,7 +70,9 @@ const BodyScan = () => {
   const [sex, setSex] = useState<'male' | 'female'>("male");
   const [heightCm, setHeightCm] = useState<number | "">("");
   const [age, setAge] = useState<number | undefined>(undefined);
-  const [features, setFeatures] = useState<Record<string, { landmarks: Keypoint[]; widthProfile: number[]; ok: boolean }>>({});
+  const [features, setFeatures] = useState<Record<string, { landmarks: Keypoint[]; widthProfile: number[]; dims?: { width: number; height: number }; ok: boolean }>>({});
+  const [analysisMeta, setAnalysisMeta] = useState<{ model?: string; at?: string; used_hints?: boolean } | null>(null);
+  const [lastScanId, setLastScanId] = useState<string | null>(null);
   useEffect(() => {
     // Reset result if images change
     setResult(null);
@@ -158,6 +160,7 @@ const BodyScan = () => {
           [slotKey]: {
             landmarks: pose.landmarks,
             widthProfile: seg?.widthProfile ?? [],
+            dims: seg?.dims,
             ok: pose.ok && !!seg,
           },
         }));
@@ -179,19 +182,30 @@ const BodyScan = () => {
     }
     setAnalyzing(true);
     setResult(null);
+    setAnalysisMeta(null);
     try {
+      // Require at least one full-body view with features
+      const okViews = Object.values(features).some((f) => f?.ok && (f.widthProfile?.length ?? 0) > 0);
+      if (!okViews) {
+        toast({ title: "Need a full-body photo", description: "Please retake at least one photo where your full body is visible.", variant: "destructive" });
+        setAnalyzing(false);
+        return;
+      }
+
       // Build features payload from on-device ML (if available)
       const photos = slots.filter(s => !!s.image).map(s => s.key);
       const landmarks: Record<string, any[]> = {};
       const widthProfiles: Record<string, number[]> = {};
+      const dims: Record<string, { width: number; height: number }> = {} as any;
       photos.forEach(k => {
         const f = features[k];
         if (f) {
           landmarks[k] = f.landmarks.map(p => ({ x: p.x, y: p.y, v: p.v ?? 1 }));
           widthProfiles[k] = f.widthProfile || [];
+          if (f.dims?.width && f.dims?.height) dims[k] = { width: f.dims.width, height: f.dims.height };
         }
       });
-      console.log("[BodyScan] StartScan with views", { photos, sex, age, heightCm, lm: Object.keys(landmarks), wp: Object.keys(widthProfiles) });
+      console.log("[BodyScan] StartScan with views", { photos, sex, age, heightCm, lm: Object.keys(landmarks), wp: Object.keys(widthProfiles), dims: Object.keys(dims) });
 
       // Prepare files map for available slots
       const files: any = {};
@@ -202,8 +216,9 @@ const BodyScan = () => {
         heightCm: Number(heightCm),
         sex,
         age,
-        features: { landmarks, widthProfiles, photos }
+        features: { landmarks, widthProfiles, dims, photos }
       });
+      setLastScanId(created.id);
 
       const finalRow = await pollScanUntilDone(created.id, (row) => {
         console.log("[BodyScan] Poll status:", row.status);
@@ -212,6 +227,7 @@ const BodyScan = () => {
       // Map server metrics/summary (supports both local and Vision schemas)
       const m = finalRow.metrics || {};
       const s = finalRow.summary || {};
+      setAnalysisMeta({ model: s.model, at: s.at, used_hints: s.used_hints });
 
       // Body fat range from either schema
       let bfLow: number | null = null;
@@ -303,7 +319,115 @@ const BodyScan = () => {
     }
   };
 
+  const rerunAnalysis = async () => {
+    if (!lastScanId) return;
+    setAnalyzing(true);
+    try {
+      const photos = slots.filter(s => !!s.image).map(s => s.key);
+      const landmarks: Record<string, any[]> = {};
+      const widthProfiles: Record<string, number[]> = {};
+      const dims: Record<string, { width: number; height: number }> = {} as any;
+      photos.forEach(k => {
+        const f = features[k];
+        if (f) {
+          landmarks[k] = f.landmarks.map(p => ({ x: p.x, y: p.y, v: p.v ?? 1 }));
+          widthProfiles[k] = f.widthProfile || [];
+          if (f.dims?.width && f.dims?.height) dims[k] = { width: f.dims.width, height: f.dims.height };
+        }
+      });
+      await supabase.functions.invoke("analyze-body-scan", {
+        body: { scan_id: lastScanId, height_cm: Number(heightCm), sex, age, features: { landmarks, widthProfiles, dims, photos } },
+      });
+      const finalRow = await pollScanUntilDone(lastScanId, (row) => { console.log("[BodyScan] Re-Poll status:", row.status); });
+
+      const m = finalRow.metrics || {};
+      const s = finalRow.summary || {};
+      setAnalysisMeta({ model: s.model, at: s.at, used_hints: s.used_hints });
+
+      let bfLow: number | null = null;
+      let bfHigh: number | null = null;
+      if (Array.isArray(m.body_fat_pct_range) && m.body_fat_pct_range.length === 2) {
+        bfLow = Number(m.body_fat_pct_range[0]);
+        bfHigh = Number(m.body_fat_pct_range[1]);
+      } else if (m.body_fat_percent?.low != null && m.body_fat_percent?.high != null) {
+        bfLow = Number(m.body_fat_percent.low);
+        bfHigh = Number(m.body_fat_percent.high);
+      }
+      const bodyFatRange = Number.isFinite(bfLow) && Number.isFinite(bfHigh) ? `${bfLow}% – ${bfHigh}%` : "—";
+
+      const postureScore = Number(m.posture_score?.score ?? m.posture?.score_pct ?? 0);
+      const symmetryScore = Number(m.symmetry_score?.score ?? m.symmetry?.score_pct ?? 0);
+      const muscleMassVal = m.muscle_mass_kg?.estimate ?? m.muscle_mass_kg_est;
+      const muscleMass = Number.isFinite(Number(muscleMassVal)) ? `${Number(muscleMassVal).toFixed(1)} kg` : "—";
+
+      let visceralLevel: 'low'|'medium'|'high'|undefined = m.visceral_fat_index?.level as any;
+      if (!visceralLevel && Number.isFinite(bfHigh)) {
+        const hi = bfHigh as number;
+        visceralLevel = hi <= 15 ? 'low' : hi >= 25 ? 'high' : 'medium';
+      }
+      const visceralFat = visceralLevel === 'low' ? 5 : visceralLevel === 'high' ? 15 : visceralLevel === 'medium' ? 10 : 7;
+
+      const bmrKcal = Number(m.bmr?.kcal_per_day ?? 0);
+      const fmt = (n: any) => (Number.isFinite(Number(n)) ? `${Number(n).toFixed(1)} cm` : "—");
+      const measSrc = m.measurements_cm || m.circumferences_cm || {};
+      const bfpAvg = Number.isFinite(Number(bfLow)) && Number.isFinite(Number(bfHigh)) ? (Number(bfLow) + Number(bfHigh)) / 2 : undefined;
+      const fa = computeFitnessAge({
+        sex,
+        heightCm: Number(heightCm),
+        bodyFatPct: bfpAvg,
+        waistCm: typeof measSrc.waist === "number" ? measSrc.waist : undefined,
+        postureScore: postureScore || undefined,
+      });
+      setResult({
+        bodyFatRange,
+        postureScore,
+        symmetryScore,
+        muscleMass,
+        visceralFat,
+        bodyAge: fa.fitnessAge,
+        metabolicRate: bmrKcal || 1800,
+        measurements: {
+          chest: fmt(measSrc.chest),
+          waist: fmt(measSrc.waist),
+          hips: fmt(measSrc.hips),
+          shoulders: fmt(measSrc.shoulders),
+          thighs: fmt(measSrc.thighs),
+        },
+        postureAnalysis: {
+          headAlignment: Math.max(60, Math.min(100, postureScore)),
+          shoulderLevel: Math.max(60, Math.min(100, postureScore)),
+          spinalCurvature: Math.round(Math.max(60, Math.min(100, postureScore * 0.9))),
+          hipAlignment: Math.max(60, Math.min(100, symmetryScore)),
+        },
+        healthIndicators: {
+          hydrationLevel: "Good",
+          skinHealth: Number(m.skin_scan_quality?.score ?? m.skin_health_pct ?? 78),
+          overallFitness: symmetryScore > 80 ? "Above Average" : "Average",
+        },
+        progressSuggestions: Array.isArray(m.recommendations) ? m.recommendations : Array.isArray(s.recommendations) ? s.recommendations : [],
+        notes: [
+          m.body_fat_percent?.reason,
+          m.muscle_mass_kg?.reason,
+          m.posture_score?.notes,
+          m.symmetry_score?.notes,
+          m.visceral_fat_index?.notes,
+          m.skin_scan_quality?.notes,
+          ...(Array.isArray(m.posture?.notes) ? m.posture.notes : []),
+          ...(Array.isArray(m.symmetry?.notes) ? m.symmetry.notes : []),
+          ...(Array.isArray(s.analysis_notes) ? s.analysis_notes : [])
+        ].filter(Boolean),
+      });
+    } catch (e: any) {
+      console.error("Re-run analysis failed", e);
+      const errMessage = e?.value?.message || e?.message || "Re-run failed";
+      toast({ title: "Re-run failed", description: String(errMessage), variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   return (
+
     <>
       <SEO 
         title="TapFit Body Scan – AI Body Analyzer"
@@ -426,7 +550,19 @@ const BodyScan = () => {
         </section>
 
         {result && (
-          <BodyScanResults result={result} />
+          <>
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {analysisMeta?.model && (<span className="mr-3">Model: {analysisMeta.model}</span>)}
+                {analysisMeta?.at && (<span className="mr-3">Analyzed: {new Date(analysisMeta.at).toLocaleString()}</span>)}
+                {analysisMeta?.used_hints !== undefined && (<span>Hints: {analysisMeta.used_hints ? 'Yes' : 'No'}</span>)}
+              </div>
+              <Button size="sm" variant="outline" onClick={rerunAnalysis} disabled={analyzing}>
+                <RefreshCw className="h-4 w-4 mr-2" /> Re-run
+              </Button>
+            </div>
+            <BodyScanResults result={result} />
+          </>
         )}
 
       </main>

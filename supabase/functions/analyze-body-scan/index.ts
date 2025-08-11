@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const VISION_MODEL = "gpt-4o-mini"; // fast + vision, supports image inputs
+const VISION_MODEL = "gpt-4o"; // higher accuracy vision model
 
 // Supabase
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
@@ -21,6 +21,7 @@ const BUCKET = "body-scans";
 type FeaturesPayload = {
   landmarks?: Record<string, any[]>;
   widthProfiles?: Record<string, number[]>;
+  dims?: Record<string, { width: number; height: number }>;
   photos?: string[];
 };
 
@@ -153,17 +154,33 @@ Deno.serve(async (req) => {
       `Height: ${payload.height_cm} cm`,
     ];
     if (typeof payload.age === 'number') contextLines.push(`Age: ${payload.age}`);
+
+    const dims = payload.features?.dims || {};
+    const dimLines: string[] = [];
+    const addDim = (k: string, label: string) => {
+      const d: any = (dims as any)[k];
+      if (d && Number.isFinite(d.width) && Number.isFinite(d.height)) {
+        dimLines.push(`${label} dims: width_px=${d.width}, height_px=${d.height}`);
+      }
+    };
+    addDim("front", "Front");
+    addDim("left", "Left");
+    addDim("right", "Right");
+    addDim("back", "Back");
+    if (dimLines.length) contextLines.push(...dimLines);
+
     const hintFront = hints.front ? `front min width frac ${hints.front.minFrac} at row ${hints.front.at}/${hints.front.n}` : undefined;
     const hintLeft = hints.left ? `left min width frac ${hints.left.minFrac} at row ${hints.left.at}/${hints.left.n}` : undefined;
     const hintRight = hints.right ? `right min width frac ${hints.right.minFrac} at row ${hints.right.at}/${hints.right.n}` : undefined;
-    const hintText = [hintFront, hintLeft, hintRight].filter(Boolean).join("; ");
+    const hintBack = hints.back ? `back min width frac ${hints.back.minFrac} at row ${hints.back.at}/${hints.back.n}` : undefined;
+    const hintText = [hintFront, hintLeft, hintRight, hintBack].filter(Boolean).join("; ");
     if (hintText) contextLines.push(`Hints: ${hintText}`);
 
     const messages = [
       {
         role: "system",
         content:
-          "You are a fitness CV assistant. Return ONLY valid JSON, no markdown, no code fences.",
+          "You are a fitness CV assistant. Return ONLY valid JSON (no markdown). Use all images plus pixel dims and width-profile hints to produce numeric outputs in centimeters. Scale using height_cm and per-image height_px: width_cm ~= (minFrac * width_px) * (height_cm / height_px). Fill all fields with your best numeric estimate; avoid strings.",
       },
       {
         role: "user",
@@ -256,7 +273,7 @@ Deno.serve(async (req) => {
         summary: {
           model: VISION_MODEL,
           at: new Date().toISOString(),
-          used_hints: Object.keys(hints).length > 0,
+          used_hints: (Object.keys(hints).length > 0) || (payload.features && Object.keys(payload.features.dims || {}).length > 0),
         },
       })
       .eq("id", scanId);
