@@ -135,42 +135,48 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   return (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl h-48 md:h-64">
+      <div className="relative overflow-hidden rounded-2xl h-[180px] sm:h-[220px] md:h-[260px] lg:h-[300px]">
         <img 
           src={heroImage} 
           alt="TapFit Futuristic Gym" 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/98 via-background/85 to-background/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-between p-6">
-          <div className="flex items-start gap-6">
+        {/* Stronger left-to-right overlay for contrast on small screens; lighter on md+ */}
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent md:from-background/75 md:via-background/55 md:to-background/20" />
+        {/* Subtle top fade on md+ only to avoid over-darkening on phones */}
+        <div className="absolute inset-0 md:bg-gradient-to-t md:from-background/50 md:to-transparent" />
+
+        {/* Content grid: single column on mobile, text | mascot on md+ */}
+        <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-4 p-4 sm:p-6 lg:p-8">
+          <div className="relative max-w-[min(90%,680px)]">
+            <div className="absolute -inset-2 rounded-lg bg-background/35 blur-sm" />
             <div className="relative">
-              <div className="absolute inset-0 bg-background/40 blur-sm rounded-lg -m-2" />
-              <div className="relative">
-                <h1 className="text-2xl md:text-4xl font-bold text-foreground drop-shadow-lg">
-                  Welcome Back{greetingName ? `, ${greetingName}` : ''}
-                </h1>
-                <p className="text-foreground/90 text-sm md:text-base drop-shadow-sm">Ready to crush today's workout?</p>
-              </div>
-            </div>
-              <img
-                src={HERO_MASCOT_URL}
-                alt="TapFit mascot red robot"
-                className="h-48 md:h-72 lg:h-80 object-contain drop-shadow-xl pointer-events-none select-none"
-                width={320}
-                height={320}
-                loading="eager"
-              />
-          </div>
-          <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="text-sm text-foreground/80">
-                {isConnected ? 'Connected' : 'Connecting...'}
-              </span>
+              <h1 className="text-[clamp(1.25rem,3.5vw,2.5rem)] md:text-4xl font-bold text-foreground drop-shadow-lg">
+                Welcome Back{greetingName ? `, ${greetingName}` : ''}
+              </h1>
+              <p className="text-foreground/90 text-[clamp(0.9rem,2.4vw,1rem)] drop-shadow-sm">
+                Ready to crush today&apos;s workout?
+              </p>
             </div>
           </div>
+
+          <img
+            src={HERO_MASCOT_URL}
+            alt="TapFit mascot red robot"
+            className="hidden md:block h-56 lg:h-72 object-contain drop-shadow-xl pointer-events-none select-none"
+            width={320}
+            height={320}
+            loading="eager"
+          />
+        </div>
+
+        {/* Status indicators */}
+        <div className="absolute right-3 top-3 md:hidden">
+          <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+        </div>
+        <div className="hidden md:flex absolute right-6 top-6 items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+          <span className="text-sm text-foreground/80">{isConnected ? 'Connected' : 'Connecting...'}</span>
         </div>
       </div>
 
