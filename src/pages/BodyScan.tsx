@@ -486,10 +486,20 @@ const BodyScan = () => {
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-80 md:h-96 rounded-lg bg-muted/30 flex items-center justify-center">
-                    <span className="text-sm text-muted-foreground">No photo captured</span>
+                  <div className="w-full h-80 md:h-96 rounded-lg bg-muted/30 flex items-center justify-center overflow-hidden">
+                    {slot.key === 'front' ? (
+                      <img
+                        src="/lovable-uploads/38d95bb2-864a-409d-923d-e5dae4595dcd.png"
+                        alt="Body scan front placeholder silhouette"
+                        className="max-h-full max-w-full object-contain opacity-90"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No photo captured</span>
+                    )}
                   </div>
                 )}
+
 
                 {slot.image && (
                   <div className="text-sm text-muted-foreground">
