@@ -33,6 +33,22 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
   const handleScan = () => {
     scanHeartRate();
   };
+  const fake = {
+    caloriesBurned: 231,
+    caloriesConsumed: 820,
+    steps: 4650,
+    workoutDuration: 38,
+    exercisesCompleted: 7,
+    avgHeartRate: 76,
+  };
+
+  const dCaloriesBurned = stats.loading ? fake.caloriesBurned : (stats.caloriesBurned || fake.caloriesBurned);
+  const dCaloriesConsumed = stats.loading ? fake.caloriesConsumed : (stats.caloriesConsumed || fake.caloriesConsumed);
+  const dSteps = stats.loading ? fake.steps : (stats.steps || fake.steps);
+  const dWorkoutDuration = stats.loading ? fake.workoutDuration : (stats.workoutDuration || fake.workoutDuration);
+  const dExercisesCompleted = stats.loading ? fake.exercisesCompleted : (stats.exercisesCompleted || fake.exercisesCompleted);
+  const dAvgHeartRate = bpm ?? (stats.loading ? fake.avgHeartRate : (stats.avgHeartRate || fake.avgHeartRate));
+
   return (
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
@@ -49,7 +65,7 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
             <Activity className="h-6 w-6 text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={stats.loading ? 0 : stats.caloriesBurned} duration={2500} />
+            <AnimatedNumber finalValue={dCaloriesBurned} duration={2500} />
           </p>
           <p className="text-sm text-muted-foreground">Calories Burned</p>
         </div>
@@ -71,7 +87,7 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
             <Utensils className="h-6 w-6 text-green-500" />
           </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={stats.loading ? 0 : stats.caloriesConsumed} duration={2200} />
+            <AnimatedNumber finalValue={dCaloriesConsumed} duration={2200} />
           </p>
           <p className="text-sm text-muted-foreground">Calories Consumed</p>
         </div>
@@ -81,7 +97,7 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
             <Footprints className="h-6 w-6 text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={stats.loading ? 0 : stats.steps} duration={1800} />
+            <AnimatedNumber finalValue={dSteps} duration={1800} />
           </p>
           <p className="text-sm text-muted-foreground">Steps Today</p>
         </div>
@@ -91,7 +107,7 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
             <Clock className="h-6 w-6 text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={stats.loading ? 0 : stats.workoutDuration} duration={2000} suffix="m" />
+            <AnimatedNumber finalValue={dWorkoutDuration} duration={2000} suffix="m" />
           </p>
           <p className="text-sm text-muted-foreground">Workout Time</p>
         </div>
@@ -101,7 +117,7 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
             <Dumbbell className="h-6 w-6 text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={stats.loading ? 0 : stats.exercisesCompleted} duration={2300} />
+            <AnimatedNumber finalValue={dExercisesCompleted} duration={2300} />
           </p>
           <p className="text-sm text-muted-foreground">Exercises Done</p>
         </div>
@@ -123,7 +139,7 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
             <Heart className="h-6 w-6 text-stats-heart group-hover:animate-pulse" />
           </div>
           <p className="text-2xl font-bold text-white">
-            <AnimatedNumber finalValue={bpm ?? (stats.loading ? 0 : stats.avgHeartRate)} duration={2800} />
+            <AnimatedNumber finalValue={dAvgHeartRate} duration={2800} />
           </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
