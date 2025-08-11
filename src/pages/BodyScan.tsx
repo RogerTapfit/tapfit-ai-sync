@@ -184,13 +184,8 @@ const BodyScan = () => {
     setResult(null);
     setAnalysisMeta(null);
     try {
-      // Require at least one full-body view with features
-      const okViews = Object.values(features).some((f) => f?.ok && (f.widthProfile?.length ?? 0) > 0);
-      if (!okViews) {
-        toast({ title: "Need a full-body photo", description: "Please retake at least one photo where your full body is visible.", variant: "destructive" });
-        setAnalyzing(false);
-        return;
-      }
+      // Proceed even if on-device features are missing; backend will use available photos
+
 
       // Build features payload from on-device ML (if available)
       const photos = slots.filter(s => !!s.image).map(s => s.key);
@@ -458,7 +453,7 @@ const BodyScan = () => {
                   {slot.label} Photo
                 </CardTitle>
                 <CardDescription>
-                  Stand ~2m away; include full body. Keep consistent lighting.
+                  Use any clear photo; we'll analyze what we can. More visible body = better results.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
