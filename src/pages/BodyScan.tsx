@@ -577,7 +577,7 @@ const BodyScan = () => {
                 <RefreshCw className="h-4 w-4 mr-2" /> Re-run
               </Button>
             </div>
-            <BodyScanResults result={result} />
+            <BodyScanResults result={result} user={{ heightCm: typeof heightCm === 'number' ? heightCm : undefined, age, sex }} />
 
             <Card className="mt-6">
               <CardHeader>

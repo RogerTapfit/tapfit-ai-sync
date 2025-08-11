@@ -1,5 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CheckCircle, Target } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -14,6 +15,10 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarRadiusAxis,
 } from "recharts";
 
 // Type mirrors the result shape produced in BodyScan.tsx
@@ -89,7 +94,7 @@ const FocusBadge = ({ text }: { text: string }) => (
   </div>
 );
 
-export default function BodyScanResults({ result }: { result: BodyScanResult }) {
+export default function BodyScanResults({ result, user }: { result: BodyScanResult; user?: { heightCm?: number; age?: number; sex?: 'male' | 'female' | 'unspecified' } }) {
   const bfp = useMemo(() => parseBodyFatAverage(result.bodyFatRange), [result.bodyFatRange]);
   const compositionData = useMemo(() => {
     const fat = Math.max(0, Math.min(100, bfp ?? 0));
@@ -115,6 +120,58 @@ export default function BodyScanResults({ result }: { result: BodyScanResult }) 
     if (tags.length === 0) tags.push("Full Body Maintenance");
     return tags;
   }, [result]);
+
+  // Derived metrics
+  const heightM = user?.heightCm ? user.heightCm / 100 : undefined;
+  const bmr = Number(result.metabolicRate || 0);
+  const weightEstimateKg = useMemo(() => {
+    if (!user?.heightCm || !user?.sex || !user?.age) return null;
+    const sexAdj = user.sex === 'male' ? 5 : -161; // Mifflin St Jeor
+    const w = (bmr - 6.25 * user.heightCm + 5 * user.age - sexAdj) / 10;
+    return Number.isFinite(w) && w > 0 ? w : null;
+  }, [bmr, user?.heightCm, user?.age, user?.sex]);
+
+  const bmi = useMemo(() => (weightEstimateKg && heightM ? weightEstimateKg / (heightM * heightM) : null), [weightEstimateKg, heightM]);
+  const fmi = useMemo(() => (bmi != null && bfp != null ? bmi * (bfp / 100) : null), [bmi, bfp]);
+  const lmi = useMemo(() => (bmi != null && fmi != null ? bmi - fmi : null), [bmi, fmi]);
+  const weeklyRMR = useMemo(() => Math.round(bmr * 7), [bmr]);
+
+  const [plan, setPlan] = useState<'maint' | 'cut' | 'bulk'>('maint');
+  const activity = 1.35; // light activity default
+  const tdee = bmr * activity;
+  const adjMap = { maint: 1, cut: 0.85, bulk: 1.15 } as const;
+  const cals = Math.round(tdee * adjMap[plan]);
+  const proteinG = weightEstimateKg ? Math.round(weightEstimateKg * 1.8) : null;
+  const fatG = weightEstimateKg ? Math.round(weightEstimateKg * 0.8) : null;
+  const carbsG = weightEstimateKg && proteinG != null && fatG != null ? Math.max(0, Math.round((cals - (proteinG * 4 + fatG * 9)) / 4)) : null;
+
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+  const percentile = useMemo(() => {
+    if (bfp == null) return null;
+    const sex = user?.sex === 'female' ? 'female' : 'male';
+    const range = sex === 'male' ? { min: 5, max: 35 } : { min: 15, max: 45 };
+    const pct = 100 - ((bfp - range.min) / (range.max - range.min)) * 100;
+    return clamp(Math.round(pct), 1, 99);
+  }, [bfp, user?.sex]);
+
+  const riskData = useMemo(() => {
+    const bf = bfp ?? 0;
+    const vis = result.visceralFat || 0; // 5,10,15 scale
+    const ps = result.postureScore || 0;
+    const bmiVal = bmi ?? 0;
+    const cardio = clamp(((bf - 18) * 3) + vis * 3, 0, 100);
+    const diabetes = clamp(((bf - 20) * 3.5) + vis * 2, 0, 100);
+    const joint = clamp(((bmiVal - 25) * 8), 0, 100);
+    const sleep = clamp(((bf - 22) * 2) + vis * 3, 0, 100);
+    const posture = clamp(100 - ps, 0, 100);
+    return [
+      { subject: 'Cardio', A: cardio },
+      { subject: 'Diabetes', A: diabetes },
+      { subject: 'Joints', A: joint },
+      { subject: 'Sleep', A: sleep },
+      { subject: 'Posture', A: posture },
+    ];
+  }, [bfp, result.visceralFat, result.postureScore, bmi]);
 
   return (
     <section className="mt-6" aria-labelledby="results">
@@ -205,21 +262,134 @@ export default function BodyScanResults({ result }: { result: BodyScanResult }) 
             </div>
           </div>
 
-          {/* Health & Fitness Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-4 rounded-lg bg-background/50">
-              <p className="text-sm text-muted-foreground">Fitness Age</p>
-              <p className="text-2xl font-bold">{result.bodyAge} yrs</p>
-            </div>
-            <div className="p-4 rounded-lg bg-background/50">
-              <p className="text-sm text-muted-foreground">Visceral Fat</p>
-              <p className="text-2xl font-bold">{result.visceralFat}</p>
-            </div>
-            <div className="p-4 rounded-lg bg-background/50">
-              <p className="text-sm text-muted-foreground">BMR</p>
-              <p className="text-2xl font-bold">{result.metabolicRate}</p>
-            </div>
-          </div>
+{/* Health & Fitness Summary */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+  <div className="p-4 rounded-lg bg-background/50">
+    <p className="text-sm text-muted-foreground">Fitness Age</p>
+    <p className="text-2xl font-bold">{result.bodyAge} yrs</p>
+  </div>
+  <div className="p-4 rounded-lg bg-background/50">
+    <p className="text-sm text-muted-foreground">Visceral Fat</p>
+    <p className="text-2xl font-bold">{result.visceralFat}</p>
+  </div>
+  <div className="p-4 rounded-lg bg-background/50">
+    <p className="text-sm text-muted-foreground">BMR (Daily)</p>
+    <p className="text-2xl font-bold">{Math.round(bmr)} kcal</p>
+  </div>
+</div>
+
+{/* Advanced Metrics */}
+<div className="space-y-3">
+  <h3 className="font-semibold">Advanced Metrics</h3>
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-base">Body Fat %</CardTitle></CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{bfp != null ? bfp.toFixed(1) + '%' : '—'}</div>
+        <div className="mt-2 h-2 rounded bg-muted">
+          <div className="h-2 rounded bg-primary" style={{width: `${bfp ? Math.round(bfp) : 0}%`}} />
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-base">Lean Mass Index</CardTitle><CardDescription>kg/m²</CardDescription></CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{lmi != null ? lmi.toFixed(1) : '—'}</div>
+        <div className="mt-2 h-2 rounded bg-muted">
+          <div className="h-2 rounded bg-primary" style={{width: `${lmi != null ? Math.round(clamp(((lmi - 12) / 8) * 100, 0, 100)) : 0}%`}} />
+        </div>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-base">Fat Mass Index</CardTitle><CardDescription>kg/m²</CardDescription></CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{fmi != null ? fmi.toFixed(1) : '—'}</div>
+        <div className="mt-2 h-2 rounded bg-muted">
+          <div className="h-2 rounded bg-primary" style={{width: `${fmi != null ? Math.round(clamp(((fmi - 2) / 8) * 100, 0, 100)) : 0}%`}} />
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</div>
+
+{/* Energy & Macros */}
+<div className="space-y-3">
+  <h3 className="font-semibold">Energy & Macros</h3>
+  <Card>
+    <CardContent className="p-4 space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">RMR (Daily)</p>
+          <p className="text-xl font-semibold">{Math.round(bmr)} kcal</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">RMR (Weekly)</p>
+          <p className="text-xl font-semibold">{weeklyRMR} kcal</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Est. Weight</p>
+          <p className="text-xl font-semibold">{weightEstimateKg ? `${weightEstimateKg.toFixed(1)} kg` : '—'}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">BMI</p>
+          <p className="text-xl font-semibold">{bmi ? bmi.toFixed(1) : '—'}</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" variant={plan==='maint' ? 'default' : 'outline'} onClick={() => setPlan('maint')}>Maintenance</Button>
+        <Button size="sm" variant={plan==='cut' ? 'default' : 'outline'} onClick={() => setPlan('cut')}>Cutting</Button>
+        <Button size="sm" variant={plan==='bulk' ? 'default' : 'outline'} onClick={() => setPlan('bulk')}>Bulking</Button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">Target Calories</p>
+          <p className="text-xl font-semibold">{cals} kcal</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Protein</p>
+          <p className="text-xl font-semibold">{proteinG != null ? `${proteinG} g` : '—'}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Carbs</p>
+          <p className="text-xl font-semibold">{carbsG != null ? `${carbsG} g` : '—'}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Fat</p>
+          <p className="text-xl font-semibold">{fatG != null ? `${fatG} g` : '—'}</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
+{/* Rank & Risk */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+  <Card>
+    <CardHeader className="pb-2"><CardTitle className="text-base">Where Do You Rank?</CardTitle><CardDescription>Percentile vs peers</CardDescription></CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{percentile != null ? `${percentile}th` : '—'}</div>
+      <div className="mt-2 h-2 rounded bg-muted">
+        <div className="h-2 rounded bg-primary" style={{width: `${percentile ?? 0}%`}} />
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">Lower body fat typically ranks higher.</p>
+    </CardContent>
+  </Card>
+  <Card>
+    <CardHeader className="pb-2"><CardTitle className="text-base">Personal Health Risk</CardTitle><CardDescription>Relative risk profile</CardDescription></CardHeader>
+    <CardContent>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadarChart data={riskData} cx="50%" cy="50%" outerRadius="80%">
+            <PolarGrid />
+            <PolarAngleAxis dataKey="subject" stroke={color("--muted-foreground")} />
+            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
+            <Radar dataKey="A" stroke={color("--primary")} fill={color("--primary")} fillOpacity={0.3} />
+          </RadarChart>
+        </ResponsiveContainer>
+      </div>
+    </CardContent>
+  </Card>
+</div>
 
           {/* Recommendations */}
           <div className="space-y-3">
