@@ -48,6 +48,12 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     diet_type: 'omnivore'
   });
 
+  // New: raw string inputs for mobile-friendly numeric entry
+  const [ageInput, setAgeInput] = useState<string>(String(25));
+  const [weightLbsInput, setWeightLbsInput] = useState<string>(String(154));
+  const [heightFeetInput, setHeightFeetInput] = useState<string>(String(5));
+  const [heightInchesInput, setHeightInchesInput] = useState<string>(String(7));
+
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
 
@@ -85,7 +91,68 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     });
   };
 
+  // Helper: clamp to range
+  const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
+
+  // Validate and commit step 1 values from string inputs into numeric profile fields
+  const commitBasicInfo = (): boolean => {
+    // Parse
+    const ageParsed = parseInt(ageInput || '', 10);
+    const feetParsed = parseInt(heightFeetInput || '', 10);
+    const inchesParsed = parseInt(heightInchesInput || '', 10);
+    const weightParsed = parseFloat(weightLbsInput || '');
+
+    // Validate presence
+    if (isNaN(ageParsed)) {
+      toast.error('Please enter your age');
+      return false;
+    }
+    if (isNaN(feetParsed) || isNaN(inchesParsed)) {
+      toast.error('Please enter your height in feet and inches');
+      return false;
+    }
+    if (isNaN(weightParsed)) {
+      toast.error('Please enter your weight in lbs');
+      return false;
+    }
+
+    // Clamp to sensible ranges
+    const age = clamp(ageParsed, 13, 100);
+    const feet = clamp(feetParsed, 3, 9);
+    const inches = clamp(inchesParsed, 0, 11);
+    const weightLbs = clamp(weightParsed, 88, 440);
+
+    // Compute derived metrics
+    const heightCm = feetInchesToCm(feet, inches);
+    const weightKg = lbsToKg(weightLbs);
+
+    // Commit to profile
+    setProfile(prev => ({
+      ...prev,
+      age,
+      height_feet: feet,
+      height_inches: inches,
+      height_cm: heightCm,
+      weight_lbs: weightLbs,
+      weight_kg: weightKg,
+    }));
+
+    // Normalize UI inputs too
+    setAgeInput(String(age));
+    setHeightFeetInput(String(feet));
+    setHeightInchesInput(String(inches));
+    setWeightLbsInput(String(Math.round(weightLbs)));
+
+    return true;
+  };
+
   const handleNext = () => {
+    // Validate step-specific input before moving on
+    if (currentStep === 1) {
+      const ok = commitBasicInfo();
+      if (!ok) return;
+    }
+
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -109,12 +176,21 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return;
       }
 
+      // Guard: ensure we have essential metrics
+      if (!profile.height_cm || !profile.weight_kg || profile.height_cm <= 0 || profile.weight_kg <= 0) {
+        toast.error('Please complete your basic info (age, height, weight) before finishing.');
+        setCurrentStep(1);
+        setLoading(false);
+        return;
+      }
+
       console.log('💾 Saving enhanced profile data:', profile);
 
-      // Update profile with enhanced data
+      // Update or insert profile with enhanced data to avoid "no row" edge cases
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
           age: profile.age,
           weight_kg: profile.weight_kg,
           height_cm: profile.height_cm,
@@ -124,11 +200,10 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           preferred_equipment_type: profile.preferred_equipment_type,
           diet_type: profile.diet_type,
           onboarding_completed: true
-        })
-        .eq('id', user.id);
+        }, { onConflict: 'id' });
 
       if (profileError) {
-        console.error('❌ Error updating profile:', profileError);
+        console.error('❌ Error saving profile:', profileError);
         toast.error(`Failed to save profile: ${profileError.message}`);
         setLoading(false);
         return;
@@ -181,11 +256,16 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                 <Label htmlFor="age">Age</Label>
                 <Input
                   id="age"
-                  type="number"
-                  value={profile.age}
-                  onChange={(e) => handleInputChange('age', parseInt(e.target.value) || 25)}
-                  min="13"
-                  max="100"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={ageInput}
+                  onChange={(e) => {
+                    // Allow digits only
+                    const next = e.target.value.replace(/\D/g, '');
+                    setAgeInput(next);
+                  }}
+                  placeholder="e.g. 28"
                 />
               </div>
               <div className="space-y-2">
@@ -208,34 +288,44 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                 <Label htmlFor="weight">Weight (lbs)</Label>
                 <Input
                   id="weight"
-                  type="number"
-                  value={profile.weight_lbs}
-                  onChange={(e) => handleInputChange('weight_lbs', parseFloat(e.target.value) || 154)}
-                  min="88"
-                  max="440"
-                  step="0.1"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*\\.?[0-9]*"
+                  value={weightLbsInput}
+                  onChange={(e) => {
+                    // Allow digits and a single dot
+                    let v = e.target.value.replace(/[^0-9.]/g, '');
+                    const parts = v.split('.');
+                    if (parts.length > 2) {
+                      v = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    setWeightLbsInput(v);
+                  }}
+                  placeholder="e.g. 165.5"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="height-feet">Height (feet)</Label>
                 <Input
                   id="height-feet"
-                  type="number"
-                  value={profile.height_feet}
-                  onChange={(e) => handleInputChange('height_feet', parseInt(e.target.value) || 5)}
-                  min="3"
-                  max="9"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={heightFeetInput}
+                  onChange={(e) => setHeightFeetInput(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g. 5"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="height-inches">Height (inches)</Label>
                 <Input
                   id="height-inches"
-                  type="number"
-                  value={profile.height_inches}
-                  onChange={(e) => handleInputChange('height_inches', e.target.value === '' ? 7 : parseInt(e.target.value) || 0)}
-                  min="0"
-                  max="11"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={heightInchesInput}
+                  onChange={(e) => setHeightInchesInput(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g. 7"
                 />
               </div>
             </div>
