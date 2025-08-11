@@ -174,7 +174,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <img
           src={HERO_MASCOT_URL}
           alt="TapFit mascot red robot"
-          className="md:hidden absolute bottom-1 right-2 h-24 sm:h-28 object-contain drop-shadow-xl pointer-events-none select-none z-10"
+          className="md:hidden absolute bottom-1 right-2 h-36 sm:h-[10.5rem] object-contain drop-shadow-xl pointer-events-none select-none z-10"
           width={160}
           height={160}
           loading="eager"
