@@ -8,6 +8,7 @@ import SEO from "@/components/SEO";
 import BodyScanResults from "@/components/body-scan/BodyScanResults";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { detectPose, type Keypoint } from "@/features/bodyScan/ml/pose";
 import { segmentBody } from "@/features/bodyScan/ml/mask";
@@ -73,6 +74,7 @@ const BodyScan = () => {
   const [features, setFeatures] = useState<Record<string, { landmarks: Keypoint[]; widthProfile: number[]; dims?: { width: number; height: number }; ok: boolean }>>({});
   const [analysisMeta, setAnalysisMeta] = useState<{ model?: string; at?: string; used_hints?: boolean } | null>(null);
   const [lastScanId, setLastScanId] = useState<string | null>(null);
+  const [notesText, setNotesText] = useState<string>("");
   useEffect(() => {
     // Reset result if images change
     setResult(null);
@@ -420,11 +422,28 @@ const BodyScan = () => {
       setAnalyzing(false);
     }
   };
+  
+  const handleSaveLog = async () => {
+    if (!lastScanId) {
+      toast({ title: "No scan to save", description: "Run an analysis first.", variant: "destructive" });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('body_scans')
+        .update({ notes: notesText })
+        .eq('id', lastScanId);
+      if (error) throw error;
+      toast({ title: "Saved to library", description: "Your scan and notes have been saved." });
+    } catch (e: any) {
+      toast({ title: "Save failed", description: String(e?.message || e), variant: "destructive" });
+    }
+  };
 
   return (
 
     <>
-      <SEO 
+      <SEO
         title="TapFit Body Scan – AI Body Analyzer"
         description="Privacy-first body scan from 4 photos. On-device analysis for composition, posture, and symmetry."
         canonicalPath="/body-scan"
@@ -559,8 +578,33 @@ const BodyScan = () => {
               </Button>
             </div>
             <BodyScanResults result={result} />
+
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Log this scan</CardTitle>
+                <CardDescription>Save notes and access later in your library</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <Textarea
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                  placeholder="Add notes (optional): e.g., conditions, time of day, recent workouts"
+                  aria-label="Scan notes"
+                />
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={handleSaveLog} disabled={!lastScanId}>Save to Library</Button>
+                  <Link to={`/body-scans/${lastScanId || ''}`}>
+                    <Button variant="outline" disabled={!lastScanId}>Open Details</Button>
+                  </Link>
+                  <Link to="/body-scans">
+                    <Button variant="ghost">View Library</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </>
         )}
+
 
       </main>
     </>

@@ -18,6 +18,8 @@ import WorkoutPlan from "./pages/WorkoutPlan";
 import MachineAccess from "./pages/MachineAccess";
 import WorkoutHub from "./pages/WorkoutHub";
 import BodyScan from "./pages/BodyScan";
+import BodyScanLibrary from "./pages/BodyScanLibrary";
+import BodyScanDetail from "./pages/BodyScanDetail";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -127,6 +129,16 @@ const App = () => {
             <Route path="/body-scan" element={
               <AuthGuard fallback={<Auth />}>
                 <BodyScan />
+              </AuthGuard>
+            } />
+            <Route path="/body-scans" element={
+              <AuthGuard fallback={<Auth />}>
+                <BodyScanLibrary />
+              </AuthGuard>
+            } />
+            <Route path="/body-scans/:scanId" element={
+              <AuthGuard fallback={<Auth />}>
+                <BodyScanDetail />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
