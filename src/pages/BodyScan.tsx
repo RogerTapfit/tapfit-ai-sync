@@ -13,6 +13,7 @@ import { detectPose, type Keypoint } from "@/features/bodyScan/ml/pose";
 import { segmentBody } from "@/features/bodyScan/ml/mask";
 import { startScan, pollScanUntilDone } from "@/features/bodyScan/api";
 import { useToast } from "@/components/ui/use-toast";
+import { computeFitnessAge } from "@/features/bodyScan/fitnessAge";
 
 import { Link } from "react-router-dom";
 
@@ -244,18 +245,23 @@ const BodyScan = () => {
 
       const fmt = (n: any) => (Number.isFinite(Number(n)) ? `${Number(n).toFixed(1)} cm` : "—");
       const measSrc = m.measurements_cm || m.circumferences_cm || {};
-
+      const bfpAvg = Number.isFinite(Number(bfLow)) && Number.isFinite(Number(bfHigh))
+        ? (Number(bfLow) + Number(bfHigh)) / 2
+        : undefined;
+      const fa = computeFitnessAge({
+        sex,
+        heightCm: Number(heightCm),
+        bodyFatPct: bfpAvg,
+        waistCm: typeof measSrc.waist === "number" ? measSrc.waist : undefined,
+        postureScore: postureScore || undefined,
+      });
       setResult({
         bodyFatRange,
         postureScore,
         symmetryScore,
         muscleMass,
         visceralFat,
-        bodyAge: (() => {
-          const base = age ?? 30;
-          const adj = (50 - postureScore) / 20 + (symmetryScore < 80 ? 2 : 0) + (visceralLevel === 'high' ? 3 : 0);
-          return Math.max(18, Math.min(80, Math.round(base + adj)));
-        })(),
+        bodyAge: fa.fitnessAge,
         metabolicRate: bmrKcal || 1800,
         measurements: {
           chest: fmt(measSrc.chest),

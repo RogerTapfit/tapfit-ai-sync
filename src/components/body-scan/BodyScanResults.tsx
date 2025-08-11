@@ -208,7 +208,7 @@ export default function BodyScanResults({ result }: { result: BodyScanResult }) 
           {/* Health & Fitness Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-4 rounded-lg bg-background/50">
-              <p className="text-sm text-muted-foreground">Body Age</p>
+              <p className="text-sm text-muted-foreground">Fitness Age</p>
               <p className="text-2xl font-bold">{result.bodyAge} yrs</p>
             </div>
             <div className="p-4 rounded-lg bg-background/50">
