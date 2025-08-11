@@ -508,6 +508,13 @@ const BodyScan = () => {
                         className="max-h-full max-w-full object-contain opacity-90"
                         loading="lazy"
                       />
+                    ) : slot.key === 'right' ? (
+                      <img
+                        src="/lovable-uploads/fad567ba-18d1-41d4-83d8-265b76c50fb7.png"
+                        alt="Body scan right placeholder silhouette"
+                        className="max-h-full max-w-full object-contain opacity-90"
+                        loading="lazy"
+                      />
                     ) : (
                       <span className="text-sm text-muted-foreground">No photo captured</span>
                     )}
