@@ -135,7 +135,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   return (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl h-[180px] sm:h-[220px] md:h-[260px] lg:h-[300px]">
+      <div className="relative overflow-hidden rounded-2xl h-[220px] sm:h-[240px] md:h-[260px] lg:h-[300px]">
         <img 
           src={heroImage} 
           alt="TapFit Futuristic Gym" 
@@ -147,8 +147,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <div className="absolute inset-0 md:bg-gradient-to-t md:from-background/50 md:to-transparent" />
 
         {/* Content grid: single column on mobile, text | mascot on md+ */}
-        <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-4 p-4 sm:p-6 lg:p-8">
-          <div className="relative max-w-[min(90%,680px)]">
+        <div className="absolute inset-0 grid grid-cols-1 md:grid-cols-[1fr_auto] items-center gap-4 p-4 sm:p-6 lg:p-8 z-10">
+          <div className="relative max-w-[min(90%,680px)] pr-24 sm:pr-28 md:pr-0">
             <div className="absolute -inset-2 rounded-lg bg-background/35 blur-sm" />
             <div className="relative">
               <h1 className="text-[clamp(1.25rem,3.5vw,2.5rem)] md:text-4xl font-bold text-foreground drop-shadow-lg">
@@ -168,6 +168,21 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
             height={320}
             loading="eager"
           />
+        </div>
+
+        {/* Mobile mascot (visible on phones), absolute bottom-right */}
+        <img
+          src={HERO_MASCOT_URL}
+          alt="TapFit mascot red robot"
+          className="md:hidden absolute bottom-1 right-2 h-24 sm:h-28 object-contain drop-shadow-xl pointer-events-none select-none z-10"
+          width={160}
+          height={160}
+          loading="eager"
+        />
+
+        {/* TapFit wordmark logo top-left */}
+        <div className="absolute left-3 top-3 sm:left-4 z-20">
+          <span className="px-2 py-1 rounded-md bg-background/50 backdrop-blur-sm text-foreground font-extrabold tracking-tight text-sm">TapFit</span>
         </div>
 
         {/* Status indicators */}
