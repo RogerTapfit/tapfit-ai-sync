@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useId } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Target } from "lucide-react";
@@ -66,15 +66,23 @@ function parseBodyFatAverage(range: string): number | null {
 const color = (token: string) => `hsl(var(${token}))`;
 
 const GaugeCard = ({ value, label }: { value: number; label: string }) => {
+  const id = useId();
+  const gradientId = `gauge-${String(id).replace(/:/g, "")}`;
   const data = [{ name: label, value }];
   return (
-    <Card>
+    <Card className="glow-card">
       <CardContent className="p-4">
         <div className="h-36">
           <ResponsiveContainer width="100%" height="100%">
             <RadialBarChart innerRadius="70%" outerRadius="100%" data={data} startAngle={180} endAngle={0}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor={color("--primary")} />
+                  <stop offset="100%" stopColor={color("--primary-glow")} />
+                </linearGradient>
+              </defs>
               <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-              <RadialBar dataKey="value" cornerRadius={10} fill={color("--primary")} background={{ fill: color("--muted") }} />
+              <RadialBar dataKey="value" cornerRadius={999} fill={`url(#${gradientId})`} background={{ fill: "hsl(var(--muted-foreground) / 0.25)" }} />
             </RadialBarChart>
           </ResponsiveContainer>
         </div>
@@ -99,7 +107,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
   const compositionData = useMemo(() => {
     const fat = Math.max(0, Math.min(100, bfp ?? 0));
     return [
-      { name: "Lean", value: 100 - fat, fill: color("--muted-foreground") },
+      { name: "Lean", value: 100 - fat, fill: "hsl(var(--muted-foreground) / 0.25)" },
       { name: "Fat", value: fat, fill: color("--primary") },
     ];
   }, [bfp]);
@@ -186,7 +194,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
         <CardContent className="space-y-6">
           {/* Composition donut + headline metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Card>
+            <Card className="glow-card">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Body Composition</CardTitle>
                 <CardDescription>Lean vs Fat (approx.)</CardDescription>
@@ -282,7 +290,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
 <div className="space-y-3">
   <h3 className="font-semibold">Advanced Metrics</h3>
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-    <Card>
+    <Card className="glow-card">
       <CardHeader className="pb-2"><CardTitle className="text-base">Body Fat %</CardTitle></CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{bfp != null ? bfp.toFixed(1) + '%' : '—'}</div>
@@ -291,7 +299,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
         </div>
       </CardContent>
     </Card>
-    <Card>
+    <Card className="glow-card">
       <CardHeader className="pb-2"><CardTitle className="text-base">Lean Mass Index</CardTitle><CardDescription>kg/m²</CardDescription></CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{lmi != null ? lmi.toFixed(1) : '—'}</div>
@@ -300,7 +308,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
         </div>
       </CardContent>
     </Card>
-    <Card>
+    <Card className="glow-card">
       <CardHeader className="pb-2"><CardTitle className="text-base">Fat Mass Index</CardTitle><CardDescription>kg/m²</CardDescription></CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{fmi != null ? fmi.toFixed(1) : '—'}</div>
@@ -315,7 +323,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
 {/* Energy & Macros */}
 <div className="space-y-3">
   <h3 className="font-semibold">Energy & Macros</h3>
-  <Card>
+  <Card className="glow-card">
     <CardContent className="p-4 space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
@@ -364,7 +372,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
 
 {/* Rank & Risk */}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-  <Card>
+  <Card className="glow-card">
     <CardHeader className="pb-2"><CardTitle className="text-base">Where Do You Rank?</CardTitle><CardDescription>Percentile vs peers</CardDescription></CardHeader>
     <CardContent>
       <div className="text-2xl font-bold">{percentile != null ? `${percentile}th` : '—'}</div>
@@ -374,7 +382,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
       <p className="mt-2 text-sm text-muted-foreground">Lower body fat typically ranks higher.</p>
     </CardContent>
   </Card>
-  <Card>
+  <Card className="glow-card">
     <CardHeader className="pb-2"><CardTitle className="text-base">Personal Health Risk</CardTitle><CardDescription>Relative risk profile</CardDescription></CardHeader>
     <CardContent>
       <div className="h-64">
