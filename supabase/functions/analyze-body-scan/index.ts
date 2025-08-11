@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const VISION_MODEL = "gpt-4o-mini"; // fast + vision
+const VISION_MODEL = "gpt-4o-mini"; // fast + vision, supports image inputs
 
 // Supabase
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
@@ -18,11 +18,19 @@ const supabase = createClient(SB_URL, SB_SERVICE_ROLE);
 
 const BUCKET = "body-scans";
 
+type FeaturesPayload = {
+  landmarks?: Record<string, any[]>;
+  widthProfiles?: Record<string, number[]>;
+  photos?: string[];
+};
+
 type Payload = {
   scan_id: string;
   user_id?: string;
   sex: "male" | "female";
   height_cm: number;
+  age?: number;
+  features?: FeaturesPayload;
 };
 
 type Metrics = {
@@ -47,6 +55,28 @@ async function signed(path: string, minutes = 10) {
     .createSignedUrl(path, minutes * 60);
   if (error) throw error;
   return data.signedUrl;
+}
+
+function stripCodeFences(s: string) {
+  if (typeof s !== "string") return s;
+  // Remove ```json ... ``` wrappers if present
+  const fence = s.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+  if (fence) return fence[1];
+  return s;
+}
+
+function profileHints(widthProfiles?: Record<string, number[]>) {
+  // Summarize width profiles into simple hints we can feed to the model
+  const hints: Record<string, { minFrac: number; at: number; n: number } | undefined> = {};
+  if (!widthProfiles) return hints;
+  for (const [k, arr] of Object.entries(widthProfiles)) {
+    if (!Array.isArray(arr) || arr.length === 0) { hints[k] = undefined; continue; }
+    let minFrac = Infinity; let idx = -1;
+    arr.forEach((v, i) => { if (typeof v === 'number' && v < minFrac) { minFrac = v; idx = i; } });
+    if (!isFinite(minFrac) || idx < 0) { hints[k] = undefined; continue; }
+    hints[k] = { minFrac: +minFrac.toFixed(4), at: idx, n: arr.length };
+  }
+  return hints;
 }
 
 Deno.serve(async (req) => {
@@ -102,23 +132,43 @@ Deno.serve(async (req) => {
     }
     if (imgs.length === 0) throw new Error("No images present for this scan");
 
-    // Use OpenAI Vision to extract simple landmarks/ratios and visual BF estimate
+    const hints = profileHints(payload.features?.widthProfiles);
+
+    // Use OpenAI Vision to extract numeric metrics; include hints to anchor scaling
     if (!OPENAI_API_KEY) throw new Error("Missing OPENAI_API_KEY secret");
 
-    const prompt = [
+    const schema = `{
+  "body_fat_pct": number,              // visual estimate for ${payload.sex}
+  "circumferences_cm": {               // use height_cm scaling and image perspective
+    "waist": number, "hips": number, "chest": number, "shoulders": number, "thighs": number
+  },
+  "posture": { "score_pct": number, "notes": string[] },
+  "symmetry": { "score_pct": number, "notes": string[] },
+  "skin_health_pct": number,
+  "analysis_notes": string[]
+}`;
+
+    const contextLines: string[] = [
+      `Sex: ${payload.sex}`,
+      `Height: ${payload.height_cm} cm`,
+    ];
+    if (typeof payload.age === 'number') contextLines.push(`Age: ${payload.age}`);
+    const hintFront = hints.front ? `front min width frac ${hints.front.minFrac} at row ${hints.front.at}/${hints.front.n}` : undefined;
+    const hintLeft = hints.left ? `left min width frac ${hints.left.minFrac} at row ${hints.left.at}/${hints.left.n}` : undefined;
+    const hintRight = hints.right ? `right min width frac ${hints.right.minFrac} at row ${hints.right.at}/${hints.right.n}` : undefined;
+    const hintText = [hintFront, hintLeft, hintRight].filter(Boolean).join("; ");
+    if (hintText) contextLines.push(`Hints: ${hintText}`);
+
+    const messages = [
       {
         role: "system",
         content:
-          `You are a fitness computer-vision assistant.\nGiven 1-4 photos (front/left/right/back), estimate:\n- Key landmarks in pixel coordinates (neck, shoulders L/R, chest mid, waist narrowest, hips widest, thigh mid)\n- Relative circumferences (waist:hip:chest:shoulders ratios) as numbers (no units)\n- Visual body fat estimate for ${payload.sex} using standard physique cues (abdomen definition, love handles, outline softness, vascularity).\nReturn a single JSON object in the schema specified by the user. Do not add commentary.`,
+          "You are a fitness CV assistant. Return ONLY valid JSON, no markdown, no code fences.",
       },
       {
         role: "user",
         content: [
-          {
-            type: "text",
-            text:
-              `Schema:\n{\n  "landmarks": { "front": { "neck":[x,y], "shoulder_l":[x,y], "shoulder_r":[x,y], "chest_mid":[x,y], "waist":[x,y], "hip":[x,y], "thigh_mid":[x,y] } },\n  "ratios": { "waist_to_hip": number, "waist_to_chest": number, "shoulder_to_waist": number },\n  "visual_body_fat_pct": number\n}\nImages:`,
-          },
+          { type: "text", text: `Using the following images, estimate the fields in this schema and return ONLY compact JSON matching it. If unsure, make your best numeric estimate (no strings).\nSchema:\n${schema}\n\nContext:\n${contextLines.join("\n")}\nImages:` },
           ...imgs.map((i) => ({ type: "image_url", image_url: { url: i.url } })),
         ],
       },
@@ -132,9 +182,10 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: VISION_MODEL,
-        messages: prompt,
+        messages,
         temperature: 0.2,
-        max_tokens: 800
+        max_tokens: 700,
+        response_format: { type: "json_object" }, // encourage JSON only
       }),
     });
 
@@ -144,46 +195,57 @@ Deno.serve(async (req) => {
     }
     const visionJson = await visionRes.json();
     let raw = visionJson.choices?.[0]?.message?.content ?? "{}";
-    let content: any = {};
+    raw = stripCodeFences(raw);
+
+    let parsed: any = {};
     try {
-      content = JSON.parse(raw);
-    } catch {
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      // last resort: try to extract JSON substring
       const match = typeof raw === "string" ? raw.match(/{[\s\S]*}/) : null;
-      if (match) {
-        content = JSON.parse(match[0]);
-      }
+      if (match) parsed = JSON.parse(match[0]);
+      else throw err;
     }
 
-    // Convert to metrics (heuristic)
-    const height_cm = payload.height_cm;
-    const bf_center = clamp(Number(content.visual_body_fat_pct ?? 20), 4, 45);
+    // Build metrics preferring model outputs; gracefully degrade
+    const bf = Number(parsed.body_fat_pct);
+    const bf_c = isFinite(bf) ? clamp(bf, 3, 60) : undefined;
     const body_fat_pct_range: [number, number] = [
-      clamp(bf_center - 3, 3, 50),
-      clamp(bf_center + 3, 3, 50),
+      clamp((bf_c ?? 22) - 2, 3, 60),
+      clamp((bf_c ?? 22) + 2, 3, 60),
     ];
 
-    const sh_w = Number(content.ratios?.shoulder_to_waist ?? 1.2);
-    const w_c = Number(content.ratios?.waist_to_chest ?? 0.85);
-    let muscle_mass_kg_est = clamp(30 + (sh_w - 1.2) * 25 + (0.95 - w_c) * 20, 28, 60);
+    const circ = parsed.circumferences_cm || {};
+    const waist = isFinite(Number(circ.waist)) ? Number(circ.waist) : undefined;
+    const hips = isFinite(Number(circ.hips)) ? Number(circ.hips) : undefined;
+    const chest = isFinite(Number(circ.chest)) ? Number(circ.chest) : undefined;
+    const shoulders = isFinite(Number(circ.shoulders)) ? Number(circ.shoulders) : undefined;
+    const thighs = isFinite(Number(circ.thighs)) ? Number(circ.thighs) : undefined;
+
+    // Estimate muscle mass from shoulder-to-waist ratio as a simple proxy
+    let shoulderWaist = (isFinite(shoulders!) && isFinite(waist!)) ? (Number(shoulders) / Number(waist)) : undefined;
+    if (!isFinite(shoulderWaist as number)) shoulderWaist = 1.3; // neutral default
+    let muscle_mass_kg_est = clamp(30 + ((shoulderWaist as number) - 1.2) * 28, 28, 62);
     if (payload.sex === "female") muscle_mass_kg_est -= 8;
     muscle_mass_kg_est = Math.round(muscle_mass_kg_est * 10) / 10;
 
-    const waist = Math.round((height_cm * (content.ratios?.waist_to_hip ? 0.46 : 0.47)) * 10) / 10;
-    const hips = Math.round((waist / (content.ratios?.waist_to_hip ?? 0.9)) * 10) / 10;
-    const chest = Math.round((waist / (content.ratios?.waist_to_chest ?? 0.85)) * 10) / 10;
-    const shoulders = Math.round((waist * (content.ratios?.shoulder_to_waist ?? 1.4)) * 10) / 10;
+    const postureScore = Number(parsed.posture?.score_pct);
+    const symmetryScore = Number(parsed.symmetry?.score_pct);
 
     const metrics: Metrics = {
       body_fat_pct_range,
       muscle_mass_kg_est,
-      circumferences_cm: { waist, hips, chest, shoulders },
-      symmetry: { score_pct: 85, notes: ["Mild L/R delt size difference possible; confirm in front view."] },
-      posture: { score_pct: 80, notes: ["Neutral pelvis; slight protracted shoulders."] },
-      skin_health_pct: 80,
-      recommendations: [
-        "Prioritize compound lifts 3x/week; track protein intake",
-        "Daily 10-min posture routine (thoracic extension, scapular retraction)",
-      ],
+      circumferences_cm: {
+        ...(isFinite(chest as number) ? { chest: Number(chest) } : {}),
+        ...(isFinite(waist as number) ? { waist: Number(waist) } : {}),
+        ...(isFinite(hips as number) ? { hips: Number(hips) } : {}),
+        ...(isFinite(shoulders as number) ? { shoulders: Number(shoulders) } : {}),
+        ...(isFinite(thighs as number) ? { thighs: Number(thighs) } : {}),
+      },
+      posture: isFinite(postureScore) ? { score_pct: clamp(postureScore, 0, 100), notes: parsed.posture?.notes ?? [] } : undefined,
+      symmetry: isFinite(symmetryScore) ? { score_pct: clamp(symmetryScore, 0, 100), notes: parsed.symmetry?.notes ?? [] } : undefined,
+      skin_health_pct: isFinite(Number(parsed.skin_health_pct)) ? clamp(Number(parsed.skin_health_pct), 0, 100) : undefined,
+      recommendations: Array.isArray(parsed.analysis_notes) ? parsed.analysis_notes.slice(0, 6) : undefined,
     };
 
     await supabase
@@ -191,7 +253,11 @@ Deno.serve(async (req) => {
       .update({
         status: "done",
         metrics,
-        summary: { model: VISION_MODEL, at: new Date().toISOString() },
+        summary: {
+          model: VISION_MODEL,
+          at: new Date().toISOString(),
+          used_hints: Object.keys(hints).length > 0,
+        },
       })
       .eq("id", scanId);
 
@@ -212,7 +278,6 @@ Deno.serve(async (req) => {
         try { errStr = JSON.stringify(anyErr); } catch { errStr = String(anyErr); }
       }
     }
-    // Trim overly long errors
     if (errStr.length > 800) errStr = errStr.slice(0, 800) + "…";
 
     try {

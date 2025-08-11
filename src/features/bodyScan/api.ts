@@ -96,6 +96,8 @@ export async function startScan(params: StartScanParams): Promise<BodyScanRow> {
         scan_id: scanId,
         height_cm: params.heightCm,
         sex: params.sex,
+        age: params.age,
+        features: params.features,
       },
     }
   );
