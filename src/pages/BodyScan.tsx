@@ -463,14 +463,16 @@ const BodyScan = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {slot.image ? (
-                  <img 
-                    src={slot.image} 
-                    alt={`${slot.label} body scan`} 
-                    className="w-full rounded-lg object-cover max-h-80"
-                    loading="lazy"
-                  />
+                  <div className="w-full h-80 md:h-96 bg-muted/20 rounded-lg overflow-hidden flex items-center justify-center">
+                    <img
+                      src={slot.image}
+                      alt={`${slot.label} body scan`}
+                      className="max-h-full max-w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
                 ) : (
-                  <div className="aspect-video w-full rounded-lg bg-muted/30 flex items-center justify-center">
+                  <div className="w-full h-80 md:h-96 rounded-lg bg-muted/30 flex items-center justify-center">
                     <span className="text-sm text-muted-foreground">No photo captured</span>
                   </div>
                 )}
