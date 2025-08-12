@@ -199,6 +199,8 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           primary_goal: profile.primary_goal,
           preferred_equipment_type: profile.preferred_equipment_type,
           diet_type: profile.diet_type,
+          health_conditions: profile.health_conditions,
+          previous_injuries: profile.previous_injuries,
           onboarding_completed: true
         }, { onConflict: 'id' });
 
