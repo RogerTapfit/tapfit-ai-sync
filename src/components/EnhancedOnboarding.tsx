@@ -176,20 +176,32 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return;
       }
 
-      // Guard: ensure we have essential metrics
+      // Guard: ensure we have essential metrics - try to commit basic info first
       if (!profile.height_cm || !profile.weight_kg || profile.height_cm <= 0 || profile.weight_kg <= 0) {
-        toast.error('Please complete your basic info (age, height, weight) before finishing.');
-        setCurrentStep(1);
-        setLoading(false);
-        return;
+        console.log('⚠️ Missing basic metrics, attempting to commit from inputs...');
+        const committed = commitBasicInfo();
+        if (!committed || !profile.height_cm || !profile.weight_kg) {
+          toast.error('Please complete your basic info (age, height, weight) before finishing.');
+          setCurrentStep(1);
+          setLoading(false);
+          return;
+        }
       }
 
       console.log('💾 Saving enhanced profile data:', profile);
 
+      // Convert health fields to arrays as expected by database
+      const healthConditionsArray = profile.health_conditions 
+        ? [profile.health_conditions] 
+        : null;
+      const previousInjuriesArray = profile.previous_injuries 
+        ? [profile.previous_injuries] 
+        : null;
+
       // Update or insert profile with enhanced data to avoid "no row" edge cases
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert({
+        .upsert([{
           id: user.id,
           age: profile.age,
           weight_kg: profile.weight_kg,
@@ -199,10 +211,10 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           primary_goal: profile.primary_goal,
           preferred_equipment_type: profile.preferred_equipment_type,
           diet_type: profile.diet_type,
-          health_conditions: profile.health_conditions,
-          previous_injuries: profile.previous_injuries,
+          health_conditions: healthConditionsArray,
+          previous_injuries: previousInjuriesArray,
           onboarding_completed: true
-        }, { onConflict: 'id' });
+        }], { onConflict: 'id' });
 
       if (profileError) {
         console.error('❌ Error saving profile:', profileError);
