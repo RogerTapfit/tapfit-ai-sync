@@ -697,10 +697,12 @@ export type Database = {
           full_name: string | null
           gender: string | null
           gym_id: string | null
+          health_conditions: string[] | null
           height_cm: number | null
           id: string
           onboarding_completed: boolean | null
           preferred_equipment_type: string | null
+          previous_injuries: string[] | null
           primary_goal: string | null
           tap_coins_balance: number
           tap_tokens_balance: number
@@ -723,10 +725,12 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           gym_id?: string | null
+          health_conditions?: string[] | null
           height_cm?: number | null
           id: string
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
+          previous_injuries?: string[] | null
           primary_goal?: string | null
           tap_coins_balance?: number
           tap_tokens_balance?: number
@@ -749,10 +753,12 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           gym_id?: string | null
+          health_conditions?: string[] | null
           height_cm?: number | null
           id?: string
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
+          previous_injuries?: string[] | null
           primary_goal?: string | null
           tap_coins_balance?: number
           tap_tokens_balance?: number
