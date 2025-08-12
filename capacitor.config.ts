@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.4e37f3a98b5244369842e2cc950a194e',
+  appId: 'com.tapfit.app',
   appName: 'TapFitApp',
   webDir: 'dist',
   server: {
@@ -31,12 +31,15 @@ const config: CapacitorConfig = {
     scheme: "tapfit",
     preferredContentMode: "mobile",
     orientation: "portrait",
+    entitlements: {
+      "com.apple.developer.associated-domains": ["applinks:tapfit-ai-sync.lovable.app"]
+    },
     infoPlist: {
       NSHealthShareUsageDescription: "This app uses HealthKit to display your heart rate, blood oxygen, and activity data during workouts.",
       NSHealthUpdateUsageDescription: "This app may write workout data to HealthKit.",
-      NSBluetoothAlwaysUsageDescription: "TapFit connects to your Smart Puck over Bluetooth to track reps during workouts.",
-      NSBluetoothPeripheralUsageDescription: "TapFit uses Bluetooth to connect to fitness sensors.",
-      NFCReaderUsageDescription: "TapFit can read NFC to quickly open workouts from your Smart Puck.",
+      NSBluetoothAlwaysUsageDescription: "TapFit uses Bluetooth to connect to workout sensors.",
+      NSBluetoothPeripheralUsageDescription: "TapFit uses Bluetooth to connect to workout sensors.",
+      NFCReaderUsageDescription: "TapFit uses NFC to detect workout stations.",
       UIApplicationSceneManifest: {
         UIApplicationSupportsMultipleScenes: false,
         UISceneConfigurations: {
