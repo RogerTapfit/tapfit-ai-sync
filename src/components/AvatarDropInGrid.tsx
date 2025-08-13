@@ -229,7 +229,7 @@ export const AvatarDropInGrid: React.FC = () => {
                       <img
                         src={slot.image_url}
                         alt={slot.name || `TapFit avatar ${i + 1}`}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-contain"
                         loading="lazy"
                       />
                       <div className="absolute inset-x-0 bottom-0 p-2 flex justify-end bg-background/70 backdrop-blur">

@@ -99,7 +99,7 @@ export const AvatarGallery: React.FC = () => {
                     alt={a.name}
                     loading="lazy"
                     onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
-                    className={`w-full aspect-square object-cover ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
+                    className={`w-full aspect-square object-contain ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                   />
                   {/* Mini preview bottom-right */}
                   <img
@@ -107,7 +107,7 @@ export const AvatarGallery: React.FC = () => {
                     alt={`${a.name} mini`}
                     loading="lazy"
                     onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
-                    className="absolute bottom-2 right-2 w-10 h-10 rounded-full border border-border bg-background object-cover"
+                    className="absolute bottom-2 right-2 w-10 h-10 rounded-full border border-border bg-background object-contain"
                   />
                   {/* Name bar */}
                   <div

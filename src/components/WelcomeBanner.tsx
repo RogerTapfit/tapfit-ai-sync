@@ -52,7 +52,7 @@ export const WelcomeBanner: React.FC = () => {
               src={avatar.mini_image_url}
               alt="Mini avatar"
               loading="lazy"
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-border object-cover"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-border object-contain"
             />
           ) : (
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-dashed border-border" />
