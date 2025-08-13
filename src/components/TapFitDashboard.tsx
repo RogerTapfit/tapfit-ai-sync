@@ -273,7 +273,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* Choose Avatar */}
       <Button
         size="lg"
-        onClick={() => onPageChange?.('avatar-selection')}
+        onClick={() => navigate('/avatar-selection')}
         className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-2xl hover:shadow-purple-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full my-4"
       >
         <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
