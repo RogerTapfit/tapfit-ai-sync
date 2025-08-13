@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, ImagePlus, ShieldAlert } from 'lucide-react';
@@ -112,6 +113,32 @@ export const AvatarDropInGrid: React.FC = () => {
     })();
     return () => { active = false; };
   }, []);
+
+  const handleUpdateName = useCallback(async (index: number, newName: string) => {
+    if (!isAdmin || !slots[index].id) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('adminUpsertAvatar', {
+        body: {
+          id: slots[index].id,
+          name: newName,
+          sort_order: index,
+        }
+      });
+      if (error) throw error;
+      
+      const next = [...slots];
+      next[index] = { ...next[index], name: newName };
+      setSlots(next);
+      toast({ title: 'Name updated', description: `Avatar renamed to "${newName}"` });
+    } catch (e: any) {
+      toast({
+        title: 'Update failed',
+        description: e?.message ?? String(e),
+        variant: 'destructive'
+      });
+    }
+  }, [slots, isAdmin, toast]);
 
   const handleUploadAt = useCallback(async (file: File, index: number) => {
     try {
@@ -232,6 +259,34 @@ export const AvatarDropInGrid: React.FC = () => {
                         className="absolute inset-0 w-full h-full object-contain"
                         loading="lazy"
                       />
+                      {/* Name input in top right */}
+                      <div className="absolute top-2 right-2">
+                        {isAdmin ? (
+                          <Input
+                            type="text"
+                            placeholder={`Avatar ${i + 1}`}
+                            value={slot.name || ''}
+                            onChange={(e) => {
+                              const next = [...slots];
+                              next[i] = { ...next[i], name: e.target.value };
+                              setSlots(next);
+                            }}
+                            onBlur={(e) => {
+                              if (slot.id && e.target.value !== slot.name) {
+                                handleUpdateName(i, e.target.value || `Avatar ${i + 1}`);
+                              }
+                            }}
+                            className="h-6 text-xs w-20 bg-background/90 border-border/50"
+                          />
+                        ) : (
+                          slot.name && (
+                            <div className="text-xs text-foreground bg-background/90 px-2 py-1 rounded shadow-lg">
+                              {slot.name}
+                            </div>
+                          )
+                        )}
+                      </div>
+                      {/* Replace button in bottom right */}
                       <div className="absolute inset-x-0 bottom-0 p-2 flex justify-end">
                         {isAdmin ? (
                           <label className="inline-flex items-center gap-1 text-xs cursor-pointer border border-border rounded px-2 py-1 bg-background/90 hover:bg-background shadow-lg transition">
