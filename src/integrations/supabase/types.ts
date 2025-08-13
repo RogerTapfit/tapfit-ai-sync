@@ -167,6 +167,33 @@ export type Database = {
         }
         Relationships: []
       }
+      avatars: {
+        Row: {
+          id: string
+          image_url: string
+          is_active: boolean
+          mini_image_url: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          image_url: string
+          is_active?: boolean
+          mini_image_url: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          mini_image_url?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       body_scan_images: {
         Row: {
           created_at: string
@@ -687,6 +714,7 @@ export type Database = {
         Row: {
           age: number | null
           avatar_data: Json | null
+          avatar_id: string | null
           avatar_url: string | null
           calibration_completed: boolean | null
           created_at: string
@@ -715,6 +743,7 @@ export type Database = {
         Insert: {
           age?: number | null
           avatar_data?: Json | null
+          avatar_id?: string | null
           avatar_url?: string | null
           calibration_completed?: boolean | null
           created_at?: string
@@ -743,6 +772,7 @@ export type Database = {
         Update: {
           age?: number | null
           avatar_data?: Json | null
+          avatar_id?: string | null
           avatar_url?: string | null
           calibration_completed?: boolean | null
           created_at?: string
@@ -768,7 +798,15 @@ export type Database = {
           target_protein_grams?: number | null
           weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_avatar_id_fkey"
+            columns: ["avatar_id"]
+            isOneToOne: false
+            referencedRelation: "avatars"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_workouts: {
         Row: {

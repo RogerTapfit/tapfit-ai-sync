@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
     { id: 'nutrition', label: 'Nutrition', icon: Apple },
     { id: 'social', label: 'Social', icon: Users },
     { id: 'challenges', label: 'Challenges', icon: Trophy },
-    { id: 'avatar', label: 'Avatar', icon: UserIcon },
+    { id: 'avatar', label: 'Choose Avatar', icon: UserIcon },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

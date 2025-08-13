@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useAvatar as useSelectedAvatar } from '@/lib/avatarState';
 
 interface Message {
   id: string;
@@ -46,6 +47,10 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Selected avatar (mini) for bot identity
+  const { avatar } = useSelectedAvatar();
+  const miniUrl = avatar?.mini_image_url;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,6 +134,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
         onClick={onToggle}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg z-50"
         size="icon"
+        aria-label="Open chat"
       >
         <MessageCircle className="h-6 w-6 text-white" />
       </Button>
@@ -140,8 +146,17 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
       <CardHeader className="p-4 pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center">
-              <Bot className="h-4 w-4 text-white" />
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center">
+              {miniUrl ? (
+                <img
+                  src={miniUrl}
+                  alt="Bot avatar"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Bot className="h-4 w-4" />
+              )}
             </div>
             <CardTitle className="text-sm">FitBot AI Coach</CardTitle>
           </div>
@@ -151,6 +166,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
               size="sm"
               onClick={() => setIsMinimized(!isMinimized)}
               className="h-6 w-6 p-0"
+              aria-label={isMinimized ? 'Expand chat' : 'Minimize chat'}
             >
               <Minimize2 className="h-3 w-3" />
             </Button>
@@ -159,6 +175,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
               size="sm"
               onClick={onToggle}
               className="h-6 w-6 p-0"
+              aria-label="Close chat"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -177,8 +194,17 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                     className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'}`}
                   >
                     {!message.isUser && (
-                      <div className="w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                        <Bot className="h-3 w-3 text-white" />
+                      <div className="w-6 h-6 rounded-full overflow-hidden border border-border flex items-center justify-center flex-shrink-0 mt-1 bg-muted">
+                        {miniUrl ? (
+                          <img
+                            src={miniUrl}
+                            alt="Bot avatar"
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Bot className="h-3 w-3" />
+                        )}
                       </div>
                     )}
                     <div
@@ -199,8 +225,17 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 ))}
                 {isLoading && (
                   <div className="flex gap-2 justify-start">
-                    <div className="w-6 h-6 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="h-3 w-3 text-white" />
+                    <div className="w-6 h-6 rounded-full overflow-hidden border border-border flex items-center justify-center flex-shrink-0 mt-1 bg-muted">
+                      {miniUrl ? (
+                        <img
+                          src={miniUrl}
+                          alt="Bot avatar"
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Bot className="h-3 w-3" />
+                      )}
                     </div>
                     <div className="bg-muted p-3 rounded-lg text-sm">
                       <div className="flex gap-1">
@@ -215,25 +250,28 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
               </div>
             </ScrollArea>
 
-            {messages.length === 1 && (
-              <div className="p-4 pt-0">
-                <div className="grid grid-cols-2 gap-2">
-                  {quickActions.map((action, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickAction(action.message)}
-                      className="flex items-center gap-1 text-xs h-8"
-                      disabled={isLoading}
-                    >
-                      <action.icon className="h-3 w-3" />
-                      {action.text}
-                    </Button>
-                  ))}
-                </div>
+            <div className="p-4 pt-0">
+              <div className="grid grid-cols-2 gap-2">
+                {[ 
+                  { icon: Dumbbell, text: "Workout tips", message: "Give me some workout tips for today" },
+                  { icon: Apple, text: "Nutrition advice", message: "What should I eat for better performance?" },
+                  { icon: Heart, text: "Recovery tips", message: "How can I improve my recovery?" },
+                  { icon: Target, text: "Set goals", message: "Help me set realistic fitness goals" }
+                ].map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickAction(action.message)}
+                    className="flex items-center gap-1 text-xs h-8"
+                    disabled={isLoading}
+                  >
+                    <action.icon className="h-3 w-3" />
+                    {action.text}
+                  </Button>
+                ))}
               </div>
-            )}
+            </div>
 
             <div className="p-4 pt-2 border-t flex-shrink-0">
               <form onSubmit={handleSubmit} className="flex gap-2">
