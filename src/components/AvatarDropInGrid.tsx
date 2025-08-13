@@ -308,6 +308,7 @@ export const AvatarDropInGrid: React.FC = () => {
                         src={slot.image_url}
                         alt={slot.name || `TapFit avatar ${i + 1}`}
                         className="absolute inset-0 w-full h-full object-contain"
+                        style={slot.name?.trim().toLowerCase() === 'reptile' ? { transform: 'scale(1.2)', transformOrigin: 'center' } : undefined}
                         loading="lazy"
                       />
                       {editingNames && isAdmin ? (
