@@ -17,7 +17,8 @@ import {
   Settings,
   Palette,
   Apple,
-  RefreshCw
+  RefreshCw,
+  User
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero-new.jpg";
 const HERO_MASCOT_URL = "/lovable-uploads/e3f47cfe-bdb8-47c1-a1d6-4df0229e046f.png";
@@ -268,6 +269,22 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           </div>
         </Button>
       </div>
+
+      {/* Choose Avatar */}
+      <Button
+        size="lg"
+        onClick={() => onPageChange?.('avatar-selection')}
+        className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-2xl hover:shadow-purple-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full my-4"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="relative flex items-center gap-4 justify-center">
+          <User className="h-8 w-8" />
+          <div className="flex flex-col items-start">
+            <span className="text-2xl font-black">CHOOSE AVATAR</span>
+            <span className="text-sm font-normal opacity-90">Customize Your Character</span>
+          </div>
+        </div>
+      </Button>
 
       {/* 3. Weekly Progress */}
       <Card className="glow-card animate-slide-up">
