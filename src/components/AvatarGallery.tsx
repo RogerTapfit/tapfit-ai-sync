@@ -3,6 +3,16 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Image as ImageIcon } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAvatar } from '@/lib/avatarState';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +30,7 @@ export const AvatarGallery: React.FC = () => {
   const [avatars, setAvatars] = useState<DBAvatar[]>([]);
   const [loading, setLoading] = useState(true);
   const [accents, setAccents] = useState<Record<string, string>>({});
+  const [selectedForConfirmation, setSelectedForConfirmation] = useState<DBAvatar | null>(null);
 
   const deriveAccentFromImage = (img: HTMLImageElement): string => {
     try {
@@ -62,12 +73,24 @@ export const AvatarGallery: React.FC = () => {
     return () => { mounted = false; };
   }, []);
 
-  const handleSelect = async (a: DBAvatar) => {
-    await selectAvatar(a);
+  const handleAvatarClick = (a: DBAvatar) => {
+    if (isSelected(a.id)) return; // Don't show confirmation for already selected avatar
+    setSelectedForConfirmation(a);
+  };
+
+  const handleConfirmSelection = async () => {
+    if (!selectedForConfirmation) return;
+    
+    await selectAvatar(selectedForConfirmation);
     toast({
       title: 'Avatar updated',
-      description: `You selected ${a.name}.`,
+      description: `You selected ${selectedForConfirmation.name}.`,
     });
+    setSelectedForConfirmation(null);
+  };
+
+  const handleCancelSelection = () => {
+    setSelectedForConfirmation(null);
   };
 
   const isSelected = (id: string) => selected?.id === id;
@@ -157,12 +180,13 @@ export const AvatarGallery: React.FC = () => {
                     {/* Action button */}
                     <div className="p-2">
                       <Button
-                        className="w-full"
+                        className="w-full cursor-pointer"
                         variant={isSelected(a.id) ? 'secondary' : 'default'}
-                        onClick={() => handleSelect(a)}
+                        onClick={() => handleAvatarClick(a)}
                         aria-pressed={isSelected(a.id)}
+                        disabled={isSelected(a.id)}
                       >
-                        {isSelected(a.id) ? 'Selected' : 'Set as Main Avatar'}
+                        {isSelected(a.id) ? 'Selected' : 'Choose This Avatar'}
                       </Button>
                     </div>
                   </div>
@@ -172,6 +196,22 @@ export const AvatarGallery: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Modal */}
+      <AlertDialog open={!!selectedForConfirmation} onOpenChange={() => setSelectedForConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Avatar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Do you want {selectedForConfirmation?.name} to be your new avatar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSelection}>No</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSelection}>Yes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

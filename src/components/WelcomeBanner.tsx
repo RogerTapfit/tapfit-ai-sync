@@ -1,6 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getDisplayName } from '@/lib/userDisplay';
 import { useAvatar } from '@/lib/avatarState';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,11 +49,11 @@ export const WelcomeBanner: React.FC = () => {
     <Card className="overflow-hidden">
       <CardContent className="p-4 sm:p-6 flex items-center justify-between">
         <div className="text-base sm:text-lg font-medium">{text}</div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {avatar?.image_url ? (
-            <div className="relative">
+            <Link to="/avatars" className="relative group cursor-pointer">
               <div
-                className="absolute -inset-2 pointer-events-none"
+                className="absolute -inset-2 pointer-events-none group-hover:opacity-90 transition-opacity"
                 style={{
                   background: `radial-gradient(50% 50% at 60% 70%, ${avatar?.accent_hex ?? '#ff3b3b'} 0%, transparent 60%)`,
                   filter: 'blur(30px) saturate(1.2)',
@@ -61,11 +64,16 @@ export const WelcomeBanner: React.FC = () => {
                 src={avatar.image_url}
                 alt={avatar?.name ? `${avatar.name} full avatar` : 'Full avatar'}
                 loading="lazy"
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-border object-contain relative"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-border object-contain relative group-hover:scale-105 transition-transform"
               />
-            </div>
+            </Link>
           ) : (
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-dashed border-border" />
+            <Link to="/avatars">
+              <Button variant="outline" size="sm" className="gap-2">
+                <User className="w-4 h-4" />
+                Choose Avatar
+              </Button>
+            </Link>
           )}
         </div>
       </CardContent>

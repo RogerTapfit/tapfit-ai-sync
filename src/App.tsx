@@ -21,6 +21,7 @@ import BodyScan from "./pages/BodyScan";
 import BodyScanLibrary from "./pages/BodyScanLibrary";
 import BodyScanDetail from "./pages/BodyScanDetail";
 import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
+import AvatarSelection from "./pages/AvatarSelection";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -140,6 +141,11 @@ const App = () => {
             <Route path="/body-scans/:scanId" element={
               <AuthGuard fallback={<Auth />}>
                 <BodyScanDetail />
+              </AuthGuard>
+            } />
+            <Route path="/avatars" element={
+              <AuthGuard fallback={<Auth />}>
+                <AvatarSelection />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
