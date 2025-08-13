@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,12 +59,14 @@ async function createThumbnail(dataUrl: string, size = 128): Promise<string> {
 
 export const AvatarDropInGrid: React.FC = () => {
   const { toast } = useToast();
-  const [slots, setSlots] = useState<Slot[]>(Array.from({ length: MAX_SLOTS }, () => ({}) ))
+  const [slots, setSlots] = useState<Slot[]>(Array.from({ length: MAX_SLOTS }, () => ({}) ));
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
   const [granting, setGranting] = useState(false);
   const [savingAll, setSavingAll] = useState(false);
+  const [editingNames, setEditingNames] = useState(false);
+  const [savingIdx, setSavingIdx] = useState<number | null>(null);
 
   const fetchAvatars = useCallback(async () => {
     setLoading(true);
@@ -144,12 +147,49 @@ export const AvatarDropInGrid: React.FC = () => {
       } else {
         toast({ title: 'Some names failed to save', description: `${failed.length} updates failed.`, variant: 'destructive' });
       }
+
+      await fetchAvatars();
+      setEditingNames(false);
     } catch (e: any) {
       toast({ title: 'Save failed', description: e?.message ?? String(e), variant: 'destructive' });
     } finally {
       setSavingAll(false);
     }
-  }, [slots, isAdmin, checkingRole, toast]);
+  }, [slots, isAdmin, checkingRole, toast, fetchAvatars]);
+
+  const handleNameChange = useCallback((index: number, value: string) => {
+    setSlots(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], name: value };
+      return next;
+    });
+  }, []);
+
+  const handleSaveNameAt = useCallback(async (index: number) => {
+    if (!isAdmin) return;
+    const slot = slots[index];
+    if (!slot?.id) return;
+    const name = (slot.name?.trim() || `Avatar ${index + 1}`);
+    try {
+      setSavingIdx(index);
+      const { data, error } = await supabase.functions.invoke('adminUpsertAvatar', {
+        body: { id: slot.id, name, sort_order: index }
+      });
+      if (error) throw error;
+      const avatar: DBAvatar = data.avatar;
+      setSlots(prev => {
+        const next = [...prev];
+        next[index] = { ...next[index], name: avatar.name };
+        return next;
+      });
+      toast({ title: 'Name saved', description: `${avatar.name}` });
+      await fetchAvatars();
+    } catch (e: any) {
+      toast({ title: 'Save failed', description: e?.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setSavingIdx(null);
+    }
+  }, [slots, isAdmin, toast, fetchAvatars]);
 
   const handleUploadAt = useCallback(async (file: File, index: number) => {
     try {
@@ -270,14 +310,31 @@ export const AvatarDropInGrid: React.FC = () => {
                         className="absolute inset-0 w-full h-full object-contain"
                         loading="lazy"
                       />
-                      {/* Avatar name display (read-only) */}
-                      <div className="absolute top-2 right-2">
-                        {slot.name && (
-                          <div className="text-xs text-foreground bg-background/90 px-2 py-1 rounded shadow-lg">
-                            {slot.name}
-                          </div>
-                        )}
-                      </div>
+                      {editingNames && isAdmin ? (
+                        <div className="absolute top-2 right-2 w-2/3 max-w-[180px]">
+                          <Input
+                            value={slot.name ?? ''}
+                            placeholder={`Avatar ${i + 1}`}
+                            onChange={(e) => handleNameChange(i, e.target.value)}
+                            onBlur={() => handleSaveNameAt(i)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.currentTarget as HTMLInputElement).blur();
+                              }
+                            }}
+                            disabled={savingIdx === i}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      ) : (
+                        <div className="absolute top-2 right-2">
+                          {slot.name && (
+                            <div className="text-xs text-foreground bg-background/90 px-2 py-1 rounded shadow-lg">
+                              {slot.name}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {/* Replace button in bottom right */}
                       <div className="absolute inset-x-0 bottom-0 p-2 flex justify-end">
                         {isAdmin ? (
@@ -315,14 +372,19 @@ export const AvatarDropInGrid: React.FC = () => {
               ))}
             </div>
           )}
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Button variant="outline" onClick={fetchAvatars}>
               <Upload className="mr-2 h-4 w-4" /> Refresh from server
             </Button>
             {isAdmin && (
-              <Button onClick={handleSaveAllNames} disabled={savingAll}>
-                {savingAll ? 'Saving…' : 'Save all names'}
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setEditingNames(v => !v)}>
+                  {editingNames ? 'Done editing' : 'Edit names'}
+                </Button>
+                <Button onClick={handleSaveAllNames} disabled={savingAll}>
+                  {savingAll ? 'Saving…' : 'Save all names'}
+                </Button>
+              </>
             )}
           </div>
         </CardContent>
