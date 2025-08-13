@@ -125,13 +125,14 @@ export const AvatarGallery: React.FC = () => {
                 return (
                   <div
                     key={a.id}
-                    className={`group relative overflow-hidden rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary' : 'border-border'} bg-card shadow-sm hover:shadow-lg transition-shadow`}
+                    onClick={() => handleAvatarClick(a)}
+                    className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50'} bg-card shadow-sm hover:shadow-lg transition-all duration-200`}
                     aria-pressed={isSelected(a.id)}
                     aria-label={`Choose avatar ${a.name}`}
                   >
                     {/* Glow layer */}
                     <div
-                      className="absolute -inset-[10%] pointer-events-none opacity-65 group-hover:opacity-90"
+                      className="absolute -inset-[10%] pointer-events-none opacity-65 group-hover:opacity-90 transition-opacity duration-200"
                       style={{
                         background: `radial-gradient(60% 60% at 50% 60%, ${accent} 0%, transparent 60%)`,
                         filter: 'blur(28px) saturate(1.2)'
@@ -151,7 +152,7 @@ export const AvatarGallery: React.FC = () => {
                           } catch {}
                         }
                       }}
-                      className={`w-full aspect-square object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.2] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
+                      className={`w-full aspect-square object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                     />
                     {/* Mini preview bottom-right */}
                     <img
@@ -182,7 +183,10 @@ export const AvatarGallery: React.FC = () => {
                       <Button
                         className="w-full cursor-pointer"
                         variant={isSelected(a.id) ? 'secondary' : 'default'}
-                        onClick={() => handleAvatarClick(a)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAvatarClick(a);
+                        }}
                         aria-pressed={isSelected(a.id)}
                         disabled={isSelected(a.id)}
                       >
