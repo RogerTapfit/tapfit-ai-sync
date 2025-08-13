@@ -20,6 +20,7 @@ import WorkoutHub from "./pages/WorkoutHub";
 import BodyScan from "./pages/BodyScan";
 import BodyScanLibrary from "./pages/BodyScanLibrary";
 import BodyScanDetail from "./pages/BodyScanDetail";
+import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -142,6 +143,11 @@ const App = () => {
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/admin/replace-avatar-image" element={
+              <AuthGuard fallback={<Auth />}>
+                <AdminReplaceAvatarImage />
+              </AuthGuard>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </HashRouter>
