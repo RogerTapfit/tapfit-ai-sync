@@ -137,7 +137,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   return (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl h-[220px] sm:h-[240px] md:h-[260px] lg:h-[300px]">
+      <div className="relative overflow-hidden rounded-2xl h-[250px] sm:h-[270px] md:h-[280px] lg:h-[320px]">
         <img 
           src={heroImage} 
           alt="TapFit Futuristic Gym" 
@@ -165,7 +165,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           <img
             src={selectedAvatar?.image_url || HERO_MASCOT_URL}
             alt={selectedAvatar?.name || "TapFit mascot red robot"}
-            className="hidden md:block max-h-72 max-w-80 w-auto object-contain drop-shadow-xl pointer-events-none select-none"
+            className="hidden md:block max-h-80 max-w-80 w-auto object-contain drop-shadow-xl pointer-events-none select-none"
             loading="eager"
           />
         </div>
@@ -174,7 +174,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <img
           src={selectedAvatar?.image_url || HERO_MASCOT_URL}
           alt={selectedAvatar?.name || "TapFit mascot red robot"}
-          className="md:hidden absolute bottom-1 right-2 max-h-44 max-w-40 w-auto object-contain drop-shadow-xl pointer-events-none select-none z-10"
+          className="md:hidden absolute bottom-4 right-2 max-h-52 max-w-40 w-auto object-contain drop-shadow-xl pointer-events-none select-none z-10"
           loading="eager"
         />
 
