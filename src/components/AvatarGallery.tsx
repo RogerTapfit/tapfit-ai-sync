@@ -128,7 +128,7 @@ export const AvatarGallery: React.FC = () => {
                   <div
                     key={a.id}
                     onClick={() => handleAvatarClick(a)}
-                    className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50'} bg-card shadow-sm hover:shadow-lg transition-all duration-200`}
+                    className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50'} bg-card shadow-sm hover:shadow-lg transition-all duration-200 h-80`}
                     aria-pressed={isSelected(a.id)}
                     aria-label={`Choose avatar ${a.name}`}
                   >
@@ -154,7 +154,7 @@ export const AvatarGallery: React.FC = () => {
                           } catch {}
                         }
                       }}
-                      className={`w-full aspect-square object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
+                      className={`w-full h-44 object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                     />
                     {/* Mini preview bottom-right */}
                     <img
@@ -162,11 +162,11 @@ export const AvatarGallery: React.FC = () => {
                       alt={`${a.name} mini`}
                       loading="lazy"
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
-                      className="absolute bottom-16 right-2 w-10 h-10 rounded-full border border-border bg-background object-contain"
+                      className="absolute top-32 right-2 w-10 h-10 rounded-full border border-border bg-background object-contain"
                     />
                     {/* Name bar */}
                     <div
-                      className="absolute left-0 right-0 bottom-12 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
+                      className="absolute left-0 right-0 top-44 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
                     >
                       {a.name}
                     </div>
@@ -181,7 +181,7 @@ export const AvatarGallery: React.FC = () => {
                     )}
 
                     {/* Action button */}
-                    <div className="p-2">
+                    <div className="absolute bottom-0 left-0 right-0 p-2">
                       <Button
                         className="w-full cursor-pointer"
                         variant={isSelected(a.id) ? 'secondary' : 'default'}
