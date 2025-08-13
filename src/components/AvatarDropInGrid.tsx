@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, ImagePlus, ShieldAlert } from 'lucide-react';
@@ -63,6 +63,7 @@ export const AvatarDropInGrid: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
   const [granting, setGranting] = useState(false);
+  const [savingAll, setSavingAll] = useState(false);
 
   const fetchAvatars = useCallback(async () => {
     setLoading(true);
@@ -114,31 +115,41 @@ export const AvatarDropInGrid: React.FC = () => {
     return () => { active = false; };
   }, []);
 
-  const handleUpdateName = useCallback(async (index: number, newName: string) => {
-    if (!isAdmin || !slots[index].id) return;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('adminUpsertAvatar', {
-        body: {
-          id: slots[index].id,
-          name: newName,
-          sort_order: index,
-        }
-      });
-      if (error) throw error;
-      
-      const next = [...slots];
-      next[index] = { ...next[index], name: newName };
-      setSlots(next);
-      toast({ title: 'Name updated', description: `Avatar renamed to "${newName}"` });
-    } catch (e: any) {
-      toast({
-        title: 'Update failed',
-        description: e?.message ?? String(e),
-        variant: 'destructive'
-      });
+  const handleSaveAllNames = useCallback(async () => {
+    if (checkingRole) {
+      toast({ title: 'Please wait', description: 'Checking your permissions…' });
+      return;
     }
-  }, [slots, isAdmin, toast]);
+    if (!isAdmin) {
+      toast({ title: 'Permission denied', description: 'Only admins can save names.', variant: 'destructive' });
+      return;
+    }
+    setSavingAll(true);
+    try {
+      const tasks = slots
+        .map((slot, i) => {
+          if (!slot.id) return null;
+          const name = (slot.name?.trim() || `Avatar ${i + 1}`);
+          return supabase.functions
+            .invoke('adminUpsertAvatar', { body: { id: slot.id, name, sort_order: i } })
+            .then(({ error }) => ({ ok: !error, i, error }));
+        })
+        .filter(Boolean) as Promise<{ ok: boolean; i: number; error?: any }>[];
+
+      const results = await Promise.all(tasks);
+      const failed = results.filter(r => !r.ok);
+
+      if (failed.length === 0) {
+        toast({ title: 'All names saved', description: 'Avatar names have been persisted.' });
+      } else {
+        toast({ title: 'Some names failed to save', description: `${failed.length} updates failed.`, variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Save failed', description: e?.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setSavingAll(false);
+    }
+  }, [slots, isAdmin, checkingRole, toast]);
 
   const handleUploadAt = useCallback(async (file: File, index: number) => {
     try {
@@ -259,31 +270,12 @@ export const AvatarDropInGrid: React.FC = () => {
                         className="absolute inset-0 w-full h-full object-contain"
                         loading="lazy"
                       />
-                      {/* Name input in top right */}
+                      {/* Avatar name display (read-only) */}
                       <div className="absolute top-2 right-2">
-                        {isAdmin ? (
-                          <Input
-                            type="text"
-                            placeholder={`Avatar ${i + 1}`}
-                            value={slot.name || ''}
-                            onChange={(e) => {
-                              const next = [...slots];
-                              next[i] = { ...next[i], name: e.target.value };
-                              setSlots(next);
-                            }}
-                            onBlur={(e) => {
-                              if (slot.id && e.target.value !== slot.name) {
-                                handleUpdateName(i, e.target.value || `Avatar ${i + 1}`);
-                              }
-                            }}
-                            className="h-6 text-xs w-20 bg-background/90 border-border/50"
-                          />
-                        ) : (
-                          slot.name && (
-                            <div className="text-xs text-foreground bg-background/90 px-2 py-1 rounded shadow-lg">
-                              {slot.name}
-                            </div>
-                          )
+                        {slot.name && (
+                          <div className="text-xs text-foreground bg-background/90 px-2 py-1 rounded shadow-lg">
+                            {slot.name}
+                          </div>
                         )}
                       </div>
                       {/* Replace button in bottom right */}
@@ -327,6 +319,11 @@ export const AvatarDropInGrid: React.FC = () => {
             <Button variant="outline" onClick={fetchAvatars}>
               <Upload className="mr-2 h-4 w-4" /> Refresh from server
             </Button>
+            {isAdmin && (
+              <Button onClick={handleSaveAllNames} disabled={savingAll}>
+                {savingAll ? 'Saving…' : 'Save all names'}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
