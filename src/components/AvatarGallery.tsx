@@ -12,19 +12,41 @@ type DBAvatar = {
   name: string;
   image_url: string;
   mini_image_url: string;
+  accent_hex?: string;
 };
 
 export const AvatarGallery: React.FC = () => {
   const { avatar: selected, selectAvatar, loading: avatarLoading } = useAvatar();
   const [avatars, setAvatars] = useState<DBAvatar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accents, setAccents] = useState<Record<string, string>>({});
 
+  const deriveAccentFromImage = (img: HTMLImageElement): string => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return '#ff4d4d';
+      const w = 32, h = 32;
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+      }
+      r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+      const toHex = (n: number) => n.toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    } catch {
+      return '#ff4d4d';
+    }
+  };
   useEffect(() => {
     let mounted = true;
     (async () => {
       const { data, error } = await supabase
         .from('avatars')
-        .select('id, name, image_url, mini_image_url')
+        .select('id, name, image_url, mini_image_url, accent_hex')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
 
@@ -75,61 +97,77 @@ export const AvatarGallery: React.FC = () => {
                 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6
               "
             >
-              {avatars.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => handleSelect(a)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleSelect(a);
-                    }
-                  }}
-                  className={`
-                    group relative overflow-hidden rounded-lg border 
-                    focus:outline-none focus:ring-2 focus:ring-primary
-                    ${isSelected(a.id) ? 'border-primary' : 'border-border'}
-                  `}
-                  aria-pressed={isSelected(a.id)}
-                  aria-label={`Choose avatar ${a.name}`}
-                >
-                  <img
-                    src={a.image_url}
-                    alt={a.name}
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
-                    className={`w-full aspect-square object-contain ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
-                  />
-                  {/* Mini preview bottom-right */}
-                  <img
-                    src={a.mini_image_url}
-                    alt={`${a.name} mini`}
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
-                    className="absolute bottom-2 right-2 w-10 h-10 rounded-full border border-border bg-background object-contain"
-                  />
-                  {/* Name bar */}
+              {avatars.map((a) => {
+                const accent = a.accent_hex || accents[a.id] || '#ff4d4d';
+                return (
                   <div
-                    className="
-                      absolute left-0 right-0 bottom-0 
-                      bg-background/80 backdrop-blur-sm 
-                      text-foreground text-xs px-2 py-1
-                    "
+                    key={a.id}
+                    className={`group relative overflow-hidden rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary' : 'border-border'} bg-card shadow-sm hover:shadow-lg transition-shadow`}
+                    aria-pressed={isSelected(a.id)}
+                    aria-label={`Choose avatar ${a.name}`}
                   >
-                    {a.name}
-                  </div>
-                  {/* Selected ring */}
-                  {isSelected(a.id) && (
-                    <div className="absolute inset-0 ring-2 ring-primary pointer-events-none" />
-                  )}
-                  {isSelected(a.id) && (
-                    <div className="absolute top-2 left-2 bg-primary text-primary-foreground rounded-full p-1">
-                      <Check className="w-4 h-4" />
+                    {/* Glow layer */}
+                    <div
+                      className="absolute -inset-[10%] pointer-events-none opacity-65 group-hover:opacity-90"
+                      style={{
+                        background: `radial-gradient(60% 60% at 50% 60%, ${accent} 0%, transparent 60%)`,
+                        filter: 'blur(28px) saturate(1.2)'
+                      }}
+                    />
+                    {/* Main image */}
+                    <img
+                      src={a.image_url}
+                      alt={a.name}
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
+                      onLoad={(e) => {
+                        if (!a.accent_hex) {
+                          try {
+                            const c = deriveAccentFromImage(e.currentTarget);
+                            setAccents((s) => ({ ...s, [a.id]: c }));
+                          } catch {}
+                        }
+                      }}
+                      className={`w-full aspect-square object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.2] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
+                    />
+                    {/* Mini preview bottom-right */}
+                    <img
+                      src={a.mini_image_url}
+                      alt={`${a.name} mini`}
+                      loading="lazy"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
+                      className="absolute bottom-2 right-2 w-10 h-10 rounded-full border border-border bg-background object-contain"
+                    />
+                    {/* Name bar */}
+                    <div
+                      className="absolute left-0 right-0 bottom-0 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
+                    >
+                      {a.name}
                     </div>
-                  )}
-                </button>
-              ))}
+                    {/* Selected ring */}
+                    {isSelected(a.id) && (
+                      <div className="absolute inset-0 ring-2 ring-primary pointer-events-none" />
+                    )}
+                    {isSelected(a.id) && (
+                      <div className="absolute top-2 left-2 bg-primary text-primary-foreground rounded-full p-1">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    )}
+
+                    {/* Action button */}
+                    <div className="p-2">
+                      <Button
+                        className="w-full"
+                        variant={isSelected(a.id) ? 'secondary' : 'default'}
+                        onClick={() => handleSelect(a)}
+                        aria-pressed={isSelected(a.id)}
+                      >
+                        {isSelected(a.id) ? 'Selected' : 'Set as Main Avatar'}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>

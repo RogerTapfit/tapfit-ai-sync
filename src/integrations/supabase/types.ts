@@ -169,6 +169,7 @@ export type Database = {
       }
       avatars: {
         Row: {
+          accent_hex: string | null
           id: string
           image_url: string
           is_active: boolean
@@ -177,6 +178,7 @@ export type Database = {
           sort_order: number
         }
         Insert: {
+          accent_hex?: string | null
           id?: string
           image_url: string
           is_active?: boolean
@@ -185,6 +187,7 @@ export type Database = {
           sort_order?: number
         }
         Update: {
+          accent_hex?: string | null
           id?: string
           image_url?: string
           is_active?: boolean

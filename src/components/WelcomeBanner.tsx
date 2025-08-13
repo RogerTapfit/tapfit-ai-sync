@@ -48,12 +48,22 @@ export const WelcomeBanner: React.FC = () => {
         <div className="text-base sm:text-lg font-medium">{text}</div>
         <div className="flex items-center gap-2">
           {avatar?.image_url ? (
-            <img
-              src={avatar.image_url}
-              alt={avatar?.name ? `${avatar.name} full avatar` : 'Full avatar'}
-              loading="lazy"
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-border object-contain"
-            />
+            <div className="relative">
+              <div
+                className="absolute -inset-2 pointer-events-none"
+                style={{
+                  background: `radial-gradient(50% 50% at 60% 70%, ${avatar?.accent_hex ?? '#ff3b3b'} 0%, transparent 60%)`,
+                  filter: 'blur(30px) saturate(1.2)',
+                  opacity: 0.7
+                }}
+              />
+              <img
+                src={avatar.image_url}
+                alt={avatar?.name ? `${avatar.name} full avatar` : 'Full avatar'}
+                loading="lazy"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-border object-contain relative"
+              />
+            </div>
           ) : (
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-dashed border-border" />
           )}
