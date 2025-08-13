@@ -98,7 +98,7 @@ export const AvatarGallery: React.FC = () => {
                     src={a.image_url}
                     alt={a.name}
                     loading="lazy"
-                    className="w-full aspect-square object-cover"
+                    className={`w-full aspect-square object-cover ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                   />
                   {/* Mini preview bottom-right */}
                   <img
