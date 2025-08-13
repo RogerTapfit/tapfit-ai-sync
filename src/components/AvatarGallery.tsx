@@ -53,7 +53,6 @@ export const AvatarGallery: React.FC = () => {
     }
   };
   useEffect(() => {
-    console.log('AvatarGallery component mounted, loading avatars...');
     let mounted = true;
     (async () => {
       const { data, error } = await supabase
@@ -67,7 +66,6 @@ export const AvatarGallery: React.FC = () => {
         console.error('Error loading avatars:', error);
         setAvatars([]);
       } else {
-        console.log('Loaded avatars:', data?.length || 0, 'avatars');
         setAvatars(data || []);
       }
       setLoading(false);
@@ -76,13 +74,9 @@ export const AvatarGallery: React.FC = () => {
   }, []);
 
   const handleAvatarClick = (a: DBAvatar) => {
-    console.log('Avatar clicked:', a.name, a.id);
-    console.log('Is selected?', isSelected(a.id));
     if (isSelected(a.id)) {
-      console.log('Avatar already selected, returning early');
       return; // Don't show confirmation for already selected avatar
     }
-    console.log('Setting avatar for confirmation:', a);
     setSelectedForConfirmation(a);
   };
 

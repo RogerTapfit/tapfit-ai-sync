@@ -27,7 +27,8 @@ import { AvatarBuilder } from "./AvatarBuilder";
 import { TodaysPerformance } from "./TopPriorityStats";
 import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
-import { useAvatar } from "@/hooks/useAvatar";
+import { useAvatar as useAvatarCustomization } from "@/hooks/useAvatar";
+import { useAvatar } from "@/lib/avatarState";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +64,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     heartRate: 142
   });
   const { awardCoins } = useTapCoins();
-  const { avatarData } = useAvatar();
+  const { avatarData } = useAvatarCustomization();
+  const { avatar: selectedAvatar } = useAvatar();
   const { todaysProgress } = useWorkoutLogger();
   const { user } = useAuth();
 
@@ -161,8 +163,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           </div>
 
           <img
-            src={HERO_MASCOT_URL}
-            alt="TapFit mascot red robot"
+            src={selectedAvatar?.image_url || HERO_MASCOT_URL}
+            alt={selectedAvatar?.name || "TapFit mascot red robot"}
             className="hidden md:block h-56 lg:h-72 object-contain drop-shadow-xl pointer-events-none select-none"
             width={320}
             height={320}
@@ -172,8 +174,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
 
         {/* Mobile mascot (visible on phones), absolute bottom-right */}
         <img
-          src={HERO_MASCOT_URL}
-          alt="TapFit mascot red robot"
+          src={selectedAvatar?.image_url || HERO_MASCOT_URL}
+          alt={selectedAvatar?.name || "TapFit mascot red robot"}
           className="md:hidden absolute bottom-1 right-2 h-36 sm:h-[10.5rem] object-contain drop-shadow-xl pointer-events-none select-none z-10"
           width={160}
           height={160}
