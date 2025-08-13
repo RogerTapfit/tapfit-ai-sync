@@ -112,6 +112,8 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
                     console.log('Navigation clicked:', item.id, item.label);
                     if (item.id === 'workouts') {
                       navigate('/workouts');
+                    } else if (item.id === 'avatar') {
+                      navigate('/avatars');
                     } else {
                       console.log('Calling onPageChange with:', item.id);
                       onPageChange(item.id);
