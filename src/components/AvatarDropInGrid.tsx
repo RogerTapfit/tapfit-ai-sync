@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, ImagePlus } from 'lucide-react';
+import { Upload, ImagePlus, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 interface DBAvatar {
   id: string;
   name: string;
@@ -59,7 +59,8 @@ export const AvatarDropInGrid: React.FC = () => {
   const { toast } = useToast();
   const [slots, setSlots] = useState<Slot[]>(Array.from({ length: MAX_SLOTS }, () => ({}) ))
   const [loading, setLoading] = useState(true);
-  
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
 
   const fetchAvatars = useCallback(async () => {
     setLoading(true);
@@ -84,10 +85,45 @@ export const AvatarDropInGrid: React.FC = () => {
     fetchAvatars();
   }, [fetchAvatars]);
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!active) return;
+        if (!user) {
+          setIsAdmin(false);
+          setCheckingRole(false);
+          return;
+        }
+        const { data: hasRole, error } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        if (!active) return;
+        if (error) {
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(Boolean(hasRole));
+        }
+      } catch {
+        setIsAdmin(false);
+      } finally {
+        if (active) setCheckingRole(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
   const handleUploadAt = useCallback(async (file: File, index: number) => {
     try {
+      if (checkingRole) {
+        toast({ title: 'Please wait', description: 'Checking your permissions…' });
+        return;
+      }
+      if (!isAdmin) {
+        toast({ title: 'Permission denied', description: 'Only admins can upload or replace avatars.', variant: 'destructive' });
+        return;
+      }
       if (!file.type.startsWith('image/')) {
-        toast({ title: 'Unsupported file', description: 'Please drop an image file.', variant: 'destructive' });
+        toast({ title: 'Unsupported file', description: 'Please choose an image file.', variant: 'destructive' });
         return;
       }
       const dataUrl = await fileToDataUrl(file);
@@ -114,9 +150,18 @@ export const AvatarDropInGrid: React.FC = () => {
       setSlots(next);
       toast({ title: 'Avatar saved', description: `${name} updated.` });
     } catch (e: any) {
-      toast({ title: 'Upload failed', description: e?.message ?? String(e), variant: 'destructive' });
+      const base = e?.message ?? String(e);
+      const isFunctionsError = base?.toLowerCase?.().includes('non-2xx') || e?.name === 'FunctionsHttpError';
+      const hint = !isAdmin
+        ? 'You must be an admin to upload or replace avatars.'
+        : (isFunctionsError ? 'The server rejected the request. Try a smaller image or check your admin role.' : undefined);
+      toast({
+        title: 'Upload failed',
+        description: hint ? `${base} — ${hint}` : base,
+        variant: 'destructive'
+      });
     }
-  }, [slots, toast]);
+  }, [slots, toast, isAdmin, checkingRole]);
 
 
   const onFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
@@ -133,6 +178,13 @@ export const AvatarDropInGrid: React.FC = () => {
           <CardTitle>Avatar Gallery</CardTitle>
         </CardHeader>
         <CardContent>
+          {!checkingRole && !isAdmin && (
+            <Alert className="mb-4">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Admin access required</AlertTitle>
+              <AlertDescription>Browsing is open; uploading/replacing avatars is limited to admins.</AlertDescription>
+            </Alert>
+          )}
           {loading ? (
             <div className="text-center text-muted-foreground py-10">Loading avatars…</div>
           ) : (
@@ -154,25 +206,36 @@ export const AvatarDropInGrid: React.FC = () => {
                         loading="lazy"
                       />
                       <div className="absolute inset-x-0 bottom-0 p-2 flex justify-end bg-background/70 backdrop-blur">
-                        <label className="inline-flex items-center gap-1 text-xs cursor-pointer border border-border rounded px-2 py-1 bg-muted/60 hover:bg-muted transition">
-                          <Upload className="h-3.5 w-3.5" /> Replace
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => onFilePick(e, i)} />
-                        </label>
+                        {isAdmin ? (
+                          <label className="inline-flex items-center gap-1 text-xs cursor-pointer border border-border rounded px-2 py-1 bg-muted/60 hover:bg-muted transition">
+                            <Upload className="h-3.5 w-3.5" /> Replace
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => onFilePick(e, i)} />
+                          </label>
+                        ) : (
+                          <div className="text-xs text-muted-foreground">Admin only</div>
+                        )}
                       </div>
                     </>
                   ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 text-center cursor-pointer p-3 sm:p-4">
-                      <ImagePlus className="h-6 w-6 text-muted-foreground" />
-                      <div className="text-xs text-muted-foreground">
-                        Click to upload image
+                    {isAdmin ? (
+                      <label className="flex flex-col items-center justify-center gap-2 text-center cursor-pointer p-3 sm:p-4">
+                        <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                        <div className="text-xs text-muted-foreground">
+                          Click to upload image
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => onFilePick(e, i)}
+                        />
+                      </label>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-2 text-center p-3 sm:p-4">
+                        <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                        <div className="text-xs text-muted-foreground">Admin only</div>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => onFilePick(e, i)}
-                      />
-                    </label>
+                    )}
                   )}
                 </div>
               ))}
