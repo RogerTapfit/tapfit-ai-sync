@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -26,6 +27,47 @@ const Auth = () => {
     navigate(from);
   };
 
+  // Thoroughly clean Supabase auth state to avoid limbo
+  const cleanupAuthState = () => {
+    try {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      Object.keys(sessionStorage || {}).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch {}
+  };
+
+  const handleGuestConfirm = async () => {
+    setLoading(true);
+    try {
+      cleanupAuthState();
+      try {
+        await supabase.auth.signOut({ scope: 'global' } as any);
+      } catch {}
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) throw error;
+      localStorage.setItem('tapfit_guest', '1');
+      toast({
+        title: 'Guest mode enabled',
+        description: 'Nothing will be saved or stored. Create an account anytime.',
+      });
+      window.location.href = '/';
+    } catch (err: any) {
+      toast({
+        title: 'Guest login failed',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -306,6 +348,30 @@ const Auth = () => {
               </form>
             </TabsContent>
           </Tabs>
+
+          <div className="mt-4 space-y-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="secondary" className="w-full" disabled={loading}>
+                  Continue as Guest
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Continue as Guest?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Nothing will be saved or stored. Some features may be unavailable until you create an account.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleGuestConfirm}>
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
     </div>

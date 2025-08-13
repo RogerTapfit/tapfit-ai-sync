@@ -35,6 +35,8 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     isNative
   });
 
+  const isGuest = (session?.user as any)?.is_anonymous === true || (typeof window !== 'undefined' && localStorage.getItem('tapfit_guest') === '1');
+
   useEffect(() => {
     console.log('🔐 AuthGuard: Setting up auth listener...');
     
@@ -139,8 +141,8 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     return <>{fallback}</>;
   }
 
-  // Show onboarding if user hasn't completed it
-  if (needsOnboarding) {
+  // Show onboarding if user hasn't completed it (skip for guest users)
+  if (needsOnboarding && !isGuest) {
     console.log('🔐 AuthGuard: User needs onboarding, showing OnboardingFlow...');
     return (
       <OnboardingFlow 
@@ -181,9 +183,29 @@ export const useAuth = () => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/auth';
+    try {
+      // Clear guest flag if present
+      localStorage.removeItem('tapfit_guest');
+      // Cleanup auth state to avoid limbo
+      try {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        Object.keys(sessionStorage || {}).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch {}
+      // Global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' } as any);
+      } catch {}
+    } finally {
+      window.location.href = '/auth';
+    }
   };
-
   return { user, session, loading, signOut };
 };
