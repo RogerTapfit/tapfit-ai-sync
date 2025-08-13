@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.adminUpsertAvatar]
 verify_jwt = true
+
+[functions.grantAdmin]
+verify_jwt = true

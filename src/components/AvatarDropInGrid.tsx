@@ -61,6 +61,7 @@ export const AvatarDropInGrid: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
+  const [granting, setGranting] = useState(false);
 
   const fetchAvatars = useCallback(async () => {
     setLoading(true);
@@ -163,6 +164,25 @@ export const AvatarDropInGrid: React.FC = () => {
     }
   }, [slots, toast, isAdmin, checkingRole]);
 
+  const handleBootstrapAdmin = useCallback(async () => {
+    try {
+      setGranting(true);
+      const { data, error } = await supabase.functions.invoke('grantAdmin', { body: {} });
+      if (error) throw error;
+
+      if (data?.status === 'granted' || data?.status === 'already_admin' || data?.granted) {
+        setIsAdmin(true);
+        toast({ title: 'Admin access granted', description: 'You can now upload or replace avatars.' });
+      } else {
+        toast({ title: 'Request processed', description: data?.message ?? 'No changes.' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Admin grant failed', description: e?.message ?? String(e), variant: 'destructive' });
+    } finally {
+      setGranting(false);
+    }
+  }, [toast]);
+
 
   const onFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
@@ -181,8 +201,15 @@ export const AvatarDropInGrid: React.FC = () => {
           {!checkingRole && !isAdmin && (
             <Alert className="mb-4">
               <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Admin access required</AlertTitle>
-              <AlertDescription>Browsing is open; uploading/replacing avatars is limited to admins.</AlertDescription>
+              <div>
+                <AlertTitle>Admin access required</AlertTitle>
+                <AlertDescription>Browsing is open; uploading/replacing avatars is limited to admins.</AlertDescription>
+                <div className="mt-2">
+                  <Button size="sm" onClick={handleBootstrapAdmin} disabled={granting}>
+                    Become admin
+                  </Button>
+                </div>
+              </div>
             </Alert>
           )}
           {loading ? (
