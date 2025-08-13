@@ -27,10 +27,10 @@ export const useTapTokens = () => {
       .select('tap_tokens_balance')
       .eq('id', user.id)
       .single();
-    setBalance(data?.tap_tokens_balance || 0);
+    setBalance((data as any)?.tap_tokens_balance || 0);
   };
 
-  constconst fetchTransactions = async () => {
+  const fetchTransactions = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data } = await supabase
@@ -46,50 +46,46 @@ export const useTapTokens = () => {
     fetchTransactions();
   }, []);
 
-  const spendTokens = async (amount: number, description: string) => {
+  // Flexible signature: (amount, description) OR (amount, transaction_type, description, referenceId?)
+  const spendTokens = async (
+    amount: number,
+    tOrDesc: string,
+    maybeDesc?: string,
+    referenceId?: string
+  ) => {
     if (isGuestMode()) {
-      toast({
-        title: 'Sign in required',
-        description: 'Please sign in to use Tap Tokens.',
-        variant: 'destructive'
-      });
+      toast({ title: 'Sign in required', description: 'Please sign in to use Tap Tokens.', variant: 'destructive' });
       return false;
     }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
-    const { data, error } = await supabase.rpc('spend_tap_tokens', {
-      user_id: user.id,
-      amount: amount,
-      description: description
-    });
+    const transaction_type = typeof maybeDesc === 'string' ? tOrDesc : 'spend';
+    const description = typeof maybeDesc === 'string' ? maybeDesc : tOrDesc;
+
+    // Use add_tap_tokens with negative amount to represent spending
+    const { error } = await supabase.rpc('add_tap_tokens', {
+      _user_id: user.id,
+      _amount: -Math.abs(amount),
+      _transaction_type: transaction_type,
+      _description: description,
+      _reference_id: referenceId
+    } as any);
 
     if (error) {
-      toast({
-        title: 'Transaction Failed',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast({ title: 'Transaction Failed', description: error.message, variant: 'destructive' });
       return false;
     }
 
-    if (data) {
-      setBalance(data);
-      fetchTransactions(); // Refresh transactions after successful spend
-      toast({
-        title: 'Tokens Spent',
-        description: `Spent ${amount} tokens: ${description}`,
-      });
-      return true;
-    }
-
-    console.log('Attempting to spend tokens', amount, description);
+    await Promise.all([fetchBalance(), fetchTransactions()]);
+    toast({ title: 'Tokens Spent', description: `Spent ${amount} tokens: ${description}` });
     return true;
   };
 
   return {
     balance,
+    tokenBalance: balance,
     transactions,
     spendTokens
   };
