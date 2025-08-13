@@ -34,14 +34,7 @@ interface FitnessChatbotProps {
 }
 
 const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userId }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "👋 Hey there! I'm FitBot, your AI fitness coach. Ask me about workouts, nutrition, form tips, or anything fitness-related!",
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -51,6 +44,17 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   // Selected avatar (mini) for bot identity
   const { avatar } = useSelectedAvatar();
   const miniUrl = avatar?.mini_image_url;
+  const avatarName = avatar?.name || 'FitBot';
+
+  // Initialize messages with dynamic avatar name
+  useEffect(() => {
+    setMessages([{
+      id: '1',
+      text: `👋 Hey there! I'm ${avatarName}, your AI fitness coach. Ask me about workouts, nutrition, form tips, or anything fitness-related!`,
+      isUser: false,
+      timestamp: new Date()
+    }]);
+  }, [avatarName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -158,7 +162,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 <Bot className="h-4 w-4" />
               )}
             </div>
-            <CardTitle className="text-sm">FitBot AI Coach</CardTitle>
+            <CardTitle className="text-sm">{avatarName} AI Coach</CardTitle>
           </div>
           <div className="flex gap-1">
             <Button
@@ -193,20 +197,6 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                     key={message.id}
                     className={`flex gap-2 ${message.isUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    {!message.isUser && (
-                      <div className="w-6 h-6 rounded-full overflow-hidden border border-border flex items-center justify-center flex-shrink-0 mt-1 bg-muted">
-                        {miniUrl ? (
-                          <img
-                            src={miniUrl}
-                            alt="Bot avatar"
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Bot className="h-3 w-3" />
-                        )}
-                      </div>
-                    )}
                     <div
                       className={`max-w-[80%] p-3 rounded-lg text-sm ${
                         message.isUser
@@ -225,18 +215,6 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 ))}
                 {isLoading && (
                   <div className="flex gap-2 justify-start">
-                    <div className="w-6 h-6 rounded-full overflow-hidden border border-border flex items-center justify-center flex-shrink-0 mt-1 bg-muted">
-                      {miniUrl ? (
-                        <img
-                          src={miniUrl}
-                          alt="Bot avatar"
-                          loading="lazy"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Bot className="h-3 w-3" />
-                      )}
-                    </div>
                     <div className="bg-muted p-3 rounded-lg text-sm">
                       <div className="flex gap-1">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>

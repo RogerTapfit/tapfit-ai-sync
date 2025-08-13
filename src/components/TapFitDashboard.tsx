@@ -27,7 +27,7 @@ import { AvatarBuilder } from "./AvatarBuilder";
 import { TodaysPerformance } from "./TopPriorityStats";
 import { PowerLevelMeter } from "./PowerLevelMeter";
 import { useTapCoins } from "@/hooks/useTapCoins";
-import { useAvatar as useAvatarCustomization } from "@/hooks/useAvatar";
+
 import { useAvatar } from "@/lib/avatarState";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useAuth } from "./AuthGuard";
@@ -64,7 +64,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     heartRate: 142
   });
   const { awardCoins } = useTapCoins();
-  const { avatarData } = useAvatarCustomization();
   const { avatar: selectedAvatar } = useAvatar();
   const { todaysProgress } = useWorkoutLogger();
   const { user } = useAuth();
