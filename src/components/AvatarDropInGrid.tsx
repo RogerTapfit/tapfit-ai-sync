@@ -232,14 +232,14 @@ export const AvatarDropInGrid: React.FC = () => {
                         className="absolute inset-0 w-full h-full object-contain"
                         loading="lazy"
                       />
-                      <div className="absolute inset-x-0 bottom-0 p-2 flex justify-end bg-background/70 backdrop-blur">
+                      <div className="absolute inset-x-0 bottom-0 p-2 flex justify-end">
                         {isAdmin ? (
-                          <label className="inline-flex items-center gap-1 text-xs cursor-pointer border border-border rounded px-2 py-1 bg-muted/60 hover:bg-muted transition">
+                          <label className="inline-flex items-center gap-1 text-xs cursor-pointer border border-border rounded px-2 py-1 bg-background/90 hover:bg-background shadow-lg transition">
                             <Upload className="h-3.5 w-3.5" /> Replace
                             <input type="file" accept="image/*" className="hidden" onChange={(e) => onFilePick(e, i)} />
                           </label>
                         ) : (
-                          <div className="text-xs text-muted-foreground">Admin only</div>
+                          <div className="text-xs text-muted-foreground bg-background/90 px-2 py-1 rounded shadow-lg">Admin only</div>
                         )}
                       </div>
                     </>
