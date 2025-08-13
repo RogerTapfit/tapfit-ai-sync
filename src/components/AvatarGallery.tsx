@@ -128,7 +128,7 @@ export const AvatarGallery: React.FC = () => {
                   <div
                     key={a.id}
                     onClick={() => handleAvatarClick(a)}
-                    className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50'} bg-card shadow-sm hover:shadow-lg transition-all duration-200 h-72`}
+                    className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50'} bg-card shadow-sm hover:shadow-lg transition-all duration-200 h-64`}
                     aria-pressed={isSelected(a.id)}
                     aria-label={`Choose avatar ${a.name}`}
                   >
@@ -154,14 +154,33 @@ export const AvatarGallery: React.FC = () => {
                           } catch {}
                         }
                       }}
-                      className={`w-full h-48 object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
+                      className={`w-full h-40 object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                     />
-                    {/* Name bar */}
-                    <div
-                      className="absolute left-0 right-0 top-48 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
-                    >
-                      {a.name}
+                    
+                    {/* Content area with name and button */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm border-t border-border/20">
+                      {/* Name */}
+                      <div className="px-2 py-2 text-center">
+                        <div className="text-sm font-medium text-foreground">{a.name}</div>
+                      </div>
+                      
+                      {/* Action button */}
+                      <div className="px-2 pb-2">
+                        <Button
+                          className="w-full cursor-pointer text-xs h-8"
+                          variant={isSelected(a.id) ? 'secondary' : 'default'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAvatarClick(a);
+                          }}
+                          aria-pressed={isSelected(a.id)}
+                          disabled={isSelected(a.id)}
+                        >
+                          {isSelected(a.id) ? 'Selected' : 'Choose This Avatar'}
+                        </Button>
+                      </div>
                     </div>
+
                     {/* Selected ring */}
                     {isSelected(a.id) && (
                       <div className="absolute inset-0 ring-2 ring-primary pointer-events-none" />
@@ -171,22 +190,6 @@ export const AvatarGallery: React.FC = () => {
                         <Check className="w-4 h-4" />
                       </div>
                     )}
-
-                    {/* Action button */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2">
-                      <Button
-                        className="w-full cursor-pointer"
-                        variant={isSelected(a.id) ? 'secondary' : 'default'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAvatarClick(a);
-                        }}
-                        aria-pressed={isSelected(a.id)}
-                        disabled={isSelected(a.id)}
-                      >
-                        {isSelected(a.id) ? 'Selected' : 'Choose This Avatar'}
-                      </Button>
-                    </div>
                   </div>
                 );
               })}
