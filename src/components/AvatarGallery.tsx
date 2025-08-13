@@ -156,14 +156,6 @@ export const AvatarGallery: React.FC = () => {
                       }}
                       className={`w-full h-48 object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                     />
-                    {/* Mini preview bottom-right */}
-                    <img
-                      src={a.mini_image_url}
-                      alt={`${a.name} mini`}
-                      loading="lazy"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder.svg'; }}
-                      className="absolute top-40 right-2 w-10 h-10 rounded-full border border-border bg-background object-contain"
-                    />
                     {/* Name bar */}
                     <div
                       className="absolute left-0 right-0 top-52 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
