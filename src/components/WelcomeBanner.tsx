@@ -47,15 +47,15 @@ export const WelcomeBanner: React.FC = () => {
       <CardContent className="p-4 sm:p-6 flex items-center justify-between">
         <div className="text-base sm:text-lg font-medium">{text}</div>
         <div className="flex items-center gap-2">
-          {avatar?.mini_image_url ? (
+          {avatar?.image_url ? (
             <img
-              src={avatar.mini_image_url}
-              alt="Mini avatar"
+              src={avatar.image_url}
+              alt={avatar?.name ? `${avatar.name} full avatar` : 'Full avatar'}
               loading="lazy"
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-border object-contain"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-border object-contain"
             />
           ) : (
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-dashed border-border" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-dashed border-border" />
           )}
         </div>
       </CardContent>
