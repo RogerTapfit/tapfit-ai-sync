@@ -165,9 +165,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           <img
             src={selectedAvatar?.image_url || HERO_MASCOT_URL}
             alt={selectedAvatar?.name || "TapFit mascot red robot"}
-            className="hidden md:block h-56 lg:h-72 object-contain drop-shadow-xl pointer-events-none select-none"
-            width={320}
-            height={320}
+            className="hidden md:block max-h-72 max-w-80 w-auto object-contain drop-shadow-xl pointer-events-none select-none"
             loading="eager"
           />
         </div>
@@ -176,9 +174,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <img
           src={selectedAvatar?.image_url || HERO_MASCOT_URL}
           alt={selectedAvatar?.name || "TapFit mascot red robot"}
-          className="md:hidden absolute bottom-1 right-2 h-36 sm:h-[10.5rem] object-contain drop-shadow-xl pointer-events-none select-none z-10"
-          width={160}
-          height={160}
+          className="md:hidden absolute bottom-1 right-2 max-h-44 max-w-40 w-auto object-contain drop-shadow-xl pointer-events-none select-none z-10"
           loading="eager"
         />
 
