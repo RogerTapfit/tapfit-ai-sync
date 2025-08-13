@@ -158,7 +158,7 @@ export const AvatarGallery: React.FC = () => {
                     />
                     {/* Name bar */}
                     <div
-                      className="absolute left-0 right-0 top-52 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
+                      className="absolute left-0 right-0 top-48 bg-background/80 backdrop-blur-sm text-foreground text-xs px-2 py-1"
                     >
                       {a.name}
                     </div>
