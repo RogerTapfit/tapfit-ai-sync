@@ -1,4 +1,3 @@
-
 project_id = "pbrayxmqzdxsmhqmzygc"
 
 [api]
@@ -41,4 +40,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.analyze_body]
+verify_jwt = true
+
+[functions.adminUpsertAvatar]
 verify_jwt = true

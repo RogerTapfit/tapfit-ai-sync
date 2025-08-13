@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AvatarGallery } from './AvatarGallery';
+import { AvatarDropInGrid } from './AvatarDropInGrid';
 
 interface AvatarBuilderProps {
   onClose: () => void;
@@ -16,10 +16,10 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {isFirstTime ? 'Choose Your Avatar' : 'Choose Your Avatar'}
+              {isFirstTime ? 'Choose Your Avatar' : 'Manage Avatars'}
             </h1>
             <p className="text-muted-foreground">
-              Pick a robot avatar to represent you across TapFit.
+              Drag-and-drop images into the grid to create or update avatars. Reorder by dragging tiles.
             </p>
           </div>
           <Button variant="outline" onClick={onClose}>
@@ -32,7 +32,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
             <CardTitle>Avatar Gallery</CardTitle>
           </CardHeader>
           <CardContent>
-            <AvatarGallery />
+            <AvatarDropInGrid />
           </CardContent>
         </Card>
       </div>
