@@ -120,7 +120,7 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     return LoadingComponent;
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     console.log('🔐 AuthGuard: No user, showing fallback...');
     
     // Mobile debug mode - temporarily bypass auth for testing

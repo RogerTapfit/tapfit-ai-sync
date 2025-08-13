@@ -50,20 +50,25 @@ const Auth = () => {
       try {
         await supabase.auth.signOut({ scope: 'global' } as any);
       } catch {}
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
+      const { error } = await supabase.auth.signInAnonymously();
+      if (!error) {
+        localStorage.setItem('tapfit_guest', '1');
+        toast({
+          title: 'Guest mode enabled',
+          description: 'Nothing will be saved or stored. Create an account anytime.',
+        });
+        window.location.href = '/';
+        return;
+      }
+      throw error;
+    } catch (err: any) {
+      // Fallback: enable local-only guest mode when anonymous auth is disabled
       localStorage.setItem('tapfit_guest', '1');
       toast({
-        title: 'Guest mode enabled',
-        description: 'Nothing will be saved or stored. Create an account anytime.',
+        title: 'Guest mode (local only)',
+        description: 'Anonymous auth is disabled. You can explore, but data will not be saved.',
       });
       window.location.href = '/';
-    } catch (err: any) {
-      toast({
-        title: 'Guest login failed',
-        description: err?.message || 'Please try again.',
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
