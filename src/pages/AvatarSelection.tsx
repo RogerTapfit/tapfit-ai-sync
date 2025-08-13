@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AvatarGallery } from '@/components/AvatarGallery';
-import { SEO } from '@/components/SEO';
+import SEO from '@/components/SEO';
 
 const AvatarSelection: React.FC = () => {
   const navigate = useNavigate();
