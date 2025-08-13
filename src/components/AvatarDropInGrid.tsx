@@ -217,7 +217,7 @@ export const AvatarDropInGrid: React.FC = () => {
                       </div>
                     </>
                   ) : (
-                    {isAdmin ? (
+                    isAdmin ? (
                       <label className="flex flex-col items-center justify-center gap-2 text-center cursor-pointer p-3 sm:p-4">
                         <ImagePlus className="h-6 w-6 text-muted-foreground" />
                         <div className="text-xs text-muted-foreground">
@@ -235,7 +235,7 @@ export const AvatarDropInGrid: React.FC = () => {
                         <ImagePlus className="h-6 w-6 text-muted-foreground" />
                         <div className="text-xs text-muted-foreground">Admin only</div>
                       </div>
-                    )}
+                    )
                   )}
                 </div>
               ))}
