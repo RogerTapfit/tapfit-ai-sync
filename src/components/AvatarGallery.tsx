@@ -154,7 +154,7 @@ export const AvatarGallery: React.FC = () => {
                           } catch {}
                         }
                       }}
-                      className={`w-full h-48 object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
+                      className={`w-full h-48 object-contain transition-transform duration-200 ease-out will-change-transform group-hover:scale-[1.05] scale-x-[-1] ${a.name === 'Nova Hawk' ? 'object-left' : 'object-center'}`}
                     />
                     {/* Mini preview bottom-right */}
                     <img
