@@ -20,7 +20,7 @@ const AvatarSelection: React.FC = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
