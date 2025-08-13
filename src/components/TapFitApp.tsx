@@ -20,7 +20,7 @@ const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const { user, signOut } = useAuth();
+  const { user, isGuest, signOut } = useAuth();
 
   const renderSocialPage = () => (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">

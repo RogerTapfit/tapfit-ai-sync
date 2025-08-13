@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isGuestMode } from '@/lib/utils';
 
 export interface Challenge {
   id: string;
@@ -165,6 +166,10 @@ export const useChallenges = () => {
   // Join a challenge
   const joinChallenge = async (challengeId: string) => {
     try {
+      if (isGuestMode()) {
+        toast({ title: 'Guest Mode', description: 'Create an account to join challenges.', variant: 'destructive' });
+        return;
+      }
       setLoading(true);
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
@@ -220,6 +225,10 @@ export const useChallenges = () => {
   // Update challenge progress
   const updateChallengeProgress = async (userChallengeId: string, newProgress: number) => {
     try {
+      if (isGuestMode()) {
+        toast({ title: 'Guest Mode', description: 'Progress isn’t saved in guest mode.', variant: 'destructive' });
+        return;
+      }
       const userChallenge = userChallenges.find(uc => uc.id === userChallengeId);
       if (!userChallenge) return;
 
@@ -284,6 +293,10 @@ export const useChallenges = () => {
     totalWeight?: number;
   }) => {
     try {
+      if (isGuestMode()) {
+        toast({ title: 'Guest Mode', description: 'Achievements are disabled in guest mode.', variant: 'destructive' });
+        return;
+      }
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
 

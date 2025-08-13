@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useTapCoins } from './useTapCoins';
+import { isGuestMode } from '@/lib/utils';
 
 interface WorkoutProgress {
   total_exercises: number;
@@ -150,6 +151,10 @@ export const useWorkoutLogger = () => {
 
   // Start a new workout session
   const startWorkout = async (workoutName: string, muscleGroup: string, totalExercises: number) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Workouts aren’t saved. Create an account to track sessions.', variant: 'destructive' });
+      return null;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
@@ -212,6 +217,10 @@ export const useWorkoutLogger = () => {
     reps: number = 10,
     weight?: number
   ) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Exercises aren’t saved in guest mode.', variant: 'destructive' });
+      return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       console.error('No user found for logExercise');
@@ -318,6 +327,10 @@ export const useWorkoutLogger = () => {
 
   // Complete the entire workout
   const completeWorkout = async (workoutLogId: string, duration?: number, notes?: string) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Completion isn’t saved in guest mode.', variant: 'destructive' });
+      return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 

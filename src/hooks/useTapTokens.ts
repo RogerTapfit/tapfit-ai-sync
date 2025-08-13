@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { isGuestMode } from '@/lib/utils';
+import { isGuestMode } from '@/lib/utils';
 
 interface TapTokenTransaction {
   id: string;
@@ -57,6 +59,10 @@ export const useTapTokens = () => {
 
   // Award tap tokens
   const awardTokens = async (amount: number, type: string, description: string, referenceId?: string) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Earning TapTokens is disabled in guest mode.', variant: 'destructive' });
+      return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
@@ -88,6 +94,10 @@ export const useTapTokens = () => {
 
   // Spend tap tokens
   const spendTokens = async (amount: number, type: string, description: string, referenceId?: string) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Spending TapTokens is disabled in guest mode.', variant: 'destructive' });
+      return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
@@ -132,6 +142,10 @@ export const useTapTokens = () => {
 
   // Convert TapCoins to TapTokens (if needed)
   const convertCoinsToTokens = async (coinAmount: number) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Conversions are disabled in guest mode.', variant: 'destructive' });
+      return false;
+    }
     // Conversion rate: 10 TapCoins = 1 TapToken
     const tokenAmount = Math.floor(coinAmount / 10);
     

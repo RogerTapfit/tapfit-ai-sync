@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { isGuestMode } from '@/lib/utils';
+import { isGuestMode } from '@/lib/utils';
 
 interface TapCoinsTransaction {
   id: string;
@@ -114,6 +116,10 @@ export const useTapCoins = () => {
 
   // Award tap coins
   const awardCoins = async (amount: number, type: string, description: string, referenceId?: string) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Earning coins is disabled. Create an account to keep rewards.', variant: 'destructive' });
+      return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
@@ -145,6 +151,10 @@ export const useTapCoins = () => {
 
   // Purchase store item
   const purchaseItem = async (itemId: string) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Purchases are disabled in guest mode.', variant: 'destructive' });
+      return false;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 

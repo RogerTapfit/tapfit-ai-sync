@@ -207,5 +207,7 @@ export const useAuth = () => {
       window.location.href = '/auth';
     }
   };
-  return { user, session, loading, signOut };
+  const isGuest = (session?.user as any)?.is_anonymous === true || (typeof window !== 'undefined' && localStorage.getItem('tapfit_guest') === '1');
+  return { user, session, loading, isGuest, signOut };
+
 };

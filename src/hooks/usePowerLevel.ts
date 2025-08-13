@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { isGuestMode } from '@/lib/utils';
 
 export interface PowerLevel {
   id: string;
@@ -26,6 +28,7 @@ export const usePowerLevel = () => {
   const [history, setHistory] = useState<PowerLevelHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchPowerLevel();
@@ -76,6 +79,10 @@ export const usePowerLevel = () => {
 
   const refreshPowerLevel = async () => {
     try {
+      if (isGuestMode()) {
+        toast({ title: 'Guest Mode', description: 'Power level refresh is disabled in guest mode.', variant: 'destructive' });
+        return false;
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
