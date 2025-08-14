@@ -38,6 +38,7 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
     { id: 'workouts', label: 'Workouts', icon: Dumbbell },
     { id: 'smart-pins', label: 'Smart Pins', icon: Activity },
     { id: 'sensor-workout', label: 'BLE Sensors', icon: Bluetooth },
+    { id: 'puck-test', label: 'Puck Test', icon: Bluetooth },
     { id: 'nutrition', label: 'Nutrition', icon: Apple },
     { id: 'social', label: 'Social', icon: Users },
     { id: 'challenges', label: 'Challenges', icon: Trophy },

@@ -12,6 +12,7 @@ const SmartPinDashboard = lazy(() => import("./SmartPinDashboard"));
 const SubscriptionPlans = lazy(() => import("./SubscriptionPlans"));
 const ChallengesAchievements = lazy(() => import("./ChallengesAchievements"));
 const SensorWorkout = lazy(() => import("../pages/SensorWorkout"));
+const PuckTest = lazy(() => import("../pages/PuckTest"));
 const HealthDataExport = lazy(() => import("./HealthDataExport").then(module => ({ default: module.HealthDataExport })));
 const WorkoutPlanDashboard = lazy(() => import("./WorkoutPlanDashboard"));
 const AvatarBuilder = lazy(() => import("./AvatarBuilder").then(module => ({ default: module.AvatarBuilder })));
@@ -113,6 +114,8 @@ const TapFitApp = () => {
           return <WorkoutPlanDashboard />;
         case 'sensor-workout':
           return <SensorWorkout />;
+        case 'puck-test':
+          return <PuckTest />;
         case 'nutrition':
           return <NutritionDashboard />;
         case 'social':
