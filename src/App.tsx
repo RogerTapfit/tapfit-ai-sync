@@ -22,6 +22,7 @@ import BodyScanLibrary from "./pages/BodyScanLibrary";
 import BodyScanDetail from "./pages/BodyScanDetail";
 import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
 import AvatarSelection from "./pages/AvatarSelection";
+import PuckTest from "./pages/PuckTest";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -146,6 +147,11 @@ const App = () => {
             <Route path="/avatars" element={
               <AuthGuard fallback={<Auth />}>
                 <AvatarSelection />
+              </AuthGuard>
+            } />
+            <Route path="/puck-test" element={
+              <AuthGuard fallback={<Auth />}>
+                <PuckTest />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
