@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Bot, User, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAvatar } from '@/lib/avatarState';
 
 export interface ChatMessage {
   id: string;
@@ -33,6 +34,7 @@ export const FoodChatInterface: React.FC<FoodChatInterfaceProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { avatar } = useAvatar();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,8 +67,19 @@ export const FoodChatInterface: React.FC<FoodChatInterfaceProps> = ({
           className="flex items-center gap-2 cursor-pointer" 
           onClick={onToggle}
         >
-          <MessageCircle className="h-5 w-5 text-primary" />
-          Food Analysis Assistant
+          {avatar?.mini_image_url ? (
+            <img 
+              src={avatar.mini_image_url} 
+              alt={avatar.name || "Assistant"} 
+              className="w-8 h-8 rounded-full border-2 border-primary/20"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling!.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <MessageCircle className={`h-5 w-5 text-primary ${avatar?.mini_image_url ? 'hidden' : ''}`} />
+          {avatar?.name || "Food Analysis Assistant"}
           {messages.length > 0 && (
             <Badge variant="secondary" className="ml-auto">
               {messages.length}
@@ -89,9 +102,20 @@ export const FoodChatInterface: React.FC<FoodChatInterfaceProps> = ({
               <div className="max-h-64 overflow-y-auto space-y-3 pr-2">
                 {messages.length === 0 ? (
                   <div className="text-center text-muted-foreground py-4">
-                    <Bot className="h-8 w-8 mx-auto mb-2" />
+                    {avatar?.mini_image_url ? (
+                      <img 
+                        src={avatar.mini_image_url} 
+                        alt={avatar.name || "Assistant"} 
+                        className="w-8 h-8 mx-auto mb-2 rounded-full border-2 border-primary/20"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling!.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <Bot className={`h-8 w-8 mx-auto mb-2 ${avatar?.mini_image_url ? 'hidden' : ''}`} />
                     <p className="text-sm">
-                      I'll help you get more accurate nutritional information!
+                      I'm {avatar?.name || "your assistant"}, I'll help you get more accurate nutritional information!
                     </p>
                     <p className="text-xs mt-1">
                       Ask me about quantities, preparation methods, or ingredients.
@@ -106,17 +130,30 @@ export const FoodChatInterface: React.FC<FoodChatInterfaceProps> = ({
                       className={`flex gap-2 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div className={`flex gap-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                         <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
                           message.type === 'user' 
                             ? 'bg-primary text-primary-foreground' 
                             : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {message.type === 'user' ? (
-                            <User className="h-3 w-3" />
-                          ) : (
-                            <Bot className="h-3 w-3" />
-                          )}
-                        </div>
+                         }`}>
+                           {message.type === 'user' ? (
+                             <User className="h-3 w-3" />
+                           ) : avatar?.mini_image_url ? (
+                             <img 
+                               src={avatar.mini_image_url} 
+                               alt={avatar.name || "Assistant"} 
+                               className="w-6 h-6 rounded-full"
+                               onError={(e) => {
+                                 e.currentTarget.style.display = 'none';
+                                 e.currentTarget.nextElementSibling!.classList.remove('hidden');
+                               }}
+                             />
+                           ) : (
+                             <Bot className="h-3 w-3" />
+                           )}
+                           {message.type === 'ai' && avatar?.mini_image_url && (
+                             <Bot className="h-3 w-3 hidden" />
+                           )}
+                         </div>
                         
                         <div className={`rounded-lg p-3 ${
                           message.type === 'user'
