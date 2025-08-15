@@ -40,6 +40,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [editingItems, setEditingItems] = useState<FoodItem[]>([]);
+  const [portionMultipliers, setPortionMultipliers] = useState<{ [key: number]: number }>({});
   const [notes, setNotes] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
@@ -167,6 +168,13 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       setAnalysisResult(result);
       setEditingItems(result.food_items || []);
       
+      // Initialize portion multipliers
+      const initialMultipliers: { [key: number]: number } = {};
+      (result.food_items || []).forEach((_: any, index: number) => {
+        initialMultipliers[index] = 1;
+      });
+      setPortionMultipliers(initialMultipliers);
+      
       // Mark photos as analyzed
       setPhotos(prev => 
         prev.map(photo => ({ ...photo, analyzed: true }))
@@ -249,16 +257,30 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   };
 
   const updateFoodItemQuantity = (index: number, multiplier: number) => {
-    const updated = [...editingItems];
-    const baseItem = updated[index];
+    // Update the multiplier state
+    setPortionMultipliers(prev => ({
+      ...prev,
+      [index]: multiplier
+    }));
+
+    // Get the original values (base multiplier = 1)
+    const originalMultiplier = portionMultipliers[index] || 1;
+    const currentItem = editingItems[index];
     
-    // Update all nutritional values proportionally
+    // Calculate original values by dividing by current multiplier
+    const originalCalories = Math.round(currentItem.calories / originalMultiplier);
+    const originalProtein = Math.round((currentItem.protein / originalMultiplier) * 10) / 10;
+    const originalCarbs = Math.round((currentItem.carbs / originalMultiplier) * 10) / 10;
+    const originalFat = Math.round((currentItem.fat / originalMultiplier) * 10) / 10;
+    
+    // Apply new multiplier to original values
+    const updated = [...editingItems];
     updated[index] = {
-      ...baseItem,
-      calories: Math.round(baseItem.calories * multiplier),
-      protein: Math.round(baseItem.protein * multiplier * 10) / 10,
-      carbs: Math.round(baseItem.carbs * multiplier * 10) / 10,
-      fat: Math.round(baseItem.fat * multiplier * 10) / 10,
+      ...currentItem,
+      calories: Math.round(originalCalories * multiplier),
+      protein: Math.round(originalProtein * multiplier * 10) / 10,
+      carbs: Math.round(originalCarbs * multiplier * 10) / 10,
+      fat: Math.round(originalFat * multiplier * 10) / 10,
     };
     
     setEditingItems(updated);
@@ -314,6 +336,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       setMealType('');
       setAnalysisResult(null);
       setEditingItems([]);
+      setPortionMultipliers({});
       setNotes('');
       setChatMessages([]);
       setChatOpen(false);
@@ -574,60 +597,60 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                       
                       <CardContent className="p-6 space-y-6">
                         {/* Quantity Slider Section */}
-                        <div className="bg-muted/20 rounded-xl p-5 border border-muted/30">
-                          <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4 block">Portion Control</Label>
-                          <AnimatedCounter
-                            value={1}
-                            onChange={(multiplier) => updateFoodItemQuantity(index, multiplier)}
-                            min={0.25}
-                            max={5}
-                            step={0.25}
-                            label=""
-                            unit="×"
-                            presets={[
-                              { label: "Quarter", value: 0.25 },
-                              { label: "Half", value: 0.5 },
-                              { label: "Normal", value: 1 },
-                              { label: "Large", value: 1.5 },
-                              { label: "XL", value: 2 }
-                            ]}
-                          />
-                        </div>
+                         <div className="bg-muted/20 rounded-xl p-5 border border-muted/30">
+                           <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4 block">Portion Control</Label>
+                           <AnimatedCounter
+                             value={portionMultipliers[index] || 1}
+                             onChange={(multiplier) => updateFoodItemQuantity(index, multiplier)}
+                             min={0.25}
+                             max={5}
+                             step={0.25}
+                             label=""
+                             unit="×"
+                             presets={[
+                               { label: "Quarter", value: 0.25 },
+                               { label: "Half", value: 0.5 },
+                               { label: "Normal", value: 1 },
+                               { label: "Large", value: 1.5 },
+                               { label: "XL", value: 2 }
+                             ]}
+                           />
+                         </div>
                         
-                        {/* Primary Nutrition Display */}
-                        <div className="space-y-3">
-                          <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Key Nutrition</Label>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-200/50 p-5 group hover:scale-105 transition-transform duration-200">
-                              <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -translate-y-10 translate-x-10"></div>
-                              <div className="relative">
-                                <p className="text-xs font-bold text-red-600/70 uppercase tracking-wider mb-2">Calories</p>
-                                <p className="text-4xl font-black text-red-600 leading-none">{item.calories}</p>
-                                <p className="text-xs text-red-500/60 mt-1 font-medium">kcal</p>
-                              </div>
-                            </div>
-                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-2 border-emerald-200/50 p-5 group hover:scale-105 transition-transform duration-200">
-                              <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-10 translate-x-10"></div>
-                              <div className="relative">
-                                <p className="text-xs font-bold text-emerald-600/70 uppercase tracking-wider mb-2">Protein</p>
-                                <p className="text-4xl font-black text-emerald-600 leading-none">{item.protein}<span className="text-2xl font-bold">g</span></p>
-                                <p className="text-xs text-emerald-500/60 mt-1 font-medium">grams</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                         {/* Primary Nutrition Display */}
+                         <div className="space-y-3">
+                           <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Key Nutrition</Label>
+                           <div className="grid grid-cols-2 gap-4">
+                             <div className="relative overflow-hidden rounded-2xl bg-card border-2 border-border p-5 group hover:scale-105 transition-transform duration-200 hover:shadow-lg">
+                               <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                               <div className="relative">
+                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Calories</p>
+                                 <p className="text-4xl font-black text-red-500 leading-none">{item.calories}</p>
+                                 <p className="text-xs text-muted-foreground mt-1 font-medium">kcal</p>
+                               </div>
+                             </div>
+                             <div className="relative overflow-hidden rounded-2xl bg-card border-2 border-border p-5 group hover:scale-105 transition-transform duration-200 hover:shadow-lg">
+                               <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                               <div className="relative">
+                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Protein</p>
+                                 <p className="text-4xl font-black text-emerald-500 leading-none">{item.protein}<span className="text-2xl font-bold text-emerald-400">g</span></p>
+                                 <p className="text-xs text-muted-foreground mt-1 font-medium">grams</p>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
 
-                        {/* Secondary Nutrition */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-gradient-to-br from-orange-50/80 to-orange-100/40 border border-orange-200/40 rounded-xl p-4 hover:shadow-md transition-shadow">
-                            <p className="text-xs font-bold text-orange-600/70 uppercase tracking-wider mb-2">Carbs</p>
-                            <p className="text-2xl font-black text-orange-600">{item.carbs}<span className="text-lg font-semibold text-orange-500/70">g</span></p>
-                          </div>
-                          <div className="bg-gradient-to-br from-purple-50/80 to-purple-100/40 border border-purple-200/40 rounded-xl p-4 hover:shadow-md transition-shadow">
-                            <p className="text-xs font-bold text-purple-600/70 uppercase tracking-wider mb-2">Fat</p>
-                            <p className="text-2xl font-black text-purple-600">{item.fat}<span className="text-lg font-semibold text-purple-500/70">g</span></p>
-                          </div>
-                        </div>
+                         {/* Secondary Nutrition */}
+                         <div className="grid grid-cols-2 gap-4">
+                           <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-shadow hover:scale-105 duration-200">
+                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Carbs</p>
+                             <p className="text-2xl font-black text-orange-500">{item.carbs}<span className="text-lg font-semibold text-orange-400">g</span></p>
+                           </div>
+                           <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-shadow hover:scale-105 duration-200">
+                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Fat</p>
+                             <p className="text-2xl font-black text-purple-500">{item.fat}<span className="text-lg font-semibold text-purple-400">g</span></p>
+                           </div>
+                         </div>
                         
                         {/* Advanced Editing Section */}
                         <div className="bg-gradient-to-br from-muted/40 to-muted/20 rounded-xl p-5 border border-muted/40">
