@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle } from 'lucide-react';
+import { Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle, Lightbulb, Target } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
@@ -284,6 +284,43 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
             </Select>
           </div>
 
+          {/* Analysis Tips Card */}
+          {image && mealType && (
+            <Card className="bg-info/5 border-info/20">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-info/10">
+                      <Target className="h-5 w-5 text-info" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-info flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4" />
+                      Get More Accurate Results
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      After analysis, you can add specific details in the notes section to improve accuracy. 
+                      These details can significantly change calorie and protein calculations:
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                      <div className="text-xs space-y-1">
+                        <p className="font-medium text-foreground">Ingredient Types:</p>
+                        <p className="text-muted-foreground">• "vegan cheese vs regular cheese"</p>
+                        <p className="text-muted-foreground">• "plant-based vs dairy milk"</p>
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <p className="font-medium text-foreground">Preparation Methods:</p>
+                        <p className="text-muted-foreground">• "grilled vs fried chicken"</p>
+                        <p className="text-muted-foreground">• "whole wheat vs white bread"</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Analyze Button */}
           <Button
             onClick={handleAnalyzeImage}
@@ -509,9 +546,12 @@ const FoodPhotoAnalyzer = ({ onDataChange }: FoodPhotoAnalyzerProps) => {
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add any notes about this meal..."
+                placeholder="Add specific details to improve accuracy (e.g., 'vegan cheese', 'grilled not fried', 'whole wheat bread', 'plant-based milk')..."
                 rows={3}
               />
+              <p className="text-xs text-muted-foreground">
+                💡 Tip: Specific details about ingredients and preparation methods help the AI provide more accurate nutritional calculations.
+              </p>
             </div>
 
             {/* Suggestions */}
