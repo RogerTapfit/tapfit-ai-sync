@@ -61,7 +61,7 @@ export const FoodChatInterface: React.FC<FoodChatInterfaceProps> = ({
   };
 
   return (
-    <Card className="relative">
+    <Card className="relative border-2 border-primary/20 shadow-lg">
       <CardHeader className="pb-3">
         <CardTitle 
           className="flex items-center gap-2 cursor-pointer" 
