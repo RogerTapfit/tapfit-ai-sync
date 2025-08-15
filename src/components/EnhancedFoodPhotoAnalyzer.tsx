@@ -19,6 +19,7 @@ import { PhotoManager } from './PhotoManager';
 import { AnimatedCounter } from './AnimatedCounter';
 import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface PhotoData {
   id: string;
@@ -204,18 +205,18 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     setChatLoading(true);
 
     try {
-      // Process the message and update nutrition data
-      const response = await fetch('/api/process-chat-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Process the message and update nutrition data using Supabase edge function
+      const { data: result, error } = await supabase.functions.invoke('process-chat-message', {
+        body: {
           message,
           currentAnalysis: analysisResult,
           foodItems: editingItems
-        })
+        }
       });
 
-      const result = await response.json();
+      if (error) {
+        throw error;
+      }
       
       // Add AI response
       const aiMessage: ChatMessage = {
