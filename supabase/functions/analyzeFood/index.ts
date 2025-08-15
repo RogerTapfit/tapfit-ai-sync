@@ -18,14 +18,41 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { imageBase64, mealType } = await req.json();
+    let { imageBase64, mealType } = await req.json();
+    
+    // Handle multiple photos
+    let photos = [];
+    try {
+      // Try to parse as multiple photos JSON
+      photos = JSON.parse(imageBase64);
+    } catch {
+      // Single photo fallback
+      photos = [{ base64: imageBase64, type: 'main_dish' }];
+    }
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
 
-    const prompt = `Analyze this food image and provide detailed nutritional information. Return a JSON object with this exact structure:
+    const photoAnalysis = photos.map((photo, index) => {
+      switch (photo.type) {
+        case 'nutrition_label':
+          return `Photo ${index + 1} (Nutrition Label): Extract exact nutritional information from the nutrition facts label.`;
+        case 'ingredients':
+          return `Photo ${index + 1} (Ingredients): Read ingredient list to identify specific ingredients and additives.`;
+        case 'angle_view':
+          return `Photo ${index + 1} (Different Angle): Use this angle to better estimate portion sizes and identify hidden ingredients.`;
+        default:
+          return `Photo ${index + 1} (Main Dish): Analyze the main food items and estimate portions.`;
+      }
+    }).join('\n');
 
+    const prompt = `Analyze these ${photos.length} food image(s) and provide detailed nutritional information. 
+
+Photo Analysis Instructions:
+${photoAnalysis}
+
+Return a JSON object with this exact structure:
 {
   "food_items": [
     {
@@ -35,25 +62,34 @@ serve(async (req) => {
       "protein": 0,
       "carbs": 0,
       "fat": 0,
-      "confidence": 0.95
+      "confidence": 0.95,
+      "brand": "Brand name if visible",
+      "preparation_method": "How it was prepared"
     }
   ],
   "total_calories": 0,
   "total_protein": 0,
   "total_carbs": 0,
   "total_fat": 0,
-  "suggestions": ["Any suggestions for the user"],
-  "meal_classification": "${mealType || 'unknown'}"
+  "suggestions": ["Suggestions for the user"],
+  "meal_classification": "${mealType || 'unknown'}",
+  "clarifying_questions": ["Questions to ask for better accuracy"],
+  "brand_recognition": {
+    "detected_brands": ["List of detected brands"],
+    "package_info": "Information from nutrition labels or packages"
+  }
 }
 
-Important guidelines:
-- Be as accurate as possible with portion sizes
-- Include all visible food items
-- Provide realistic nutritional values
-- Use grams for protein, carbs, and fat
-- Include confidence score (0-1) for each item
-- If you can't identify something, indicate low confidence
-- Provide helpful suggestions for nutrition optimization`;
+Enhanced Analysis Guidelines:
+- Cross-reference nutrition labels with visual portions for accuracy
+- If nutrition labels are visible, use exact values and scale by visual portion
+- Identify specific brands and product types from packages
+- Note preparation methods (grilled, fried, baked, etc.)
+- Ask clarifying questions about quantities (e.g., "How many slices of pizza?")
+- Be more precise with brand products vs homemade items
+- Use nutrition label data when available for exact macro calculations
+- Consider ingredient substitutions (vegan cheese, plant-based milk, etc.)
+- Provide confidence scores based on image quality and label visibility`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -72,13 +108,13 @@ Important guidelines:
             role: 'user', 
             content: [
               { type: 'text', text: prompt },
-              { 
+              ...photos.map(photo => ({
                 type: 'image_url', 
                 image_url: { 
-                  url: `data:image/jpeg;base64,${imageBase64}`,
+                  url: `data:image/jpeg;base64,${photo.base64}`,
                   detail: 'high'
-                } 
-              }
+                }
+              }))
             ]
           }
         ],
