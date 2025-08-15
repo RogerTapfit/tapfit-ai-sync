@@ -555,23 +555,26 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   </Button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {editingItems.map((item, index) => (
-                    <Card key={index} className="p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{item.name}</h4>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeFoodItem(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <Card key={index} className="overflow-hidden border-muted/40">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-lg">{item.name}</h4>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeFoodItem(index)}
+                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
                       
-                      {/* Quantity Counter */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                      <CardContent className="space-y-4">
+                        {/* Quantity Controls */}
+                        <div className="bg-muted/30 rounded-lg p-4">
                           <AnimatedCounter
                             value={1}
                             onChange={(multiplier) => updateFoodItemQuantity(index, multiplier)}
@@ -589,56 +592,64 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                           />
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 text-center">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Calories</p>
-                            <p className="text-lg font-bold">{item.calories}</p>
+                        {/* Nutrition Overview */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-primary/5 rounded-lg p-3 text-center border border-primary/10">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Calories</p>
+                            <p className="text-2xl font-bold text-primary">{item.calories}</p>
                           </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Protein</p>
-                            <p className="text-lg font-bold">{item.protein}g</p>
+                          <div className="bg-stats-exercises/5 rounded-lg p-3 text-center border border-stats-exercises/10">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Protein</p>
+                            <p className="text-2xl font-bold text-stats-exercises">{item.protein}g</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* Manual Edit Fields */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div>
-                          <Label className="text-xs">Calories</Label>
-                          <Input
-                            type="number"
-                            value={item.calories}
-                            onChange={(e) => updateFoodItem(index, 'calories', parseInt(e.target.value) || 0)}
-                          />
+                        
+                        {/* Detailed Nutrition Edit */}
+                        <div className="bg-muted/20 rounded-lg p-4">
+                          <Label className="text-sm font-medium mb-3 block">Fine-tune Nutrition</Label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Calories</Label>
+                              <Input
+                                type="number"
+                                value={item.calories}
+                                onChange={(e) => updateFoodItem(index, 'calories', parseInt(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Protein (g)</Label>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={item.protein}
+                                onChange={(e) => updateFoodItem(index, 'protein', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Carbs (g)</Label>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={item.carbs}
+                                onChange={(e) => updateFoodItem(index, 'carbs', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Fat (g)</Label>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={item.fat}
+                                onChange={(e) => updateFoodItem(index, 'fat', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <Label className="text-xs">Protein (g)</Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={item.protein}
-                            onChange={(e) => updateFoodItem(index, 'protein', parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Carbs (g)</Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={item.carbs}
-                            onChange={(e) => updateFoodItem(index, 'carbs', parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Fat (g)</Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={item.fat}
-                            onChange={(e) => updateFoodItem(index, 'fat', parseFloat(e.target.value) || 0)}
-                          />
-                        </div>
-                      </div>
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
