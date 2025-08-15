@@ -42,7 +42,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
                 <img 
                   src={photo.dataUrl} 
                   alt="Food photo" 
-                  className="w-full h-32 object-cover"
+                  className="w-full h-48 object-contain bg-muted/5"
                 />
                 <Button
                   size="sm"
