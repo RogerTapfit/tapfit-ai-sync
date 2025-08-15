@@ -708,32 +708,32 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
 
               {/* Summary Totals */}
               {editingItems.length > 0 && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold mb-3">Meal Totals</h4>
+                <Card className="bg-muted/30 border-2 border-muted/40">
+                  <CardContent className="p-6">
+                    <h4 className="font-semibold mb-4 text-lg">Meal Totals</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Calories</p>
-                        <p className="text-2xl font-bold text-primary">
+                      <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all hover:scale-105 duration-200">
+                        <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide mb-2">Calories</p>
+                        <p className="text-3xl font-black text-red-500">
                           {editingItems.reduce((sum, item) => sum + item.calories, 0)}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Protein</p>
-                        <p className="text-2xl font-bold text-primary">
-                          {editingItems.reduce((sum, item) => sum + item.protein, 0).toFixed(1)}g
+                      <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all hover:scale-105 duration-200">
+                        <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide mb-2">Protein</p>
+                        <p className="text-3xl font-black text-emerald-500">
+                          {editingItems.reduce((sum, item) => sum + item.protein, 0).toFixed(1)}<span className="text-xl font-bold text-emerald-400">g</span>
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Carbs</p>
-                        <p className="text-2xl font-bold text-primary">
-                          {editingItems.reduce((sum, item) => sum + item.carbs, 0).toFixed(1)}g
+                      <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all hover:scale-105 duration-200">
+                        <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide mb-2">Carbs</p>
+                        <p className="text-3xl font-black text-orange-500">
+                          {editingItems.reduce((sum, item) => sum + item.carbs, 0).toFixed(1)}<span className="text-xl font-bold text-orange-400">g</span>
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Fat</p>
-                        <p className="text-2xl font-bold text-primary">
-                          {editingItems.reduce((sum, item) => sum + item.fat, 0).toFixed(1)}g
+                      <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-all hover:scale-105 duration-200">
+                        <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide mb-2">Fat</p>
+                        <p className="text-3xl font-black text-purple-500">
+                          {editingItems.reduce((sum, item) => sum + item.fat, 0).toFixed(1)}<span className="text-xl font-bold text-purple-400">g</span>
                         </p>
                       </div>
                     </div>
