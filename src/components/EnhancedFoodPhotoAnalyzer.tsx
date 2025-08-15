@@ -555,96 +555,124 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   </Button>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-6">
                   {editingItems.map((item, index) => (
-                    <Card key={index} className="overflow-hidden border-muted/40">
-                      <CardHeader className="pb-3">
+                    <Card key={index} className="overflow-hidden border-muted/40 bg-gradient-to-br from-background to-muted/10 hover:shadow-lg transition-all duration-300">
+                      <CardHeader className="pb-4 bg-gradient-to-r from-muted/20 to-muted/10 border-b border-muted/30">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-lg">{item.name}</h4>
+                          <h4 className="font-bold text-xl text-foreground">{item.name}</h4>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => removeFoodItem(index)}
-                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors rounded-full"
                           >
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
                       </CardHeader>
                       
-                      <CardContent className="space-y-4">
-                        {/* Quantity Controls */}
-                        <div className="bg-muted/30 rounded-lg p-4">
+                      <CardContent className="p-6 space-y-6">
+                        {/* Quantity Slider Section */}
+                        <div className="bg-muted/20 rounded-xl p-5 border border-muted/30">
+                          <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4 block">Portion Control</Label>
                           <AnimatedCounter
                             value={1}
                             onChange={(multiplier) => updateFoodItemQuantity(index, multiplier)}
-                            min={0.5}
-                            max={10}
-                            step={0.5}
-                            label="Quantity"
+                            min={0.25}
+                            max={5}
+                            step={0.25}
+                            label=""
                             unit="×"
                             presets={[
+                              { label: "Quarter", value: 0.25 },
                               { label: "Half", value: 0.5 },
                               { label: "Normal", value: 1 },
                               { label: "Large", value: 1.5 },
-                              { label: "Extra Large", value: 2 }
+                              { label: "XL", value: 2 }
                             ]}
                           />
                         </div>
                         
-                        {/* Nutrition Overview */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-primary/5 rounded-lg p-3 text-center border border-primary/10">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Calories</p>
-                            <p className="text-2xl font-bold text-primary">{item.calories}</p>
+                        {/* Primary Nutrition Display */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Key Nutrition</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-200/50 p-5 group hover:scale-105 transition-transform duration-200">
+                              <div className="absolute top-0 right-0 w-20 h-20 bg-red-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                              <div className="relative">
+                                <p className="text-xs font-bold text-red-600/70 uppercase tracking-wider mb-2">Calories</p>
+                                <p className="text-4xl font-black text-red-600 leading-none">{item.calories}</p>
+                                <p className="text-xs text-red-500/60 mt-1 font-medium">kcal</p>
+                              </div>
+                            </div>
+                            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-2 border-emerald-200/50 p-5 group hover:scale-105 transition-transform duration-200">
+                              <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full -translate-y-10 translate-x-10"></div>
+                              <div className="relative">
+                                <p className="text-xs font-bold text-emerald-600/70 uppercase tracking-wider mb-2">Protein</p>
+                                <p className="text-4xl font-black text-emerald-600 leading-none">{item.protein}<span className="text-2xl font-bold">g</span></p>
+                                <p className="text-xs text-emerald-500/60 mt-1 font-medium">grams</p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="bg-stats-exercises/5 rounded-lg p-3 text-center border border-stats-exercises/10">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Protein</p>
-                            <p className="text-2xl font-bold text-stats-exercises">{item.protein}g</p>
+                        </div>
+
+                        {/* Secondary Nutrition */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gradient-to-br from-orange-50/80 to-orange-100/40 border border-orange-200/40 rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <p className="text-xs font-bold text-orange-600/70 uppercase tracking-wider mb-2">Carbs</p>
+                            <p className="text-2xl font-black text-orange-600">{item.carbs}<span className="text-lg font-semibold text-orange-500/70">g</span></p>
+                          </div>
+                          <div className="bg-gradient-to-br from-purple-50/80 to-purple-100/40 border border-purple-200/40 rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <p className="text-xs font-bold text-purple-600/70 uppercase tracking-wider mb-2">Fat</p>
+                            <p className="text-2xl font-black text-purple-600">{item.fat}<span className="text-lg font-semibold text-purple-500/70">g</span></p>
                           </div>
                         </div>
                         
-                        {/* Detailed Nutrition Edit */}
-                        <div className="bg-muted/20 rounded-lg p-4">
-                          <Label className="text-sm font-medium mb-3 block">Fine-tune Nutrition</Label>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Calories</Label>
+                        {/* Advanced Editing Section */}
+                        <div className="bg-gradient-to-br from-muted/40 to-muted/20 rounded-xl p-5 border border-muted/40">
+                          <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4 block flex items-center gap-2">
+                            <Edit3 className="h-4 w-4" />
+                            Manual Adjustments
+                          </Label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Calories</Label>
                               <Input
                                 type="number"
                                 value={item.calories}
                                 onChange={(e) => updateFoodItem(index, 'calories', parseInt(e.target.value) || 0)}
-                                className="h-8 text-sm"
+                                className="h-10 text-sm bg-background/70 border-muted/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                               />
                             </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Protein (g)</Label>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Protein</Label>
                               <Input
                                 type="number"
                                 step="0.1"
                                 value={item.protein}
                                 onChange={(e) => updateFoodItem(index, 'protein', parseFloat(e.target.value) || 0)}
-                                className="h-8 text-sm"
+                                className="h-10 text-sm bg-background/70 border-muted/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                               />
                             </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Carbs (g)</Label>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Carbs</Label>
                               <Input
                                 type="number"
                                 step="0.1"
                                 value={item.carbs}
                                 onChange={(e) => updateFoodItem(index, 'carbs', parseFloat(e.target.value) || 0)}
-                                className="h-8 text-sm"
+                                className="h-10 text-sm bg-background/70 border-muted/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                               />
                             </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Fat (g)</Label>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Fat</Label>
                               <Input
                                 type="number"
                                 step="0.1"
                                 value={item.fat}
                                 onChange={(e) => updateFoodItem(index, 'fat', parseFloat(e.target.value) || 0)}
-                                className="h-8 text-sm"
+                                className="h-10 text-sm bg-background/70 border-muted/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                               />
                             </div>
                           </div>
