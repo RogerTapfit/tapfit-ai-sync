@@ -4,7 +4,8 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.4e37f3a98b5244369842e2cc950a194e',
   appName: 'tapfit-ai-sync',
   webDir: 'dist',
-  version: '1.2.4',
+  version: '1.3.0',
+  bundledWebRuntime: false,
   server: {
     url: "https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com?forceHideBadge=true",
     cleartext: true
@@ -39,8 +40,10 @@ const config: CapacitorConfig = {
   ios: {
     preferredContentMode: "mobile",
     orientation: "portrait",
-    minVersion: "15.0",
+    minVersion: "16.0",
     buildScheme: "App",
+    cordovaSwiftVersion: "5.0",
+    allowMixedContent: true,
     entitlements: {
       "com.apple.developer.associated-domains": ["applinks:tapfit-ai-sync.lovable.app"],
       "com.apple.developer.healthkit": true,
