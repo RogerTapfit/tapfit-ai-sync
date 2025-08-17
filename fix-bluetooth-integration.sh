@@ -1,35 +1,81 @@
 #!/bin/bash
-# Fix Bluetooth LE Plugin Integration for iOS
+# Comprehensive iOS Project Setup with Bluetooth LE and Watch App Integration
 
-echo "🔧 Fixing Bluetooth LE Plugin Integration"
-echo "========================================"
+echo "🚀 COMPREHENSIVE IOS PROJECT SETUP"
+echo "=================================="
+echo "Setting up iOS project with Bluetooth LE and Apple Watch integration..."
+echo ""
 
-# Step 1: Ensure clean iOS project
-echo "📱 Step 1: Setting up clean iOS project..."
-npx cap add ios 2>/dev/null || echo "iOS platform already exists"
-npx cap sync ios
-
-echo "✅ iOS project setup complete"
-
-# Step 2: Verify plugin installation
-echo "🔍 Step 2: Verifying Bluetooth LE plugin..."
-npm list @capacitor-community/bluetooth-le || echo "Plugin verification complete"
-
-echo "✅ Plugin verification complete"
-
-# Step 3: Clean build environment
-echo "🧹 Step 3: Cleaning build environment..."
-rm -rf ios/App/build 2>/dev/null || true
-rm -rf ios/App/DerivedData 2>/dev/null || true
-
+# Step 1: Clean and prepare environment
+echo "🧹 Step 1: Cleaning previous builds..."
+rm -rf ios/App/build ios/App/DerivedData 2>/dev/null || true
 echo "✅ Build environment cleaned"
 
+# Step 2: Build web assets first
+echo "📦 Step 2: Building web assets..."
+npm run build
+echo "✅ Web assets built"
+
+# Step 3: Generate/update iOS project
+echo "📱 Step 3: Generating iOS project..."
+npx cap add ios 2>/dev/null || echo "iOS platform already exists"
+npx cap sync ios
+echo "✅ iOS project generated and synced"
+
+# Step 4: Verify Bluetooth LE plugin
+echo "🔍 Step 4: Verifying Bluetooth LE plugin..."
+if npm list @capacitor-community/bluetooth-le > /dev/null 2>&1; then
+    echo "✅ Bluetooth LE plugin verified"
+else
+    echo "❌ Bluetooth LE plugin missing - installing..."
+    npm install @capacitor-community/bluetooth-le@latest
+    npx cap sync ios
+fi
+
+# Step 5: Create Watch App directory structure
+echo "⌚ Step 5: Preparing Watch App files..."
+mkdir -p ios/App/TapFitWatch/TapFitWatch\ Watch\ App
+mkdir -p ios/App/TapFitWatch/TapFitWatch\ Watch\ App\ Extension
+
+# Copy Watch App files to iOS project
+if [ -d "watch/TapFitWatch" ]; then
+    echo "📋 Copying Watch App files..."
+    cp -r watch/TapFitWatch/* ios/App/TapFitWatch/ 2>/dev/null || true
+    echo "✅ Watch App files prepared"
+else
+    echo "⚠️  Watch App source files not found - will create in Xcode"
+fi
+
 echo ""
-echo "🎉 BLUETOOTH INTEGRATION FIX COMPLETE!"
-echo "========================================"
-echo "Next steps:"
-echo "1. Open iOS project: npx cap open ios"
-echo "2. Clean build in Xcode: Product → Clean Build Folder"
-echo "3. Build and test Bluetooth functionality"
-echo "4. Verify Puck.js and heart rate integration"
-echo "========================================"
+echo "🎉 SETUP COMPLETE!"
+echo "================="
+echo ""
+echo "📋 NEXT STEPS:"
+echo "1. Open Xcode project:"
+echo "   npx cap open ios"
+echo ""
+echo "2. In Xcode, add Watch App target:"
+echo "   • File → New → Target → watchOS → Watch App"
+echo "   • Name: TapFitWatch"
+echo "   • Bundle ID: app.lovable.4e37f3a98b5244369842e2cc950a194e.watchapp"
+echo ""
+echo "3. Copy Swift files to appropriate targets:"
+echo "   • WatchHealthController.swift → Watch App Extension"
+echo "   • ContentView.swift → Watch App"
+echo "   • TapfitWatchApp.swift → Watch App"
+echo ""
+echo "4. Configure capabilities:"
+echo "   • Main app: Bluetooth LE background modes"
+echo "   • Watch app: HealthKit entitlement"
+echo ""
+echo "5. Build and deploy:"
+echo "   • Clean: Product → Clean Build Folder"
+echo "   • Build main app first, then Watch app"
+echo "   • Deploy to physical device with paired Apple Watch"
+echo ""
+echo "🔧 TROUBLESHOOTING:"
+echo "• Ensure iOS deployment target is 15.0+"
+echo "• Verify code signing for both targets"
+echo "• Check that Apple Watch is paired and trusted"
+echo ""
+echo "================="
