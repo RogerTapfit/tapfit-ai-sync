@@ -25,6 +25,14 @@ const config: CapacitorConfig = {
     StatusBar: {
       overlaysWebView: false,
       style: 'DARK'
+    },
+    BluetoothLe: {
+      displayStrings: {
+        scanning: "Looking for Bluetooth devices...",
+        cancel: "Cancel",
+        availableDevices: "Available devices",
+        noDeviceFound: "No Bluetooth devices found"
+      }
     }
   },
   ios: {
