@@ -81,6 +81,9 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
               TapFit
             </h1>
             <p className="text-xs text-muted-foreground">AI-Powered Fitness</p>
+            <div className="mt-1">
+              <span className="text-xs text-muted-foreground font-mono">v1.2.4</span>
+            </div>
           </div>
 
           {/* Premium Badge */}

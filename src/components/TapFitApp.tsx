@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
 import { useAuth } from "./AuthGuard";
 import LoadingSpinner from "./LoadingSpinner";
+import { VersionDisplay } from "./VersionDisplay";
 
 // Lazy load components for better performance
 const TapFitDashboard = lazy(() => import("./TapFitDashboard"));
@@ -98,6 +99,11 @@ const TapFitApp = () => {
       {/* Health Data Export Section */}
       <div className="max-w-4xl">
         <HealthDataExport />
+      </div>
+
+      {/* Version Information Section */}
+      <div className="max-w-4xl">
+        <VersionDisplay variant="card" showCopy={true} />
       </div>
     </div>
   );
