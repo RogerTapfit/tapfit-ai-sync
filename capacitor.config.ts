@@ -28,7 +28,6 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
-    scheme: "tapfit",
     preferredContentMode: "mobile",
     orientation: "portrait",
     entitlements: {
