@@ -30,15 +30,72 @@ const config: CapacitorConfig = {
   ios: {
     preferredContentMode: "mobile",
     orientation: "portrait",
+    minVersion: "15.0",
+    buildScheme: "App",
     entitlements: {
-      "com.apple.developer.associated-domains": ["applinks:tapfit-ai-sync.lovable.app"]
+      "com.apple.developer.associated-domains": ["applinks:tapfit-ai-sync.lovable.app"],
+      "com.apple.developer.healthkit": true,
+      "com.apple.developer.healthkit.access": [],
+      "com.apple.developer.nfc.readersession.formats": ["NDEF", "TAG"]
     },
     infoPlist: {
-      NSHealthShareUsageDescription: "This app uses HealthKit to display your heart rate, blood oxygen, and activity data during workouts.",
-      NSHealthUpdateUsageDescription: "This app may write workout data to HealthKit.",
-      NSBluetoothAlwaysUsageDescription: "TapFit uses Bluetooth to connect to workout sensors.",
-      NSBluetoothPeripheralUsageDescription: "TapFit uses Bluetooth to connect to workout sensors.",
-      NFCReaderUsageDescription: "TapFit uses NFC to detect workout stations.",
+      // Health & Fitness
+      NSHealthShareUsageDescription: "TapFit requires access to your health data to track workout metrics, heart rate, and fitness progress during training sessions.",
+      NSHealthUpdateUsageDescription: "TapFit writes workout data and health metrics to HealthKit to maintain your comprehensive fitness record.",
+      NSHealthClinicalHealthRecordsShareUsageDescription: "TapFit may access clinical health records to provide personalized fitness recommendations.",
+      
+      // Camera & Photos
+      NSCameraUsageDescription: "TapFit uses the camera to analyze food for nutrition tracking and body scanning for fitness assessments.",
+      NSPhotoLibraryUsageDescription: "TapFit accesses your photo library to select food images for nutrition analysis and save fitness progress photos.",
+      NSPhotoLibraryAddUsageDescription: "TapFit saves workout photos and progress images to your photo library.",
+      
+      // Bluetooth & Connectivity
+      NSBluetoothAlwaysUsageDescription: "TapFit uses Bluetooth to connect to fitness sensors, heart rate monitors, and workout equipment for real-time data tracking.",
+      NSBluetoothPeripheralUsageDescription: "TapFit connects to Bluetooth fitness devices to enhance your workout experience with real-time metrics.",
+      
+      // NFC
+      NFCReaderUsageDescription: "TapFit uses NFC to detect and connect to compatible workout stations and fitness equipment.",
+      
+      // Location (for outdoor workouts)
+      NSLocationWhenInUseUsageDescription: "TapFit uses location services to track outdoor workouts and provide location-based fitness recommendations.",
+      NSLocationAlwaysAndWhenInUseUsageDescription: "TapFit uses location services to track outdoor workouts and provide location-based fitness recommendations.",
+      
+      // Motion & Activity
+      NSMotionUsageDescription: "TapFit accesses motion and fitness activity data to track your workouts and daily activity levels.",
+      NSFallDetectionUsageDescription: "TapFit monitors for falls during intense workouts to ensure your safety.",
+      
+      // Microphone (for voice commands)
+      NSMicrophoneUsageDescription: "TapFit uses the microphone for voice commands during hands-free workouts and audio-guided training sessions.",
+      
+      // Contacts (for social features)
+      NSContactsUsageDescription: "TapFit accesses your contacts to help you connect with workout partners and share fitness achievements.",
+      
+      // Notifications
+      NSUserNotificationsUsageDescription: "TapFit sends notifications for workout reminders, achievement alerts, and health insights.",
+      
+      // Background modes and capabilities
+      UIBackgroundModes: [
+        "bluetooth-central",
+        "bluetooth-peripheral", 
+        "background-processing",
+        "background-fetch",
+        "location"
+      ],
+      
+      // App Transport Security
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: false,
+        NSAllowsLocalNetworking: true,
+        NSExceptionDomains: {
+          "lovableproject.com": {
+            NSExceptionAllowsInsecureHTTPLoads: true,
+            NSExceptionMinimumTLSVersion: "TLSv1.0",
+            NSIncludesSubdomains: true
+          }
+        }
+      },
+      
+      // Scene configuration for modern iOS
       UIApplicationSceneManifest: {
         UIApplicationSupportsMultipleScenes: false,
         UISceneConfigurations: {
@@ -51,6 +108,34 @@ const config: CapacitorConfig = {
           ],
         },
       },
+      
+      // Supported interface orientations
+      UISupportedInterfaceOrientations: [
+        "UIInterfaceOrientationPortrait"
+      ],
+      UISupportedInterfaceOrientationsIPhone: [
+        "UIInterfaceOrientationPortrait"
+      ],
+      
+      // Launch screen
+      UILaunchStoryboardName: "LaunchScreen",
+      
+      // Status bar
+      UIStatusBarStyle: "UIStatusBarStyleDarkContent",
+      UIViewControllerBasedStatusBarAppearance: true,
+      
+      // Required device capabilities
+      UIRequiredDeviceCapabilities: [
+        "armv7",
+        "bluetooth-le",
+        "healthkit"
+      ],
+      
+      // Privacy tracking
+      NSUserTrackingUsageDescription: "TapFit uses tracking to provide personalized fitness recommendations and improve your workout experience.",
+      
+      // App category
+      LSApplicationCategoryType: "public.app-category.healthcare-fitness"
     }
   },
   android: {
