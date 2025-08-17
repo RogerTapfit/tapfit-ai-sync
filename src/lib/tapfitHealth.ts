@@ -10,4 +10,6 @@ export interface TapfitHealthPlugin {
   addListener(eventName: 'heartRate', listenerFunc: (data: { bpm: number; timestamp: number }) => void): Promise<{ remove: () => void }>
 }
 
-export const TapfitHealth = registerPlugin<TapfitHealthPlugin>('TapfitHealth');
+export const TapfitHealth = registerPlugin<TapfitHealthPlugin>('TapfitHealth', {
+  web: async () => import('./tapfitHealth.web').then(m => new m.TapfitHealthWeb()),
+});
