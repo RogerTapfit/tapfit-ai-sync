@@ -1,7 +1,7 @@
 import { BleClient } from '@capacitor-community/bluetooth-le';
 
-const SERVICE = 'FFE0';
-const CHAR = 'FFE1';
+const SERVICE = '0000FFE0-0000-1000-8000-00805F9B34FB';
+const CHAR = '0000FFE1-0000-1000-8000-00805F9B34FB';
 
 export type PuckStatus = 'handshaking' | 'connected' | 'disconnected' | 'error';
 

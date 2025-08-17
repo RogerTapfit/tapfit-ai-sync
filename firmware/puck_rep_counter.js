@@ -2,8 +2,8 @@
 // Compatible with usePuckWorkout hook and PuckTest page
 // Upload this to your Puck.js using the Espruino Web IDE
 
-const SERVICE_UUID = 'FFE0';
-const CHAR_UUID = 'FFE1';
+const SERVICE_UUID = '0000FFE0-0000-1000-8000-00805F9B34FB';
+const CHAR_UUID = '0000FFE1-0000-1000-8000-00805F9B34FB';
 const DEVICE_NAME = 'TapFit Puck';
 
 let repCount = 0;
