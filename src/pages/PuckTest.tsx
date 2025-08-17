@@ -1,13 +1,72 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { usePuckWorkout } from '@/hooks/usePuckWorkout';
 import { Progress } from '@/components/ui/progress';
-import { Activity, Bluetooth, Timer, Target } from 'lucide-react';
+import { Activity, Bluetooth, Timer, Target, TestTube, Zap } from 'lucide-react';
+import { blePuckUtil } from '@/services/blePuckUtil';
+import { toast } from 'sonner';
 
 export default function PuckTest() {
   const { state, isReconnecting, handshake, startWorkout, endWorkout } = usePuckWorkout();
+  const [testDevice, setTestDevice] = useState<{ deviceId: string; name?: string } | null>(null);
+  const [testStatus, setTestStatus] = useState<'idle' | 'connecting' | 'connected' | 'testing'>('idle');
+
+  const SERVICE = '0000FFE0-0000-1000-8000-00805F9B34FB';
+  const CHAR = '0000FFE1-0000-1000-8000-00805F9B34FB';
+
+  const testConnection = async () => {
+    setTestStatus('connecting');
+    try {
+      const device = await blePuckUtil.connectFirst({ 
+        service: SERVICE, 
+        timeoutMs: 10000,
+        onDisconnect: () => {
+          setTestDevice(null);
+          setTestStatus('idle');
+        }
+      });
+      setTestDevice(device);
+      setTestStatus('connected');
+      toast.success(`Connected to ${device.name || 'Puck.js'}`);
+    } catch (e) {
+      setTestStatus('idle');
+      toast.error('Failed to connect to Puck.js');
+      console.error('Connection failed:', e);
+    }
+  };
+
+  const simulateReps = async (repCount: number) => {
+    if (!testDevice?.deviceId) {
+      toast.error('Not connected to Puck.js');
+      return;
+    }
+    
+    setTestStatus('testing');
+    try {
+      // Reset first
+      await blePuckUtil.write(testDevice.deviceId, SERVICE, CHAR, new Uint8Array([0x00]));
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Send rep count
+      await blePuckUtil.write(testDevice.deviceId, SERVICE, CHAR, new Uint8Array([0x01, repCount]));
+      toast.success(`Simulated ${repCount} reps sent to Puck.js`);
+    } catch (e) {
+      toast.error('Failed to send test data');
+      console.error('Test failed:', e);
+    } finally {
+      setTestStatus('connected');
+    }
+  };
+
+  const disconnectTest = async () => {
+    if (testDevice?.deviceId) {
+      await blePuckUtil.disconnect(testDevice.deviceId);
+    }
+    setTestDevice(null);
+    setTestStatus('idle');
+  };
 
   const getStateDisplay = () => {
     switch (state.kind) {
@@ -74,6 +133,64 @@ export default function PuckTest() {
               <Button onClick={() => window.location.reload()}>
                 Start New Test
               </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Rep Tester */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TestTube className="h-5 w-5" />
+            Rep Tester
+          </CardTitle>
+          <CardDescription>
+            Test Puck.js connection and simulate rep counts to verify communication
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <Badge variant={testStatus === 'connected' ? 'default' : 'secondary'}>
+              {testStatus === 'idle' && 'Not Connected'}
+              {testStatus === 'connecting' && 'Connecting...'}
+              {testStatus === 'connected' && `Connected: ${testDevice?.name || 'Puck.js'}`}
+              {testStatus === 'testing' && 'Testing...'}
+            </Badge>
+          </div>
+          
+          <div className="space-y-3">
+            {testStatus === 'idle' && (
+              <Button onClick={testConnection} className="w-full">
+                <Bluetooth className="h-4 w-4 mr-2" />
+                Test Connection
+              </Button>
+            )}
+            
+            {testStatus === 'connected' && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button onClick={() => simulateReps(1)} size="sm">
+                  <Zap className="h-3 w-3 mr-1" />
+                  1 Rep
+                </Button>
+                <Button onClick={() => simulateReps(5)} size="sm">
+                  <Zap className="h-3 w-3 mr-1" />
+                  5 Reps
+                </Button>
+                <Button onClick={() => simulateReps(10)} size="sm">
+                  <Zap className="h-3 w-3 mr-1" />
+                  10 Reps
+                </Button>
+                <Button onClick={disconnectTest} variant="outline" size="sm">
+                  Disconnect
+                </Button>
+              </div>
+            )}
+            
+            {(testStatus === 'connecting' || testStatus === 'testing') && (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+              </div>
             )}
           </div>
         </CardContent>

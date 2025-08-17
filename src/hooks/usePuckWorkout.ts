@@ -10,8 +10,8 @@ export type WorkoutState =
   | { kind: 'rest'; setIndex: 1|2|3|4; seconds: number }
   | { kind: 'done' };
 
-const SERVICE = 'FFE0';
-const CHAR = 'FFE1';
+const SERVICE = '0000FFE0-0000-1000-8000-00805F9B34FB';
+const CHAR = '0000FFE1-0000-1000-8000-00805F9B34FB';
 const MAX_REPS = 10;
 const MAX_SETS = 4;
 const REST_SEC = 90;
