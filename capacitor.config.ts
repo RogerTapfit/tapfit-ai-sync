@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   version: '1.3.0',
   bundledWebRuntime: false,
   server: {
-    url: "https://4e37f3a9-8b52-4436-9842-e2cc950a194e.lovableproject.com?forceHideBadge=true",
+    url: "https://tapfit.info?forceHideBadge=true",
     cleartext: true
   },
   plugins: {
@@ -45,7 +45,7 @@ const config: CapacitorConfig = {
     cordovaSwiftVersion: "5.0",
     allowMixedContent: true,
     entitlements: {
-      "com.apple.developer.associated-domains": ["applinks:tapfit-ai-sync.lovable.app"],
+      "com.apple.developer.associated-domains": ["applinks:tapfit.info"],
       "com.apple.developer.healthkit": true,
       "com.apple.developer.healthkit.access": [],
       "com.apple.developer.nfc.readersession.formats": ["NDEF", "TAG"]
