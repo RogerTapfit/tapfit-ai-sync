@@ -1,167 +1,263 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { blePuckUtil } from '@/services/blePuckUtil';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { PuckClient, type PuckStatus, type PuckState } from '@/ble/puckClient';
 import { audioManager } from '@/utils/audioUtils';
 
-export type WorkoutState =
-  | { kind: 'idle' }
-  | { kind: 'connecting' }
-  | { kind: 'awaitStart' }
-  | { kind: 'inSet'; setIndex: 1|2|3|4; reps: number }
-  | { kind: 'rest'; setIndex: 1|2|3|4; seconds: number }
-  | { kind: 'done' };
+export type WorkoutState = 'idle' | 'connecting' | 'connected' | 'calibrating' | 'awaiting_start' | 'in_set' | 'rest' | 'done';
 
-const SERVICE = '0000FFE0-0000-1000-8000-00805F9B34FB';
-const CHAR = '0000FFE1-0000-1000-8000-00805F9B34FB';
-const MAX_REPS = 10;
-const MAX_SETS = 4;
-const REST_SEC = 90;
+interface UsePuckWorkoutReturn {
+  state: WorkoutState;
+  isReconnecting: boolean;
+  repCount: number;
+  setNumber: number;
+  restTimeRemaining: number;
+  targetReps: number;
+  targetSets: number;
+  puckState: PuckState | null;
+  batteryLevel: number;
+  handshake: () => Promise<void>;
+  startWorkout: () => Promise<void>;
+  endWorkout: () => Promise<void>;
+  calibrate: () => Promise<void>;
+}
 
-export function usePuckWorkout(autoStart = false) {
-  const [state, setState] = useState<WorkoutState>({ kind: 'idle' });
-  const [device, setDevice] = useState<{ deviceId: string; name?: string } | null>(null);
+export function usePuckWorkout(autoStart = false): UsePuckWorkoutReturn {
+  const [state, setState] = useState<WorkoutState>('idle');
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const unsubscribeRef = useRef<null | (() => Promise<void>)>(null);
-  const restIntervalRef = useRef<any>(null);
-  const lastRepRef = useRef<number>(0);
+  const [repCount, setRepCount] = useState(0);
+  const [setNumber, setSetNumber] = useState(1);
+  const [restTimeRemaining, setRestTimeRemaining] = useState(0);
+  const [puckState, setPuckState] = useState<PuckState | null>(null);
+  
+  const targetReps = 10;
+  const targetSets = 4;
+  const restDuration = 90; // seconds
+  
+  const clientRef = useRef<PuckClient | null>(null);
+  const restIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audio = audioManager;
 
-  const cleanup = useCallback(async () => {
-    if (unsubscribeRef.current) {
-      await unsubscribeRef.current();
-      unsubscribeRef.current = null;
+  // Handle Puck status changes
+  const handleStatus = useCallback((status: PuckStatus) => {
+    console.log('Puck status changed:', status);
+    
+    switch (status) {
+      case 'handshaking':
+        setState('connecting');
+        setIsReconnecting(false);
+        break;
+      case 'connected':
+        setState('connected');
+        setIsReconnecting(false);
+        break;
+      case 'calibrating':
+        setState('calibrating');
+        break;
+      case 'session_active':
+        setState('awaiting_start');
+        break;
+      case 'disconnected':
+        if (state !== 'idle') {
+          setIsReconnecting(true);
+          // Auto-reconnect after a delay
+          setTimeout(() => {
+            if (clientRef.current) {
+              reconnect();
+            }
+          }, 2000);
+        }
+        break;
+      case 'error':
+        setState('idle');
+        setIsReconnecting(false);
+        break;
     }
+  }, [state]);
+
+  // Handle rep count updates
+  const handleRep = useCallback((newRepCount: number) => {
+    console.log('Rep received:', newRepCount);
+    setRepCount(newRepCount);
+    
+    // Only process if we're in a set
+    if (state === 'in_set') {
+      // Check if set is complete
+      if (newRepCount >= targetReps) {
+        audio.playSetComplete();
+        
+        if (setNumber >= targetSets) {
+          // Workout complete
+          audio.playWorkoutComplete();
+          setState('done');
+        } else {
+          // Start rest period
+          startRest();
+        }
+      }
+    }
+  }, [state, setNumber, targetReps, targetSets, audio]);
+
+  // Handle Puck state updates
+  const handleStateUpdate = useCallback((newPuckState: PuckState) => {
+    setPuckState(newPuckState);
+  }, []);
+
+  // Reconnection logic
+  const reconnect = useCallback(async () => {
+    if (!clientRef.current || isReconnecting) return;
+    
+    try {
+      setIsReconnecting(true);
+      await clientRef.current.handshake(false);
+    } catch (error) {
+      console.error('Reconnect failed:', error);
+      setTimeout(reconnect, 5000); // Try again in 5 seconds
+    }
+  }, [isReconnecting]);
+
+  // Start rest period between sets
+  const startRest = useCallback(() => {
+    setState('rest');
+    setRestTimeRemaining(restDuration);
+    
+    // Reset rep count for next set
+    if (clientRef.current) {
+      clientRef.current.reset();
+    }
+    
+    // Start countdown timer
+    if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+    }
+    
+    restIntervalRef.current = setInterval(() => {
+      setRestTimeRemaining(prev => {
+        if (prev <= 1) {
+          // Rest complete
+          clearInterval(restIntervalRef.current!);
+          restIntervalRef.current = null;
+          audio.playRestComplete();
+          
+          // Move to next set
+          setSetNumber(prevSet => prevSet + 1);
+          setRepCount(0);
+          setState('in_set');
+          
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [restDuration, audio]);
+
+  // Initialize connection
+  const handshake = useCallback(async () => {
+    if (clientRef.current || state === 'connecting') return;
+    
+    try {
+      clientRef.current = new PuckClient(handleStatus, handleRep, handleStateUpdate);
+      await clientRef.current.handshake(false);
+    } catch (error) {
+      console.error('Handshake failed:', error);
+      setState('idle');
+      clientRef.current = null;
+    }
+  }, [handleStatus, handleRep, handleStateUpdate, state]);
+
+  // Start workout session
+  const startWorkout = useCallback(async () => {
+    if (!clientRef.current) {
+      await handshake();
+      return;
+    }
+    
+    try {
+      // Reset workout state
+      setRepCount(0);
+      setSetNumber(1);
+      setRestTimeRemaining(0);
+      
+      // Start session on device
+      await clientRef.current.startSession();
+      setState('in_set');
+    } catch (error) {
+      console.error('Start workout failed:', error);
+    }
+  }, [handshake]);
+
+  // End workout session
+  const endWorkout = useCallback(async () => {
+    // Clear any running intervals
     if (restIntervalRef.current) {
       clearInterval(restIntervalRef.current);
       restIntervalRef.current = null;
     }
+    
+    // End session on device and disconnect
+    if (clientRef.current) {
+      try {
+        await clientRef.current.endSession();
+        await clientRef.current.disconnect();
+      } catch (error) {
+        console.warn('Cleanup error:', error);
+      }
+      clientRef.current = null;
+    }
+    
+    // Reset state
+    setState('idle');
+    setIsReconnecting(false);
+    setRepCount(0);
+    setSetNumber(1);
+    setRestTimeRemaining(0);
+    setPuckState(null);
   }, []);
 
-  const handleDisconnect = useCallback(async () => {
-    if (!device) return;
-    setIsReconnecting(true);
+  // Calibrate device
+  const calibrate = useCallback(async () => {
+    if (!clientRef.current) return;
+    
     try {
-      const re = await blePuckUtil.connectFirst({ service: SERVICE, onDisconnect: () => handleDisconnect() });
-      setDevice(re);
-      // Re-subscribe
-      if (unsubscribeRef.current) await unsubscribeRef.current();
-      unsubscribeRef.current = await blePuckUtil.subscribe(re.deviceId, SERVICE, CHAR, onNotify);
-      setIsReconnecting(false);
-    } catch (e) {
-      // keep trying in a few seconds
-      setTimeout(handleDisconnect, 3000);
+      await clientRef.current.calibrate();
+    } catch (error) {
+      console.error('Calibration failed:', error);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [device]);
+  }, []);
 
-  const onNotify = useCallback((data: ArrayBuffer) => {
-    const u = new Uint8Array(data);
-    if (u[0] !== 0x01) return;
-    const reps = u[1] ?? 0;
-
-    setState(prev => {
-      if (prev.kind !== 'inSet') return prev;
-      // Debounce duplicates or decreases
-      if (reps === lastRepRef.current) return prev;
-      lastRepRef.current = reps;
-
-      const nextReps = Math.min(Math.max(reps, 0), MAX_REPS);
-      if (nextReps >= MAX_REPS) {
-        audio.playSetComplete();
-        // Lock to 10 and start rest
-        startRest(prev.setIndex);
-        return { ...prev, reps: MAX_REPS };
-      }
-      return { ...prev, reps: nextReps };
-    });
-  }, [audio]);
-
-  const startRest = useCallback((setIndex: 1|2|3|4) => {
-    setState({ kind: 'rest', setIndex, seconds: REST_SEC });
-    // Reset puck counter for next set
-    if (device?.deviceId) {
-      blePuckUtil.writeSafe(device.deviceId, SERVICE, CHAR, Uint8Array.from([0x00]));
-    }
-
-    if (restIntervalRef.current) clearInterval(restIntervalRef.current);
-    restIntervalRef.current = setInterval(() => {
-      setState(prev => {
-        if (prev.kind !== 'rest') return prev;
-        if (prev.seconds <= 1) {
-          clearInterval(restIntervalRef.current);
-          restIntervalRef.current = null;
-          audio.playRestComplete();
-          if (prev.setIndex < MAX_SETS) {
-            lastRepRef.current = 0;
-            // Enter next set
-            setState({ kind: 'inSet', setIndex: ((prev.setIndex + 1) as 1|2|3|4), reps: 0 });
-            // Ensure device counter is cleared
-            if (device?.deviceId) {
-              blePuckUtil.writeSafe(device.deviceId, SERVICE, CHAR, Uint8Array.from([0x00]));
-            }
-          } else {
-            // Done
-            audio.playWorkoutComplete();
-            setState({ kind: 'done' });
-          }
-          return prev; // this return won't be used as state is set above
-        }
-        return { ...prev, seconds: prev.seconds - 1 };
-      });
-    }, 1000);
-  }, [audio, device?.deviceId]);
-
-  const handshake = useCallback(async () => {
-    setState({ kind: 'connecting' });
-    try {
-      const conn = await blePuckUtil.connectFirst({ service: SERVICE, onDisconnect: () => handleDisconnect() });
-      setDevice(conn);
-      unsubscribeRef.current = await blePuckUtil.subscribe(conn.deviceId, SERVICE, CHAR, onNotify);
-      // Reset reps on connect
-      await blePuckUtil.writeSafe(conn.deviceId, SERVICE, CHAR, Uint8Array.from([0x00]));
-      lastRepRef.current = 0;
-      setState({ kind: 'awaitStart' });
-    } catch (e) {
-      console.error('Failed to handshake', e);
-      setState({ kind: 'idle' });
-    }
-  }, [handleDisconnect, onNotify]);
-
-  const startWorkout = useCallback(async () => {
-    if (!device?.deviceId) {
-      await handshake();
-    }
-    try {
-      if (device?.deviceId) {
-        await blePuckUtil.writeSafe(device.deviceId, SERVICE, CHAR, Uint8Array.from([0x00]));
-      }
-      lastRepRef.current = 0;
-      setState({ kind: 'inSet', setIndex: 1, reps: 0 });
-    } catch (e) {
-      console.error('Failed to start workout', e);
-      setState({ kind: 'idle' });
-    }
-  }, [device?.deviceId, handshake]);
-
-  const endWorkout = useCallback(async () => {
-    await cleanup();
-    if (device?.deviceId) await blePuckUtil.disconnect(device.deviceId);
-    setDevice(null);
-    setState({ kind: 'idle' });
-  }, [cleanup, device?.deviceId]);
-
+  // Auto-start if requested
   useEffect(() => {
-    if (autoStart && state.kind === 'idle') {
-      // Backwards-compat: autoStart triggers full flow
-      handshake().then(() => startWorkout()).catch(() => setState({ kind: 'idle' }));
+    if (autoStart && state === 'idle') {
+      handshake().then(() => {
+        // Wait a bit then start workout
+        setTimeout(startWorkout, 1000);
+      }).catch(console.error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart]);
+  }, [autoStart, state, handshake, startWorkout]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (restIntervalRef.current) {
+        clearInterval(restIntervalRef.current);
+      }
+      if (clientRef.current) {
+        clientRef.current.disconnect().catch(console.error);
+      }
+    };
+  }, []);
 
   return {
     state,
     isReconnecting,
+    repCount,
+    setNumber,
+    restTimeRemaining,
+    targetReps,
+    targetSets,
+    puckState,
+    batteryLevel: puckState?.batteryLevel ?? 1.0,
     handshake,
     startWorkout,
     endWorkout,
-  } as const;
+    calibrate,
+  };
 }
