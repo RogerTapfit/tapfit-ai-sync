@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Smartphone, ExternalLink } from 'lucide-react';
+import { Copy, Smartphone, ExternalLink, Bluetooth, Zap } from 'lucide-react';
 import { nfcService, MachineId, MACHINE_IDS } from '@/services/nfcService';
+import { nfcPuckIntegration, NFCPuckIntegrationState } from '@/services/nfcPuckIntegration';
 import { useToast } from '@/hooks/use-toast';
 
 interface NFCMachinePopupProps {
@@ -65,7 +66,39 @@ const WORKOUT_TO_NFC_MAPPING: Record<string, MachineId | null> = {
 
 export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachinePopupProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [integrationState, setIntegrationState] = useState<NFCPuckIntegrationState>(
+    nfcPuckIntegration.getState()
+  );
   const { toast } = useToast();
+  
+  // Subscribe to integration state changes
+  useEffect(() => {
+    const handleStateChange = (state: NFCPuckIntegrationState) => {
+      setIntegrationState(state);
+    };
+    
+    // Set up the integration callbacks
+    const integration = new (nfcPuckIntegration.constructor as any)(
+      handleStateChange,
+      (puckClient) => {
+        toast({
+          title: "Puck Connected!",
+          description: "Auto-connection successful via NFC detection",
+        });
+      },
+      (error) => {
+        toast({
+          title: "Connection Failed",
+          description: `Auto-connection failed: ${error}`,
+          variant: "destructive",
+        });
+      }
+    );
+    
+    return () => {
+      // Cleanup if needed
+    };
+  }, [toast]);
   
   const nfcMachineId = WORKOUT_TO_NFC_MAPPING[machineId];
   
@@ -94,6 +127,26 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
     }
   };
 
+  const handleTestNFCConnection = async () => {
+    try {
+      await nfcPuckIntegration.handleNFCDetection();
+      toast({
+        title: "NFC Test Triggered",
+        description: "Attempting auto-connection to Puck device",
+      });
+    } catch (error) {
+      toast({
+        title: "Test Failed",
+        description: "Could not trigger NFC auto-connection test",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleAutoConnect = () => {
+    nfcPuckIntegration.setAutoConnect(!integrationState.autoConnectEnabled);
+  };
+
   const openInBrowser = (url: string) => {
     window.open(url, '_blank');
   };
@@ -107,11 +160,63 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5 text-primary" />
-            NFC Configuration
+            NFC Auto-Connect Configuration
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
+          {/* Auto-Connect Status */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Zap className="h-4 w-4 text-blue-500" />
+                Auto-Connect Status
+              </h4>
+              <Badge 
+                variant={integrationState.autoConnectEnabled ? "default" : "secondary"}
+                className="text-xs"
+              >
+                {integrationState.autoConnectEnabled ? "Enabled" : "Disabled"}
+              </Badge>
+            </div>
+            
+            <div className="space-y-2 text-xs">
+              {integrationState.isConnecting && (
+                <div className="flex items-center gap-2 text-blue-600">
+                  <Bluetooth className="h-3 w-3 animate-pulse" />
+                  Connecting to Puck (Attempt {integrationState.connectionAttempts})...
+                </div>
+              )}
+              
+              {integrationState.lastNFCDetection && (
+                <div className="text-muted-foreground">
+                  Last NFC: {integrationState.lastNFCDetection.toLocaleTimeString()}
+                </div>
+              )}
+              
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant={integrationState.autoConnectEnabled ? "secondary" : "default"}
+                  onClick={toggleAutoConnect}
+                  className="text-xs"
+                >
+                  {integrationState.autoConnectEnabled ? "Disable" : "Enable"} Auto-Connect
+                </Button>
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTestNFCConnection}
+                  disabled={integrationState.isConnecting}
+                  className="text-xs"
+                >
+                  Test Connection
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-muted/50 p-3 rounded-lg">
             <h4 className="font-semibold text-sm mb-1">{machineName}</h4>
             <p className="text-xs text-muted-foreground">
@@ -177,10 +282,13 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
           </div>
 
           <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-            <h5 className="text-sm font-medium mb-1">📱 iPhone NFC Instructions:</h5>
-            <p className="text-xs text-muted-foreground">
-              Use the "NFC Tools" app to write these URLs to NFC tags. The native URL will open the app directly, while the web URL provides browser fallback.
-            </p>
+            <h5 className="text-sm font-medium mb-1">📱 NFC Auto-Connect Instructions:</h5>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>1. Enable auto-connect above</p>
+              <p>2. Upload firmware to your Puck.js device</p>
+              <p>3. Write the Native App URL to an NFC tag using "NFC Tools"</p>
+              <p>4. Tap the NFC tag - the app will open and auto-connect to your Puck!</p>
+            </div>
           </div>
         </div>
       </DialogContent>

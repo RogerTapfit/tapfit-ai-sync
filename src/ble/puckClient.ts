@@ -11,7 +11,9 @@ const PACKET_TYPE = {
   STATUS: 0x02,
   HEARTBEAT: 0x03,
   BATTERY: 0x04,
-  ERROR: 0xFF
+  ERROR: 0xFF,
+  NFC_DETECTED: 0x06,
+  NFC_ACK: 0x07
 };
 
 // Commands to send to Puck
@@ -20,7 +22,8 @@ const COMMAND = {
   START_SESSION: 0x01,
   END_SESSION: 0x02,
   REQUEST_STATUS: 0x03,
-  CALIBRATE: 0x04
+  CALIBRATE: 0x04,
+  NFC_ACK: 0x06
 };
 
 export interface PuckState {
@@ -29,6 +32,7 @@ export interface PuckState {
   sessionActive: boolean;
   batteryLevel: number;
   lastHeartbeat: number;
+  nfcDetected: boolean;
 }
 
 export class PuckClient {
@@ -39,7 +43,8 @@ export class PuckClient {
     isCalibrated: false,
     sessionActive: false,
     batteryLevel: 1.0,
-    lastHeartbeat: 0
+    lastHeartbeat: 0,
+    nfcDetected: false
   };
 
   constructor(
@@ -135,6 +140,18 @@ export class PuckClient {
         console.error('Puck device error received');
         this.onStatus?.('error');
         break;
+        
+      case PACKET_TYPE.NFC_DETECTED:
+        console.log('NFC detection received from Puck');
+        this.state.nfcDetected = true;
+        this.onStateUpdate?.(this.state);
+        break;
+        
+      case PACKET_TYPE.NFC_ACK:
+        console.log('NFC acknowledgment received from Puck');
+        this.state.nfcDetected = false;
+        this.onStateUpdate?.(this.state);
+        break;
     }
   }
 
@@ -166,7 +183,7 @@ export class PuckClient {
     await this.sendCommand(COMMAND.CALIBRATE);
   }
 
-  private async sendCommand(command: number) {
+  public async sendCommand(command: number) {
     if (!this.deviceId) return;
     
     const bytes = new Uint8Array([command]);
