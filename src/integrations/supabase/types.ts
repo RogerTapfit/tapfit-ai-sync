@@ -1679,6 +1679,23 @@ export type Database = {
           total_exercises: number
         }[]
       }
+      get_trainer_accessible_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_data: Json
+          avatar_id: string
+          avatar_url: string
+          calibration_completed: boolean
+          created_at: string
+          experience_level: string
+          full_name: string
+          gym_id: string
+          id: string
+          onboarding_completed: boolean
+          preferred_equipment_type: string
+          primary_goal: string
+        }[]
+      }
       get_user_gym_id: {
         Args: { _user_id: string }
         Returns: string
