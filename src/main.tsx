@@ -1,22 +1,23 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { App as CapacitorApp } from '@capacitor/app';
-import { startBLEPair } from './pairing/blePairer';
+import { setupUniversalLinkPairing } from './lib/blePair';
 
-// Handle Universal Links for NFC → BLE pairing
-CapacitorApp.addListener('appUrlOpen', ({ url }) => {
-  try {
-    const u = new URL(url);
-    if (u.pathname === '/pair') {
-      const station = u.searchParams.get('station') || '';
-      if (station) {
-        console.log('Starting BLE pair for station:', station);
-        startBLEPair(station);
-      }
-    }
-  } catch (e) {
-    console.error('Error handling app URL open:', e);
+// Setup Universal Link pairing system for NFC tap-to-connect
+setupUniversalLinkPairing({
+  onStatusUpdate: (status) => {
+    console.log('BLE Status:', status);
+    // Could dispatch to global state management if needed
+  },
+  onRepCountUpdate: (repCount) => {
+    console.log('Rep Count:', repCount);
+    // Could dispatch to global state management if needed
+  },
+  onConnectionSuccess: (puckClient) => {
+    console.log('Puck connected successfully:', puckClient);
+  },
+  onConnectionFailed: (error) => {
+    console.error('Puck connection failed:', error);
   }
 });
 

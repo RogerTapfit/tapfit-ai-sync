@@ -3,8 +3,13 @@
     "apps": [],
     "details": [
       {
-        "appID": "TEAMID.com.tapfit.app",
-        "paths": [ "/pair/*" ]
+        "appIDs": ["TEAMID.com.tapfit.app"],
+        "components": [
+          {
+            "/": "/pair*",
+            "comment": "TapFit pairing link"
+          }
+        ]
       }
     ]
   }
