@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -1602,48 +1602,48 @@ export type Database = {
     Functions: {
       add_tap_coins: {
         Args: {
-          _user_id: string
           _amount: number
-          _transaction_type: string
           _description: string
           _reference_id?: string
+          _transaction_type: string
+          _user_id: string
         }
         Returns: boolean
       }
       add_tap_tokens: {
         Args: {
-          _user_id: string
           _amount: number
-          _transaction_type: string
           _description: string
           _reference_id?: string
+          _transaction_type: string
+          _user_id: string
         }
         Returns: boolean
       }
       award_challenge_coins: {
         Args: {
-          _user_id: string
           _amount: number
           _reference_id: string
           _type: string
+          _user_id: string
         }
         Returns: boolean
       }
       calculate_bmr: {
         Args: {
-          _weight_kg: number
-          _height_cm: number
           _age: number
           _gender: string
+          _height_cm: number
+          _weight_kg: number
         }
         Returns: number
       }
       calculate_nutrition_goals: {
         Args: {
-          _weight_kg: number
-          _height_cm: number
-          _gender: string
           _activity_level?: string
+          _gender: string
+          _height_cm: number
+          _weight_kg: number
         }
         Returns: Json
       }
@@ -1674,9 +1674,9 @@ export type Database = {
       get_todays_workout_progress: {
         Args: { _user_id: string }
         Returns: {
-          total_exercises: number
           completed_exercises: number
           completion_percentage: number
+          total_exercises: number
         }[]
       }
       get_user_gym_id: {
@@ -1685,16 +1685,16 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
       has_role_at_gym: {
         Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["app_role"]
           _gym_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1704,21 +1704,21 @@ export type Database = {
       }
       spend_tap_coins: {
         Args: {
-          _user_id: string
           _amount: number
-          _transaction_type: string
           _description: string
           _reference_id?: string
+          _transaction_type: string
+          _user_id: string
         }
         Returns: boolean
       }
       spend_tap_tokens: {
         Args: {
-          _user_id: string
           _amount: number
-          _transaction_type: string
           _description: string
           _reference_id?: string
+          _transaction_type: string
+          _user_id: string
         }
         Returns: boolean
       }
