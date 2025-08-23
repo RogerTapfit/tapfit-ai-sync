@@ -4,10 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.tapfit.app',
   appName: 'TapFit',
   webDir: 'dist',
-  server: {
-    url: "https://tapfit-ai-sync.lovable.app?forceHideBadge=true",
-    cleartext: true
-  },
+  // server: {
+  //   url: "https://tapfit-ai-sync.lovable.app?forceHideBadge=true",
+  //   cleartext: true
+  // },
   ios: {
     preferredContentMode: "mobile",
     orientation: "portrait",
