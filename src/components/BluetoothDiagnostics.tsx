@@ -2,12 +2,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Bluetooth } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { AlertCircle, CheckCircle, Bluetooth, Settings } from 'lucide-react';
 import { BluetoothDiagnostics, BluetoothDiagnosticResult } from '@/utils/bluetoothDiagnostics';
+import { FirmwareVersionSelector } from './FirmwareVersionSelector';
+import { FirmwareUploadDialog } from './FirmwareUploadDialog';
+import { FirmwareManager } from '@/lib/firmwareRegistry';
 
 export function BluetoothDiagnosticsPanel() {
   const [results, setResults] = useState<BluetoothDiagnosticResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [showFirmwareManager, setShowFirmwareManager] = useState(false);
+  
+  const recommendedFirmware = FirmwareManager.getRecommendedFirmware();
 
   const runDiagnostics = async () => {
     setIsRunning(true);
@@ -37,13 +44,22 @@ export function BluetoothDiagnosticsPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button 
-          onClick={runDiagnostics} 
-          disabled={isRunning}
-          className="w-full"
-        >
-          {isRunning ? 'Running Diagnostics...' : 'Run Bluetooth Test'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={runDiagnostics} 
+            disabled={isRunning}
+            className="flex-1"
+          >
+            {isRunning ? 'Running Diagnostics...' : 'Run Bluetooth Test'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowFirmwareManager(!showFirmwareManager)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Firmware
+          </Button>
+        </div>
 
         {results.length > 0 && (
           <div className="space-y-3">
@@ -69,6 +85,31 @@ export function BluetoothDiagnosticsPanel() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Firmware Management Section */}
+        {showFirmwareManager && (
+          <>
+            <Separator />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Firmware Management</h4>
+                <FirmwareUploadDialog 
+                  firmware={recommendedFirmware}
+                  deviceConnected={false} // Would be determined by actual device connection state
+                  trigger={
+                    <Button variant="outline" size="sm">
+                      Quick Upload
+                    </Button>
+                  }
+                />
+              </div>
+              <FirmwareVersionSelector 
+                currentDeviceFirmware="8.1" // This would come from actual device query
+                showUploadButton={false}
+              />
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

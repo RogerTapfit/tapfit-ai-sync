@@ -4,7 +4,7 @@
 // ========== CONFIGURATION ==========
 var CONFIG = {
   DEVICE_NAME: "TapFit_Puck",
-  FIRMWARE_VERSION: "8.1",
+  FIRMWARE_VERSION: "8.2",
   ACCEL_SAMPLE_RATE: 26,
   REP_THRESHOLD: 0.8,
   REP_COOLDOWN: 800,
