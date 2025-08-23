@@ -15,22 +15,39 @@ export interface FirmwareInfo {
 // Firmware registry that maps app versions to firmware versions
 export const FIRMWARE_REGISTRY: FirmwareInfo[] = [
   {
-    version: "8.2",
+    version: "9.0",
     appVersion: "1.2.5",
     buildNumber: BUILD_NUMBER,
-    filename: "puck_espruino_compatible.js",
-    title: "TapFit Puck v8.2 - Latest",
-    description: "Latest firmware with enhanced BLE communication and NFC support",
+    filename: "puck_ultra_minimal_v2.0.js",
+    title: "TapFit Puck v9.0 - Ultra Minimal",
+    description: "Ultra-minimal firmware optimized for memory and app compatibility (87 lines)",
+    compatibility: "stable",
+    features: [
+      "Memory optimized (87 lines)",
+      "Fast 1-second calibration",
+      "Correct BLE protocol",
+      "No LED lockups",
+      "Robust error handling",
+      "26Hz accelerometer sampling"
+    ],
+    isRecommended: true
+  },
+  {
+    version: "8.2",
+    appVersion: "1.2.5",
+    buildNumber: BUILD_NUMBER - 1,
+    filename: "puck_espruino_compatible.js", 
+    title: "TapFit Puck v8.2 - Legacy",
+    description: "Previous firmware (may have memory issues on some devices)",
     compatibility: "stable",
     features: [
       "26Hz accelerometer sampling",
       "Enhanced NFC detection",
-      "Improved BLE stability",
+      "Improved BLE stability", 
       "Battery monitoring",
       "Auto-calibration",
       "Error recovery"
-    ],
-    isRecommended: true
+    ]
   },
   {
     version: "8.1",
