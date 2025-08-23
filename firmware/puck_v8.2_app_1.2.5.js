@@ -465,24 +465,42 @@ var tapfit = {
   }
 };
 
-// Global error handler
+// Temporary error handler for initialization
 process.on('uncaughtException', function(e) {
-  tapfit.system.handleError(e, 'uncaughtException');
+  console.log('Init Error: ' + e);
+  digitalPulse(LED3, 1, [50, 50, 50, 50, 50]);
 });
 
-// Add calibration sample collection during calibration
-setInterval(function() {
-  if (tapfit.calibration.isCalibrating) {
-    tapfit.calibration.samples.push({
-      x: tapfit.sensor.lastAccel.x,
-      y: tapfit.sensor.lastAccel.y,
-      z: tapfit.sensor.lastAccel.z
-    });
-  }
-}, 100); // Sample every 100ms during calibration
-
 // Initialize TapFit system
-tapfit.system.init();
-
-// Expose tapfit object for debugging
-global.tapfit = tapfit;
+try {
+  tapfit.system.init();
+  
+  // Replace with proper error handler after successful init
+  process.removeAllListeners('uncaughtException');
+  process.on('uncaughtException', function(e) {
+    if (tapfit && tapfit.system && tapfit.system.handleError) {
+      tapfit.system.handleError(e, 'uncaughtException');
+    } else {
+      console.log('Error: ' + e);
+      digitalPulse(LED3, 1, [100, 100, 100]);
+    }
+  });
+  
+  // Add calibration sample collection after successful init
+  setInterval(function() {
+    if (tapfit.calibration && tapfit.calibration.isCalibrating) {
+      tapfit.calibration.samples.push({
+        x: tapfit.sensor.lastAccel.x,
+        y: tapfit.sensor.lastAccel.y,
+        z: tapfit.sensor.lastAccel.z
+      });
+    }
+  }, 100); // Sample every 100ms during calibration
+  
+  // Expose tapfit object for debugging
+  global.tapfit = tapfit;
+  
+} catch (initError) {
+  console.log('Fatal init error: ' + initError);
+  digitalPulse(LED1, 1, [1000, 200, 1000, 200, 1000]);
+}
