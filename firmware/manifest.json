@@ -1,0 +1,23 @@
+{
+  "versions": [
+    {
+      "firmwareVersion": "8.2",
+      "appVersion": "1.2.5",
+      "buildNumber": 1735002000,
+      "buildDate": "2024-12-24",
+      "filename": "puck_v8.2_app_1.2.5.js",
+      "isLatest": true,
+      "features": [
+        "26Hz accelerometer sampling",
+        "Enhanced NFC detection",
+        "Improved BLE stability",
+        "Battery monitoring",
+        "Auto-calibration",
+        "Error recovery"
+      ],
+      "compatibility": "stable"
+    }
+  ],
+  "lastUpdated": "2024-12-24T00:00:00.000Z",
+  "totalVersions": 1
+}

@@ -101,8 +101,25 @@ export class FirmwareManager {
     return version === current.version;
   }
 
-  static getFirmwareContent(filename: string): Promise<string> {
-    // Import firmware files dynamically based on filename
+  static async getFirmwareContent(filename: string): Promise<string> {
+    // Try to load from manifest first for version-specific files
+    try {
+      const manifestResponse = await fetch('/firmware/manifest.json');
+      if (manifestResponse.ok) {
+        const manifest = await manifestResponse.json();
+        const version = manifest.versions.find((v: any) => v.filename === filename);
+        if (version) {
+          const firmwareResponse = await fetch(`/firmware/${filename}`);
+          if (firmwareResponse.ok) {
+            return await firmwareResponse.text();
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Loading from manifest failed, trying static imports...');
+    }
+
+    // Fallback to static imports for legacy files
     const firmwareMap: Record<string, () => Promise<{ default: string }>> = {
       'puck_espruino_compatible.js': () => import('../../firmware/puck_espruino_compatible.js?raw'),
       'puck_tapfit_working.js': () => import('../../firmware/puck_tapfit_working.js?raw'),
