@@ -226,14 +226,27 @@ EOF
     print_success "Development optimizations configured"
 }
 
+# Update to latest version v1.2.5
+update_to_latest_version() {
+    print_status "Updating to TapFit v1.2.5..."
+    
+    if [ -f "scripts/update-version.js" ]; then
+        node scripts/update-version.js 1.2.5
+        print_success "Updated to v1.2.5"
+    else
+        print_warning "Version update script not found, continuing with current version"
+    fi
+}
+
 # Main execution
 main() {
     echo
-    print_status "Starting advanced Xcode project setup..."
+    print_status "Starting TapFit v1.2.5 Xcode Force Launch..."
     echo
     
     # Run all steps
     check_xcode
+    update_to_latest_version
     update_dependencies
     kill_xcode_processes
     clear_xcode_caches
