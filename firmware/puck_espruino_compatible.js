@@ -409,11 +409,11 @@ function sendPacket(type, data) {
   var buffer = new Uint8Array(packet);
   
   try {
-    NRF.updateServices({});
-    var services = {};
-    services[SERVICE_UUID] = {};
-    services[SERVICE_UUID][TX_CHAR_UUID] = { value: buffer, notify: true };
-    NRF.updateServices(services);
+    // Use direct characteristic update instead of recreating services
+    var updateData = {};
+    updateData[SERVICE_UUID] = {};
+    updateData[SERVICE_UUID][TX_CHAR_UUID] = { value: buffer, notify: true };
+    NRF.updateServices(updateData);
     return true;
   } catch (e) {
     console.log("Send failed:", e);
