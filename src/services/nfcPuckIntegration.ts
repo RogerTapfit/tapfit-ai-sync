@@ -1,169 +1,269 @@
-import { PuckClient } from '@/ble/puckClient';
+import { Capacitor } from '@capacitor/core';
+import { PuckClient, type PuckStatus, type PuckState } from '../ble/puckClient';
+import { NFCService, type NFCData, type MachineId } from './nfcService';
+import { toast } from 'sonner';
 
-export interface NFCPuckIntegrationState {
+export interface NFCPuckConnection {
+  machineId: MachineId;
+  puckClient: PuckClient | null;
+  connectionStatus: PuckStatus;
   isConnecting: boolean;
-  connectionAttempts: number;
-  lastNFCDetection: Date | null;
-  autoConnectEnabled: boolean;
 }
 
 export class NFCPuckIntegration {
-  private puckClient: PuckClient | null = null;
-  private state: NFCPuckIntegrationState = {
-    isConnecting: false,
-    connectionAttempts: 0,
-    lastNFCDetection: null,
-    autoConnectEnabled: true
-  };
-  
-  private onStateChange?: (state: NFCPuckIntegrationState) => void;
-  private onConnectionSuccess?: (puckClient: PuckClient) => void;
-  private onConnectionFailed?: (error: string) => void;
+  private static instance: NFCPuckIntegration;
+  private nfcService: NFCService;
+  private currentConnection: NFCPuckConnection | null = null;
+  private connectionCallbacks: ((connection: NFCPuckConnection) => void)[] = [];
+  private isListening = false;
 
-  constructor(
-    onStateChange?: (state: NFCPuckIntegrationState) => void,
-    onConnectionSuccess?: (puckClient: PuckClient) => void,
-    onConnectionFailed?: (error: string) => void
-  ) {
-    this.onStateChange = onStateChange;
-    this.onConnectionSuccess = onConnectionSuccess;
-    this.onConnectionFailed = onConnectionFailed;
+  private constructor() {
+    this.nfcService = NFCService.getInstance();
   }
 
-  public getState(): NFCPuckIntegrationState {
-    return { ...this.state };
+  public static getInstance(): NFCPuckIntegration {
+    if (!NFCPuckIntegration.instance) {
+      NFCPuckIntegration.instance = new NFCPuckIntegration();
+    }
+    return NFCPuckIntegration.instance;
   }
 
-  public setAutoConnect(enabled: boolean): void {
-    this.state.autoConnectEnabled = enabled;
-    this.notifyStateChange();
-  }
-
-  public async handleNFCDetection(): Promise<void> {
-    console.log('NFC detection triggered - attempting Puck auto-connect');
-    
-    this.state.lastNFCDetection = new Date();
-    
-    if (!this.state.autoConnectEnabled) {
-      console.log('Auto-connect disabled, skipping connection attempt');
-      this.notifyStateChange();
+  public async initialize(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      console.log('NFC-Puck integration: Running in web mode');
       return;
     }
-
-    if (this.state.isConnecting) {
-      console.log('Already connecting, skipping duplicate attempt');
-      return;
-    }
-
-    await this.attemptConnection();
-  }
-
-  private async attemptConnection(): Promise<void> {
-    this.state.isConnecting = true;
-    this.state.connectionAttempts++;
-    this.notifyStateChange();
 
     try {
-      console.log(`Puck connection attempt ${this.state.connectionAttempts}`);
+      const nfcAvailable = await this.nfcService.isNFCAvailable();
+      if (!nfcAvailable) {
+        throw new Error('NFC not available on this device');
+      }
+
+      await this.startNFCListening();
+      console.log('NFC-Puck integration initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize NFC-Puck integration:', error);
+      throw error;
+    }
+  }
+
+  public async startNFCListening(): Promise<void> {
+    if (this.isListening) return;
+
+    try {
+      await this.nfcService.startNFCListening((nfcData: NFCData & { triggerBLEConnection?: boolean }) => {
+        console.log('NFC tag detected for machine:', nfcData.machineId);
+        
+        if (nfcData.triggerBLEConnection) {
+          this.handleNFCTriggeredConnection(nfcData.machineId);
+        }
+      });
       
-      // Create new PuckClient instance
-      this.puckClient = new PuckClient(
-        (status) => console.log('Puck status:', status),
-        (repCount) => console.log('Puck rep count:', repCount),
-        (puckState) => {
-          console.log('Puck state update:', puckState);
-          // Handle NFC acknowledgment
-          if (puckState.nfcDetected) {
-            this.sendNFCAcknowledgment();
-          }
+      this.isListening = true;
+      console.log('NFC listening started for Puck auto-connect');
+    } catch (error) {
+      console.error('Failed to start NFC listening:', error);
+      throw error;
+    }
+  }
+
+  public async stopNFCListening(): Promise<void> {
+    if (!this.isListening) return;
+
+    try {
+      await this.nfcService.stopNFCListening();
+      this.isListening = false;
+      console.log('NFC listening stopped');
+    } catch (error) {
+      console.error('Failed to stop NFC listening:', error);
+    }
+  }
+
+  private async handleNFCTriggeredConnection(machineId: MachineId): Promise<void> {
+    console.log('Handling NFC-triggered connection for machine:', machineId);
+    
+    // Update connection state
+    this.currentConnection = {
+      machineId,
+      puckClient: null,
+      connectionStatus: 'handshaking',
+      isConnecting: true
+    };
+
+    this.notifyConnectionCallbacks();
+
+    try {
+      toast.info(`NFC detected for ${machineId}. Connecting to Puck...`);
+      
+      // Attempt automatic Puck connection
+      const puckClient = await PuckClient.autoConnect(
+        (status: PuckStatus) => this.handlePuckStatus(status),
+        (rep: number) => this.handleRepCount(rep),
+        (state: PuckState) => this.handlePuckStateUpdate(state)
+      );
+
+      if (puckClient) {
+        this.currentConnection.puckClient = puckClient;
+        this.currentConnection.connectionStatus = 'connected';
+        this.currentConnection.isConnecting = false;
+        
+        toast.success(`Connected to Puck for ${machineId}!`);
+        console.log('NFC-triggered Puck connection successful');
+      } else {
+        throw new Error('Failed to connect to Puck device');
+      }
+    } catch (error) {
+      console.error('NFC-triggered connection failed:', error);
+      
+      this.currentConnection.connectionStatus = 'error';
+      this.currentConnection.isConnecting = false;
+      
+      toast.error('Failed to connect to Puck device. Please try manual connection.');
+    }
+
+    this.notifyConnectionCallbacks();
+  }
+
+  private handlePuckStatus(status: PuckStatus): void {
+    if (this.currentConnection) {
+      this.currentConnection.connectionStatus = status;
+      this.notifyConnectionCallbacks();
+    }
+  }
+
+  private handleRepCount(rep: number): void {
+    console.log('Rep count updated:', rep);
+    // Additional rep handling can be added here
+  }
+
+  private handlePuckStateUpdate(state: PuckState): void {
+    console.log('Puck state updated:', state);
+    
+    // Handle NFC-specific state changes
+    if (state.nfcDetected) {
+      console.log('Puck reported NFC detection');
+    }
+    
+    if (state.autoConnectTriggered) {
+      console.log('Puck reported auto-connect trigger');
+    }
+  }
+
+  public async connectToPuck(
+    machineId: MachineId,
+    onStatus?: (status: PuckStatus) => void,
+    onRep?: (rep: number) => void,
+    onStateUpdate?: (state: PuckState) => void
+  ): Promise<PuckClient | null> {
+    console.log('Manual Puck connection for machine:', machineId);
+
+    this.currentConnection = {
+      machineId,
+      puckClient: null,
+      connectionStatus: 'handshaking',
+      isConnecting: true
+    };
+
+    this.notifyConnectionCallbacks();
+
+    try {
+      const puckClient = await PuckClient.autoConnect(
+        (status: PuckStatus) => {
+          this.handlePuckStatus(status);
+          onStatus?.(status);
+        },
+        (rep: number) => {
+          this.handleRepCount(rep);
+          onRep?.(rep);
+        },
+        (state: PuckState) => {
+          this.handlePuckStateUpdate(state);
+          onStateUpdate?.(state);
         }
       );
 
-      // Attempt handshake with timeout
-      await Promise.race([
-        this.puckClient.handshake(),
-        this.createTimeout(10000, 'Connection timeout')
-      ]);
-
-      console.log('Puck connection successful');
-      this.state.isConnecting = false;
-      this.notifyStateChange();
-      
-      if (this.onConnectionSuccess) {
-        this.onConnectionSuccess(this.puckClient);
+      if (puckClient) {
+        this.currentConnection.puckClient = puckClient;
+        this.currentConnection.connectionStatus = 'connected';
+        this.currentConnection.isConnecting = false;
+        
+        toast.success(`Connected to Puck for ${machineId}!`);
+        return puckClient;
+      } else {
+        throw new Error('Failed to connect');
       }
-
     } catch (error) {
-      console.error('Puck connection failed:', error);
-      this.state.isConnecting = false;
-      this.notifyStateChange();
+      console.error('Manual Puck connection failed:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
-      if (this.onConnectionFailed) {
-        this.onConnectionFailed(errorMessage);
-      }
-
-      // Retry logic for certain errors
-      if (this.state.connectionAttempts < 3 && this.shouldRetry(errorMessage)) {
-        console.log('Retrying connection in 2 seconds...');
-        setTimeout(() => this.attemptConnection(), 2000);
-      }
+      this.currentConnection.connectionStatus = 'error';
+      this.currentConnection.isConnecting = false;
+      
+      toast.error('Failed to connect to Puck device');
+      return null;
+    } finally {
+      this.notifyConnectionCallbacks();
     }
   }
 
-  private async sendNFCAcknowledgment(): Promise<void> {
-    if (this.puckClient) {
+  public async disconnectPuck(): Promise<void> {
+    if (this.currentConnection?.puckClient) {
       try {
-        await this.puckClient.sendCommand(0x06); // NFC_ACK command
-        console.log('Sent NFC acknowledgment to Puck');
+        await this.currentConnection.puckClient.disconnect();
+        toast.info('Puck disconnected');
       } catch (error) {
-        console.error('Failed to send NFC acknowledgment:', error);
+        console.error('Error disconnecting Puck:', error);
       }
     }
+
+    this.currentConnection = null;
+    this.notifyConnectionCallbacks();
   }
 
-  private createTimeout(ms: number, message: string): Promise<never> {
-    return new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
+  public getCurrentConnection(): NFCPuckConnection | null {
+    return this.currentConnection;
+  }
+
+  public onConnectionChange(callback: (connection: NFCPuckConnection | null) => void): () => void {
+    const wrappedCallback = (connection: NFCPuckConnection) => callback(connection);
+    this.connectionCallbacks.push(wrappedCallback);
+    
+    // Return unsubscribe function
+    return () => {
+      const index = this.connectionCallbacks.indexOf(wrappedCallback);
+      if (index > -1) {
+        this.connectionCallbacks.splice(index, 1);
+      }
+    };
+  }
+
+  private notifyConnectionCallbacks(): void {
+    this.connectionCallbacks.forEach(callback => {
+      try {
+        callback(this.currentConnection!);
+      } catch (error) {
+        console.error('Error in connection callback:', error);
+      }
     });
   }
 
-  private shouldRetry(errorMessage: string): boolean {
-    const retryableErrors = [
-      'timeout',
-      'device not found',
-      'connection failed',
-      'gatt server disconnected'
-    ];
-    
-    return retryableErrors.some(error => 
-      errorMessage.toLowerCase().includes(error)
-    );
+  // Simulate NFC tap for testing
+  public simulateNFCTap(machineId: MachineId): void {
+    console.log('Simulating NFC tap for machine:', machineId);
+    this.handleNFCTriggeredConnection(machineId);
   }
 
-  private notifyStateChange(): void {
-    if (this.onStateChange) {
-      this.onStateChange(this.getState());
+  // Write NFC tag for a machine
+  public async writeNFCTag(machineId: MachineId): Promise<void> {
+    try {
+      await this.nfcService.writeNFCTag(machineId);
+      toast.success(`NFC tag written for ${machineId}`);
+    } catch (error) {
+      console.error('Failed to write NFC tag:', error);
+      toast.error('Failed to write NFC tag');
+      throw error;
     }
-  }
-
-  public disconnect(): void {
-    if (this.puckClient) {
-      this.puckClient.disconnect();
-      this.puckClient = null;
-    }
-    
-    this.state.isConnecting = false;
-    this.notifyStateChange();
-  }
-
-  public reset(): void {
-    this.disconnect();
-    this.state.connectionAttempts = 0;
-    this.state.lastNFCDetection = null;
-    this.notifyStateChange();
   }
 }
 
-// Global instance for the app
-export const nfcPuckIntegration = new NFCPuckIntegration();
+export const nfcPuckIntegration = NFCPuckIntegration.getInstance();

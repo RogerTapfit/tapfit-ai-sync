@@ -60,16 +60,12 @@ export class PuckClient {
     
     try {
       await BleClient.initialize();
-      const dev = await BleClient.requestDevice({
-        services: [SERVICE],
-        optionalServices: [SERVICE],
-      });
-      this.deviceId = dev.deviceId;
-
-      await BleClient.connect(this.deviceId, () => {
-        this.onStatus?.('disconnected');
-        this.deviceId = undefined;
-      });
+      
+      // Use automatic scanning instead of requestDevice
+      const connected = await this.scanAndConnect();
+      if (!connected) {
+        throw new Error('Failed to find and connect to Puck device');
+      }
 
       // Start listening for notifications with enhanced packet handling
       await BleClient.startNotifications(this.deviceId!, SERVICE, CHAR, (v) => {
@@ -77,6 +73,9 @@ export class PuckClient {
       });
 
       this.onStatus?.('connected');
+      
+      // Send NFC acknowledgment if this was triggered by NFC
+      await this.sendCommand(COMMAND.NFC_ACK);
       
       // Request initial status
       await this.requestStatus();
@@ -89,6 +88,71 @@ export class PuckClient {
       console.error('Handshake failed:', error);
       this.onStatus?.('error');
       throw error;
+    }
+  }
+
+  private async scanAndConnect(timeoutMs = 10000): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      let resolved = false;
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve(false);
+        }
+      }, timeoutMs);
+
+      try {
+        await BleClient.requestLEScan({ services: [SERVICE] }, async (result) => {
+          if (resolved) return;
+          
+          const { device } = result;
+          if (!device?.deviceId) return;
+          
+          // Filter for TapFit Puck devices
+          if (device.name?.includes('TapFit') || device.name?.includes('Puck')) {
+            resolved = true;
+            clearTimeout(timeout);
+            
+            try {
+              await BleClient.stopLEScan();
+              this.deviceId = device.deviceId;
+              
+              await BleClient.connect(this.deviceId, () => {
+                console.log('Puck disconnected');
+                this.onStatus?.('disconnected');
+                this.deviceId = undefined;
+              });
+              
+              console.log('Connected to Puck:', device.name, device.deviceId);
+              resolve(true);
+            } catch (error) {
+              console.error('Connection failed:', error);
+              resolve(false);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Scan failed:', error);
+        clearTimeout(timeout);
+        resolved = true;
+        resolve(false);
+      }
+    });
+  }
+
+  // Static method for auto-connect from NFC
+  static async autoConnect(
+    onStatus?: (s: PuckStatus) => void,
+    onRep?: (rep: number) => void,
+    onStateUpdate?: (state: PuckState) => void
+  ): Promise<PuckClient | null> {
+    try {
+      const client = new PuckClient(onStatus, onRep, onStateUpdate);
+      await client.handshake(true);
+      return client;
+    } catch (error) {
+      console.error('Auto-connect failed:', error);
+      return null;
     }
   }
 
