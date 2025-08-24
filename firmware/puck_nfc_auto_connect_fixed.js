@@ -2,8 +2,8 @@
 // Espruino-compatible firmware with automatic NFC detection and BLE connection
 
 // Configuration
-const SERVICE_UUID = "0000FFE0-0000-1000-8000-00805F9B34FB";
-const CHAR_UUID = "0000FFE1-0000-1000-8000-00805F9B34FB";
+const SERVICE_UUID = "FFE0";
+const CHAR_UUID = "FFE1";
 const DEVICE_NAME = "TapFit-Puck-NFC";
 const MOTION_THRESHOLD = 0.15;
 const REP_COOLDOWN = 800;
@@ -289,45 +289,59 @@ function calibrateAccelerometer() {
   var sampleCount = 0;
   var targetSamples = 20;
   
+  // Ensure accelerometer is on
+  Puck.accelOn(12.5);
+  
   function takeSample() {
-    var accel = Puck.accel();
-    samples.push(accel);
-    sampleCount++;
-    
-    // Progress indication
-    if (sampleCount % 5 === 0) {
-      digitalPulse(LED2, 1, 50);
-    }
-    
-    if (sampleCount < targetSamples) {
-      setTimeout(takeSample, 50);
-    } else {
-      // Calculate baseline
-      var sum = { x: 0, y: 0, z: 0 };
-      samples.forEach(function(sample) {
-        sum.x += sample.x;
-        sum.y += sample.y;
-        sum.z += sample.z;
-      });
+    try {
+      var accel = Puck.accel();
+      if (accel && !isNaN(accel.x) && !isNaN(accel.y) && !isNaN(accel.z)) {
+        samples.push(accel);
+        sampleCount++;
+        console.log("Sample", sampleCount + ":", accel);
+      } else {
+        console.log("Invalid accel reading, retrying...");
+      }
       
-      state.accelBaseline = {
-        x: sum.x / targetSamples,
-        y: sum.y / targetSamples,
-        z: sum.z / targetSamples
-      };
+      // Progress indication
+      if (sampleCount % 5 === 0) {
+        digitalPulse(LED2, 1, 50);
+      }
       
-      state.calibrated = true;
-      console.log("Calibration complete:", state.accelBaseline);
-      
-      // Success indication
-      ledSequence([[LED2], [LED2], [LED2]], 200);
-      
-      // Send status update
-      sendStatus();
+      if (sampleCount < targetSamples) {
+        setTimeout(takeSample, 100);
+      } else {
+        // Calculate baseline
+        var sum = { x: 0, y: 0, z: 0 };
+        samples.forEach(function(sample) {
+          sum.x += sample.x;
+          sum.y += sample.y;
+          sum.z += sample.z;
+        });
+        
+        state.accelBaseline = {
+          x: sum.x / targetSamples,
+          y: sum.y / targetSamples,
+          z: sum.z / targetSamples
+        };
+        
+        state.calibrated = true;
+        console.log("Calibration complete:", state.accelBaseline);
+        
+        // Success indication
+        ledSequence([[LED2], [LED2], [LED2]], 200);
+        
+        // Send status update
+        setTimeout(sendStatus, 500);
+      }
+    } catch (e) {
+      console.log("Calibration error:", e);
+      setTimeout(takeSample, 100);
     }
   }
   
-  takeSample();
+  // Wait a bit for accelerometer to initialize then start sampling
+  setTimeout(takeSample, 200);
 }
 
 // Enhanced motion detection and rep counting
