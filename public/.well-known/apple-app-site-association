@@ -3,11 +3,19 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.com.tapfit.app"],
+        "appIDs": ["TEAMID.app.lovable.4e37f3a98b5244369842e2cc950a194e"],
         "components": [
           {
             "/": "/pair*",
             "comment": "TapFit pairing link"
+          },
+          {
+            "/": "/nfc*",
+            "comment": "TapFit NFC trigger"
+          },
+          {
+            "/": "/machine/*",
+            "comment": "TapFit machine access"
           }
         ]
       }

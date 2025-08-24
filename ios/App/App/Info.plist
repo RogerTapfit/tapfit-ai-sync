@@ -79,6 +79,17 @@
 	<string>This app uses location to find nearby gyms and fitness facilities.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app uses the microphone for voice commands during workouts.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>This app uses NFC to detect and connect to workout machines and equipment.</string>
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>NDEF</string>
+		<string>TAG</string>
+	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:tapfit-ai-sync.lovable.app</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>background-processing</string>
