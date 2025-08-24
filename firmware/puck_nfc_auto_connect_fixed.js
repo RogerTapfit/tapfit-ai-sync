@@ -79,7 +79,7 @@ function setupBLE() {
     notify: true,
     description: "TapFit Data Channel"
   };
-  NRF.setServices(services, { uart: false, hid: false });
+  NRF.setServices(services, { uart: false });
 
   // Enhanced connection event handlers
   NRF.on('connect', handleConnect);
