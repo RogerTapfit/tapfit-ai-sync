@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePuckWorkout } from '@/hooks/usePuckWorkout';
 import { blePuckUtil } from '@/services/blePuckUtil';
-import { NFCPuckTestPanel } from '@/components/NFCPuckTestPanel';
+import NFCPuckTestPanel from '@/components/NFCPuckTestPanel';
 import { toast } from 'sonner';
 import { Bluetooth, Activity, Battery, Timer, RotateCcw, Play, Square, Zap, Smartphone } from 'lucide-react';
 

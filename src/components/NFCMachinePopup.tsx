@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Copy, Smartphone, ExternalLink, Bluetooth, Zap } from 'lucide-react';
 import { nfcService, MachineId, MACHINE_IDS } from '@/services/nfcService';
-import { nfcPuckIntegration, NFCPuckIntegrationState } from '@/services/nfcPuckIntegration';
+import { nfcPuckIntegration, type NFCPuckConnection } from '@/services/nfcPuckIntegration';
 import { useToast } from '@/hooks/use-toast';
 
 interface NFCMachinePopupProps {
@@ -66,39 +66,19 @@ const WORKOUT_TO_NFC_MAPPING: Record<string, MachineId | null> = {
 
 export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachinePopupProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [integrationState, setIntegrationState] = useState<NFCPuckIntegrationState>(
-    nfcPuckIntegration.getState()
+  const [integrationState, setIntegrationState] = useState<NFCPuckConnection | null>(
+    nfcPuckIntegration.getCurrentConnection()
   );
   const { toast } = useToast();
   
   // Subscribe to integration state changes
   useEffect(() => {
-    const handleStateChange = (state: NFCPuckIntegrationState) => {
-      setIntegrationState(state);
-    };
+    const unsubscribe = nfcPuckIntegration.onConnectionChange((connection) => {
+      setIntegrationState(connection);
+    });
     
-    // Set up the integration callbacks
-    const integration = new (nfcPuckIntegration.constructor as any)(
-      handleStateChange,
-      (puckClient) => {
-        toast({
-          title: "Puck Connected!",
-          description: "Auto-connection successful via NFC detection",
-        });
-      },
-      (error) => {
-        toast({
-          title: "Connection Failed",
-          description: `Auto-connection failed: ${error}`,
-          variant: "destructive",
-        });
-      }
-    );
-    
-    return () => {
-      // Cleanup if needed
-    };
-  }, [toast]);
+    return unsubscribe;
+  }, []);
   
   const nfcMachineId = WORKOUT_TO_NFC_MAPPING[machineId];
   
@@ -129,7 +109,7 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
 
   const handleTestNFCConnection = async () => {
     try {
-      await nfcPuckIntegration.handleNFCDetection();
+      nfcPuckIntegration.simulateNFCTap(nfcMachineId);
       toast({
         title: "NFC Test Triggered",
         description: "Attempting auto-connection to Puck device",
@@ -143,8 +123,16 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
     }
   };
 
-  const toggleAutoConnect = () => {
-    nfcPuckIntegration.setAutoConnect(!integrationState.autoConnectEnabled);
+  const handleManualConnect = async () => {
+    try {
+      await nfcPuckIntegration.connectToPuck(nfcMachineId);
+    } catch (error) {
+      toast({
+        title: "Connection Failed",
+        description: "Could not connect to Puck device",
+        variant: "destructive",
+      });
+    }
   };
 
   const openInBrowser = (url: string) => {
@@ -165,53 +153,48 @@ export const NFCMachinePopup = ({ machineId, machineName, children }: NFCMachine
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Auto-Connect Status */}
+          {/* Connection Status */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-semibold text-sm flex items-center gap-2">
                 <Zap className="h-4 w-4 text-blue-500" />
-                Auto-Connect Status
+                Connection Status
               </h4>
               <Badge 
-                variant={integrationState.autoConnectEnabled ? "default" : "secondary"}
+                variant={integrationState?.connectionStatus === 'connected' ? "default" : "secondary"}
                 className="text-xs"
               >
-                {integrationState.autoConnectEnabled ? "Enabled" : "Disabled"}
+                {integrationState?.connectionStatus || 'disconnected'}
               </Badge>
             </div>
             
             <div className="space-y-2 text-xs">
-              {integrationState.isConnecting && (
+              {integrationState?.isConnecting && (
                 <div className="flex items-center gap-2 text-blue-600">
                   <Bluetooth className="h-3 w-3 animate-pulse" />
-                  Connecting to Puck (Attempt {integrationState.connectionAttempts})...
-                </div>
-              )}
-              
-              {integrationState.lastNFCDetection && (
-                <div className="text-muted-foreground">
-                  Last NFC: {integrationState.lastNFCDetection.toLocaleTimeString()}
+                  Connecting to Puck for {integrationState.machineId}...
                 </div>
               )}
               
               <div className="flex gap-2 mt-3">
                 <Button
                   size="sm"
-                  variant={integrationState.autoConnectEnabled ? "secondary" : "default"}
-                  onClick={toggleAutoConnect}
+                  variant="default"
+                  onClick={handleTestNFCConnection}
+                  disabled={integrationState?.isConnecting}
                   className="text-xs"
                 >
-                  {integrationState.autoConnectEnabled ? "Disable" : "Enable"} Auto-Connect
+                  Test NFC Connection
                 </Button>
                 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={handleTestNFCConnection}
-                  disabled={integrationState.isConnecting}
+                  onClick={handleManualConnect}
+                  disabled={integrationState?.isConnecting || integrationState?.connectionStatus === 'connected'}
                   className="text-xs"
                 >
-                  Test Connection
+                  Manual Connect
                 </Button>
               </div>
             </div>
