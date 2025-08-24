@@ -1,577 +1,490 @@
-// TapFit Puck.js Firmware - Espruino Compatible Version
-// Fixed: Computed property syntax, object notation compatibility
+// TapFit Puck Enhanced NFC Auto-Connect Firmware v3.0 - Espruino Compatible
+// Optimized for TapFit App v1.2.5
+// Features: Instant NFC response, perfect BLE handshake, accurate rep counting
 
-// ========== CONFIGURATION ==========
-var CONFIG = {
-  DEVICE_NAME: "TapFit_Puck",
-  FIRMWARE_VERSION: "8.2",
-  ACCEL_SAMPLE_RATE: 26,
-  REP_THRESHOLD: 0.8,
-  REP_COOLDOWN: 800,
-  NFC_URL: "https://tapfit-ai-sync.lovable.app/pair?station=TAPFIT01",
-  DEBUG: true
-};
+var DEVICE_NAME = "TapFit Puck";
+var SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+var TX_CHAR_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+var RX_CHAR_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
-// ========== BLE SERVICE UUIDs ==========
-var NORDIC_UART_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-var NORDIC_UART_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-var NORDIC_UART_RX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
-
-// ========== PACKET TYPES ==========
-var PACKET_TYPES = {
-  REP: 0x01,
-  STATUS: 0x02,
-  NFC_DETECTION: 0x03,
-  HEARTBEAT: 0x04,
-  ERROR: 0x05
-};
-
-// ========== DEVICE STATE ==========
-var deviceState = {
+// Device state management
+var state = {
   repCount: 0,
-  sessionStartTime: 0,
-  lastRepTime: 0,
+  sessionActive: false,
   isConnected: false,
-  isCalibrating: false,
-  isSessionActive: false,
-  baseline: { x: 0, y: 0, z: 0 },
-  batteryLevel: 100,
-  nfcDetected: false,
+  isCalibrated: false,
+  batteryLevel: 1.0,
   lastMotion: 0,
-  motionBuffer: []
+  calibrationData: { x: 0, y: 0, z: 0 },
+  motionThreshold: 0.8,
+  lastRepTime: 0,
+  sessionTimeout: 300000, // 5 minutes
+  sessionStartTime: 0
 };
 
-// ========== GLOBAL VARIABLES ==========
-var heartbeatTimer = null;
-var monitoringTimer = null;
+// Packet types for communication
+var PACKET_TYPE = {
+  REP_COUNT: 0x01,
+  STATUS: 0x02,
+  HEARTBEAT: 0x03,
+  BATTERY: 0x04,
+  ERROR: 0xFF
+};
 
-// ========== UTILITY FUNCTIONS ==========
-function log(message) {
-  if (CONFIG.DEBUG) {
-    console.log("[TapFit] " + message);
-  }
+// Commands from app
+var COMMAND = {
+  HANDSHAKE: 0x01,
+  START_SESSION: 0x02,
+  STOP_SESSION: 0x03,
+  CALIBRATE: 0x04,
+  RESET: 0x05,
+  STATUS_REQUEST: 0x06
+};
+
+var bleService, txCharacteristic, rxCharacteristic;
+var motionInterval, heartbeatInterval;
+var nfcFieldDetected = false;
+
+// Main initialization
+function initializePuck() {
+  console.log("TapFit Puck v3.0 initializing...");
+  
+  setupBLE();
+  setupNFC();
+  setupButtons();
+  setupAccelerometer();
+  setupMotionDetection();
+  
+  // Start advertising immediately
+  startAdvertising(false);
+  
+  // Battery monitoring
+  setInterval(function() {
+    state.batteryLevel = getBatteryLevel();
+    if (state.isConnected) {
+      sendHeartbeat();
+    }
+  }, 30000);
+  
+  // Visual startup indication
+  ledSequence([LED1, LED2, LED3], 200, 1);
+  console.log("TapFit Puck ready for NFC and BLE");
 }
 
-function calculateChecksum(data) {
-  var sum = 0;
-  for (var i = 0; i < data.length; i++) {
-    sum += data[i];
-  }
-  return sum & 0xFF;
-}
-
-// ========== LED FEEDBACK ==========
-function ledSuccess() {
-  digitalPulse(LED1, 1, 100);
-  setTimeout(function() {
-    digitalPulse(LED1, 1, 100);
-  }, 150);
-}
-
-function ledError() {
-  digitalPulse(LED2, 1, 300);
-}
-
-function ledConnected() {
-  digitalPulse(LED3, 1, 500);
-}
-
-function ledNFC() {
-  digitalPulse(LED1, 1, 50);
-  setTimeout(function() {
-    digitalPulse(LED2, 1, 50);
-  }, 100);
-  setTimeout(function() {
-    digitalPulse(LED3, 1, 50);
-  }, 200);
-}
-
-function startupSequence() {
-  digitalPulse(LED1, 1, 200);
-  setTimeout(function() {
-    digitalPulse(LED2, 1, 200);
-  }, 300);
-  setTimeout(function() {
-    digitalPulse(LED3, 1, 200);
-  }, 600);
-}
-
-// ========== NFC SETUP ==========
-function setupNFC() {
-  try {
-    NRF.nfcURL(CONFIG.NFC_URL);
-    
-    NRF.on('NFCrx', function(data) {
-      log("NFC field detected");
-      deviceState.nfcDetected = true;
-      ledNFC();
-      sendNFCDetectionPacket();
-      startAggressiveAdvertising();
-    });
-    
-    log("NFC configured");
-    return true;
-  } catch (e) {
-    log("NFC setup failed: " + e.message);
-    return false;
-  }
-}
-
-// ========== BLE SETUP ==========
+// BLE Service Setup
 function setupBLE() {
+  console.log("Setting up BLE service...");
+  
   try {
-    // Set device name and advertising
-    NRF.setAdvertising({}, {
-      name: CONFIG.DEVICE_NAME,
-      showName: true,
-      discoverable: true,
-      connectable: true
-    });
-
-    // Create service object using standard notation
-    var serviceObj = {};
-    serviceObj[NORDIC_UART_SERVICE] = {};
+    // Create service object using string keys (Espruino compatible)
+    var services = {};
+    services[SERVICE_UUID] = {};
     
-    // TX Characteristic (write from app to puck)
-    var txCharObj = {
+    // TX Characteristic
+    services[SERVICE_UUID][TX_CHAR_UUID] = {
       value: [0],
       maxLen: 20,
-      writable: true,
-      onWrite: function(evt) {
-        handleIncomingCommand(evt.data);
-      }
-    };
-    
-    // RX Characteristic (notify from puck to app)
-    var rxCharObj = {
-      value: [0],
-      maxLen: 20,
+      writable: false,
       readable: true,
       notify: true
     };
     
-    serviceObj[NORDIC_UART_SERVICE][NORDIC_UART_TX] = txCharObj;
-    serviceObj[NORDIC_UART_SERVICE][NORDIC_UART_RX] = rxCharObj;
-    
-    NRF.setServices(serviceObj, { uart: false });
-    
-    log("BLE Nordic UART service configured");
-    return true;
-  } catch (e) {
-    log("BLE setup failed: " + e.message);
-    ledError();
-    return false;
-  }
-}
-
-// ========== ADVERTISING CONTROL ==========
-function startAggressiveAdvertising() {
-  NRF.setAdvertising({}, {
-    name: CONFIG.DEVICE_NAME,
-    showName: true,
-    discoverable: true,
-    connectable: true,
-    interval: 20
-  });
-  
-  log("Aggressive advertising started");
-  
-  setTimeout(function() {
-    NRF.setAdvertising({}, {
-      name: CONFIG.DEVICE_NAME,
-      showName: true,
-      discoverable: true,
-      connectable: true,
-      interval: 375
-    });
-    log("Normal advertising resumed");
-  }, 30000);
-}
-
-// ========== PACKET TRANSMISSION ==========
-function transmitPacket(packetType, data) {
-  if (!deviceState.isConnected) {
-    return false;
-  }
-
-  try {
-    var packet = [packetType];
-    if (data && data.length > 0) {
-      packet = packet.concat(data);
-    }
-    
-    var checksum = calculateChecksum(packet);
-    packet.push(checksum);
-    
-    if (packet.length > 20) {
-      packet = packet.slice(0, 19);
-      packet.push(calculateChecksum(packet));
-    }
-    
-    // Update service using standard notation
-    var updateObj = {};
-    updateObj[NORDIC_UART_SERVICE] = {};
-    updateObj[NORDIC_UART_SERVICE][NORDIC_UART_RX] = {
-      value: packet,
-      notify: true
+    // RX Characteristic
+    services[SERVICE_UUID][RX_CHAR_UUID] = {
+      value: [0],
+      maxLen: 20,
+      writable: true,
+      onWrite: handleIncomingCommand
     };
     
-    NRF.updateServices(updateObj);
-    return true;
+    NRF.setServices(services, { advertise: [SERVICE_UUID] });
+    
+    // Connection event handlers
+    NRF.on('connect', handleConnect);
+    NRF.on('disconnect', handleDisconnect);
+    
+    console.log("BLE service setup complete");
   } catch (e) {
-    log("Transmission failed: " + e.message);
-    return false;
+    console.log("BLE setup error:", e);
+    // Attempt recovery
+    setTimeout(function() {
+      console.log("Attempting recovery...");
+      initializePuck();
+    }, 2000);
   }
 }
 
-// ========== PACKET SENDERS ==========
-function sendRepPacket() {
-  var timestamp = Math.floor((getTime() - deviceState.sessionStartTime) * 1000);
-  var data = [
-    deviceState.repCount & 0xFF,
-    (deviceState.repCount >> 8) & 0xFF,
-    timestamp & 0xFF,
-    (timestamp >> 8) & 0xFF,
-    (timestamp >> 16) & 0xFF,
-    (timestamp >> 24) & 0xFF
-  ];
-  transmitPacket(PACKET_TYPES.REP, data);
-}
-
-function sendStatusPacket() {
-  var data = [
-    deviceState.repCount & 0xFF,
-    (deviceState.repCount >> 8) & 0xFF,
-    deviceState.batteryLevel,
-    deviceState.isSessionActive ? 1 : 0,
-    deviceState.isCalibrating ? 1 : 0
-  ];
-  transmitPacket(PACKET_TYPES.STATUS, data);
-}
-
-function sendNFCDetectionPacket() {
-  var timestamp = Math.floor(getTime() * 1000);
-  var data = [
-    timestamp & 0xFF,
-    (timestamp >> 8) & 0xFF,
-    (timestamp >> 16) & 0xFF,
-    (timestamp >> 24) & 0xFF
-  ];
-  transmitPacket(PACKET_TYPES.NFC_DETECTION, data);
-}
-
-function sendHeartbeat() {
-  var timestamp = Math.floor(getTime() * 1000);
-  var data = [
-    timestamp & 0xFF,
-    (timestamp >> 8) & 0xFF,
-    (timestamp >> 16) & 0xFF,
-    (timestamp >> 24) & 0xFF,
-    deviceState.batteryLevel
-  ];
-  transmitPacket(PACKET_TYPES.HEARTBEAT, data);
-}
-
-// ========== COMMAND HANDLING ==========
-function handleIncomingCommand(data) {
-  if (!data || data.length === 0) return;
+// NFC Setup for auto-connect trigger
+function setupNFC() {
+  console.log("Setting up NFC...");
   
-  var command = String.fromCharCode.apply(null, data).trim();
-  log("Received command: " + command);
-  
-  if (command === "RESET") {
-    resetSession();
-    sendStatusPacket();
-  } else if (command === "STATUS") {
-    sendStatusPacket();
-  } else if (command === "START") {
-    startSession();
-  } else if (command === "STOP") {
-    endSession();
-  } else if (command === "CALIBRATE") {
-    calibrateDevice();
-  }
-}
-
-// ========== ACCELEROMETER SETUP ==========
-function setupAccelerometer() {
   try {
-    Puck.accelOn(CONFIG.ACCEL_SAMPLE_RATE);
-    log("Accelerometer started at " + CONFIG.ACCEL_SAMPLE_RATE + "Hz");
-    return true;
+    // Enable NFC with auto-connect data
+    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/nfc");
+    
+    // NFC field detection for instant response
+    NRF.on('NFCon', function() {
+      console.log("NFC detected!");
+      nfcFieldDetected = true;
+      handleNFCDetection();
+    });
+    
+    NRF.on('NFCoff', function() {
+      console.log("NFC removed");
+      nfcFieldDetected = false;
+    });
+    
+    console.log("NFC setup complete");
   } catch (e) {
-    log("Accelerometer setup failed: " + e.message);
-    return false;
+    console.log("NFC setup error:", e);
   }
 }
 
-// ========== CALIBRATION ==========
-function calibrateDevice() {
-  log("Starting calibration...");
-  deviceState.isCalibrating = true;
-  ledSuccess();
+function handleNFCDetection() {
+  console.log("NFC auto-connect triggered");
+  
+  // Visual feedback
+  LED1.write(1);
+  setTimeout(function() { LED1.write(0); }, 500);
+  
+  // Boost advertising for faster discovery
+  startAdvertising(true);
+  
+  // Auto-boost timeout
+  setTimeout(function() {
+    if (!state.isConnected) {
+      startAdvertising(false); // Return to normal advertising
+    }
+  }, 10000);
+}
+
+// Enhanced advertising with boost mode
+function startAdvertising(boost) {
+  if (boost === undefined) boost = false;
+  
+  var advData = {};
+  advData[0x02] = [0x01, 0x06]; // General discoverable mode
+  advData[0x03] = [0x01, 0x40, 0x6e]; // Service UUID (shortened)
+  advData[0x09] = DEVICE_NAME; // Complete local name
+  advData[0x0A] = [0x04]; // TX power level
+  
+  var scanData = {};
+  scanData[0x09] = DEVICE_NAME;
+  scanData[0x16] = [0x12, 0x18, Math.floor(state.batteryLevel * 100)]; // Battery service data
+  
+  var options = {
+    name: DEVICE_NAME,
+    interval: boost ? 20 : 100, // Faster when boosted
+    connectable: true,
+    discoverable: true,
+    showName: true
+  };
+  
+  NRF.setAdvertising(advData, options);
+  NRF.setScanResponse(scanData);
+  
+  console.log("Advertising started" + (boost ? " (boosted)" : ""));
+}
+
+function restartAdvertising(boost) {
+  if (boost === undefined) boost = false;
+  
+  NRF.setAdvertising({}, { connectable: false });
+  setTimeout(function() { startAdvertising(boost); }, 100);
+}
+
+// Connection handlers
+function handleConnect() {
+  console.log("BLE device connected");
+  state.isConnected = true;
+  
+  // Visual feedback
+  LED2.write(1);
+  setTimeout(function() { LED2.write(0); }, 1000);
+  
+  // Send initial status
+  setTimeout(sendStatus, 500);
+}
+
+function handleDisconnect() {
+  console.log("BLE device disconnected");
+  state.isConnected = false;
+  
+  // Stop session if active
+  if (state.sessionActive) {
+    stopSession();
+  }
+  
+  // Restart advertising
+  setTimeout(function() { startAdvertising(false); }, 1000);
+}
+
+// Command handling from app
+function handleIncomingCommand(evt) {
+  var data = new Uint8Array(evt.data);
+  var command = data[0];
+  
+  console.log("Received command:", command);
+  
+  switch (command) {
+    case COMMAND.HANDSHAKE:
+      console.log("Handshake received");
+      sendStatus();
+      break;
+      
+    case COMMAND.START_SESSION:
+      startSession();
+      break;
+      
+    case COMMAND.STOP_SESSION:
+      stopSession();
+      break;
+      
+    case COMMAND.CALIBRATE:
+      calibrateAccelerometer();
+      break;
+      
+    case COMMAND.RESET:
+      resetReps();
+      break;
+      
+    case COMMAND.STATUS_REQUEST:
+      sendStatus();
+      break;
+      
+    default:
+      console.log("Unknown command:", command);
+  }
+}
+
+// Accelerometer calibration
+function calibrateAccelerometer() {
+  console.log("Starting calibration...");
+  state.isCalibrated = false;
   
   var samples = [];
-  var sampleCount = 0;
-  var maxSamples = 50;
+  var sampleCount = 10;
   
-  var calibrationTimer = setInterval(function() {
-    try {
-      var accel = Puck.accel();
-      if (accel && !isNaN(accel.x) && !isNaN(accel.y) && !isNaN(accel.z)) {
-        samples.push(accel);
-        sampleCount++;
-        
-        if (sampleCount >= maxSamples) {
-          clearInterval(calibrationTimer);
-          
-          var sumX = 0, sumY = 0, sumZ = 0;
-          for (var i = 0; i < samples.length; i++) {
-            sumX += samples[i].x;
-            sumY += samples[i].y;
-            sumZ += samples[i].z;
-          }
-          
-          deviceState.baseline = {
-            x: sumX / samples.length,
-            y: sumY / samples.length,
-            z: sumZ / samples.length
-          };
-          
-          deviceState.isCalibrating = false;
-          log("Calibration complete");
-          ledSuccess();
-          sendStatusPacket();
-        }
+  function takeSample() {
+    var acc = Puck.accel();
+    samples.push(acc);
+    
+    if (samples.length < sampleCount) {
+      setTimeout(takeSample, 100);
+    } else {
+      // Calculate averages
+      var sumX = 0, sumY = 0, sumZ = 0;
+      for (var i = 0; i < samples.length; i++) {
+        sumX += samples[i].x;
+        sumY += samples[i].y;
+        sumZ += samples[i].z;
       }
-    } catch (e) {
-      log("Calibration error: " + e.message);
-      clearInterval(calibrationTimer);
-      deviceState.isCalibrating = false;
-      ledError();
-    }
-  }, 100);
-}
-
-// ========== MOTION DETECTION ==========
-function calculateMotionMagnitude(accel) {
-  if (!accel || isNaN(accel.x) || isNaN(accel.y) || isNaN(accel.z)) {
-    return 0;
-  }
-  
-  var dx = accel.x - deviceState.baseline.x;
-  var dy = accel.y - deviceState.baseline.y;
-  var dz = accel.z - deviceState.baseline.z;
-  
-  return Math.sqrt(dx*dx + dy*dy + dz*dz*2);
-}
-
-function checkForRep(motion) {
-  var now = getTime() * 1000;
-  
-  if (now - deviceState.lastRepTime < CONFIG.REP_COOLDOWN) {
-    return false;
-  }
-  
-  if (motion > CONFIG.REP_THRESHOLD) {
-    deviceState.motionBuffer.push({ motion: motion, time: now });
-    
-    if (deviceState.motionBuffer.length > 10) {
-      deviceState.motionBuffer.shift();
-    }
-    
-    if (deviceState.motionBuffer.length >= 3) {
-      var recent = deviceState.motionBuffer.slice(-3);
-      var hasHighMotion = recent[0].motion > CONFIG.REP_THRESHOLD;
-      var hasLowMotion = recent[2].motion < CONFIG.REP_THRESHOLD * 0.3;
       
-      if (hasHighMotion && hasLowMotion) {
-        return true;
-      }
+      state.calibrationData = {
+        x: sumX / samples.length,
+        y: sumY / samples.length,
+        z: sumZ / samples.length
+      };
+      
+      state.isCalibrated = true;
+      console.log("Calibration complete:", state.calibrationData);
+      
+      // Visual feedback
+      ledSequence([LED2], 100, 3);
+      
+      sendStatus();
     }
   }
   
-  return false;
+  takeSample();
 }
 
-function registerRep() {
-  deviceState.repCount++;
-  deviceState.lastRepTime = getTime() * 1000;
+function setupMotionDetection() {
+  // High-frequency motion detection for accurate rep counting
+  motionInterval = setInterval(processMotion, 50); // 20Hz
+}
+
+function processMotion() {
+  if (!state.isCalibrated || !state.sessionActive) return;
   
-  log("Rep registered: " + deviceState.repCount);
-  ledSuccess();
-  sendRepPacket();
+  var acc = Puck.accel();
+  var now = getTime();
+  
+  // Calculate deviation from calibrated baseline
+  var deltaX = Math.abs(acc.x - state.calibrationData.x);
+  var deltaY = Math.abs(acc.y - state.calibrationData.y);
+  var deltaZ = Math.abs(acc.z - state.calibrationData.z);
+  var magnitude = Math.sqrt(deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ);
+  
+  // Rep detection with debouncing
+  if (magnitude > state.motionThreshold && (now - state.lastRepTime) > 1000) { // 1 second debounce
+    state.repCount++;
+    state.lastRepTime = now;
+    state.lastMotion = now;
+    
+    console.log("Rep detected! Count:", state.repCount, "Magnitude:", magnitude.toFixed(2));
+    
+    // Visual feedback
+    LED3.write(1);
+    setTimeout(function() { LED3.write(0); }, 200);
+    
+    // Send rep count to app
+    sendRepCount();
+  }
+  
+  // Session timeout check
+  if (now - state.lastMotion > state.sessionTimeout && state.sessionActive) {
+    console.log("Session timeout - stopping");
+    stopSession();
+  }
 }
 
-// ========== SESSION MANAGEMENT ==========
 function startSession() {
-  deviceState.isSessionActive = true;
-  deviceState.sessionStartTime = getTime();
-  deviceState.repCount = 0;
-  deviceState.motionBuffer = [];
+  console.log("Starting workout session");
+  state.sessionActive = true;
+  state.sessionStartTime = getTime();
+  state.lastMotion = getTime();
   
-  startMotionMonitoring();
-  startHeartbeat();
+  // Reset rep count for new session
+  state.repCount = 0;
   
-  log("Session started");
-  ledSuccess();
-  sendStatusPacket();
+  // Visual feedback - all LEDs on briefly
+  LED1.write(1);
+  LED2.write(1);
+  LED3.write(1);
+  setTimeout(function() {
+    LED1.write(0);
+    LED2.write(0);
+    LED3.write(0);
+  }, 1000);
+  
+  sendStatus();
 }
 
-function endSession() {
-  deviceState.isSessionActive = false;
+function stopSession() {
+  console.log("Stopping workout session");
+  state.sessionActive = false;
   
-  stopMotionMonitoring();
-  stopHeartbeat();
+  // Visual feedback - all LEDs on briefly
+  LED1.write(1);
+  LED2.write(1);
+  LED3.write(1);
+  setTimeout(function() {
+    LED1.write(0);
+    LED2.write(0);
+    LED3.write(0);
+  }, 1000);
   
-  log("Session ended - Total reps: " + deviceState.repCount);
-  ledConnected();
-  sendStatusPacket();
+  sendStatus();
 }
 
-function resetSession() {
-  deviceState.repCount = 0;
-  deviceState.sessionStartTime = getTime();
-  deviceState.motionBuffer = [];
-  deviceState.lastRepTime = 0;
-  
-  log("Session reset");
-  sendStatusPacket();
+function resetReps() {
+  console.log("Resetting rep count");
+  state.repCount = 0;
+  sendRepCount();
 }
 
-// ========== MONITORING ==========
-function startMotionMonitoring() {
-  if (monitoringTimer) {
-    clearInterval(monitoringTimer);
-  }
-  
-  monitoringTimer = setInterval(function() {
-    try {
-      var accel = Puck.accel();
-      var motion = calculateMotionMagnitude(accel);
-      deviceState.lastMotion = motion;
-      
-      if (checkForRep(motion)) {
-        registerRep();
-      }
-    } catch (e) {
-      log("Motion monitoring error: " + e.message);
-    }
-  }, 50);
-}
-
-function stopMotionMonitoring() {
-  if (monitoringTimer) {
-    clearInterval(monitoringTimer);
-    monitoringTimer = null;
-  }
-}
-
-function startHeartbeat() {
-  if (heartbeatTimer) {
-    clearInterval(heartbeatTimer);
-  }
-  
-  heartbeatTimer = setInterval(function() {
-    if (deviceState.isConnected) {
-      sendHeartbeat();
-    }
-  }, 5000);
-}
-
-function stopHeartbeat() {
-  if (heartbeatTimer) {
-    clearInterval(heartbeatTimer);
-    heartbeatTimer = null;
-  }
-}
-
-// ========== BUTTON SETUP ==========
+// Button setup for manual control
 function setupButtons() {
   setWatch(function() {
-    if (deviceState.isSessionActive) {
-      endSession();
-    } else {
+    if (state.sessionActive) {
+      stopSession();
+    } else if (state.isCalibrated) {
       startSession();
     }
   }, BTN, { edge: "rising", debounce: 50, repeat: true });
-  
-  log("Button configured");
 }
 
-// ========== POWER MANAGEMENT ==========
-function updateBattery() {
-  deviceState.batteryLevel = Math.round(Puck.getBatteryPercentage());
-  
-  if (deviceState.batteryLevel < 15) {
-    log("Low battery: " + deviceState.batteryLevel + "%");
-    ledError();
-  }
+function setupAccelerometer() {
+  // Enable accelerometer with optimal settings
+  Puck.accelOn(12.5); // 12.5Hz for baseline, motion detection uses polling
 }
 
-// ========== CONNECTION EVENTS ==========
-NRF.on('connect', function(addr) {
-  deviceState.isConnected = true;
-  log("BLE connected: " + addr);
-  ledConnected();
-  sendStatusPacket();
-});
-
-NRF.on('disconnect', function(reason) {
-  deviceState.isConnected = false;
-  log("BLE disconnected: " + reason);
+// Communication functions
+function sendPacket(type, data) {
+  if (data === undefined) data = [];
+  if (!state.isConnected) return false;
   
-  if (deviceState.isSessionActive) {
-    endSession();
-  }
-});
-
-// ========== ERROR HANDLING ==========
-process.on('uncaughtException', function(e) {
-  log("ERROR: " + e.message);
-  ledError();
+  var packet = [type].concat(data);
+  var buffer = new Uint8Array(packet);
   
   try {
-    var errorData = [e.message.length];
-    for (var i = 0; i < Math.min(e.message.length, 15); i++) {
-      errorData.push(e.message.charCodeAt(i));
-    }
-    transmitPacket(PACKET_TYPES.ERROR, errorData);
-  } catch (err) {
-    // Ignore errors during error handling
+    NRF.updateServices({});
+    var services = {};
+    services[SERVICE_UUID] = {};
+    services[SERVICE_UUID][TX_CHAR_UUID] = { value: buffer, notify: true };
+    NRF.updateServices(services);
+    return true;
+  } catch (e) {
+    console.log("Send failed:", e);
+    return false;
   }
-});
-
-// ========== INITIALIZATION ==========
-function init() {
-  log("Initializing TapFit Puck v" + CONFIG.FIRMWARE_VERSION);
-  
-  startupSequence();
-  
-  var bleOk = setupBLE();
-  var nfcOk = setupNFC();
-  var accelOk = setupAccelerometer();
-  
-  if (!bleOk) {
-    log("Critical: BLE setup failed");
-    ledError();
-    return;
-  }
-  
-  setupButtons();
-  
-  setTimeout(function() {
-    calibrateDevice();
-  }, 2000);
-  
-  setInterval(updateBattery, 60000);
-  
-  log("TapFit Puck ready!");
-  log("NFC: " + (nfcOk ? "OK" : "FAILED"));
-  log("Accelerometer: " + (accelOk ? "OK" : "FAILED"));
-  
-  ledSuccess();
 }
 
-// ========== START FIRMWARE ==========
-setTimeout(init, 1000);
+function sendRepCount() {
+  var repBytes = [
+    (state.repCount >> 8) & 0xFF,
+    state.repCount & 0xFF
+  ];
+  sendPacket(PACKET_TYPE.REP_COUNT, repBytes);
+}
+
+function sendStatus() {
+  var statusData = [
+    state.sessionActive ? 1 : 0,
+    state.isCalibrated ? 1 : 0,
+    Math.floor(state.batteryLevel * 100),
+    (state.repCount >> 8) & 0xFF,
+    state.repCount & 0xFF
+  ];
+  sendPacket(PACKET_TYPE.STATUS, statusData);
+}
+
+function sendHeartbeat() {
+  var batteryPercent = Math.floor(state.batteryLevel * 100);
+  sendPacket(PACKET_TYPE.HEARTBEAT, [batteryPercent]);
+}
+
+// Utility functions
+function getBatteryLevel() {
+  var voltage = NRF.getBattery();
+  // Convert voltage to percentage (3.0V = 0%, 4.2V = 100%)
+  var percentage = Math.max(0, Math.min(1, (voltage - 3.0) / 1.2));
+  return percentage;
+}
+
+function ledSequence(leds, duration, repeats) {
+  if (repeats === undefined) repeats = 1;
+  
+  var count = 0;
+  function sequence() {
+    for (var i = 0; i < leds.length; i++) {
+      (function(led, delay) {
+        setTimeout(function() {
+          led.write(1);
+          setTimeout(function() { led.write(0); }, duration / 2);
+        }, delay);
+      })(leds[i], i * duration / 3);
+    }
+    
+    count++;
+    if (count < repeats) {
+      setTimeout(sequence, duration);
+    }
+  }
+  sequence();
+}
+
+// Error handling
+process.on('uncaughtException', function(e) {
+  console.log("Error:", e);
+  
+  // Attempt recovery
+  setTimeout(function() {
+    console.log("Attempting recovery...");
+    initializePuck();
+  }, 2000);
+});
+
+// Start the puck
+initializePuck();
