@@ -69,18 +69,17 @@ function setupBLE() {
   NRF.setServices(undefined, { uart: false });
   
   // Configure the service and characteristic
-  NRF.setServices({
-    [SERVICE_UUID]: {
-      [CHAR_UUID]: {
-        value: [0x00],
-        maxLen: 20,
-        writable: true,
-        readable: true,
-        notify: true,
-        description: "TapFit Data Channel"
-      }
-    }
-  }, { uart: false, hid: false });
+  var services = {};
+  services[SERVICE_UUID] = {};
+  services[SERVICE_UUID][CHAR_UUID] = {
+    value: [0x00],
+    maxLen: 20,
+    writable: true,
+    readable: true,
+    notify: true,
+    description: "TapFit Data Channel"
+  };
+  NRF.setServices(services, { uart: false, hid: false });
 
   // Enhanced connection event handlers
   NRF.on('connect', handleConnect);
@@ -452,14 +451,13 @@ function sendPacket(type, data) {
       packet = packet.concat(data);
     }
     
-    NRF.updateServices({
-      [SERVICE_UUID]: {
-        [CHAR_UUID]: {
-          value: packet,
-          notify: true
-        }
-      }
-    });
+    var updateData = {};
+    updateData[SERVICE_UUID] = {};
+    updateData[SERVICE_UUID][CHAR_UUID] = {
+      value: packet,
+      notify: true
+    };
+    NRF.updateServices(updateData);
     
     return true;
   } catch (e) {
