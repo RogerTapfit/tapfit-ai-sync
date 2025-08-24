@@ -153,62 +153,84 @@ validate_project() {
     print_success "Found Xcode $PROJECT_TYPE: $PROJECT_FILE"
 }
 
-# Open Xcode with advanced options
+# Force open Xcode with multiple fallback methods
 open_xcode() {
-    print_status "Opening Xcode with optimal settings..."
+    print_status "Force opening Xcode with multiple methods..."
     
-    # Set environment variables for better Xcode performance
-    export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
-    export XCODE_DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+    # Check if Xcode exists
+    if [ ! -d "/Applications/Xcode.app" ]; then
+        print_error "Xcode not found in /Applications/Xcode.app"
+        exit 1
+    fi
     
-    # Open Xcode with the project
+    print_status "Found Xcode, attempting to open $PROJECT_FILE"
+    
+    # Method 1: Direct executable launch
+    print_status "Method 1: Direct Xcode executable..."
     /Applications/Xcode.app/Contents/MacOS/Xcode "$PROJECT_FILE" &
-    XCODE_PID=$!
+    sleep 3
     
-    print_status "Waiting for Xcode to initialize..."
-    sleep 8
+    # Method 2: Using open command
+    print_status "Method 2: Using macOS open command..."
+    open -a Xcode "$PROJECT_FILE"
+    sleep 3
     
-    # Advanced AppleScript to ensure proper window display
-    osascript << EOF
+    # Method 3: Using xed command
+    print_status "Method 3: Using xed command..."
+    xed "$PROJECT_FILE" 2>/dev/null || true
+    sleep 3
+    
+    # Method 4: Force activate Xcode
+    print_status "Method 4: Force activating Xcode..."
+    osascript -e 'tell application "Xcode" to activate' 2>/dev/null || true
+    sleep 2
+    
+    # Method 5: System Events force
+    print_status "Method 5: Using System Events to force Xcode visible..."
+    osascript << 'EOF'
+tell application "System Events"
     try
-        tell application "System Events"
-            -- Wait for Xcode to be running
-            repeat while not (exists (processes whose name is "Xcode"))
-                delay 0.5
-            end repeat
-            
-            -- Bring Xcode to front
-            set frontmost of every process whose name is "Xcode" to true
-        end tell
-        
-        tell application "Xcode"
-            activate
-            delay 3
-            
-            -- Open navigator if not visible
-            tell application "System Events"
-                tell process "Xcode"
-                    -- Show project navigator (Cmd+1)
-                    keystroke "1" using {command down}
-                    delay 1
-                    
-                    -- Show debug area if needed (Cmd+Shift+Y)
-                    keystroke "y" using {command down, shift down}
-                    delay 1
-                    
-                    -- Focus on project navigator
-                    keystroke "1" using {command down}
-                end tell
-            end tell
-        end tell
-        
-        return "Xcode opened successfully"
-    on error errMsg
-        return "Error: " & errMsg
+        set xcodeProcess to first process whose name is "Xcode"
+        set frontmost of xcodeProcess to true
+        set visible of xcodeProcess to true
     end try
+end tell
 EOF
     
-    print_success "Xcode opened and configured"
+    sleep 2
+    
+    # Final verification and window management
+    print_status "Verifying Xcode is running and visible..."
+    osascript << 'EOF'
+tell application "Xcode"
+    try
+        activate
+        delay 2
+        
+        -- Make sure a window is visible
+        if (count of windows) is 0 then
+            tell application "System Events"
+                tell process "Xcode"
+                    keystroke "o" using {command down, shift down}
+                end tell
+            end tell
+        end if
+        
+        -- Bring all windows to front
+        set index of every window to 1
+        
+    end try
+end tell
+EOF
+    
+    # Check if Xcode is actually running
+    if pgrep -x "Xcode" > /dev/null; then
+        print_success "✅ Xcode is now running!"
+        print_status "If you can't see Xcode, try Command+Tab or check your Mission Control"
+    else
+        print_error "❌ Failed to launch Xcode. Try running manually:"
+        echo "open -a Xcode '$PROJECT_FILE'"
+    fi
 }
 
 # Setup development optimizations
