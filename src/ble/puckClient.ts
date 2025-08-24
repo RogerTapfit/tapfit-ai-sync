@@ -3,18 +3,18 @@ import { BleClient } from '@capacitor-community/bluetooth-le';
 const SERVICE = '0000FFE0-0000-1000-8000-00805F9B34FB';
 const CHAR = '0000FFE1-0000-1000-8000-00805F9B34FB';
 
-export type PuckStatus = 'handshaking' | 'connected' | 'disconnected' | 'error' | 'calibrating' | 'session_active';
+export type PuckStatus = 'handshaking' | 'connected' | 'disconnected' | 'error' | 'calibrating' | 'session_active' | 'nfc_detected' | 'auto_connect_signal' | 'nfc_connected';
 
-// Packet types matching firmware
-const PACKET_TYPE = {
+export const PACKET_TYPE = {
   REP_COUNT: 0x01,
   STATUS: 0x02,
   HEARTBEAT: 0x03,
   BATTERY: 0x04,
   ERROR: 0xFF,
   NFC_DETECTED: 0x06,
-  NFC_ACK: 0x07
-};
+  AUTO_CONNECT: 0x07,
+  NFC_ACK: 0x08
+} as const;
 
 // Commands to send to Puck
 const COMMAND = {
@@ -33,6 +33,7 @@ export interface PuckState {
   batteryLevel: number;
   lastHeartbeat: number;
   nfcDetected: boolean;
+  autoConnectTriggered: boolean;
 }
 
 export class PuckClient {
@@ -44,13 +45,14 @@ export class PuckClient {
     sessionActive: false,
     batteryLevel: 1.0,
     lastHeartbeat: 0,
-    nfcDetected: false
+    nfcDetected: false,
+    autoConnectTriggered: false
   };
 
   constructor(
     private onStatus?: (s: PuckStatus) => void,
-    private onRep?: (rep: number) => void,
-    private onStateUpdate?: (state: PuckState) => void
+    public onRep?: (rep: number) => void,
+    public onStateUpdate?: (state: PuckState) => void
   ) {}
 
   async handshake(autoStart = false) {
@@ -144,6 +146,12 @@ export class PuckClient {
       case PACKET_TYPE.NFC_DETECTED:
         console.log('NFC detection received from Puck');
         this.state.nfcDetected = true;
+        this.onStateUpdate?.(this.state);
+        break;
+        
+      case PACKET_TYPE.AUTO_CONNECT:
+        console.log('Auto-connect signal received from Puck');
+        this.state.autoConnectTriggered = true;
         this.onStateUpdate?.(this.state);
         break;
         
