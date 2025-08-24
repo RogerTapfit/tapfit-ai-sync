@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { getShortVersionString } from "@/lib/version";
 import { 
   Home, 
   Activity, 
@@ -82,7 +83,7 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
             </h1>
             <p className="text-xs text-muted-foreground">AI-Powered Fitness</p>
             <div className="mt-1">
-              <span className="text-xs text-muted-foreground font-mono">v1.2.4</span>
+              <span className="text-xs text-muted-foreground font-mono">{getShortVersionString()}</span>
             </div>
           </div>
 
