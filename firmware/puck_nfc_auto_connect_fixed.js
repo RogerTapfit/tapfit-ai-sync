@@ -287,29 +287,33 @@ function calibrateAccelerometer() {
   
   var samples = [];
   var sampleCount = 0;
-  var targetSamples = 20;
+  var targetSamples = 10;
   
-  // Ensure accelerometer is on
+  // Enable accelerometer first - this is crucial!
   Puck.accelOn(12.5);
+  console.log("Accelerometer enabled, waiting for initialization...");
   
   function takeSample() {
     try {
       var accel = Puck.accel();
-      if (accel && !isNaN(accel.x) && !isNaN(accel.y) && !isNaN(accel.z)) {
+      console.log("Raw accel reading:", accel);
+      
+      if (accel && typeof accel.x === 'number' && typeof accel.y === 'number' && typeof accel.z === 'number' &&
+          !isNaN(accel.x) && !isNaN(accel.y) && !isNaN(accel.z)) {
         samples.push(accel);
         sampleCount++;
-        console.log("Sample", sampleCount + ":", accel);
+        console.log("Valid sample", sampleCount + ":", accel);
+        
+        // Progress indication
+        if (sampleCount % 2 === 0) {
+          digitalPulse(LED2, 1, 50);
+        }
       } else {
-        console.log("Invalid accel reading, retrying...");
-      }
-      
-      // Progress indication
-      if (sampleCount % 5 === 0) {
-        digitalPulse(LED2, 1, 50);
+        console.log("Invalid accel reading, retrying...", accel);
       }
       
       if (sampleCount < targetSamples) {
-        setTimeout(takeSample, 100);
+        setTimeout(takeSample, 200);
       } else {
         // Calculate baseline
         var sum = { x: 0, y: 0, z: 0 };
@@ -336,17 +340,17 @@ function calibrateAccelerometer() {
       }
     } catch (e) {
       console.log("Calibration error:", e);
-      setTimeout(takeSample, 100);
+      setTimeout(takeSample, 200);
     }
   }
   
-  // Wait a bit for accelerometer to initialize then start sampling
-  setTimeout(takeSample, 200);
+  // Wait longer for accelerometer to initialize properly
+  setTimeout(takeSample, 1000);
 }
 
 // Enhanced motion detection and rep counting
 function setupMotionDetection() {
-  Puck.accelOn(26);
+  // Accelerometer is already enabled in calibrateAccelerometer()
   Puck.on('accel', processMotion);
   console.log("Enhanced motion detection active");
 }
