@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Repo roots (adjust only if your layout differs)
+# Enhanced iOS workflow with cache clearing
 REPO_ROOT="$(cd "$(dirname "$0")/.."; pwd)"
 IOS_APP="$REPO_ROOT/ios/App/App"
-PLIST="$IOS_APP/Info.plist"
+PLIST="$IOS_APP/Info.plist" 
 PUBLIC_DIR="$IOS_APP/public"
 CAPCFG=$(ls "$REPO_ROOT"/capacitor.config.* 2>/dev/null || true)
+
+# Clear caches for fresh build
+echo "▶︎ Clearing caches..."
+rm -rf ~/Library/Developer/Xcode/DerivedData/* 2>/dev/null || true
+rm -rf ~/.capacitor 2>/dev/null || true
+rm -rf dist 2>/dev/null || true
 
 # 1) Read version from package.json
 APP_VERSION=$(node -p "require('$REPO_ROOT/package.json').version" 2>/dev/null || true)
