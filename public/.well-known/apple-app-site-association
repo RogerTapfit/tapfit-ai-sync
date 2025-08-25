@@ -3,15 +3,19 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.app.lovable.4e37f3a98b5244369842e2cc950a194e"],
+        "appIDs": ["9LSCR6RK4Z.app.lovable.4e37f3a98b5244369842e2cc950a194e"],
         "components": [
+          {
+            "/": "/nfc",
+            "comment": "TapFit direct NFC trigger"
+          },
+          {
+            "/": "/nfc/*",
+            "comment": "TapFit NFC with parameters"
+          },
           {
             "/": "/pair*",
             "comment": "TapFit pairing link"
-          },
-          {
-            "/": "/nfc*",
-            "comment": "TapFit NFC trigger"
           },
           {
             "/": "/machine/*",
