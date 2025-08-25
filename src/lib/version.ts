@@ -1,5 +1,5 @@
 // App version configuration and utilities
-export const APP_VERSION = "1.2.5";
+export const APP_VERSION = "1.2.6";
 export const BUILD_DATE = new Date().toISOString().split('T')[0];
 export const BUILD_NUMBER = Math.floor(Date.now() / 1000);
 

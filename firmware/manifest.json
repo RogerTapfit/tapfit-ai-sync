@@ -2,10 +2,10 @@
   "versions": [
     {
       "firmwareVersion": "8.2",
-      "appVersion": "1.2.5",
+      "appVersion": "1.2.6",
       "buildNumber": 1735002000,
       "buildDate": "2024-12-24",
-      "filename": "puck_v8.2_app_1.2.5.js",
+      "filename": "puck_v8.2_app_1.2.6.js",
       "isLatest": true,
       "features": [
         "26Hz accelerometer sampling",
