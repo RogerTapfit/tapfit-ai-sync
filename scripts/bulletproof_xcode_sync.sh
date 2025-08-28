@@ -26,16 +26,22 @@ log "Step 1: Finding TapFit project directory..."
 
 # Try multiple common locations
 POSSIBLE_DIRS=(
+  "$(pwd)"
   "$HOME/tapfit-ai-sync"
   "$HOME/Desktop/tapfit-ai-sync" 
   "$HOME/Downloads/tapfit-ai-sync"
   "$HOME/Projects/tapfit-ai-sync"
-  "$(pwd)"
 )
 
 REPO_ROOT=""
 for dir in "${POSSIBLE_DIRS[@]}"; do
-  if [ -d "$dir" ] && [ -f "$dir/package.json" ] && grep -q "tapfit" "$dir/package.json" 2>/dev/null; then
+  # Check for TapFit project indicators (more flexible)
+  if [ -d "$dir" ] && [ -f "$dir/package.json" ] && (
+    grep -q "tapfit" "$dir/package.json" 2>/dev/null || 
+    [ -d "$dir/src/components/TapFitApp.tsx" ] ||
+    [ -f "$dir/src/components/TapFitApp.tsx" ] ||
+    [ -d "$dir/ios/App" ]
+  ); then
     REPO_ROOT="$dir"
     break
   fi
