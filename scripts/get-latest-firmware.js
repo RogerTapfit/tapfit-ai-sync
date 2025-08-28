@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Read firmware manifest
 const manifestPath = path.join(__dirname, '../firmware/manifest.json');
@@ -74,7 +80,7 @@ if (process.argv.includes('--show')) {
 
 // If --copy flag is passed (and on macOS), copy to clipboard
 if (process.argv.includes('--copy') && process.platform === 'darwin') {
-  const { execSync } = require('child_process');
+  const { execSync } = await import('child_process');
   try {
     execSync(`cat "${firmwarePath}" | pbcopy`);
     console.log('\n📋 Firmware code copied to clipboard!');
