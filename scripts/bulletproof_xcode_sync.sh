@@ -38,9 +38,9 @@ for dir in "${POSSIBLE_DIRS[@]}"; do
   # Check for TapFit project indicators (more flexible)
   if [ -d "$dir" ] && [ -f "$dir/package.json" ] && (
     grep -q "tapfit" "$dir/package.json" 2>/dev/null || 
-    [ -d "$dir/src/components/TapFitApp.tsx" ] ||
     [ -f "$dir/src/components/TapFitApp.tsx" ] ||
-    [ -d "$dir/ios/App" ]
+    [ -d "$dir/ios/App" ] ||
+    [ -d "$dir/src" ]
   ); then
     REPO_ROOT="$dir"
     break
