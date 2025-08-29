@@ -32,13 +32,15 @@ function ini() {
   
   NRF.setServices(svc);
   NRF.setAdvertising({}, {name: "TapFit", connectable: true});
+  console.log('Advertising as "TapFit"');
   
   // BLE Events
   NRF.on('connect', function() {
     d.cn = true;
     LED2.set();
     setTimeout(function() { LED2.reset(); }, 200);
-    snd(1, [d.r]); // handshake
+    snd(1, [d.r]); // handshake with current rep count
+    console.log('BLE connected, sent handshake with reps:', d.r);
   });
   
   NRF.on('disconnect', function() {
@@ -94,7 +96,8 @@ function mot(a) {
     d.lt = now;
     LED2.set();
     setTimeout(function() { LED2.reset(); }, 50);
-    if (d.cn) snd(0, [d.r]);
+    console.log('Rep detected:', d.r);
+    if (d.cn) snd(0, [d.r]); // send rep count (type 0)
   }
   
   // Auto stop timeout
@@ -123,14 +126,16 @@ function str() {
       setTimeout(function() { LED2.reset(); }, 100);
     }, 100);
   }, 100);
-  if (d.cn) snd(2, [1]);
+  console.log('Session started');
+  if (d.cn) snd(2, [1]); // send status: session active (type 2, data 1)
 }
 
 function stp() {
   d.on = false;
   LED1.set();
   setTimeout(function() { LED1.reset(); }, 200);
-  if (d.cn) snd(2, [0]);
+  console.log('Session stopped');
+  if (d.cn) snd(2, [0]); // send status: session inactive (type 2, data 0)
 }
 
 function snd(type, data) {

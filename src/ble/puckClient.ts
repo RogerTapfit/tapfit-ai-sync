@@ -1,13 +1,14 @@
 import { BleClient } from '@capacitor-community/bluetooth-le';
 
-const SERVICE = '0000FFE0-0000-1000-8000-00805F9B34FB';
-const CHAR = '0000FFE1-0000-1000-8000-00805F9B34FB';
+const SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+const CHAR = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
 
 export type PuckStatus = 'handshaking' | 'connected' | 'disconnected' | 'error' | 'calibrating' | 'session_active' | 'nfc_detected' | 'auto_connect_signal' | 'nfc_connected';
 
 export const PACKET_TYPE = {
-  REP_COUNT: 0x01,
-  STATUS: 0x02,
+  REP_COUNT: 0,      // matches firmware type 0 = reps
+  HANDSHAKE: 1,      // matches firmware type 1 = handshake  
+  STATUS: 2,         // matches firmware type 2 = status
   HEARTBEAT: 0x03,
   BATTERY: 0x04,
   ERROR: 0xFF,
@@ -91,25 +92,32 @@ export class PuckClient {
     }
   }
 
-  private async scanAndConnect(timeoutMs = 10000): Promise<boolean> {
+  private async scanAndConnect(timeoutMs = 15000): Promise<boolean> {
     return new Promise(async (resolve) => {
       let resolved = false;
       const timeout = setTimeout(() => {
         if (!resolved) {
           resolved = true;
+          console.log('Scan timeout reached, no TapFit device found');
           resolve(false);
         }
       }, timeoutMs);
 
       try {
-        await BleClient.requestLEScan({ services: [SERVICE] }, async (result) => {
+        console.log('Starting BLE scan for TapFit devices...');
+        await BleClient.requestLEScan({ 
+          services: [SERVICE], 
+          allowDuplicates: false 
+        }, async (result) => {
           if (resolved) return;
           
           const { device } = result;
           if (!device?.deviceId) return;
           
-          // Filter for TapFit Puck devices
-          if (device.name?.includes('TapFit') || device.name?.includes('Puck')) {
+          console.log('Found BLE device:', device.name, device.deviceId);
+          
+          // Filter for TapFit Puck devices with more specific matching
+          if (device.name === 'TapFit' || device.name?.includes('TapFit-Puck')) {
             resolved = true;
             clearTimeout(timeout);
             
@@ -117,13 +125,14 @@ export class PuckClient {
               await BleClient.stopLEScan();
               this.deviceId = device.deviceId;
               
+              console.log('Attempting to connect to device:', device.name);
               await BleClient.connect(this.deviceId, () => {
                 console.log('Puck disconnected');
                 this.onStatus?.('disconnected');
                 this.deviceId = undefined;
               });
               
-              console.log('Connected to Puck:', device.name, device.deviceId);
+              console.log('Successfully connected to Puck:', device.name, device.deviceId);
               resolve(true);
             } catch (error) {
               console.error('Connection failed:', error);
@@ -132,7 +141,7 @@ export class PuckClient {
           }
         });
       } catch (error) {
-        console.error('Scan failed:', error);
+        console.error('BLE scan failed:', error);
         clearTimeout(timeout);
         resolved = true;
         resolve(false);
@@ -157,15 +166,17 @@ export class PuckClient {
   }
 
   private handleIncomingPacket(packet: Uint8Array) {
-    if (packet.length < 2) return;
+    if (packet.length < 1) return;
     
     const packetType = packet[0];
+    console.log('Received packet type:', packetType, 'data:', Array.from(packet));
     
     switch (packetType) {
-      case PACKET_TYPE.REP_COUNT:
-        if (packet.length >= 3) {
-          const repCount = packet[1] | (packet[2] << 8);
+      case PACKET_TYPE.REP_COUNT: // type 0 from firmware
+        if (packet.length >= 2) {
+          const repCount = packet[1];
           if (repCount !== this.lastRep) {
+            console.log('Rep count updated to:', repCount);
             this.lastRep = repCount;
             this.state.repCount = repCount;
             this.onRep?.(repCount);
@@ -174,20 +185,30 @@ export class PuckClient {
         }
         break;
         
-      case PACKET_TYPE.STATUS:
-        if (packet.length >= 4) {
-          const statusFlags = packet[1];
-          this.state.isCalibrated = (statusFlags & 0x01) !== 0;
-          this.state.sessionActive = (statusFlags & 0x02) !== 0;
-          this.state.repCount = packet[2];
+      case PACKET_TYPE.HANDSHAKE: // type 1 from firmware
+        if (packet.length >= 2) {
+          const currentReps = packet[1];
+          console.log('Handshake received with rep count:', currentReps);
+          this.state.repCount = currentReps;
+          this.state.isCalibrated = true;
+          this.onStatus?.('connected');
+          this.onStateUpdate?.(this.state);
+        }
+        break;
+        
+      case PACKET_TYPE.STATUS: // type 2 from firmware
+        if (packet.length >= 2) {
+          const statusCode = packet[1];
+          console.log('Status update received:', statusCode);
           
-          // Update status based on state
-          if (this.state.sessionActive) {
+          if (statusCode === 1) {
+            // Session started
+            this.state.sessionActive = true;
             this.onStatus?.('session_active');
-          } else if (this.state.isCalibrated) {
+          } else if (statusCode === 0) {
+            // Session ended
+            this.state.sessionActive = false;
             this.onStatus?.('connected');
-          } else {
-            this.onStatus?.('calibrating');
           }
           
           this.onStateUpdate?.(this.state);
