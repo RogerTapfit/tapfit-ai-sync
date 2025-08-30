@@ -320,26 +320,38 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
               <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                 <li>• Ensure your Puck.js is powered on</li>
                 <li>• Make sure it's within Bluetooth range</li>
-                <li>• Check that the device name contains "Puck.js"</li>
-                <li>• Use NFC tag with: <code className="text-xs bg-muted px-1 rounded">tapfit://machine/123?autoConnect=puck</code> for auto-connection</li>
+                <li>• Check that the device name contains "TapFit"</li>
+                <li>• Upload the enhanced NFC firmware for auto-connect capability</li>
               </ul>
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-medium">2. Connect your device:</h4>
+              <h4 className="font-medium">2. Connection options:</h4>
               <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                <li>• Tap "Scan for Devices" above</li>
-                <li>• The app will automatically connect to the closest Puck.js</li>
-                <li>• Once connected, you can start a workout session</li>
+                <li>• <strong>NFC Auto-Connect:</strong> Tap a programmed NFC tag for instant connection</li>
+                <li>• <strong>Manual Connect:</strong> Use "Scan for Devices" button above</li>
+                <li>• <strong>Auto-Discovery:</strong> App automatically connects to closest Puck.js</li>
+                <li>• NFC tags support machine-specific configurations</li>
               </ul>
             </div>
 
             <div className="space-y-2">
               <h4 className="font-medium">3. Start tracking:</h4>
               <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                <li>• Begin your workout movements</li>
-                <li>• Reps will be automatically counted</li>
-                <li>• Session data is saved to your workout history</li>
+                <li>• Begin your workout movements with connected sensor</li>
+                <li>• Reps are automatically counted via motion detection</li>
+                <li>• Session data syncs to your workout history</li>
+                <li>• NFC detection triggers automatic session start</li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium">4. Firmware requirements:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                <li>• Use: <code className="text-xs bg-muted px-1 rounded">puck_nfc_ble_enhanced.js</code></li>
+                <li>• Supports Nordic UART Service (6E40 series)</li>
+                <li>• Includes NFC field detection and auto-advertising boost</li>
+                <li>• Compatible with existing BLE scanning infrastructure</li>
               </ul>
             </div>
           </CardContent>

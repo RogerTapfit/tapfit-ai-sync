@@ -1,16 +1,62 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LiveWorkoutSession } from '@/components/LiveWorkoutSession';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Smartphone, Bluetooth, Activity, BarChart3, ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Smartphone, Bluetooth, Activity, BarChart3, ArrowLeft, Nfc, Zap, Scan } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { nfcPuckIntegration, type NFCPuckConnection } from '@/services/nfcPuckIntegration';
+import { nfcService, MACHINE_IDS, type MachineId } from '@/services/nfcService';
 
 export default function SensorWorkout() {
   const navigate = useNavigate();
+  const [nfcConnection, setNfcConnection] = useState<NFCPuckConnection | null>(null);
+  const [nfcSupported, setNfcSupported] = useState(false);
+  const [selectedMachine, setSelectedMachine] = useState<MachineId>('chest-press');
 
   const handleBack = () => {
     navigate('/');
+  };
+
+  // Initialize NFC integration
+  useEffect(() => {
+    const initializeNFC = async () => {
+      try {
+        const isSupported = await nfcService.isNFCAvailable();
+        setNfcSupported(isSupported);
+        
+        if (isSupported) {
+          await nfcPuckIntegration.initialize();
+        }
+      } catch (error) {
+        console.error('NFC initialization failed:', error);
+      }
+    };
+
+    initializeNFC();
+
+    // Subscribe to connection changes
+    const unsubscribe = nfcPuckIntegration.onConnectionChange((connection) => {
+      setNfcConnection(connection);
+    });
+
+    return () => {
+      unsubscribe();
+      nfcPuckIntegration.stopNFCListening();
+    };
+  }, []);
+
+  const handleSimulateNFC = () => {
+    nfcPuckIntegration.simulateNFCTap(selectedMachine);
+  };
+
+  const handleWriteNFCTag = async () => {
+    try {
+      await nfcPuckIntegration.writeNFCTag(selectedMachine);
+    } catch (error) {
+      console.error('Failed to write NFC tag:', error);
+    }
   };
 
   return (
@@ -57,7 +103,77 @@ export default function SensorWorkout() {
         </TabsList>
 
         <TabsContent value="live" className="space-y-6">
-          <LiveWorkoutSession />
+          {/* NFC Status Panel */}
+          {nfcSupported && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Nfc className="w-5 h-5" />
+                  NFC Auto-Connect
+                  {nfcConnection?.isConnecting && (
+                    <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
+                      Connecting...
+                    </Badge>
+                  )}
+                  {nfcConnection?.connectionStatus === 'connected' && (
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                      Connected via NFC
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Tap an NFC tag to automatically connect to your Puck.js device and start tracking.
+                  </p>
+                  
+                  {/* Machine Selection for Testing */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">Machine:</label>
+                    <select 
+                      value={selectedMachine} 
+                      onChange={(e) => setSelectedMachine(e.target.value as MachineId)}
+                      className="text-sm border rounded px-2 py-1"
+                    >
+                      {Object.entries(MACHINE_IDS).map(([id, details]) => (
+                        <option key={id} value={id}>{details.machine}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleSimulateNFC}
+                      size="sm"
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Zap className="w-4 h-4" />
+                      Simulate NFC Tap
+                    </Button>
+                    <Button 
+                      onClick={handleWriteNFCTag}
+                      size="sm"
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Scan className="w-4 h-4" />
+                      Write NFC Tag
+                    </Button>
+                  </div>
+                  
+                  {nfcConnection && (
+                    <div className="text-xs text-muted-foreground">
+                      Status: {nfcConnection.connectionStatus} | Machine: {nfcConnection.machineId}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <LiveWorkoutSession autoConnect={nfcConnection?.connectionStatus === 'connected'} />
         </TabsContent>
 
         <TabsContent value="setup" className="space-y-6">
@@ -139,6 +255,16 @@ export default function SensorWorkout() {
                       <li>3. Build with `npm run build && npx cap sync`</li>
                       <li>4. Run with `npx cap run ios/android`</li>
                     </ol>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-sm">NFC Auto-Connect:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                      <li>• Write NFC tags with machine-specific URLs</li>
+                      <li>• Tap to automatically connect Puck.js</li>
+                      <li>• No manual scanning required</li>
+                      <li>• Seamless workout start experience</li>
+                    </ul>
                   </div>
                 </div>
               </CardContent>
