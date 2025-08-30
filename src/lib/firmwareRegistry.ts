@@ -15,11 +15,11 @@ export interface FirmwareInfo {
 // Firmware registry that maps app versions to firmware versions
 export const FIRMWARE_REGISTRY: FirmwareInfo[] = [
   {
-    version: "9.0",
-  appVersion: "1.2.6",
-  buildNumber: 1735046400,
-  filename: "puck_v8.2_app_1.2.6.js",
-    title: "TapFit Puck v9.0 - Ultra Minimal",
+    version: "9.1",
+    appVersion: "1.2.7",
+    buildNumber: 1735132800,
+    filename: "puck_v8.2_app_1.2.7.js",
+    title: "TapFit Puck v9.1 - Ultra Minimal",
     description: "Ultra-minimal firmware optimized for memory and app compatibility (87 lines)",
     compatibility: "stable",
     features: [

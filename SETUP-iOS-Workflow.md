@@ -7,7 +7,7 @@
 - ✅ Created `scripts/update_and_open_xcode.sh` - Master workflow script
 - ✅ Created `scripts/emergency_reset_ios.sh` - Emergency reset
 - ✅ Created documentation in `scripts/README-Lovable-Xcode-Sync.md`
-- ✅ Version sync ready (src/lib/version.ts is 1.2.6)
+- ✅ Version sync ready (src/lib/version.ts is 1.2.7)
 
 ## 🔧 Manual Steps Required
 
@@ -38,7 +38,7 @@ Since package.json is read-only in Lovable, you'll need to add these manually wh
 
 **Update version:**
 ```json
-"version": "1.2.6"
+"version": "1.2.7"
 ```
 
 ### 3. Add Xcode Build Phase
@@ -67,7 +67,7 @@ bash scripts/update_and_open_xcode.sh
 This will:
 - ✅ Pull latest Lovable changes from GitHub
 - ✅ Clear all Xcode caches and build artifacts
-- ✅ Sync Info.plist version (1.2.6) with package.json
+- ✅ Sync Info.plist version (1.2.7) with package.json
 - ✅ Auto-increment build number  
 - ✅ Build fresh web bundle with latest code
 - ✅ Embed web in iOS shell with hash validation
