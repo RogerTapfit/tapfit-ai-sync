@@ -33,8 +33,12 @@ fi
 echo ""
 log "Step 2: Opening Xcode with fresh code..."
 
-# Open Xcode
-if [ -f "$IOS_APP.xcworkspace" ]; then
+# Open Xcode (check for TapFit-1.2.7 first, then fallback to App)
+IOS_DIR="$REPO_ROOT/ios/App"
+if [ -f "$IOS_DIR/TapFit-1.2.7.xcworkspace" ]; then
+  open "$IOS_DIR/TapFit-1.2.7.xcworkspace"
+  success "Xcode opened with TapFit-1.2.7 workspace"
+elif [ -f "$IOS_APP.xcworkspace" ]; then
   open "$IOS_APP.xcworkspace"
   success "Xcode opened with workspace"
 elif command -v npx >/dev/null 2>&1; then

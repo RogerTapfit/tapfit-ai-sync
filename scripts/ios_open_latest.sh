@@ -52,7 +52,12 @@ if [ "$DIST_HASH" != "$EMB_HASH" ]; then
 fi
 echo "✅ Web embedded OK (hash match)"
 
-# 6) Open Xcode
+# 6) Open Xcode (check for TapFit-1.2.7 first)
 echo "▶︎ Opening Xcode…"
-npx cap open ios || open "$IOS_APP.xcworkspace"
+IOS_DIR="$REPO_ROOT/ios/App"
+if [ -f "$IOS_DIR/TapFit-1.2.7.xcworkspace" ]; then
+  open "$IOS_DIR/TapFit-1.2.7.xcworkspace"
+else
+  npx cap open ios || open "$IOS_APP.xcworkspace"
+fi
 echo "✅ Done. Build in Xcode shows version $APP_VERSION ($NEW_BUILD)"
