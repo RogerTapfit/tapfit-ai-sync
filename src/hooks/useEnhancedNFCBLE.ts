@@ -36,6 +36,7 @@ export interface EnhancedNFCBLEState {
 export interface EnhancedNFCBLEActions {
   // Connection management
   connect: () => Promise<boolean>;
+  connectWithNFC: (machineId: MachineId) => Promise<boolean>;
   disconnect: () => Promise<void>;
   reconnect: () => Promise<boolean>;
   
@@ -51,6 +52,8 @@ export interface EnhancedNFCBLEActions {
   
   // Testing
   testConnection: () => Promise<boolean>;
+  testNFCDetection: (machineId: MachineId) => Promise<boolean>;
+  testBLEOnly: () => Promise<boolean>;
 }
 
 export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions => {
@@ -170,7 +173,62 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
     }));
   }, []);
 
-  // Manual connection
+  // NFC-first connection method
+  const connectWithNFC = useCallback(async (machineId: MachineId = 'chest-press'): Promise<boolean> => {
+    if (state.isConnected || state.isConnecting) {
+      return state.isConnected;
+    }
+
+    setState(prev => ({ 
+      ...prev, 
+      isConnecting: true,
+      connectionAttempts: prev.connectionAttempts + 1
+    }));
+    connectionAttemptsRef.current++;
+
+    try {
+      // Step 1: Simulate NFC detection
+      toast.info('Step 1: Simulating NFC tap detection...');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Brief delay for realism
+      
+      // Trigger NFC simulation
+      nfcPuckIntegration.simulateNFCTap(machineId);
+      
+      // Step 2: Wait for NFC to trigger BLE connection
+      toast.info('Step 2: NFC detected, connecting to Puck via BLE...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Allow NFC integration to work
+      
+      // Step 3: Manual BLE connection as fallback
+      const client = await PuckClient.autoConnect(
+        handlePuckStatus,
+        handleRepCount,
+        handlePuckStateUpdate
+      );
+
+      if (client) {
+        puckClientRef.current = client;
+        updateConnectionState('connected', client);
+        toast.success(`NFC + BLE connection successful for ${machineId}!`);
+        return true;
+      } else {
+        throw new Error('Failed to establish BLE connection after NFC detection');
+      }
+    } catch (error) {
+      console.error('NFC + BLE connection failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
+      
+      setState(prev => ({
+        ...prev,
+        lastError: errorMessage,
+        isConnecting: false
+      }));
+      
+      toast.error(`NFC connection failed: ${errorMessage}`);
+      return false;
+    }
+  }, [state.isConnected, state.isConnecting, handlePuckStatus, handleRepCount, handlePuckStateUpdate, updateConnectionState]);
+
+  // Manual BLE-only connection
   const connect = useCallback(async (): Promise<boolean> => {
     if (state.isConnected || state.isConnecting) {
       return state.isConnected;
@@ -184,6 +242,7 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
     connectionAttemptsRef.current++;
 
     try {
+      toast.info('Scanning for BLE devices...');
       const client = await PuckClient.autoConnect(
         handlePuckStatus,
         handleRepCount,
@@ -193,13 +252,13 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
       if (client) {
         puckClientRef.current = client;
         updateConnectionState('connected', client);
-        toast.success('Successfully connected to TapFit Puck!');
+        toast.success('BLE connection successful!');
         return true;
       } else {
-        throw new Error('Failed to establish connection');
+        throw new Error('Failed to establish BLE connection');
       }
     } catch (error) {
-      console.error('Connection failed:', error);
+      console.error('BLE connection failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
       
       setState(prev => ({
@@ -208,12 +267,12 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
         isConnecting: false
       }));
       
-      toast.error(`Connection failed: ${errorMessage}`);
+      toast.error(`BLE connection failed: ${errorMessage}`);
       
-      // Auto-retry with exponential backoff
+      // Auto-retry with exponential backoff for BLE-only
       if (connectionAttemptsRef.current < 3) {
         const retryDelay = Math.min(1000 * Math.pow(2, connectionAttemptsRef.current - 1), 5000);
-        toast.info(`Retrying connection in ${retryDelay / 1000}s...`);
+        toast.info(`Retrying BLE connection in ${retryDelay / 1000}s...`);
         
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
@@ -222,7 +281,7 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
       
       return false;
     }
-  }, [state.isConnected, state.isConnecting, handlePuckStatus, handleRepCount, handlePuckStateUpdate, updateConnectionState, toast]);
+  }, [state.isConnected, state.isConnecting, handlePuckStatus, handleRepCount, handlePuckStateUpdate, updateConnectionState]);
 
   // Disconnect
   const disconnect = useCallback(async (): Promise<void> => {
@@ -368,6 +427,56 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
     }
   }, []);
 
+  // Test NFC detection only
+  const testNFCDetection = useCallback(async (machineId: MachineId): Promise<boolean> => {
+    try {
+      toast.info(`Testing NFC detection for ${machineId}...`);
+      nfcPuckIntegration.simulateNFCTap(machineId);
+      
+      // Wait briefly to see if NFC integration responds
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const connection = nfcPuckIntegration.getCurrentConnection();
+      const success = connection?.machineId === machineId;
+      
+      if (success) {
+        toast.success(`NFC detection test passed for ${machineId}!`);
+      } else {
+        toast.error('NFC detection test failed');
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('NFC detection test failed:', error);
+      toast.error('NFC detection test failed');
+      return false;
+    }
+  }, []);
+
+  // Test BLE scanning only
+  const testBLEOnly = useCallback(async (): Promise<boolean> => {
+    try {
+      toast.info('Testing BLE scan only...');
+      
+      // Create a temporary client just for testing
+      const testClient = new PuckClient(
+        (status) => console.log('Test status:', status),
+        (rep) => console.log('Test rep:', rep),
+        (state) => console.log('Test state:', state)
+      );
+      
+      await testClient.handshake(false);
+      await testClient.disconnect();
+      
+      toast.success('BLE scan test passed!');
+      return true;
+    } catch (error) {
+      console.error('BLE scan test failed:', error);
+      toast.error('BLE scan test failed');
+      return false;
+    }
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -384,6 +493,7 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
     
     // Actions
     connect,
+    connectWithNFC,
     disconnect,
     reconnect,
     simulateNFCTap,
@@ -392,6 +502,8 @@ export const useEnhancedNFCBLE = (): EnhancedNFCBLEState & EnhancedNFCBLEActions
     endSession,
     calibrate,
     reset,
-    testConnection
+    testConnection,
+    testNFCDetection,
+    testBLEOnly
   };
 };

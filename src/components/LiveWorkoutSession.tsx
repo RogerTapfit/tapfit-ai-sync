@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useEnhancedNFCBLE } from '@/hooks/useEnhancedNFCBLE';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { HealthMetricsPanel } from './HealthMetricsPanel';
+import { NFCBLETestPanel } from './NFCBLETestPanel';
 import { 
   Bluetooth, 
   BluetoothConnected, 
@@ -41,6 +42,7 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
     sessionStartTime,
     lastActivityTime,
     connect,
+    connectWithNFC,
     disconnect,
     startSession,
     endSession,
@@ -130,14 +132,23 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
                 </Badge>
               )}
               {!isConnected && !isConnecting && !autoConnect && (
-                <Button 
-                  onClick={connect}
-                  size="sm"
-                  variant="outline"
-                >
-                  <Bluetooth className="w-4 h-4 mr-2" />
-                  Connect to Puck
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => connectWithNFC('chest-press')}
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Bluetooth className="w-4 h-4 mr-2" />
+                    Connect to Puck (NFC)
+                  </Button>
+                  <Button 
+                    onClick={connect}
+                    size="sm"
+                    variant="outline"
+                  >
+                    BLE Only
+                  </Button>
+                </div>
               )}
               {isConnecting && !autoConnect && (
                 <Button 
@@ -344,6 +355,11 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* NFC + BLE Test Panel */}
+      {!isConnected && (
+        <NFCBLETestPanel />
       )}
 
       {/* Apple Watch Health Monitoring */}
