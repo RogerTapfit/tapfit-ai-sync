@@ -15,6 +15,25 @@ export interface FirmwareInfo {
 // Firmware registry that maps app versions to firmware versions
 export const FIRMWARE_REGISTRY: FirmwareInfo[] = [
   {
+    version: "9.2",
+    appVersion: "1.2.7",
+    buildNumber: 1735139200,
+    filename: "puck_v8.3_memory_optimized.js",
+    title: "TapFit Puck v9.2 - Memory Optimized",
+    description: "Ultra memory-optimized firmware (<2KB RAM) with full iOS compatibility",
+    compatibility: "stable",
+    features: [
+      "Ultra-low memory usage (<2KB RAM)",
+      "Full iOS BLE protocol compatibility",
+      "NFC auto-connect support",
+      "26Hz accelerometer sampling",
+      "Battery monitoring",
+      "Error handling",
+      "Session management"
+    ],
+    isRecommended: true
+  },
+  {
     version: "9.1",
     appVersion: "1.2.7",
     buildNumber: 1735132800,
@@ -29,8 +48,7 @@ export const FIRMWARE_REGISTRY: FirmwareInfo[] = [
       "No LED lockups",
       "Robust error handling",
       "26Hz accelerometer sampling"
-    ],
-    isRecommended: true
+    ]
   },
   {
     version: "8.2",

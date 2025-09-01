@@ -1,12 +1,30 @@
 {
   "versions": [
     {
+      "firmwareVersion": "9.2",
+      "appVersion": "1.2.7",
+      "buildNumber": 1735139200,
+      "buildDate": "2024-12-25",
+      "filename": "puck_v8.3_memory_optimized.js",
+      "isLatest": true,
+      "features": [
+        "Ultra-low memory usage (<2KB RAM)",
+        "Full iOS BLE protocol compatibility",
+        "NFC auto-connect support",
+        "26Hz accelerometer sampling",
+        "Battery monitoring",
+        "Error handling",
+        "Session management"
+      ],
+      "compatibility": "stable"
+    },
+    {
       "firmwareVersion": "8.3",
       "appVersion": "1.2.7",
       "buildNumber": 1735132800,
       "buildDate": "2024-12-25",
       "filename": "puck_v8.2_app_1.2.7.js",
-      "isLatest": true,
+      "isLatest": false,
       "features": [
         "26Hz accelerometer sampling",
         "Enhanced NFC detection",
@@ -19,5 +37,5 @@
     }
   ],
   "lastUpdated": "2024-12-25T00:00:00.000Z",
-  "totalVersions": 1
+  "totalVersions": 2
 }
