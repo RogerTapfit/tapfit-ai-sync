@@ -1,7 +1,10 @@
 import { BleClient } from '@capacitor-community/bluetooth-le';
+import { toast } from 'sonner';
 
+// Nordic UART Service UUIDs for iOS compatibility
 const SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-const CHAR = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+const TX_CHAR = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // RX from device perspective
+const RX_CHAR = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // TX from device perspective
 
 export type PuckStatus = 'handshaking' | 'connected' | 'disconnected' | 'error' | 'calibrating' | 'session_active' | 'nfc_detected' | 'auto_connect_signal' | 'nfc_connected';
 
@@ -60,26 +63,35 @@ export class PuckClient {
     this.onStatus?.('handshaking');
     
     try {
-      await BleClient.initialize();
+      // Initialize with iOS-optimized settings
+      await BleClient.initialize({ 
+        androidNeverForLocation: true 
+      });
       
-      // Use automatic scanning instead of requestDevice
-      const connected = await this.scanAndConnect();
+      // Enhanced scanning with better device filtering
+      const connected = await this.scanAndConnect(20000); // Extended timeout for iOS
       if (!connected) {
-        throw new Error('Failed to find and connect to Puck device');
+        throw new Error('Failed to find and connect to TapFit Puck device');
       }
 
-      // Start listening for notifications with enhanced packet handling
-      await BleClient.startNotifications(this.deviceId!, SERVICE, CHAR, (v) => {
+      // Start listening for TX notifications (device sends data to app)
+      await BleClient.startNotifications(this.deviceId!, SERVICE, TX_CHAR, (v) => {
         this.handleIncomingPacket(new Uint8Array(v.buffer, v.byteOffset, v.byteLength));
       });
 
-      this.onStatus?.('connected');
+      console.log('BLE notifications started, sending NFC acknowledgment...');
       
-      // Send NFC acknowledgment if this was triggered by NFC
+      // Send NFC acknowledgment for auto-connect scenarios
       await this.sendCommand(COMMAND.NFC_ACK);
+      
+      // Small delay to ensure firmware is ready
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // Request initial status
       await this.requestStatus();
+      
+      this.onStatus?.('connected');
+      toast.success('Connected to TapFit Puck!');
       
       if (autoStart) {
         await this.startSession();
@@ -88,6 +100,7 @@ export class PuckClient {
     } catch (error) {
       console.error('Handshake failed:', error);
       this.onStatus?.('error');
+      toast.error('Failed to connect to Puck device');
       throw error;
     }
   }
@@ -107,17 +120,23 @@ export class PuckClient {
         console.log('Starting BLE scan for TapFit devices...');
         await BleClient.requestLEScan({ 
           services: [SERVICE], 
-          allowDuplicates: false 
+          allowDuplicates: false,
+          scanMode: 2 // High performance scanning for iOS
         }, async (result) => {
           if (resolved) return;
           
           const { device } = result;
           if (!device?.deviceId) return;
           
-          console.log('Found BLE device:', device.name, device.deviceId);
+          console.log('Found BLE device:', device.name, device.deviceId, 'RSSI:', result.rssi);
           
-          // Filter for TapFit Puck devices with more specific matching
-          if (device.name === 'TapFit' || device.name?.includes('TapFit-Puck')) {
+          // Enhanced filtering for TapFit Puck devices
+          const validNames = ['TapFit', 'TapFit-Puck', 'Puck.js TapFit'];
+          const isValidDevice = validNames.some(name => 
+            device.name === name || device.name?.includes(name)
+          );
+          
+          if (isValidDevice && result.rssi > -85) { // Signal strength filter
             resolved = true;
             clearTimeout(timeout);
             
@@ -283,10 +302,13 @@ export class PuckClient {
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     
     try {
-      await BleClient.write(this.deviceId, SERVICE, CHAR, view);
+      // Write to RX characteristic (device receives commands)
+      await BleClient.write(this.deviceId, SERVICE, RX_CHAR, view);
+      console.log('Sent command: 0x' + command.toString(16));
     } catch (error) {
       console.error('Command send failed:', error);
       this.onStatus?.('error');
+      toast.error('Communication error with Puck device');
     }
   }
 
@@ -298,10 +320,11 @@ export class PuckClient {
     if (!this.deviceId) return;
     
     try {
-      // End session before disconnecting
+      // End session gracefully before disconnecting
       await this.endSession();
-      await BleClient.stopNotifications(this.deviceId, SERVICE, CHAR);
+      await BleClient.stopNotifications(this.deviceId, SERVICE, TX_CHAR);
       await BleClient.disconnect(this.deviceId);
+      toast.info('Disconnected from Puck device');
     } catch (error) {
       console.warn('Disconnect cleanup failed:', error);
     } finally {

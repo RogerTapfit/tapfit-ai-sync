@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useBLESensor } from '@/hooks/useBLESensor';
+import { useEnhancedNFCBLE } from '@/hooks/useEnhancedNFCBLE';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { HealthMetricsPanel } from './HealthMetricsPanel';
 import { 
@@ -27,29 +27,37 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
   const navigate = useNavigate();
   const { avatarData } = useAvatar();
   const {
-    connectionStatus,
     isConnected,
-    isScanning,
-    currentSession,
+    isConnecting,
+    connectionStatus,
+    deviceName,
+    deviceId,
+    nfcSupported,
+    nfcConnection,
+    isNFCTriggeredConnection,
+    repCount,
+    batteryLevel,
     isSessionActive,
-    realtimeReps,
-    lastMotionTime,
-    startScanning,
-    stopScanning,
+    sessionStartTime,
+    lastActivityTime,
+    connect,
     disconnect,
-    startWorkoutSession,
-    endWorkoutSession,
-    autoConnect: triggerAutoConnect
-  } = useBLESensor();
+    startSession,
+    endSession,
+    simulateNFCTap,
+    writeNFCTag,
+    calibrate,
+    reset
+  } = useEnhancedNFCBLE();
   
   const { awardCoins } = useTapCoins();
 
   // Auto-connect when autoConnect prop is true
   useEffect(() => {
-    if (autoConnect && !isConnected && !isScanning) {
-      triggerAutoConnect();
+    if (autoConnect && !isConnected && !isConnecting) {
+      connect();
     }
-  }, [autoConnect, isConnected, isScanning, triggerAutoConnect]);
+  }, [autoConnect, isConnected, isConnecting, connect]);
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -63,17 +71,22 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
         <div className="flex items-center gap-2">
           <BluetoothConnected className="w-4 h-4 text-green-500" />
           <span className="text-green-500 font-medium">
-            Connected to {connectionStatus.deviceName}
+            Connected to {deviceName || 'TapFit-Puck'}
           </span>
-          <Badge variant="default" className="ml-2 bg-green-100 text-green-800 border-green-200">Live</Badge>
+          <Badge variant="default" className="ml-2 bg-green-100 text-green-800 border-green-200">
+            {isNFCTriggeredConnection ? 'NFC' : 'BLE'}
+          </Badge>
+          <Badge variant="default" className="ml-1 bg-green-100 text-green-800 border-green-200">
+            Live
+          </Badge>
         </div>
       );
-    } else if (isScanning) {
+    } else if (isConnecting) {
       return (
         <div className="flex items-center gap-2">
           <Bluetooth className="w-4 h-4 text-blue-500 animate-pulse" />
-          <span className="text-blue-500">Searching for Puck.js...</span>
-          <Badge variant="secondary" className="ml-2">Scanning</Badge>
+          <span className="text-blue-500">Connecting to Puck.js...</span>
+          <Badge variant="secondary" className="ml-2">Connecting</Badge>
         </div>
       );
     } else {
@@ -88,14 +101,19 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
   };
 
   const getLastActivityDisplay = () => {
-    if (!lastMotionTime) return 'No activity detected';
+    if (!lastActivityTime) return 'No activity detected';
     
-    const secondsSinceActivity = Math.floor((Date.now() - lastMotionTime.getTime()) / 1000);
+    const secondsSinceActivity = Math.floor((Date.now() - lastActivityTime.getTime()) / 1000);
     if (secondsSinceActivity < 5) return 'Active now';
     if (secondsSinceActivity < 60) return `${secondsSinceActivity}s ago`;
     
     const minutesSinceActivity = Math.floor(secondsSinceActivity / 60);
     return `${minutesSinceActivity}m ago`;
+  };
+
+  const getSessionDuration = () => {
+    if (!sessionStartTime) return 0;
+    return Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
   };
 
   return (
@@ -106,49 +124,70 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
           <CardTitle className="flex items-center justify-between">
             <span>BLE Sensor Connection</span>
             <div className="flex gap-2">
-              {autoConnect && isScanning && (
+              {autoConnect && isConnecting && (
                 <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
                   Auto-connecting...
                 </Badge>
               )}
-              {!isConnected && !isScanning && !autoConnect && (
+              {!isConnected && !isConnecting && !autoConnect && (
                 <Button 
-                  onClick={startScanning}
+                  onClick={connect}
                   size="sm"
                   variant="outline"
                 >
                   <Bluetooth className="w-4 h-4 mr-2" />
-                  Scan for Devices
+                  Connect to Puck
                 </Button>
               )}
-              {isScanning && !autoConnect && (
-                <Button 
-                  onClick={stopScanning}
-                  size="sm"
-                  variant="outline"
-                >
-                  Stop Scanning
-                </Button>
-              )}
-              {isConnected && (
+              {isConnecting && !autoConnect && (
                 <Button 
                   onClick={disconnect}
                   size="sm"
-                  variant="destructive"
+                  variant="outline"
+                  disabled
                 >
-                  Disconnect
+                  Connecting...
                 </Button>
+              )}
+              {isConnected && (
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={calibrate}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Calibrate
+                  </Button>
+                  <Button 
+                    onClick={disconnect}
+                    size="sm"
+                    variant="destructive"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
               )}
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {getConnectionStatusDisplay()}
-          {connectionStatus.deviceId && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              Device ID: {connectionStatus.deviceId}
-            </div>
-          )}
+          
+          {/* Enhanced connection info */}
+          <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+            {deviceId && (
+              <div>Device ID: {deviceId}</div>
+            )}
+            {isConnected && (
+              <div className="flex justify-between">
+                <span>Battery Level:</span>
+                <span className={batteryLevel < 20 ? 'text-red-500 font-medium' : ''}>{batteryLevel}%</span>
+              </div>
+            )}  
+            {nfcConnection && (
+              <div>NFC Machine: {nfcConnection.machineId}</div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -161,7 +200,7 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
               <div className="flex gap-2">
                 {!isSessionActive ? (
                   <Button 
-                    onClick={startWorkoutSession}
+                    onClick={startSession}
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
                   >
@@ -172,30 +211,28 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
                   <Button 
                     onClick={async () => {
                       // Award coins for completing workout session
-                      if (currentSession) {
-                        const sessionMinutes = Math.floor(currentSession.activeTime / 60);
-                        // 100 reps = 1 tap coin (each rep = 1 cent)
-                        const repCoins = Math.floor(realtimeReps / 100);
-                        const totalCoins = repCoins;
-                        
-                        await awardCoins(totalCoins, 'earn_workout', `Completed BLE sensor workout: ${realtimeReps} reps in ${sessionMinutes} minutes`);
-                        
-                        // Navigate to workout summary
-                        navigate('/workout-summary', {
-                          state: {
-                            workoutData: {
-                              name: "BLE Sensor Workout",
-                              exercises: 1,
-                              duration: sessionMinutes,
-                              sets: Math.ceil(realtimeReps / 10), // Estimate sets
-                              totalReps: realtimeReps,
-                              notes: `Sensor workout completed with ${realtimeReps} reps`
-                            }
-                          }
-                        });
-                      }
+                      const sessionMinutes = Math.floor(getSessionDuration() / 60);
+                      // 100 reps = 1 tap coin (each rep = 1 cent)
+                      const repCoins = Math.floor(repCount / 100);
+                      const totalCoins = repCoins;
                       
-                      endWorkoutSession();
+                      await awardCoins(totalCoins, 'earn_workout', `Completed NFC-BLE sensor workout: ${repCount} reps in ${sessionMinutes} minutes`);
+                      
+                      // Navigate to workout summary
+                      navigate('/workout-summary', {
+                        state: {
+                          workoutData: {
+                            name: "TapFit Puck Workout",
+                            exercises: 1,
+                            duration: sessionMinutes,
+                            sets: Math.ceil(repCount / 10), // Estimate sets
+                            totalReps: repCount,
+                            notes: `Puck sensor workout completed with ${repCount} reps via ${isNFCTriggeredConnection ? 'NFC' : 'BLE'} connection`
+                          }
+                        }
+                      });
+                      
+                      await endSession();
                     }}
                     size="sm"
                     variant="destructive"
@@ -208,7 +245,7 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {isSessionActive && currentSession ? (
+            {isSessionActive && sessionStartTime ? (
               <div className="space-y-6">
                 {/* Motivational Avatar */}
                 <div className="flex justify-center mb-6">
@@ -218,14 +255,14 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
                         avatarData={avatarData} 
                         size="medium" 
                         showAnimation={true}
-                        emotion={lastMotionTime && (Date.now() - lastMotionTime.getTime()) < 5000 ? 'excited' : 'focused'}
-                        pose={lastMotionTime && (Date.now() - lastMotionTime.getTime()) < 5000 ? 'workout' : 'idle'}
+                        emotion={lastActivityTime && (Date.now() - lastActivityTime.getTime()) < 5000 ? 'excited' : 'focused'}
+                        pose={lastActivityTime && (Date.now() - lastActivityTime.getTime()) < 5000 ? 'workout' : 'idle'}
                       />
                       <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg px-3 py-1 text-xs font-bold shadow-lg border-2 border-primary">
-                        {realtimeReps === 0 ? "Let's go!" : 
-                         realtimeReps < 10 ? "Great start!" :
-                         realtimeReps < 25 ? "Keep it up!" :
-                         realtimeReps < 50 ? "You're on fire!" :
+                        {repCount === 0 ? "Let's go!" : 
+                         repCount < 10 ? "Great start!" :
+                         repCount < 25 ? "Keep it up!" :
+                         repCount < 50 ? "You're on fire!" :
                          "Amazing work!"}
                         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white" />
                       </div>
@@ -237,16 +274,16 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary mb-1">
-                      {realtimeReps}
+                      {repCount}
                     </div>
                     <div className="text-sm text-muted-foreground">Total Reps</div>
                   </div>
                   
                   <div className="text-center">
                     <div className="text-3xl font-bold text-primary mb-1">
-                      {formatTime(currentSession.activeTime)}
+                      {formatTime(getSessionDuration())}
                     </div>
-                    <div className="text-sm text-muted-foreground">Active Time</div>
+                    <div className="text-sm text-muted-foreground">Session Time</div>
                   </div>
                   
                   <div className="text-center">
@@ -266,28 +303,32 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Session Started:</span>
-                    <span>{currentSession.startTime.toLocaleTimeString()}</span>
+                    <span>{sessionStartTime.toLocaleTimeString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Data Points:</span>
-                    <span>{currentSession.sensorData.length}</span>
+                    <span className="text-muted-foreground">Connection Type:</span>
+                    <span>{isNFCTriggeredConnection ? 'NFC Auto-Connect' : 'Manual BLE'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Avg Reps/Min:</span>
                     <span>
-                      {currentSession.activeTime > 0 
-                        ? Math.round((realtimeReps / currentSession.activeTime) * 60) 
+                      {getSessionDuration() > 0 
+                        ? Math.round((repCount / getSessionDuration()) * 60) 
                         : 0}
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Battery Level:</span>
+                    <span className={batteryLevel < 20 ? 'text-red-500 font-medium' : ''}>{batteryLevel}%</span>
                   </div>
                 </div>
 
                 {/* Real-time Activity Indicator */}
-                {lastMotionTime && (Date.now() - lastMotionTime.getTime()) < 5000 && (
+                {lastActivityTime && (Date.now() - lastActivityTime.getTime()) < 5000 && (
                   <div className="flex items-center justify-center gap-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                     <Zap className="w-4 h-4 text-green-600 animate-pulse" />
                     <span className="text-green-700 dark:text-green-300 font-medium">
-                      Motion detected!
+                      Rep detected! Keep going!
                     </span>
                   </div>
                 )}
@@ -348,10 +389,11 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
             <div className="space-y-2">
               <h4 className="font-medium">4. Firmware requirements:</h4>
               <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                <li>• Use: <code className="text-xs bg-muted px-1 rounded">puck_nfc_ble_enhanced.js</code></li>
-                <li>• Supports Nordic UART Service (6E40 series)</li>
-                <li>• Includes NFC field detection and auto-advertising boost</li>
-                <li>• Compatible with existing BLE scanning infrastructure</li>
+                <li>• Use: <code className="text-xs bg-muted px-1 rounded">puck_v8.3_app_1.2.7_ios_optimized.js</code></li>
+                <li>• Supports Nordic UART Service (6E40 series UUID)</li>
+                <li>• Binary protocol for reliable communication</li>
+                <li>• NFC field detection with auto-advertising boost</li>
+                <li>• iOS-optimized BLE settings and enhanced battery monitoring</li>
               </ul>
             </div>
           </CardContent>
