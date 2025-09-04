@@ -36,8 +36,6 @@ import { supabase } from "@/integrations/supabase/client";
 import FitnessChatbot from "./FitnessChatbot";
 import { useAIInsights } from "@/hooks/useAIInsights";
 import { useRecentWorkouts } from "@/hooks/useRecentWorkouts";
-import FoodPhotoAnalyzer from "./FoodPhotoAnalyzer";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Camera } from "lucide-react";
 
 interface TapFitDashboardProps {
@@ -229,29 +227,20 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* SEE FOOD and BODY SCAN - side by side on wide, stacked on small */}
       <div className="my-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* SEE FOOD */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button 
-              size="lg"
-              className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 hover:transition-transform hover:duration-200 animate-food-glow border-0 rounded-2xl w-full"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center gap-4 justify-center">
-                <Camera className="h-8 w-8" />
-                <div className="flex flex-col items-start">
-                  <span className="text-2xl font-black">SEE FOOD</span>
-                  <span className="text-sm font-normal opacity-90">AI Food Scanner</span>
-                </div>
-              </div>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>AI Food Photo Analyzer</DialogTitle>
-            </DialogHeader>
-            <FoodPhotoAnalyzer onDataChange={() => {}} />
-          </DialogContent>
-        </Dialog>
+        <Button
+          size="lg"
+          onClick={() => navigate('/food-scanner')}
+          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 hover:transition-transform hover:duration-200 animate-food-glow border-0 rounded-2xl w-full"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative flex items-center gap-4 justify-center">
+            <Camera className="h-8 w-8" />
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black">SEE FOOD</span>
+              <span className="text-sm font-normal opacity-90">AI Food Scanner</span>
+            </div>
+          </div>
+        </Button>
 
         {/* BODY SCAN */}
         <Button

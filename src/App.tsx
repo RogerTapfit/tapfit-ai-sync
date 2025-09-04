@@ -22,6 +22,7 @@ import BodyScanLibrary from "./pages/BodyScanLibrary";
 import BodyScanDetail from "./pages/BodyScanDetail";
 import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
 import AvatarSelection from "./pages/AvatarSelection";
+import FoodScanner from "./pages/FoodScanner";
 import PuckTest from "./pages/PuckTest";
 import { AuthGuard } from "./components/AuthGuard";
 
@@ -147,6 +148,11 @@ const App = () => {
             <Route path="/avatars" element={
               <AuthGuard fallback={<Auth />}>
                 <AvatarSelection />
+              </AuthGuard>
+            } />
+            <Route path="/food-scanner" element={
+              <AuthGuard fallback={<Auth />}>
+                <FoodScanner />
               </AuthGuard>
             } />
             <Route path="/puck-test" element={
