@@ -182,6 +182,31 @@ const BodyScan = () => {
       alert("Please enter your height (cm) for accurate measurements.");
       return;
     }
+
+    // Ensure the user has an authenticated Supabase session before proceeding
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Attempt anonymous sign-in if available; falls back to login if disabled
+        const { data: anonData, error: anonErr } = await supabase.auth.signInAnonymously();
+        if (anonErr || !anonData?.session) {
+          toast({
+            title: "Sign in required",
+            description: "Please log in to use body scanning",
+            variant: "destructive",
+          });
+          // Using HashRouter → navigate via hash
+          window.location.hash = "#/auth";
+          return;
+        }
+      }
+    } catch (e) {
+      // If anything goes wrong determining auth, direct the user to login
+      toast({ title: "Sign in required", description: "Please log in to use body scanning", variant: "destructive" });
+      window.location.hash = "#/auth";
+      return;
+    }
+
     setAnalyzing(true);
     setResult(null);
     setAnalysisMeta(null);
