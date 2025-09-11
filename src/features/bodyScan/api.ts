@@ -41,9 +41,36 @@ function dataURLtoBlob(dataUrl: string): Blob {
 }
 
 async function getUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.id) throw new Error("Not authenticated");
-  return user.id;
+  try {
+    // First try to get the current user
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      console.error("Auth error:", error);
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+    
+    if (!user?.id) {
+      console.error("No user found in session");
+      // Try to refresh the session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session refresh error:", sessionError);
+        throw new Error("Not authenticated - please log in again");
+      }
+      
+      if (!session?.user?.id) {
+        throw new Error("Not authenticated - please log in again");
+      }
+      
+      return session.user.id;
+    }
+    
+    return user.id;
+  } catch (error) {
+    console.error("getUserId failed:", error);
+    throw error;
+  }
 }
 
 export async function startScan(params: StartScanParams): Promise<BodyScanRow> {

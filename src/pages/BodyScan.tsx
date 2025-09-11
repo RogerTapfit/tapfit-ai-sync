@@ -310,7 +310,20 @@ const BodyScan = () => {
     } catch (e: any) {
       console.error("Body scan processing failed", e);
       const errMessage = e?.value?.message || e?.message || "Analysis failed";
-      toast({ title: "Analysis failed", description: String(errMessage), variant: "destructive" });
+      
+      // Provide more specific error messages for authentication issues
+      let displayMessage = String(errMessage);
+      if (displayMessage.includes("Not authenticated")) {
+        displayMessage = "Please log in again to use body scanning";
+      } else if (displayMessage.includes("Authentication error")) {
+        displayMessage = "Authentication issue - please try logging out and back in";
+      }
+      
+      toast({ 
+        title: "Analysis failed", 
+        description: displayMessage, 
+        variant: "destructive" 
+      });
     } finally {
       setAnalyzing(false);
     }
