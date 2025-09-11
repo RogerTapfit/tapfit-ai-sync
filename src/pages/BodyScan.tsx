@@ -183,28 +183,24 @@ const BodyScan = () => {
       return;
     }
 
-    // Ensure the user has an authenticated Supabase session before proceeding
+    // Ensure a session silently (guest/anonymous) without forcing login
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        // Attempt anonymous sign-in if available; falls back to login if disabled
         const { data: anonData, error: anonErr } = await supabase.auth.signInAnonymously();
         if (anonErr || !anonData?.session) {
           toast({
-            title: "Sign in required",
-            description: "Please log in to use body scanning",
+            title: "Guest mode unavailable",
+            description: "Please try again in a moment.",
             variant: "destructive",
           });
-          // Using HashRouter → navigate via hash
-          window.location.hash = "#/auth";
           return;
         }
+        try { localStorage.setItem('tapfit_guest', '1'); } catch {}
+        toast({ title: "Guest mode", description: "Scanning without an account." });
       }
-    } catch (e) {
-      // If anything goes wrong determining auth, direct the user to login
-      toast({ title: "Sign in required", description: "Please log in to use body scanning", variant: "destructive" });
-      window.location.hash = "#/auth";
-      return;
+    } catch {
+      // Non-fatal: continue; startScan will attempt auth again if needed
     }
 
     setAnalyzing(true);

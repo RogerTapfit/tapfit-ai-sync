@@ -130,11 +130,7 @@ const App = () => {
                 <WorkoutHub />
               </AuthGuard>
             } />
-            <Route path="/body-scan" element={
-              <AuthGuard fallback={<Auth />}>
-                <BodyScan />
-              </AuthGuard>
-            } />
+            <Route path="/body-scan" element={<BodyScan />} />
             <Route path="/body-scans" element={
               <AuthGuard fallback={<Auth />}>
                 <BodyScanLibrary />
