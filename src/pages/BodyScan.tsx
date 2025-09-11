@@ -183,25 +183,19 @@ const BodyScan = () => {
       return;
     }
 
-    // Ensure a session silently (guest/anonymous) without forcing login
+    // Try to establish a silent guest session (optional); continue regardless
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        const { data: anonData, error: anonErr } = await supabase.auth.signInAnonymously();
-        if (anonErr || !anonData?.session) {
-          toast({
-            title: "Guest mode unavailable",
-            description: "Please try again in a moment.",
-            variant: "destructive",
-          });
-          return;
-        }
-        try { localStorage.setItem('tapfit_guest', '1'); } catch {}
-        toast({ title: "Guest mode", description: "Scanning without an account." });
+        try {
+          const { data: anonData } = await supabase.auth.signInAnonymously();
+          if (anonData?.session) {
+            try { localStorage.setItem('tapfit_guest', '1'); } catch {}
+          }
+        } catch {}
       }
-    } catch {
-      // Non-fatal: continue; startScan will attempt auth again if needed
-    }
+    } catch {}
+
 
     setAnalyzing(true);
     setResult(null);
@@ -226,26 +220,49 @@ const BodyScan = () => {
       console.log("[BodyScan] StartScan with views", { photos, sex, age, heightCm, lm: Object.keys(landmarks), wp: Object.keys(widthProfiles), dims: Object.keys(dims) });
 
       // Prepare files map for available slots
-      const files: any = {};
+      const files: Record<string, string> = {};
       slots.forEach(s => { if (s.image) files[s.key] = s.image; });
 
-      const created = await startScan({
-        files,
-        heightCm: Number(heightCm),
-        sex,
-        age,
-        features: { landmarks, widthProfiles, dims, photos }
-      });
-      setLastScanId(created.id);
+      // Choose flow based on auth session: authenticated -> full DB flow; guest -> stateless edge function
+      let m: any = {};
+      let s: any = {};
+      const { data: { session: activeSession } } = await supabase.auth.getSession();
 
-      const finalRow = await pollScanUntilDone(created.id, (row) => {
-        console.log("[BodyScan] Poll status:", row.status);
-      });
+      if (activeSession) {
+        const created = await startScan({
+          files,
+          heightCm: Number(heightCm),
+          sex,
+          age,
+          features: { landmarks, widthProfiles, dims, photos }
+        });
+        setLastScanId(created.id);
 
-      // Map server metrics/summary (supports both local and Vision schemas)
-      const m = finalRow.metrics || {};
-      const s = finalRow.summary || {};
-      setAnalysisMeta({ model: s.model, at: s.at, used_hints: s.used_hints });
+        const finalRow = await pollScanUntilDone(created.id, (row) => {
+          console.log("[BodyScan] Poll status:", row.status);
+        });
+        m = finalRow.metrics || {};
+        s = finalRow.summary || {};
+      } else {
+        const { data: fnData, error: fnErr } = await supabase.functions.invoke("analyze-body-scan-guest", {
+          body: {
+            sex,
+            height_cm: Number(heightCm),
+            age,
+            features: { landmarks, widthProfiles, dims, photos },
+            photosData: files,
+          },
+        });
+        if (fnErr || !fnData?.ok) {
+          const msg = (fnErr as any)?.message || fnData?.error || "Guest analysis failed";
+          throw new Error(msg);
+        }
+        m = (fnData as any).metrics || {};
+        s = (fnData as any).summary || {};
+      }
+
+      setAnalysisMeta({ model: s.model, at: s.at, used_hints: s.used_hints, guest: !activeSession } as any);
+
 
       // Body fat range from either schema
       let bfLow: number | null = null;
