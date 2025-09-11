@@ -228,22 +228,7 @@ const BodyScan = () => {
       let s: any = {};
       const { data: { session: activeSession } } = await supabase.auth.getSession();
 
-      if (activeSession) {
-        const created = await startScan({
-          files,
-          heightCm: Number(heightCm),
-          sex,
-          age,
-          features: { landmarks, widthProfiles, dims, photos }
-        });
-        setLastScanId(created.id);
-
-        const finalRow = await pollScanUntilDone(created.id, (row) => {
-          console.log("[BodyScan] Poll status:", row.status);
-        });
-        m = finalRow.metrics || {};
-        s = finalRow.summary || {};
-      } else {
+      const runGuest = async () => {
         const { data: fnData, error: fnErr } = await supabase.functions.invoke("analyze-body-scan-guest", {
           body: {
             sex,
@@ -254,11 +239,40 @@ const BodyScan = () => {
           },
         });
         if (fnErr || !fnData?.ok) {
-          const msg = (fnErr as any)?.message || fnData?.error || "Guest analysis failed";
+          const msg = (fnErr as any)?.message || (fnData as any)?.error || "Guest analysis failed";
           throw new Error(msg);
         }
         m = (fnData as any).metrics || {};
         s = (fnData as any).summary || {};
+      };
+
+      if (activeSession) {
+        try {
+          const created = await startScan({
+            files,
+            heightCm: Number(heightCm),
+            sex,
+            age,
+            features: { landmarks, widthProfiles, dims, photos }
+          });
+          setLastScanId(created.id);
+
+          const finalRow = await pollScanUntilDone(
+            created.id,
+            (row) => {
+              console.log("[BodyScan] Poll status:", row.status);
+            },
+            2000,
+            60000
+          );
+          m = finalRow.metrics || {};
+          s = finalRow.summary || {};
+        } catch (err) {
+          console.warn("[BodyScan] Auth flow failed, falling back to guest:", err);
+          await runGuest();
+        }
+      } else {
+        await runGuest();
       }
 
       setAnalysisMeta({ model: s.model, at: s.at, used_hints: s.used_hints, guest: !activeSession } as any);
