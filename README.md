@@ -1,73 +1,64 @@
-# Welcome to your Lovable project
+# TapFit — The Future of Fitness & Wellness  
 
-## Project info
+**TapFit transforms any gym into a smart gym.**  
+Using AI-powered sensors, body scanners, and a food analyzer, TapFit delivers real-time, hardware-verified workout and biometric insights — making fitness personalized, measurable, and engaging like never before.  
 
-**URL**: https://lovable.dev/projects/4e37f3a9-8b52-4436-9842-e2cc950a194e
+---
 
-## How can I edit this code?
+## 🚀 Vision  
+TapFit is building the first **all-in-one fitness ecosystem** that connects:  
+- **Smart Sensors** — Retrofit any gym machine with TapFit sensors for real-time rep, weight, and form tracking.  
+- **AI Food Analyzer** — Scan and log meals instantly with machine learning–powered nutrition insights.  
+- **3D Body Scanner** — Track progress visually with precise body composition scans.  
+- **Wearable Integration** — Connect Apple Watch, Garmin, and other wearables for seamless biometric data sync.  
 
-There are several ways of editing your application.
+Our mission: to end the **80% fitness dropout crisis** with AI personalization and make TapFit the new global standard in health & wellness.  
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4e37f3a9-8b52-4436-9842-e2cc950a194e) and start prompting.
+## 🛠️ Tech Stack  
+- **iOS App**: Swift + Capacitor (with BLE + NFC support)  
+- **Hardware**: Puck.js v2.1 sensors (BLE/NFC), accelerometer + gyroscope  
+- **Backend**: Supabase + PostgreSQL  
+- **Frontend**: Vite + React + Tailwind + shadcn/ui  
+- **AI/ML**: Food analyzer & biometric prediction engine (in development)  
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## ✨ Features (Current & Upcoming)  
+✅ NFC tap → instant device connection  
+✅ BLE handshake with smart sensors  
+✅ Rep counting with accelerometer (>2G force threshold)  
+✅ Green LED feedback for reps  
+✅ Blue LED NFC confirmation  
+🔄 AI food analyzer (in progress)  
+🔄 3D body scanner integration (in progress)  
+🔄 Full wearable + nutrition sync (coming soon)  
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 📸 Screenshots / Demo  
+*(Add screenshots or short GIFs of your app here so non-technical reviewers see progress immediately.)*  
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 📂 Repository Structure  
+- `firmware/` → Puck.js firmware code (BLE/NFC + motion detection)  
+- `ios/App/` → iOS app source code  
+- `supabase/` → Database + API backend  
+- `watch/TapFitWatch/` → Apple Watch companion app  
+- `scripts/` → Build & setup scripts  
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🧑‍💻 Getting Started (Developers)  
+```bash
+# Clone the repo
+git clone https://github.com/RogerTapfit/tapfit-ai-sync.git
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+# Install dependencies
+pnpm install
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/4e37f3a9-8b52-4436-9842-e2cc950a194e) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# iOS Setup
+npx cap sync ios
+open ios/App/App.xcworkspace
