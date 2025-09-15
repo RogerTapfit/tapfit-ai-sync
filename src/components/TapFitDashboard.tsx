@@ -36,7 +36,8 @@ import { supabase } from "@/integrations/supabase/client";
 import FitnessChatbot from "./FitnessChatbot";
 import { useAIInsights } from "@/hooks/useAIInsights";
 import { useRecentWorkouts } from "@/hooks/useRecentWorkouts";
-import { Camera } from "lucide-react";
+import { Camera, Calendar } from "lucide-react";
+import { ComprehensiveCalendar } from "./ComprehensiveCalendar";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -223,6 +224,56 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
 
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
+
+      {/* Calendar Feature */}
+      <Card className="glow-card animate-slide-up">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Your Fitness Calendar
+            </h3>
+            <ComprehensiveCalendar 
+              trigger={
+                <Button variant="glow" size="sm" className="shadow-glow">
+                  View Full Calendar
+                </Button>
+              }
+            />
+          </div>
+          <p className="text-muted-foreground text-sm mb-4">
+            Track your workouts, food entries, and daily activities all in one place
+          </p>
+          
+          {/* Mini calendar preview */}
+          <div className="grid grid-cols-7 gap-1 text-center text-xs">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+              <div key={i} className="p-1 font-semibold text-muted-foreground">
+                {day}
+              </div>
+            ))}
+            {/* Sample week preview */}
+            {Array.from({ length: 7 }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - date.getDay() + i);
+              const isToday = date.toDateString() === new Date().toDateString();
+              
+              return (
+                <div 
+                  key={i} 
+                  className={`p-1 rounded text-xs ${
+                    isToday 
+                      ? 'bg-primary text-primary-foreground font-bold' 
+                      : 'hover:bg-accent'
+                  }`}
+                >
+                  {date.getDate()}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
 
       {/* SEE FOOD and BODY SCAN - side by side on wide, stacked on small */}
       <div className="my-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
