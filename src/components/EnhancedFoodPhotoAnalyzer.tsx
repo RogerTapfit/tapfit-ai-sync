@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle, 
-  Lightbulb, Target, MessageCircle, Package, Sparkles 
+  Lightbulb, Target, MessageCircle, Package, Sparkles, QrCode 
 } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ import { Capacitor } from '@capacitor/core';
 import { PhotoManager } from './PhotoManager';
 import { AnimatedCounter } from './AnimatedCounter';
 import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
+import { BarcodeScanner } from './BarcodeScanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -47,6 +48,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -378,6 +380,20 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     }
   };
 
+  const handleBarcodeProduct = (foodItem: FoodItem) => {
+    setEditingItems([foodItem]);
+    setAnalysisResult({
+      food_items: [foodItem],
+      total_calories: foodItem.calories,
+      total_protein: foodItem.protein,
+      total_carbs: foodItem.carbs,
+      total_fat: foodItem.fat,
+      confidence: foodItem.confidence,
+      clarifying_questions: []
+    });
+    onStateChange?.('results', { photoCount: 0, hasResults: true });
+  };
+
   return (
     <div className="space-y-8">
       <Card className="glow-card border-gradient overflow-hidden">
@@ -466,12 +482,28 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => handlePhotoCapture('gallery')}
-                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all duration-300 touch-manipulation"
+                  onClick={() => setBarcodeScannerOpen(true)}
+                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 touch-manipulation"
                 >
-                  <Package className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
-                  <span className="font-semibold text-sm sm:text-base">Nutrition Label</span>
-                  <span className="text-xs text-muted-foreground hidden sm:block">Scan barcode</span>
+                  <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+                  <span className="font-semibold text-sm sm:text-base">Scan Barcode</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block">Live scanner</span>
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="sm:col-span-2 lg:col-span-1"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setBarcodeScannerOpen(true)}
+                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 touch-manipulation"
+                >
+                  <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+                  <span className="font-semibold text-sm sm:text-base">Scan Barcode</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block">Live scanner</span>
                 </Button>
               </motion.div>
             </div>
