@@ -1,3 +1,5 @@
+import { getBeatboxProduct, getPopularAlcoholicBeverage } from './beatboxDatabase';
+
 interface ProductData {
   id: string;
   name: string;
@@ -42,6 +44,52 @@ export class EnhancedBarcodeService {
   }
 
   static async scanBarcode(barcode: string): Promise<ProductData | null> {
+    // First check our custom alcohol database for popular products
+    const beatboxProduct = getBeatboxProduct(barcode);
+    if (beatboxProduct) {
+      return {
+        id: barcode,
+        name: beatboxProduct.name,
+        brand: beatboxProduct.brand,
+        category: 'Alcoholic Beverages',
+        nutrition: {
+          calories_100g: Math.round((beatboxProduct.calories / (parseInt(beatboxProduct.servingSize) / 100))),
+          proteins_100g: 0,
+          carbohydrates_100g: Math.round((beatboxProduct.carbs / (parseInt(beatboxProduct.servingSize) / 100))),
+          fat_100g: 0,
+          fiber_100g: 0,
+          sugars_100g: Math.round((beatboxProduct.sugars / (parseInt(beatboxProduct.servingSize) / 100))),
+          salt_100g: 0,
+        },
+        serving_size: beatboxProduct.servingSize,
+        data_source: 'BeatBox Database',
+        confidence: 1.0
+      };
+    }
+
+    // Check popular alcoholic beverages
+    const popularDrink = getPopularAlcoholicBeverage(barcode);
+    if (popularDrink) {
+      return {
+        id: barcode,
+        name: popularDrink.name,
+        brand: popularDrink.brand,
+        category: 'Alcoholic Beverages',
+        nutrition: {
+          calories_100g: Math.round((popularDrink.calories / 3.55)), // Assuming 355ml serving
+          proteins_100g: 0,
+          carbohydrates_100g: 5, // Typical for hard seltzers
+          fat_100g: 0,
+          fiber_100g: 0,
+          sugars_100g: 2,
+          salt_100g: 0,
+        },
+        serving_size: '355ml',
+        data_source: 'Popular Beverages Database',
+        confidence: 0.95
+      };
+    }
+
     const apis = [
       () => this.tryGoUPC(barcode),
       () => this.tryBarcodeSpider(barcode),
@@ -221,43 +269,75 @@ export class EnhancedBarcodeService {
 
   private static async tryAlcoholDatabase(barcode: string): Promise<APIResponse> {
     try {
-      // Try LCBO (Canada) API for alcohol products
-      const response = await fetch(`https://lcboapi.com/products?q=${barcode}`, {
-        headers: {
-          'Authorization': 'Token token=MDo0ZjAyMWJjNS1jOTIwLTExZTQtOWRmNi1lZjMzYTFlYWMwOWE6'
-        }
-      });
+      // Try multiple alcohol-specific sources
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.result && data.result.length > 0) {
-          const item = data.result[0];
+      // First try OpenFoodFacts with alcohol-specific search
+      const offResponse = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      if (offResponse.ok) {
+        const offData = await offResponse.json();
+        if (offData.product && (
+          offData.product.categories?.toLowerCase().includes('alcohol') ||
+          offData.product.categories?.toLowerCase().includes('beverage') ||
+          offData.product.categories?.toLowerCase().includes('drink')
+        )) {
+          const product = offData.product;
           return {
             success: true,
             product: {
               id: barcode,
-              name: item.name || 'Unknown Alcohol Product',
-              brand: item.producer_name,
-              image_url: item.image_thumb_url,
-              category: `${item.primary_category} - ${item.secondary_category}`,
+              name: product.product_name || 'Unknown Alcoholic Beverage',
+              brand: product.brands || '',
+              image_url: product.image_url,
+              category: product.categories || 'Alcoholic Beverages',
               nutrition: {
-                calories_100g: Math.round((item.alcohol_content || 0) * 7), // Rough alcohol calorie estimate
+                calories_100g: product.nutriments?.['energy-kcal_100g'] || 
+                             Math.round((product.nutriments?.alcohol || 0) * 7), // Alcohol calories
+                proteins_100g: product.nutriments?.proteins_100g || 0,
+                carbohydrates_100g: product.nutriments?.carbohydrates_100g || 
+                                  product.nutriments?.sugars_100g || 0,
+                fat_100g: product.nutriments?.fat_100g || 0,
+                fiber_100g: product.nutriments?.fiber_100g || 0,
+                sugars_100g: product.nutriments?.sugars_100g || 0,
+                salt_100g: product.nutriments?.salt_100g || 0,
+              },
+              ingredients: product.ingredients_text,
+              serving_size: product.serving_size || '355ml',
+              data_source: 'OpenFoodFacts (Alcohol)',
+              confidence: 0.9
+            }
+          };
+        }
+      }
+
+      // Try TheCocktailDB for alcohol products (free API)
+      const cocktailResponse = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${barcode}`);
+      if (cocktailResponse.ok) {
+        const cocktailData = await cocktailResponse.json();
+        if (cocktailData.drinks && cocktailData.drinks.length > 0) {
+          const drink = cocktailData.drinks[0];
+          return {
+            success: true,
+            product: {
+              id: barcode,
+              name: drink.strDrink || 'Unknown Alcoholic Beverage',
+              brand: 'Mixed Drink',
+              image_url: drink.strDrinkThumb,
+              category: 'Alcoholic Beverages',
+              nutrition: {
+                calories_100g: 200, // Estimate for mixed drinks
                 proteins_100g: 0,
-                carbohydrates_100g: item.sugar_content || 0,
+                carbohydrates_100g: 15,
                 fat_100g: 0,
               },
-              store_info: {
-                price_range: `$${item.price_in_cents / 100}`,
-                stores: ['LCBO']
-              },
-              data_source: 'LCBO Canada',
-              confidence: 0.85
+              ingredients: drink.strInstructions,
+              data_source: 'TheCocktailDB',
+              confidence: 0.7
             }
           };
         }
       }
       
-      return { success: false, error: 'Product not found in alcohol database' };
+      return { success: false, error: 'Product not found in alcohol databases' };
     } catch (error) {
       return { success: false, error: `Alcohol database error: ${error}` };
     }
