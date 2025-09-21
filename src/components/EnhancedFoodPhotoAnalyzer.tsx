@@ -490,22 +490,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   <span className="text-xs text-muted-foreground hidden sm:block">Live scanner</span>
                 </Button>
               </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="sm:col-span-2 lg:col-span-1"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setBarcodeScannerOpen(true)}
-                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 touch-manipulation"
-                >
-                  <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-                  <span className="font-semibold text-sm sm:text-base">Scan Barcode</span>
-                  <span className="text-xs text-muted-foreground hidden sm:block">Live scanner</span>
-                </Button>
-              </motion.div>
             </div>
 
             <PhotoManager
@@ -934,6 +918,12 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
           </Card>
         </motion.div>
       )}
+
+      <BarcodeScanner
+        isOpen={barcodeScannerOpen}
+        onClose={() => setBarcodeScannerOpen(false)}
+        onProductFound={handleBarcodeProduct}
+      />
     </div>
   );
 };
