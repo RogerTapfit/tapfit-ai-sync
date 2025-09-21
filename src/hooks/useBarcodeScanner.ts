@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import { toast } from 'sonner';
+import { EnhancedBarcodeService } from '../services/enhancedBarcodeService';
 
 interface ProductData {
   id: string;
@@ -18,6 +19,13 @@ interface ProductData {
   };
   ingredients?: string;
   serving_size?: string;
+  category?: string;
+  store_info?: {
+    stores?: string[];
+    price_range?: string;
+  };
+  data_source?: string;
+  confidence?: number;
 }
 
 export const useBarcodeScanner = () => {
@@ -28,31 +36,7 @@ export const useBarcodeScanner = () => {
 
   const fetchProductData = async (barcode: string): Promise<ProductData | null> => {
     try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-      const data = await response.json();
-      
-      if (!data.product) {
-        return null;
-      }
-      
-      const product = data.product;
-      return {
-        id: barcode,
-        name: product.product_name || 'Unknown Product',
-        brand: product.brands || '',
-        image_url: product.image_url,
-        nutrition: {
-          calories_100g: product.nutriments?.['energy-kcal_100g'],
-          proteins_100g: product.nutriments?.proteins_100g,
-          carbohydrates_100g: product.nutriments?.carbohydrates_100g,
-          fat_100g: product.nutriments?.fat_100g,
-          fiber_100g: product.nutriments?.fiber_100g,
-          sugars_100g: product.nutriments?.sugars_100g,
-          salt_100g: product.nutriments?.salt_100g,
-        },
-        ingredients: product.ingredients_text,
-        serving_size: product.serving_size,
-      };
+      return await EnhancedBarcodeService.scanBarcode(barcode);
     } catch (error) {
       console.error('Error fetching product data:', error);
       return null;

@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { 
   QrCode, Camera, X, Check, Package2, Loader2, 
-  Zap, Target, AlertCircle, Info 
+  Zap, Target, AlertCircle, Info, Settings, Store
 } from 'lucide-react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FoodItem } from '@/hooks/useNutrition';
+import { ApiKeyManager } from './ApiKeyManager';
 
 interface BarcodeScannerProps {
   onProductFound?: (foodItem: FoodItem) => void;
@@ -27,6 +28,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   const [servingWeight, setServingWeight] = useState(100);
   const [manualBarcode, setManualBarcode] = useState('');
   const [scanMode, setScanMode] = useState<'camera' | 'manual'>('camera');
+  const [showApiManager, setShowApiManager] = useState(false);
   
   const {
     isScanning,
@@ -100,14 +102,24 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                 >
                   <QrCode className="h-6 w-6 text-primary" />
                 </motion.div>
-                Barcode Scanner
+                Enhanced Barcode Scanner
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowApiManager(true)}
+                  title="Manage API Keys"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onClose}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <p className="text-muted-foreground text-sm">
-              Scan product barcodes for instant nutritional information
+              Scan any product barcode for comprehensive information across multiple databases
             </p>
           </CardHeader>
           
@@ -222,11 +234,23 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-4 border-t pt-4"
               >
-                <div className="text-center">
+                <div className="flex items-center justify-between">
                   <Badge variant="secondary" className="bg-green-500/10 text-green-600">
                     <Check className="h-3 w-3 mr-1" />
                     Product Found
                   </Badge>
+                  <div className="flex items-center gap-2">
+                    {productData.data_source && (
+                      <Badge variant="outline" className="text-xs">
+                        {productData.data_source}
+                      </Badge>
+                    )}
+                    {productData.confidence && (
+                      <Badge variant="secondary" className="text-xs">
+                        {Math.round(productData.confidence * 100)}% match
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="bg-muted/30 rounded-lg p-4 space-y-3">
@@ -246,15 +270,44 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                       {productData.brand && (
                         <p className="text-muted-foreground">{productData.brand}</p>
                       )}
+                      {productData.category && (
+                        <p className="text-xs text-muted-foreground">
+                          Category: {productData.category}
+                        </p>
+                      )}
                     </div>
                   </div>
 
+                  {/* Store Information */}
+                  {productData.store_info && (
+                    <div className="flex items-center gap-2 p-2 bg-background rounded border">
+                      <Store className="h-4 w-4 text-muted-foreground" />
+                      <div className="text-sm">
+                        {productData.store_info.stores && productData.store_info.stores.length > 0 && (
+                          <p>Available at: {productData.store_info.stores.slice(0, 3).join(', ')}</p>
+                        )}
+                        {productData.store_info.price_range && (
+                          <p>Price: {productData.store_info.price_range}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {productData.nutrition && (
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>Calories: {productData.nutrition.calories_100g}kcal/100g</div>
-                      <div>Protein: {productData.nutrition.proteins_100g}g/100g</div>
-                      <div>Carbs: {productData.nutrition.carbohydrates_100g}g/100g</div>
-                      <div>Fat: {productData.nutrition.fat_100g}g/100g</div>
+                      <div>Calories: {productData.nutrition.calories_100g || 'N/A'}kcal/100g</div>
+                      <div>Protein: {productData.nutrition.proteins_100g || 'N/A'}g/100g</div>
+                      <div>Carbs: {productData.nutrition.carbohydrates_100g || 'N/A'}g/100g</div>
+                      <div>Fat: {productData.nutrition.fat_100g || 'N/A'}g/100g</div>
+                    </div>
+                  )}
+
+                  {productData.ingredients && (
+                    <div>
+                      <p className="text-sm font-medium">Ingredients:</p>
+                      <p className="text-xs text-muted-foreground line-clamp-3">
+                        {productData.ingredients}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -306,6 +359,11 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
           </CardContent>
         </Card>
       </motion.div>
+
+      <ApiKeyManager 
+        isOpen={showApiManager} 
+        onClose={() => setShowApiManager(false)} 
+      />
     </AnimatePresence>
   );
 };
