@@ -43,10 +43,20 @@ export const ExercisesBreakdown: React.FC<ExercisesBreakdownProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+      // Create date range in UTC to avoid timezone issues
+      const targetDate = new Date(date);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const day = targetDate.getDate();
+      
+      const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+
+      console.log('Fetching exercise details for date range:', {
+        originalDate: date,
+        startOfDay: startOfDay.toISOString(),
+        endOfDay: endOfDay.toISOString()
+      });
 
       // Fetch exercise logs for the specific date
       const { data: exerciseLogs, error: logsError } = await supabase
