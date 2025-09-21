@@ -35,25 +35,26 @@ const FoodScanner = () => {
       />
       
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-        <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
           {/* Animated Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4 mb-8"
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8"
           >
             <Link to="/">
-              <Button variant="ghost" size="sm" className="gap-2 hover:bg-primary/10 transition-colors">
+              <Button variant="ghost" size="sm" className="gap-2 hover:bg-primary/10 transition-colors mb-2 sm:mb-0">
                 <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
               </Button>
             </Link>
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center gap-3"
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent flex items-center gap-2 sm:gap-3"
               >
                 <motion.div
                   animate={{ 
@@ -66,7 +67,7 @@ const FoodScanner = () => {
                     ease: "easeInOut"
                   }}
                 >
-                  <Zap className="h-10 w-10 text-primary" />
+                  <Zap className="h-6 w-6 sm:h-8 lg:h-10 sm:w-8 lg:w-10 text-primary" />
                 </motion.div>
                 AI Food Hub
                 <motion.div
@@ -80,14 +81,14 @@ const FoodScanner = () => {
                     ease: "easeInOut"
                   }}
                 >
-                  <Stars className="h-8 w-8 text-yellow-500" />
+                  <Stars className="h-5 w-5 sm:h-6 lg:h-8 sm:w-6 lg:w-8 text-yellow-500" />
                 </motion.div>
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-lg text-muted-foreground mt-2"
+                className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 sm:mt-2"
               >
                 Analyze nutrition, discover recipes, and transform your cooking with AI magic ✨
               </motion.p>
@@ -101,20 +102,22 @@ const FoodScanner = () => {
             transition={{ delay: 0.6 }}
           >
             <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8 h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
+              <TabsList className="grid w-full grid-cols-2 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
                 <TabsTrigger 
                   value="analyzer" 
-                  className="flex items-center gap-2 text-lg py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-lg py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
-                  <Sparkles className="h-5 w-5" />
-                  Food Analyzer
+                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden xs:inline">Food Analyzer</span>
+                  <span className="xs:hidden">Analyzer</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="builder" 
-                  className="flex items-center gap-2 text-lg py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-lg py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
-                  <Stars className="h-5 w-5" />
-                  Recipe Builder
+                  <Stars className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden xs:inline">Recipe Builder</span>
+                  <span className="xs:hidden">Builder</span>
                 </TabsTrigger>
               </TabsList>
 

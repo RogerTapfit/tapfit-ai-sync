@@ -221,35 +221,35 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
               <Camera className="h-5 w-5 text-primary" />
               Capture Your Ingredients
             </h3>
-            <div className="flex gap-3 flex-wrap">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => handlePhotoCapture('camera')}
-                className="flex items-center gap-2 glow-hover"
+                className="flex items-center gap-2 glow-hover h-12 sm:h-auto touch-manipulation"
               >
                 <Camera className="h-4 w-4" />
-                Take Photo
+                <span className="text-sm sm:text-base">Take Photo</span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => handlePhotoCapture('gallery')}
-                className="flex items-center gap-2 glow-hover"
+                className="flex items-center gap-2 glow-hover h-12 sm:h-auto touch-manipulation"
               >
                 <Upload className="h-4 w-4" />
-                Upload Photo
+                <span className="text-sm sm:text-base">Upload Photo</span>
               </Button>
             </div>
 
             {/* Photo Grid */}
             <AnimatePresence>
               {photos.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"
+                  >
                   {photos.map((photo) => (
                     <motion.div
                       key={photo.id}
@@ -281,12 +281,12 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
           </div>
 
           {/* Analyze Button */}
-          <Button
-            onClick={analyzeIngredientsAndGetRecipes}
-            disabled={photos.length === 0 || analyzing}
-            className="w-full glow-button"
-            size="lg"
-          >
+            <Button
+              onClick={analyzeIngredientsAndGetRecipes}
+              disabled={photos.length === 0 || analyzing}
+              className="w-full glow-button touch-manipulation"
+              size="lg"
+            >
             {analyzing ? (
               <>
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -360,7 +360,7 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {recommendations.map((recipe, index) => (
                 <motion.div
                   key={index}

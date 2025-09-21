@@ -427,7 +427,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                 Take multiple photos for the most accurate nutritional analysis
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -436,11 +436,11 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   type="button"
                   variant="outline"
                   onClick={() => handlePhotoCapture('camera')}
-                  className="w-full h-20 flex flex-col items-center gap-2 glow-hover border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300 touch-manipulation"
                 >
-                  <Camera className="h-6 w-6 text-primary" />
-                  <span className="font-semibold">Take Photo</span>
-                  <span className="text-xs text-muted-foreground">Use camera</span>
+                  <Camera className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  <span className="font-semibold text-sm sm:text-base">Take Photo</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block">Use camera</span>
                 </Button>
               </motion.div>
               <motion.div
@@ -451,26 +451,27 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   type="button"
                   variant="outline"
                   onClick={() => handlePhotoCapture('gallery')}
-                  className="w-full h-20 flex flex-col items-center gap-2 glow-hover border-green-500/20 hover:border-green-500/40 hover:bg-green-500/5 transition-all duration-300"
+                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-green-500/20 hover:border-green-500/40 hover:bg-green-500/5 transition-all duration-300 touch-manipulation"
                 >
-                  <Upload className="h-6 w-6 text-green-500" />
-                  <span className="font-semibold">Upload Photo</span>
-                  <span className="text-xs text-muted-foreground">From gallery</span>
+                  <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
+                  <span className="font-semibold text-sm sm:text-base">Upload Photo</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block">From gallery</span>
                 </Button>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                className="sm:col-span-2 lg:col-span-1"
               >
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => handlePhotoCapture('gallery')}
-                  className="w-full h-20 flex flex-col items-center gap-2 glow-hover border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all duration-300"
+                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all duration-300 touch-manipulation"
                 >
-                  <Package className="h-6 w-6 text-orange-500" />
-                  <span className="font-semibold">Nutrition Label</span>
-                  <span className="text-xs text-muted-foreground">Scan barcode</span>
+                  <Package className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
+                  <span className="font-semibold text-sm sm:text-base">Nutrition Label</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block">Scan barcode</span>
                 </Button>
               </motion.div>
             </div>

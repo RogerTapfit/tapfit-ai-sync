@@ -126,7 +126,7 @@ export const FoodScannerAssistant: React.FC<FoodScannerAssistantProps> = ({
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50"
     >
       <div className="relative">
         {/* Speech Bubble */}
@@ -137,17 +137,17 @@ export const FoodScannerAssistant: React.FC<FoodScannerAssistantProps> = ({
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className="absolute bottom-20 right-0 mb-2 max-w-xs"
+              className="absolute bottom-16 sm:bottom-20 right-0 mb-2 max-w-[280px] sm:max-w-xs"
             >
-              <Card className="p-3 bg-gradient-to-r from-primary/90 to-primary/80 border-primary/30 shadow-xl backdrop-blur-sm">
+              <Card className="p-2 sm:p-3 bg-gradient-to-r from-primary/90 to-primary/80 border-primary/30 shadow-xl backdrop-blur-sm">
                 <div className="flex items-start gap-2">
-                  <MessageCircle className="h-4 w-4 text-primary-foreground mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-primary-foreground font-medium leading-relaxed">
+                  <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary-foreground mt-0.5 flex-shrink-0" />
+                  <p className="text-xs sm:text-sm text-primary-foreground font-medium leading-relaxed">
                     {currentMessage?.text || helpfulTips[currentTipIndex]}
                   </p>
                 </div>
                 {/* Speech bubble pointer */}
-                <div className="absolute bottom-0 right-8 transform translate-y-1/2 rotate-45 w-3 h-3 bg-primary border-r border-b border-primary/30" />
+                <div className="absolute bottom-0 right-6 sm:right-8 transform translate-y-1/2 rotate-45 w-2 sm:w-3 h-2 sm:h-3 bg-primary border-r border-b border-primary/30" />
               </Card>
             </motion.div>
           )}
@@ -155,10 +155,10 @@ export const FoodScannerAssistant: React.FC<FoodScannerAssistantProps> = ({
 
         {/* Avatar Container */}
         <motion.div
-          animate={isMinimized ? { scale: 0.7 } : { scale: 1 }}
+          animate={isMinimized ? { scale: 0.6 } : { scale: 1 }}
           className="relative"
         >
-          <div className="w-24 h-32">
+          <div className="w-20 h-28 sm:w-24 sm:h-32">
             <RobotAvatarDisplay
               avatarData={avatarData}
               size="small"
@@ -170,22 +170,22 @@ export const FoodScannerAssistant: React.FC<FoodScannerAssistantProps> = ({
           </div>
 
           {/* Control Buttons */}
-          <div className="absolute -top-2 -right-2 flex gap-1">
+          <div className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 flex gap-1">
             <Button
               size="sm"
               variant="outline"
               onClick={() => setIsMinimized(!isMinimized)}
-              className="h-6 w-6 p-0 rounded-full border-primary/30 bg-background/80 hover:bg-primary/10"
+              className="h-5 w-5 sm:h-6 sm:w-6 p-0 rounded-full border-primary/30 bg-background/80 hover:bg-primary/10 touch-manipulation"
             >
-              <MessageCircle className="h-3 w-3" />
+              <MessageCircle className="h-2 w-2 sm:h-3 sm:w-3" />
             </Button>
             <Button
               size="sm"
               variant="outline"
               onClick={() => setIsVisible(false)}
-              className="h-6 w-6 p-0 rounded-full border-destructive/30 bg-background/80 hover:bg-destructive/10"
+              className="h-5 w-5 sm:h-6 sm:w-6 p-0 rounded-full border-destructive/30 bg-background/80 hover:bg-destructive/10 touch-manipulation"
             >
-              <X className="h-3 w-3" />
+              <X className="h-2 w-2 sm:h-3 sm:w-3" />
             </Button>
           </div>
 
@@ -193,7 +193,7 @@ export const FoodScannerAssistant: React.FC<FoodScannerAssistantProps> = ({
           <motion.div
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute -bottom-1 -left-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background shadow-lg"
+            className="absolute -bottom-1 -left-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-background shadow-lg"
           />
         </motion.div>
       </div>
