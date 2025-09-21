@@ -48,6 +48,8 @@ export const ApiKeyManager = ({ isOpen, onClose }: ApiKeyManagerProps) => {
       case 'barcodeSpider': return 'Large product catalog with detailed information';
       case 'upcItemDB': return 'Free product lookup service (limited requests)';
       case 'openFoodFacts': return 'Free food product database with nutrition info';
+      case 'alcoholDatabase': return 'Alcohol & beverage database (LCBO Canada)';
+      case 'fdaDatabase': return 'FDA food database for US products';
       default: return 'Product information service';
     }
   };
@@ -94,7 +96,7 @@ export const ApiKeyManager = ({ isOpen, onClose }: ApiKeyManagerProps) => {
                 </div>
               </div>
               
-              {service !== 'upcItemDB' && service !== 'openFoodFacts' && (
+              {service !== 'upcItemDB' && service !== 'openFoodFacts' && service !== 'alcoholDatabase' && service !== 'fdaDatabase' && (
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Label htmlFor={`${service}-key`} className="sr-only">
@@ -130,8 +132,12 @@ export const ApiKeyManager = ({ isOpen, onClose }: ApiKeyManagerProps) => {
               <li>2. Barcode Spider (Large catalog)</li>
               <li>3. UPCItemDB (Free general products)</li>
               <li>4. OpenFoodFacts (Free food database)</li>
-              <li>5. USDA FoodData (Authoritative nutrition)</li>
+              <li>5. Alcohol Database (LCBO Canada)</li>
+              <li>6. FDA Database (US food products)</li>
             </ol>
+            <p className="text-xs text-muted-foreground mt-2">
+              Covers food, beverages, alcohol, supplements, and all consumables
+            </p>
           </div>
           
           <div className="flex justify-end gap-2">

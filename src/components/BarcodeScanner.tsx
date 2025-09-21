@@ -12,6 +12,7 @@ import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FoodItem } from '@/hooks/useNutrition';
 import { ApiKeyManager } from './ApiKeyManager';
+import { ProductNotFoundDialog } from './ProductNotFoundDialog';
 
 interface BarcodeScannerProps {
   onProductFound?: (foodItem: FoodItem) => void;
@@ -29,6 +30,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   const [manualBarcode, setManualBarcode] = useState('');
   const [scanMode, setScanMode] = useState<'camera' | 'manual'>('camera');
   const [showApiManager, setShowApiManager] = useState(false);
+  const [showProductNotFound, setShowProductNotFound] = useState(false);
+  const [lastScannedBarcode, setLastScannedBarcode] = useState<string>('');
   
   const {
     isScanning,
@@ -58,7 +61,10 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     
     try {
       const product = await fetchProductData(manualBarcode.trim());
-      // Product data is automatically set by the hook
+      if (!product) {
+        setLastScannedBarcode(manualBarcode.trim());
+        setShowProductNotFound(true);
+      }
     } catch (error) {
       console.error('Error fetching product:', error);
     }
@@ -79,6 +85,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     resetScanner();
     if (scanMode === 'camera' && videoRef.current) {
       startScanning(videoRef.current);
+    }
+  };
+
+  const handleManualProductAdded = (product: any) => {
+    const foodItem = convertToFoodItem(product, servingWeight);
+    if (foodItem && onProductFound) {
+      onProductFound(foodItem);
+      onClose?.();
     }
   };
 
@@ -346,14 +360,25 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
               >
                 <div className="text-muted-foreground flex items-center gap-2 justify-center">
                   <AlertCircle className="h-5 w-5 text-yellow-500" />
-                  <span>Product not found in database</span>
+                  <span>Product not found in any database</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Try using the photo analyzer or manual entry instead
+                  Help us expand our database by adding this product manually
                 </p>
-                <Button variant="outline" onClick={handleRetry}>
-                  Try Different Barcode
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      setLastScannedBarcode(manualBarcode);
+                      setShowProductNotFound(true);
+                    }}
+                    className="flex-1"
+                  >
+                    Add Product Manually
+                  </Button>
+                  <Button variant="outline" onClick={handleRetry}>
+                    Try Different Barcode
+                  </Button>
+                </div>
               </motion.div>
             )}
           </CardContent>
@@ -363,6 +388,13 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
       <ApiKeyManager 
         isOpen={showApiManager} 
         onClose={() => setShowApiManager(false)} 
+      />
+
+      <ProductNotFoundDialog
+        isOpen={showProductNotFound}
+        barcode={lastScannedBarcode}
+        onClose={() => setShowProductNotFound(false)}
+        onProductAdded={handleManualProductAdded}
       />
     </AnimatePresence>
   );

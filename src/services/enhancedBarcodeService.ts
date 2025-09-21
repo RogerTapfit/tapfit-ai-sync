@@ -47,7 +47,8 @@ export class EnhancedBarcodeService {
       () => this.tryBarcodeSpider(barcode),
       () => this.tryUPCItemDB(barcode),
       () => this.tryOpenFoodFacts(barcode),
-      () => this.tryUSDAFoodData(barcode)
+      () => this.tryAlcoholDatabase(barcode),
+      () => this.tryFDADatabase(barcode)
     ];
 
     for (const apiCall of apis) {
@@ -146,7 +147,11 @@ export class EnhancedBarcodeService {
 
   private static async tryUPCItemDB(barcode: string): Promise<APIResponse> {
     try {
-      const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+      const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`, {
+        headers: {
+          'User-Agent': 'TapFit-Scanner/1.0'
+        }
+      });
       
       if (!response.ok) {
         return { success: false, error: 'UPCItemDB API request failed' };
@@ -214,13 +219,93 @@ export class EnhancedBarcodeService {
     }
   }
 
-  private static async tryUSDAFoodData(barcode: string): Promise<APIResponse> {
+  private static async tryAlcoholDatabase(barcode: string): Promise<APIResponse> {
     try {
-      // USDA FoodData Central doesn't directly support UPC lookup
-      // This would require a different approach or additional mapping service
-      return { success: false, error: 'USDA lookup not implemented for UPC codes' };
+      // Try LCBO (Canada) API for alcohol products
+      const response = await fetch(`https://lcboapi.com/products?q=${barcode}`, {
+        headers: {
+          'Authorization': 'Token token=MDo0ZjAyMWJjNS1jOTIwLTExZTQtOWRmNi1lZjMzYTFlYWMwOWE6'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.result && data.result.length > 0) {
+          const item = data.result[0];
+          return {
+            success: true,
+            product: {
+              id: barcode,
+              name: item.name || 'Unknown Alcohol Product',
+              brand: item.producer_name,
+              image_url: item.image_thumb_url,
+              category: `${item.primary_category} - ${item.secondary_category}`,
+              nutrition: {
+                calories_100g: Math.round((item.alcohol_content || 0) * 7), // Rough alcohol calorie estimate
+                proteins_100g: 0,
+                carbohydrates_100g: item.sugar_content || 0,
+                fat_100g: 0,
+              },
+              store_info: {
+                price_range: `$${item.price_in_cents / 100}`,
+                stores: ['LCBO']
+              },
+              data_source: 'LCBO Canada',
+              confidence: 0.85
+            }
+          };
+        }
+      }
+      
+      return { success: false, error: 'Product not found in alcohol database' };
     } catch (error) {
-      return { success: false, error: `USDA error: ${error}` };
+      return { success: false, error: `Alcohol database error: ${error}` };
+    }
+  }
+
+  private static async tryFDADatabase(barcode: string): Promise<APIResponse> {
+    try {
+      // FDA Food Database for US products
+      const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${barcode}&api_key=DEMO_KEY`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.foods && data.foods.length > 0) {
+          const item = data.foods[0];
+          const nutrients = item.foodNutrients || [];
+          
+          const getnutrient = (id: number) => {
+            const nutrient = nutrients.find(n => n.nutrientId === id);
+            return nutrient ? nutrient.value : 0;
+          };
+          
+          return {
+            success: true,
+            product: {
+              id: barcode,
+              name: item.description || 'Unknown Food Product',
+              brand: item.brandOwner || '',
+              category: item.foodCategory,
+              nutrition: {
+                calories_100g: getnutrient(1008), // Energy
+                proteins_100g: getnutrient(1003), // Protein
+                carbohydrates_100g: getnutrient(1005), // Carbs
+                fat_100g: getnutrient(1004), // Fat
+                fiber_100g: getnutrient(1079), // Fiber
+                sugars_100g: getnutrient(2000), // Sugars
+                salt_100g: getnutrient(1093) / 1000, // Sodium to salt conversion
+              },
+              ingredients: item.ingredients,
+              data_source: 'FDA Database',
+              confidence: 0.9
+            }
+          };
+        }
+      }
+      
+      return { success: false, error: 'Product not found in FDA database' };
+    } catch (error) {
+      return { success: false, error: `FDA database error: ${error}` };
     }
   }
 
@@ -230,7 +315,8 @@ export class EnhancedBarcodeService {
       barcodeSpider: !!this.API_KEYS.barcodeSpider,
       upcItemDB: true, // Free API
       openFoodFacts: true, // Free API
-      usda: false // Not implemented
+      alcoholDatabase: true, // Free API
+      fdaDatabase: true // Free API (with limitations)
     };
   }
 }

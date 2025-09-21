@@ -63,12 +63,20 @@ export const useBarcodeScanner = () => {
       videoElement.srcObject = stream;
       videoElement.play();
       
+      // Debounce the barcode detection to prevent flickering
+      let lastScanTime = 0;
+      const scanCooldown = 2000; // 2 seconds between scans
+      
       const result = await codeReader.decodeFromVideoDevice(
         undefined, 
         videoElement, 
         (result: Result | null, error?: Error) => {
           if (result) {
-            handleBarcodeDetected(result.getText());
+            const now = Date.now();
+            if (now - lastScanTime > scanCooldown) {
+              lastScanTime = now;
+              handleBarcodeDetected(result.getText());
+            }
           }
         }
       );
