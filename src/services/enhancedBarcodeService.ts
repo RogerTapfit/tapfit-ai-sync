@@ -1,4 +1,5 @@
 import { getBeatboxProduct, getPopularAlcoholicBeverage } from './beatboxDatabase';
+import { getPopularBeverage } from './popularBeveragesDatabase';
 
 interface ProductData {
   id: string;
@@ -44,7 +45,30 @@ export class EnhancedBarcodeService {
   }
 
   static async scanBarcode(barcode: string): Promise<ProductData | null> {
-    // First check our custom alcohol database for popular products
+    // First check our comprehensive popular beverages database
+    const popularBeverage = getPopularBeverage(barcode);
+    if (popularBeverage) {
+      return {
+        id: barcode,
+        name: popularBeverage.name,
+        brand: popularBeverage.brand,
+        category: popularBeverage.category,
+        nutrition: {
+          calories_100g: Math.round((popularBeverage.calories / (parseInt(popularBeverage.servingSize) / 100))),
+          proteins_100g: 0,
+          carbohydrates_100g: Math.round((popularBeverage.carbs / (parseInt(popularBeverage.servingSize) / 100))),
+          fat_100g: 0,
+          fiber_100g: 0,
+          sugars_100g: Math.round((popularBeverage.sugars / (parseInt(popularBeverage.servingSize) / 100))),
+          salt_100g: 0,
+        },
+        serving_size: popularBeverage.servingSize,
+        data_source: 'Popular Beverages Database',
+        confidence: 1.0
+      };
+    }
+
+    // Fallback to legacy BeatBox check
     const beatboxProduct = getBeatboxProduct(barcode);
     if (beatboxProduct) {
       return {
