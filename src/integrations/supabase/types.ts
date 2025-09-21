@@ -369,6 +369,57 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_activity_summary: {
+        Row: {
+          activity_date: string
+          activity_score: number | null
+          created_at: string
+          goals_achieved: number | null
+          id: string
+          meals_logged: number | null
+          step_count: number | null
+          total_calories_burned: number | null
+          total_calories_consumed: number | null
+          total_exercises: number | null
+          total_workout_minutes: number | null
+          updated_at: string
+          user_id: string
+          workouts_completed: number | null
+        }
+        Insert: {
+          activity_date?: string
+          activity_score?: number | null
+          created_at?: string
+          goals_achieved?: number | null
+          id?: string
+          meals_logged?: number | null
+          step_count?: number | null
+          total_calories_burned?: number | null
+          total_calories_consumed?: number | null
+          total_exercises?: number | null
+          total_workout_minutes?: number | null
+          updated_at?: string
+          user_id: string
+          workouts_completed?: number | null
+        }
+        Update: {
+          activity_date?: string
+          activity_score?: number | null
+          created_at?: string
+          goals_achieved?: number | null
+          id?: string
+          meals_logged?: number | null
+          step_count?: number | null
+          total_calories_burned?: number | null
+          total_calories_consumed?: number | null
+          total_exercises?: number | null
+          total_workout_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+          workouts_completed?: number | null
+        }
+        Relationships: []
+      }
       daily_nutrition_summary: {
         Row: {
           created_at: string
@@ -406,6 +457,45 @@ export type Database = {
           total_carbs?: number
           total_fat?: number
           total_protein?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_steps: {
+        Row: {
+          active_minutes: number | null
+          calories_burned: number | null
+          created_at: string
+          data_source: string | null
+          distance_km: number | null
+          id: string
+          recorded_date: string
+          step_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_minutes?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          data_source?: string | null
+          distance_km?: number | null
+          id?: string
+          recorded_date?: string
+          step_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_minutes?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          data_source?: string | null
+          distance_km?: number | null
+          id?: string
+          recorded_date?: string
+          step_count?: number
           updated_at?: string
           user_id?: string
         }
@@ -461,9 +551,52 @@ export type Database = {
           },
         ]
       }
+      exercise_sets: {
+        Row: {
+          completed_at: string
+          created_at: string
+          exercise_log_id: string
+          id: string
+          notes: string | null
+          perceived_effort: number | null
+          reps_completed: number
+          rest_duration_seconds: number | null
+          set_number: number
+          user_id: string
+          weight_used: number | null
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          exercise_log_id: string
+          id?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          reps_completed?: number
+          rest_duration_seconds?: number | null
+          set_number: number
+          user_id: string
+          weight_used?: number | null
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          exercise_log_id?: string
+          id?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          reps_completed?: number
+          rest_duration_seconds?: number | null
+          set_number?: number
+          user_id?: string
+          weight_used?: number | null
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           ai_analyzed: boolean
+          analysis_confidence: number | null
           created_at: string
           food_items: Json
           grade_score: number | null
@@ -472,7 +605,9 @@ export type Database = {
           logged_date: string
           meal_type: string
           notes: string | null
+          photo_storage_path: string | null
           photo_url: string | null
+          thumbnail_url: string | null
           total_calories: number
           total_carbs: number
           total_fat: number
@@ -483,6 +618,7 @@ export type Database = {
         }
         Insert: {
           ai_analyzed?: boolean
+          analysis_confidence?: number | null
           created_at?: string
           food_items: Json
           grade_score?: number | null
@@ -491,7 +627,9 @@ export type Database = {
           logged_date?: string
           meal_type: string
           notes?: string | null
+          photo_storage_path?: string | null
           photo_url?: string | null
+          thumbnail_url?: string | null
           total_calories: number
           total_carbs?: number
           total_fat?: number
@@ -502,6 +640,7 @@ export type Database = {
         }
         Update: {
           ai_analyzed?: boolean
+          analysis_confidence?: number | null
           created_at?: string
           food_items?: Json
           grade_score?: number | null
@@ -510,7 +649,9 @@ export type Database = {
           logged_date?: string
           meal_type?: string
           notes?: string | null
+          photo_storage_path?: string | null
           photo_url?: string | null
+          thumbnail_url?: string | null
           total_calories?: number
           total_carbs?: number
           total_fat?: number

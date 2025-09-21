@@ -49,7 +49,7 @@ export const useCalendarData = (userId?: string) => {
   const { foodEntries } = useNutrition();
   const dailyStats = useDailyStats(userId);
 
-  // Generate calendar data for current month
+  // Function to generate calendar data for a given month
   const generateCalendarData = async (month: Date) => {
     if (!userId) return;
     
@@ -58,131 +58,95 @@ export const useCalendarData = (userId?: string) => {
       const startDate = new Date(month.getFullYear(), month.getMonth(), 1);
       const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
       
-      // Fetch workout data for the month
-      const { data: workoutLogs } = await supabase
-        .from('workout_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('started_at', startDate.toISOString())
-        .lte('started_at', endDate.toISOString());
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
 
-      // Fetch scheduled workouts for the month
-      const { data: scheduledWorkouts } = await supabase
-        .from('scheduled_workouts')
-        .select(`
-          *,
-          workout_exercises (*)
-        `)
-        .eq('user_id', userId)
-        .gte('scheduled_date', startDate.toISOString().split('T')[0])
-        .lte('scheduled_date', endDate.toISOString().split('T')[0]);
+      // Fetch comprehensive data in parallel
+      const [workoutLogsResponse, foodEntriesResponse, dailyStepsResponse] = await Promise.all([
+        supabase
+          .from('workout_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('started_at', startDateStr)
+          .lte('started_at', endDateStr + 'T23:59:59'),
+          
+        supabase
+          .from('food_entries')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('logged_date', startDateStr)
+          .lte('logged_date', endDateStr),
+          
+        supabase
+          .from('daily_steps')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('recorded_date', startDateStr)
+          .lte('recorded_date', endDateStr)
+      ]);
 
-      // Fetch food entries for the month
-      const { data: monthFoodEntries } = await supabase
-        .from('food_entries')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('logged_date', startDate.toISOString().split('T')[0])
-        .lte('logged_date', endDate.toISOString().split('T')[0]);
+      const newCalendarData = new Map<string, CalendarDay>();
+      const workoutLogs = workoutLogsResponse.data || [];
+      const fetchedFoodEntries = foodEntriesResponse.data || [];
+      const dailySteps = dailyStepsResponse.data || [];
 
-      // Fetch daily nutrition summaries
-      const { data: nutritionSummaries } = await supabase
-        .from('daily_nutrition_summary')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('summary_date', startDate.toISOString().split('T')[0])
-        .lte('summary_date', endDate.toISOString().split('T')[0]);
-
-      // Build calendar data map
-      const dataMap = new Map<string, CalendarDay>();
-      
-      // Initialize all days in month
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateString = d.toISOString().split('T')[0];
-        dataMap.set(dateString, {
-          date: new Date(d),
+      // Generate days for the month
+      for (let day = 1; day <= endDate.getDate(); day++) {
+        const currentDate = new Date(month.getFullYear(), month.getMonth(), day);
+        const dateString = currentDate.toISOString().split('T')[0];
+        
+        // Get workouts for this day
+        const dayWorkouts: WorkoutActivity[] = workoutLogs
+          .filter(log => new Date(log.started_at).toISOString().split('T')[0] === dateString)
+          .map(log => ({
+            id: log.id,
+            type: 'completed' as const,
+            name: log.workout_name || 'Workout',
+            muscleGroup: log.muscle_group || 'general',
+            duration: log.duration_minutes || 0,
+            exercises: log.completed_exercises || 0,
+            calories: log.calories_burned
+          }));
+        
+        // Get food entries for this day
+        const dayFoodEntries: FoodActivity[] = fetchedFoodEntries
+          .filter(food => food.logged_date === dateString)
+          .map(food => ({
+            id: food.id,
+            mealType: food.meal_type,
+            totalCalories: food.total_calories,
+            photoUrl: food.photo_url,
+            healthGrade: food.health_grade,
+            time: new Date(food.created_at).toISOString()
+          }));
+        
+        // Get steps for this day
+        const dayStep = dailySteps.find(step => step.recorded_date === dateString);
+        
+        // Calculate daily stats
+        const totalWorkoutCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0);
+        const totalConsumedCalories = dayFoodEntries.reduce((sum, f) => sum + f.totalCalories, 0);
+        const totalExercises = dayWorkouts.reduce((sum, w) => sum + w.exercises, 0);
+        const totalWorkoutDuration = dayWorkouts.reduce((sum, w) => sum + w.duration, 0);
+        
+        newCalendarData.set(dateString, {
+          date: currentDate,
           dateString,
-          workouts: [],
-          foodEntries: [],
-          steps: 0,
-          calories: 0,
+          workouts: dayWorkouts,
+          foodEntries: dayFoodEntries,
+          steps: dayStep?.step_count || 0,
+          calories: totalWorkoutCalories,
           dailyStats: {
-            caloriesConsumed: 0,
-            caloriesBurned: 0,
-            exercisesCompleted: 0,
-            workoutDuration: 0,
+            caloriesBurned: totalWorkoutCalories + Math.round((dayStep?.step_count || 0) * 0.04),
+            caloriesConsumed: totalConsumedCalories,
+            exercisesCompleted: totalExercises,
+            workoutDuration: totalWorkoutDuration
           },
-          hasActivity: false,
+          hasActivity: dayWorkouts.length > 0 || dayFoodEntries.length > 0 || (dayStep?.step_count || 0) > 0
         });
       }
 
-      // Add workout data
-      workoutLogs?.forEach(log => {
-        const date = new Date(log.started_at).toISOString().split('T')[0];
-        const day = dataMap.get(date);
-        if (day) {
-          day.workouts.push({
-            id: log.id,
-            type: 'completed',
-            name: log.workout_name,
-            muscleGroup: log.muscle_group,
-            duration: log.duration_minutes || 0,
-            exercises: log.completed_exercises,
-            calories: log.calories_burned,
-          });
-          day.dailyStats.exercisesCompleted += log.completed_exercises;
-          day.dailyStats.workoutDuration += log.duration_minutes || 0;
-          day.dailyStats.caloriesBurned += log.calories_burned || 0;
-          day.hasActivity = true;
-        }
-      });
-
-      // Add scheduled workouts
-      scheduledWorkouts?.forEach(workout => {
-        const day = dataMap.get(workout.scheduled_date);
-        if (day) {
-          const exerciseCount = workout.workout_exercises?.length || 0;
-          day.workouts.push({
-            id: workout.id,
-            type: workout.status === 'completed' ? 'completed' : 
-                  workout.status === 'missed' ? 'missed' : 'scheduled',
-            name: `${workout.target_muscle_group} Workout`,
-            muscleGroup: workout.target_muscle_group,
-            duration: workout.estimated_duration,
-            time: workout.scheduled_time,
-            exercises: exerciseCount,
-          });
-          day.hasActivity = true;
-        }
-      });
-
-      // Add food entries
-      monthFoodEntries?.forEach(entry => {
-        const day = dataMap.get(entry.logged_date);
-        if (day) {
-          day.foodEntries.push({
-            id: entry.id,
-            mealType: entry.meal_type,
-            totalCalories: entry.total_calories,
-            photoUrl: entry.photo_url,
-            healthGrade: entry.health_grade,
-            time: entry.created_at,
-          });
-          day.dailyStats.caloriesConsumed += entry.total_calories;
-          day.hasActivity = true;
-        }
-      });
-
-      // Add nutrition summaries
-      nutritionSummaries?.forEach(summary => {
-        const day = dataMap.get(summary.summary_date);
-        if (day && day.dailyStats.caloriesConsumed === 0) {
-          day.dailyStats.caloriesConsumed = summary.total_calories;
-          day.hasActivity = day.hasActivity || summary.total_calories > 0;
-        }
-      });
-
-      setCalendarData(dataMap);
+      setCalendarData(newCalendarData);
     } catch (error) {
       console.error('Error generating calendar data:', error);
     } finally {
@@ -190,20 +154,12 @@ export const useCalendarData = (userId?: string) => {
     }
   };
 
-  // Generate data when month changes or user changes
+  // Load data when userId or currentMonth changes
   useEffect(() => {
-    if (userId) {
-      generateCalendarData(currentMonth);
-    }
+    generateCalendarData(currentMonth);
   }, [userId, currentMonth]);
 
-  // Refresh data when workout or nutrition data changes
-  useEffect(() => {
-    if (userId && (weeklySchedule.length > 0 || foodEntries.length > 0)) {
-      generateCalendarData(currentMonth);
-    }
-  }, [weeklySchedule, foodEntries, userId]);
-
+  // Navigation functions
   const goToPreviousMonth = () => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   };
@@ -216,45 +172,51 @@ export const useCalendarData = (userId?: string) => {
     setCurrentMonth(new Date());
   };
 
-  // Get days for calendar grid (including padding days)
+  // Generate calendar days for display (with padding)
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay(); // 0 = Sunday
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
     
     const days: (CalendarDay | null)[] = [];
+    const current = new Date(startDate);
     
-    // Add padding days from previous month
-    for (let i = 0; i < startDay; i++) {
-      days.push(null);
-    }
-    
-    // Add actual days
-    for (let date = 1; date <= lastDay.getDate(); date++) {
-      const dateString = new Date(year, month, date).toISOString().split('T')[0];
-      const dayData = calendarData.get(dateString);
-      days.push(dayData || {
-        date: new Date(year, month, date),
-        dateString,
-        workouts: [],
-        foodEntries: [],
-        steps: 0,
-        calories: 0,
-        dailyStats: {
-          caloriesConsumed: 0,
-          caloriesBurned: 0,
-          exercisesCompleted: 0,
-          workoutDuration: 0,
-        },
-        hasActivity: false,
-      });
+    for (let i = 0; i < 42; i++) {
+      const dateString = current.toISOString().split('T')[0];
+      
+      if (current.getMonth() === month) {
+        days.push(calendarData.get(dateString) || {
+          date: new Date(current),
+          dateString,
+          workouts: [],
+          foodEntries: [],
+          steps: 0,
+          calories: 0,
+          dailyStats: {
+            caloriesBurned: 0,
+            caloriesConsumed: 0,
+            exercisesCompleted: 0,
+            workoutDuration: 0
+          },
+          hasActivity: false
+        });
+      } else {
+        days.push(null);
+      }
+      
+      current.setDate(current.getDate() + 1);
     }
     
     return days;
-  }, [currentMonth, calendarData]);
+  }, [calendarData, currentMonth]);
+
+  const refreshData = () => {
+    generateCalendarData(currentMonth);
+  };
 
   return {
     calendarDays,
@@ -263,6 +225,6 @@ export const useCalendarData = (userId?: string) => {
     goToPreviousMonth,
     goToNextMonth,
     goToToday,
-    refreshData: () => generateCalendarData(currentMonth),
+    refreshData
   };
 };
