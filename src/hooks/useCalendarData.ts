@@ -9,6 +9,7 @@ export interface CalendarDay {
   dateString: string;
   workouts: WorkoutActivity[];
   foodEntries: FoodActivity[];
+  tapCoins: TapCoinsActivity[];
   steps: number;
   calories: number;
   dailyStats: {
@@ -16,6 +17,7 @@ export interface CalendarDay {
     caloriesBurned: number;
     exercisesCompleted: number;
     workoutDuration: number;
+    tapCoinsEarned: number;
   };
   hasActivity: boolean;
 }
@@ -37,6 +39,14 @@ export interface FoodActivity {
   totalCalories: number;
   photoUrl?: string;
   healthGrade?: string;
+  time: string;
+}
+
+export interface TapCoinsActivity {
+  id: string;
+  amount: number;
+  transactionType: string;
+  description: string;
   time: string;
 }
 
@@ -62,7 +72,7 @@ export const useCalendarData = (userId?: string) => {
       const endDateStr = endDate.toISOString().split('T')[0];
 
       // Fetch comprehensive data in parallel
-      const [workoutLogsResponse, foodEntriesResponse, dailyStepsResponse] = await Promise.all([
+      const [workoutLogsResponse, foodEntriesResponse, dailyStepsResponse, tapCoinsResponse] = await Promise.all([
         supabase
           .from('workout_logs')
           .select('*')
@@ -82,13 +92,22 @@ export const useCalendarData = (userId?: string) => {
           .select('*')
           .eq('user_id', userId)
           .gte('recorded_date', startDateStr)
-          .lte('recorded_date', endDateStr)
+          .lte('recorded_date', endDateStr),
+          
+        supabase
+          .from('tap_coins_transactions')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('created_at', startDateStr)
+          .lte('created_at', endDateStr + 'T23:59:59')
+          .order('created_at', { ascending: false })
       ]);
 
       const newCalendarData = new Map<string, CalendarDay>();
       const workoutLogs = workoutLogsResponse.data || [];
       const fetchedFoodEntries = foodEntriesResponse.data || [];
       const dailySteps = dailyStepsResponse.data || [];
+      const tapCoinsTransactions = tapCoinsResponse.data || [];
 
       // Generate days for the month
       for (let day = 1; day <= endDate.getDate(); day++) {
@@ -123,26 +142,42 @@ export const useCalendarData = (userId?: string) => {
         // Get steps for this day
         const dayStep = dailySteps.find(step => step.recorded_date === dateString);
         
+        // Get tap coins for this day
+        const dayTapCoins: TapCoinsActivity[] = tapCoinsTransactions
+          .filter(transaction => new Date(transaction.created_at).toISOString().split('T')[0] === dateString)
+          .map(transaction => ({
+            id: transaction.id,
+            amount: transaction.amount,
+            transactionType: transaction.transaction_type,
+            description: transaction.description,
+            time: new Date(transaction.created_at).toISOString()
+          }));
+        
         // Calculate daily stats
         const totalWorkoutCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0);
         const totalConsumedCalories = dayFoodEntries.reduce((sum, f) => sum + f.totalCalories, 0);
         const totalExercises = dayWorkouts.reduce((sum, w) => sum + w.exercises, 0);
         const totalWorkoutDuration = dayWorkouts.reduce((sum, w) => sum + w.duration, 0);
+        const totalTapCoinsEarned = dayTapCoins
+          .filter(coin => coin.amount > 0)
+          .reduce((sum, coin) => sum + coin.amount, 0);
         
         newCalendarData.set(dateString, {
           date: currentDate,
           dateString,
           workouts: dayWorkouts,
           foodEntries: dayFoodEntries,
+          tapCoins: dayTapCoins,
           steps: dayStep?.step_count || 0,
           calories: totalWorkoutCalories,
           dailyStats: {
             caloriesBurned: totalWorkoutCalories + Math.round((dayStep?.step_count || 0) * 0.04),
             caloriesConsumed: totalConsumedCalories,
             exercisesCompleted: totalExercises,
-            workoutDuration: totalWorkoutDuration
+            workoutDuration: totalWorkoutDuration,
+            tapCoinsEarned: totalTapCoinsEarned
           },
-          hasActivity: dayWorkouts.length > 0 || dayFoodEntries.length > 0 || (dayStep?.step_count || 0) > 0
+          hasActivity: dayWorkouts.length > 0 || dayFoodEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0
         });
       }
 
@@ -194,13 +229,15 @@ export const useCalendarData = (userId?: string) => {
           dateString,
           workouts: [],
           foodEntries: [],
+          tapCoins: [],
           steps: 0,
           calories: 0,
           dailyStats: {
             caloriesBurned: 0,
             caloriesConsumed: 0,
             exercisesCompleted: 0,
-            workoutDuration: 0
+            workoutDuration: 0,
+            tapCoinsEarned: 0
           },
           hasActivity: false
         });

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDay, WorkoutActivity, FoodActivity } from '@/hooks/useCalendarData';
+import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity } from '@/hooks/useCalendarData';
 import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
 import { ConsumedCaloriesBreakdown } from './calendar/ConsumedCaloriesBreakdown';
 import { ExercisesBreakdown } from './calendar/ExercisesBreakdown';
@@ -20,7 +20,8 @@ import {
   AlertCircle,
   Camera,
   ChevronRight,
-  Apple
+  Apple,
+  Coins
 } from 'lucide-react';
 
 interface CalendarDayDetailProps {
@@ -130,7 +131,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                 <Activity className="h-5 w-5 text-primary" />
                 Daily Summary (Click to view details)
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {/* Burned Calories */}
                 <Button
                   variant="ghost"
@@ -192,6 +193,21 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                   <div className="text-center">
                     <div className="text-lg font-bold text-purple-500">{day.dailyStats.workoutDuration}m</div>
                     <div className="text-xs text-muted-foreground">Workout</div>
+                  </div>
+                </Button>
+
+                {/* Tap Coins */}
+                <Button
+                  variant="ghost"
+                  className="h-auto p-3 flex flex-col items-center space-y-2 hover:bg-yellow-500/10 border border-transparent hover:border-yellow-500/20 transition-all duration-200"
+                  disabled
+                >
+                  <div className="flex items-center space-x-2">
+                    <Coins className="h-4 w-4 text-yellow-500" />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-yellow-500">{day.dailyStats.tapCoinsEarned}</div>
+                    <div className="text-xs text-muted-foreground">Tap Coins</div>
                   </div>
                 </Button>
               </div>
@@ -292,6 +308,45 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                           />
                         </div>
                       )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tap Coins Section */}
+            {day.tapCoins.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-yellow-500" />
+                  Tap Coins Earned ({day.dailyStats.tapCoinsEarned} coins)
+                </h3>
+                <div className="space-y-3">
+                  {day.tapCoins
+                    .filter(coin => coin.amount > 0)
+                    .map((coin) => (
+                    <Card key={coin.id} className="p-4 glow-card border-yellow-500/20">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Coins className="h-4 w-4 text-yellow-500" />
+                            <span className="font-semibold text-yellow-500">+{coin.amount} coins</span>
+                            <Badge variant="outline" className="text-yellow-500 border-yellow-500/30">
+                              {coin.transactionType}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>{coin.description}</span>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(coin.time).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </Card>
                   ))}
                 </div>
