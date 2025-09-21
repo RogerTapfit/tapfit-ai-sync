@@ -66,9 +66,13 @@ export const useBarcodeScanner = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: 'environment',
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1080 },
+          // Disable mirroring for barcode scanning
+          advanced: [{
+            facingMode: 'environment'
+          }]
         } 
       });
       

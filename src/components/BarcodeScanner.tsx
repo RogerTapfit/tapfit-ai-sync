@@ -139,6 +139,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                   <video
                     ref={videoRef}
                     className="w-full h-full object-cover"
+                    style={{ transform: 'scaleX(1)' }} // Prevent mirroring for barcode scanning
                     playsInline
                     muted
                   />
