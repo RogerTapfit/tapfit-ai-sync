@@ -394,6 +394,25 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     onStateChange?.('results', { photoCount: 0, hasResults: true });
   };
 
+  const handleAiFoodItemsFound = (items: FoodItem[]) => {
+    setEditingItems(items);
+    const totalCalories = items.reduce((sum, item) => sum + item.calories, 0);
+    const totalProtein = items.reduce((sum, item) => sum + item.protein, 0);
+    const totalCarbs = items.reduce((sum, item) => sum + item.carbs, 0);
+    const totalFat = items.reduce((sum, item) => sum + item.fat, 0);
+    
+    setAnalysisResult({
+      food_items: items,
+      total_calories: totalCalories,
+      total_protein: totalProtein,
+      total_carbs: totalCarbs,
+      total_fat: totalFat,
+      confidence: items.length > 0 ? items[0].confidence : 1.0,
+      clarifying_questions: []
+    });
+    onStateChange?.('results', { photoCount: 0, hasResults: true });
+  };
+
   return (
     <div className="space-y-8">
       <Card className="glow-card border-gradient overflow-hidden">
