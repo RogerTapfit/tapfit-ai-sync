@@ -447,7 +447,6 @@ export const useNutrition = () => {
       if (error) throw error;
 
       setFoodEntries(prev => [transformDatabaseToFoodEntry(data), ...prev]);
-      toast.success('Food entry saved!');
       
       // Refresh daily summary
       await loadTodaysSummary();
@@ -455,7 +454,6 @@ export const useNutrition = () => {
       return data;
     } catch (error) {
       console.error('Error saving food entry:', error);
-      toast.error('Failed to save food entry');
       throw error;
     }
   };

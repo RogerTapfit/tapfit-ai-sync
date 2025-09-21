@@ -45,6 +45,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -309,7 +310,19 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   };
 
   const handleSaveFoodEntry = async () => {
-    if (!analysisResult || !mealType) return;
+    if (!analysisResult || !mealType) {
+      toast.error('Please analyze photos and select a meal type first');
+      return;
+    }
+
+    if (editingItems.length === 0) {
+      toast.error('No food items to save');
+      return;
+    }
+
+    if (isSaving) return; // Prevent multiple submissions
+
+    setIsSaving(true);
 
     try {
       const totalCalories = editingItems.reduce((sum, item) => sum + item.calories, 0);
@@ -343,8 +356,21 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       
       onDataChange?.();
       toast.success('Food entry saved successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving food entry:', error);
+      
+      // Provide specific error messages based on error type
+      if (error?.message?.includes('Failed to fetch')) {
+        toast.error('Network error - please check your connection and try again');
+      } else if (error?.message?.includes('connection termination')) {
+        toast.error('Connection lost - please try again in a moment');
+      } else if (error?.message?.includes('503')) {
+        toast.error('Service temporarily unavailable - please try again');
+      } else {
+        toast.error('Failed to save food entry - please try again');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -775,9 +801,23 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
               )}
 
               {/* Save Button */}
-              <Button onClick={handleSaveFoodEntry} className="w-full" size="lg">
-                <Save className="h-4 w-4 mr-2" />
-                Save to Food Log
+              <Button 
+                onClick={handleSaveFoodEntry} 
+                className="w-full" 
+                size="lg"
+                disabled={isSaving || !analysisResult || !mealType || editingItems.length === 0}
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save to Food Log
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
