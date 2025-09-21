@@ -46,7 +46,11 @@ interface IngredientPhoto {
   file: File;
 }
 
-export const FoodRecipeBuilder: React.FC = () => {
+interface FoodRecipeBuilderProps {
+  onStateChange?: (state: 'recipe_mode' | 'ingredient_analysis', data?: { recipeCount?: number }) => void;
+}
+
+export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateChange }) => {
   const [photos, setPhotos] = useState<IngredientPhoto[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
@@ -160,6 +164,7 @@ export const FoodRecipeBuilder: React.FC = () => {
 
       setDetectedIngredients(result.ingredients || []);
       setRecommendations(result.recipes || []);
+      onStateChange?.('ingredient_analysis', { recipeCount: result.recipes?.length || 0 });
       
       toast.success(`Found ${result.ingredients?.length || 0} ingredients and ${result.recipes?.length || 0} recipe recommendations!`);
       

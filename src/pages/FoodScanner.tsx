@@ -5,9 +5,27 @@ import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { EnhancedFoodPhotoAnalyzer } from "@/components/EnhancedFoodPhotoAnalyzer";
 import { FoodRecipeBuilder } from "@/components/FoodRecipeBuilder";
+import { FoodScannerAssistant } from "@/components/FoodScannerAssistant";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 const FoodScanner = () => {
+  const [currentTab, setCurrentTab] = useState('analyzer');
+  const [assistantState, setAssistantState] = useState<'initial' | 'photos_added' | 'analyzing' | 'results' | 'recipe_mode' | 'ingredient_analysis'>('initial');
+  const [photoCount, setPhotoCount] = useState(0);
+  const [hasResults, setHasResults] = useState(false);
+  const [recipeCount, setRecipeCount] = useState(0);
+
+  // Update assistant state based on tab changes
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value);
+    if (value === 'builder') {
+      setAssistantState('recipe_mode');
+    } else {
+      setAssistantState('initial');
+    }
+  };
+
   return (
     <>
       <SEO 
@@ -82,7 +100,7 @@ const FoodScanner = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <Tabs defaultValue="analyzer" className="w-full">
+            <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8 h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
                 <TabsTrigger 
                   value="analyzer" 
@@ -106,7 +124,14 @@ const FoodScanner = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <EnhancedFoodPhotoAnalyzer onDataChange={() => {}} />
+                  <EnhancedFoodPhotoAnalyzer 
+                    onDataChange={() => {}} 
+                    onStateChange={(state, data) => {
+                      setAssistantState(state);
+                      if (data?.photoCount !== undefined) setPhotoCount(data.photoCount);
+                      if (data?.hasResults !== undefined) setHasResults(data.hasResults);
+                    }}
+                  />
                 </motion.div>
               </TabsContent>
 
@@ -116,12 +141,25 @@ const FoodScanner = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <FoodRecipeBuilder />
+                  <FoodRecipeBuilder 
+                    onStateChange={(state, data) => {
+                      setAssistantState(state);
+                      if (data?.recipeCount !== undefined) setRecipeCount(data.recipeCount);
+                    }}
+                  />
                 </motion.div>
               </TabsContent>
             </Tabs>
           </motion.div>
         </div>
+
+        {/* AI Assistant */}
+        <FoodScannerAssistant
+          currentState={assistantState}
+          photoCount={photoCount}
+          hasResults={hasResults}
+          recipeCount={recipeCount}
+        />
       </div>
     </>
   );

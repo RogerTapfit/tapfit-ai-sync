@@ -31,9 +31,10 @@ export interface PhotoData {
 
 interface EnhancedFoodPhotoAnalyzerProps {
   onDataChange?: () => void;
+  onStateChange?: (state: 'initial' | 'photos_added' | 'analyzing' | 'results', data?: { photoCount?: number; hasResults?: boolean }) => void;
 }
 
-export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps> = ({ onDataChange }) => {
+export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps> = ({ onDataChange, onStateChange }) => {
   const { analyzeFoodImage, saveFoodEntry, loading } = useNutrition();
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [mealType, setMealType] = useState<string>('');
@@ -81,8 +82,8 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   type: 'main_dish',
                   analyzed: false
                 };
-                setPhotos(prev => [...prev, newPhoto]);
-                resolve();
+        setPhotos(prev => [...prev, newPhoto]);
+        onStateChange?.('photos_added', { photoCount: photos.length + 1 });
               };
               reader.readAsDataURL(selectedFile);
             }
@@ -112,6 +113,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         };
         
         setPhotos(prev => [...prev, newPhoto]);
+        onStateChange?.('photos_added', { photoCount: photos.length + 1 });
       }
     } catch (error) {
       console.error('Error capturing photo:', error);
@@ -151,6 +153,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     }
 
     setAnalyzing(true);
+    onStateChange?.('analyzing', { photoCount: photos.length });
     try {
       // Convert all photos to base64
       const photoData = await Promise.all(
@@ -168,6 +171,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       
       setAnalysisResult(result);
       setEditingItems(result.food_items || []);
+      onStateChange?.('results', { photoCount: photos.length, hasResults: true });
       
       // Initialize portion multipliers
       const initialMultipliers: { [key: number]: number } = {};
