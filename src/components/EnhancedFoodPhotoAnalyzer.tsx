@@ -375,46 +375,100 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+    <div className="space-y-8">
+      <Card className="glow-card border-gradient overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" />
+          <CardTitle className="flex items-center justify-center gap-3 text-2xl relative z-10">
+            <motion.div
+              animate={{ 
+                rotate: [0, 360],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                rotate: { repeat: Infinity, duration: 8, ease: "linear" },
+                scale: { repeat: Infinity, duration: 2, ease: "easeInOut" }
+              }}
+            >
+              <Sparkles className="h-8 w-8 text-primary" />
+            </motion.div>
             Enhanced AI Food Analyzer
+            <motion.div
+              animate={{ 
+                y: [0, -5, 0],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 1.5,
+                ease: "easeInOut"
+              }}
+            >
+              <Award className="h-6 w-6 text-yellow-500" />
+            </motion.div>
           </CardTitle>
+          <p className="text-center text-muted-foreground relative z-10">
+            Powered by advanced AI vision - Get detailed nutritional insights in seconds ⚡
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Photo Capture */}
-          <div className="space-y-4">
-            <Label>Food Photos</Label>
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handlePhotoCapture('camera')}
-                className="flex items-center gap-2"
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold flex items-center justify-center gap-2 mb-2">
+                <Camera className="h-6 w-6 text-primary" />
+                Capture Your Food
+              </h3>
+              <p className="text-muted-foreground">
+                Take multiple photos for the most accurate nutritional analysis
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Camera className="h-4 w-4" />
-                Take Photo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handlePhotoCapture('gallery')}
-                className="flex items-center gap-2"
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handlePhotoCapture('camera')}
+                  className="w-full h-20 flex flex-col items-center gap-2 glow-hover border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all duration-300"
+                >
+                  <Camera className="h-6 w-6 text-primary" />
+                  <span className="font-semibold">Take Photo</span>
+                  <span className="text-xs text-muted-foreground">Use camera</span>
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Upload className="h-4 w-4" />
-                Upload Photo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handlePhotoCapture('gallery')}
-                className="flex items-center gap-2"
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handlePhotoCapture('gallery')}
+                  className="w-full h-20 flex flex-col items-center gap-2 glow-hover border-green-500/20 hover:border-green-500/40 hover:bg-green-500/5 transition-all duration-300"
+                >
+                  <Upload className="h-6 w-6 text-green-500" />
+                  <span className="font-semibold">Upload Photo</span>
+                  <span className="text-xs text-muted-foreground">From gallery</span>
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Package className="h-4 w-4" />
-                Nutrition Label
-              </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handlePhotoCapture('gallery')}
+                  className="w-full h-20 flex flex-col items-center gap-2 glow-hover border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5 transition-all duration-300"
+                >
+                  <Package className="h-6 w-6 text-orange-500" />
+                  <span className="font-semibold">Nutrition Label</span>
+                  <span className="text-xs text-muted-foreground">Scan barcode</span>
+                </Button>
+              </motion.div>
             </div>
 
             <PhotoManager
@@ -483,24 +537,44 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
           )}
 
           {/* Analyze Button */}
-          <Button
-            onClick={handleAnalyzeImages}
-            disabled={photos.length === 0 || !mealType || analyzing || loading}
-            className="w-full"
-            size="lg"
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            {analyzing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analyzing {photos.length} Photo{photos.length > 1 ? 's' : ''}...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Analyze {photos.length || 0} Photo{photos.length !== 1 ? 's' : ''}
-              </>
-            )}
-          </Button>
+            <Button
+              onClick={handleAnalyzeImages}
+              disabled={photos.length === 0 || !mealType || analyzing || loading}
+              className="w-full glow-button bg-gradient-to-r from-primary to-primary/80 border-0 text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+              size="lg"
+            >
+              {analyzing ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  <span className="animate-pulse">
+                    Analyzing {photos.length} Photo{photos.length > 1 ? 's' : ''}...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  >
+                    <Sparkles className="h-5 w-5 mr-3" />
+                  </motion.div>
+                  <span className="flex items-center gap-2">
+                    Analyze {photos.length || 0} Photo{photos.length !== 1 ? 's' : ''} with AI Magic
+                    <motion.span
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ repeat: Infinity, duration: 1 }}
+                    >
+                      ✨
+                    </motion.span>
+                  </span>
+                </>
+              )}
+            </Button>
+          </motion.div>
         </CardContent>
       </Card>
 
