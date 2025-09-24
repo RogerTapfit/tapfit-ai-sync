@@ -35,7 +35,9 @@ serve(async (req) => {
 Your task:
 1. Identify all visible ingredients, food items, and pantry staples in the images
 2. Generate 2-3 creative, healthy recipe recommendations using these ingredients
-3. For each recipe, provide complete details including ingredients, instructions, and nutrition info
+3. For each recipe, provide complete details with ingredient amounts normalized for 1 serving
+
+IMPORTANT: All recipes must be sized for 1 SERVING only. Nutrition calculation will be handled separately.
 
 Return a JSON object with this exact structure:
 {
@@ -47,41 +49,36 @@ Return a JSON object with this exact structure:
       "difficulty": "Easy|Medium|Hard",
       "prepTime": 15,
       "cookTime": 20,
-      "servings": 4,
+      "servings": 1,
       "healthScore": 85,
       "tags": ["healthy", "quick", "vegetarian"],
       "ingredients": [
         {
           "name": "ingredient name",
-          "amount": "2 cups",
+          "amount": "1/2 cup",
           "available": true,
           "substitutes": ["alternative ingredient"]
         }
       ],
       "instructions": [
-        "Step 1: Detailed instruction",
-        "Step 2: Next step"
-      ],
-      "nutrition": {
-        "calories": 320,
-        "protein": 24,
-        "carbs": 35,
-        "fat": 8,
-        "fiber": 6
-      }
+        "Step 1: Detailed instruction for 1 serving",
+        "Step 2: Next step for 1 serving"
+      ]
     }
   ]
 }
 
 Guidelines:
+- ALL RECIPES MUST BE FOR 1 SERVING ONLY (servings: 1)
+- Provide realistic single-serving ingredient amounts (e.g., "1/4 pound ground beef", "1/2 cup pasta", "2 tablespoons sauce")
 - Focus on healthy, balanced recipes that maximize the visible ingredients
-- Provide accurate nutrition estimates
 - Include preparation methods suitable for home cooking
 - Suggest reasonable substitutes for missing common ingredients
 - Rate difficulty realistically (Easy: <30min, basic techniques; Medium: 30-60min, moderate skills; Hard: >60min, advanced techniques)
 - Health score should reflect nutritional balance (vegetables, lean proteins, whole grains = higher scores)
 - Be creative but practical with recipe suggestions
-- Consider different meal types (breakfast, lunch, dinner, snacks)`;
+- Consider different meal types (breakfast, lunch, dinner, snacks)
+- DO NOT include nutrition data - this will be calculated automatically using USDA data`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
