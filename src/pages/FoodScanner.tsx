@@ -11,7 +11,6 @@ import { useState } from "react";
 
 const FoodScanner = () => {
   const [currentTab, setCurrentTab] = useState('analyzer');
-  const [showProductAnalyzer, setShowProductAnalyzer] = useState(false);
 
   return (
     <>
@@ -131,51 +130,14 @@ const FoodScanner = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="text-center space-y-4"
                 >
-                  <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-6">
-                    <motion.div
-                      animate={{ 
-                        scale: [1, 1.1, 1],
-                        rotate: [0, 5, -5, 0]
-                      }}
-                      transition={{ 
-                        repeat: Infinity, 
-                        duration: 3,
-                        ease: "easeInOut"
-                      }}
-                      className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4"
-                    >
-                      <Scan className="h-8 w-8 text-primary" />
-                    </motion.div>
-                    <h3 className="text-xl font-bold mb-2">Smart Product Analyzer</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Use AI vision to analyze any product's nutrition, safety, and health impact instantly
-                    </p>
-                    <Button 
-                      onClick={() => setShowProductAnalyzer(true)}
-                      size="lg"
-                      className="gap-2"
-                    >
-                      <Scan className="h-5 w-5" />
-                      Start Product Analysis
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="bg-green-50/50 border border-green-200 rounded-lg p-4">
-                      <div className="text-green-600 font-semibold mb-2">🔍 AI Vision Analysis</div>
-                      <p className="text-green-700">Identifies products from photos using advanced computer vision</p>
-                    </div>
-                    <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
-                      <div className="text-blue-600 font-semibold mb-2">📊 Health Grading</div>
-                      <p className="text-blue-700">A+ to F grades based on nutrition, safety, and ingredient quality</p>
-                    </div>
-                    <div className="bg-purple-50/50 border border-purple-200 rounded-lg p-4">
-                      <div className="text-purple-600 font-semibold mb-2">🛡️ Safety Analysis</div>
-                      <p className="text-purple-700">Detects concerning additives, chemicals, and processing levels</p>
-                    </div>
-                  </div>
+                  <SmartProductAnalyzer 
+                    isOpen={true}
+                    onClose={() => {}}
+                    onProductFound={(foodItem) => {
+                      console.log('Product found:', foodItem);
+                    }}
+                  />
                 </motion.div>
               </TabsContent>
 
@@ -192,15 +154,6 @@ const FoodScanner = () => {
           </motion.div>
         </div>
       </div>
-
-      <SmartProductAnalyzer 
-        isOpen={showProductAnalyzer}
-        onClose={() => setShowProductAnalyzer(false)}
-        onProductFound={(foodItem) => {
-          // Handle adding to nutrition log here if needed
-          console.log('Product found:', foodItem);
-        }}
-      />
     </>
   );
 };
