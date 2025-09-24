@@ -1,0 +1,12 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "openai": "npm:openai@^4.52.5"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.ns", "es2020"],
+    "strict": false
+  },
+  "nodeModulesDir": "auto"
+}
