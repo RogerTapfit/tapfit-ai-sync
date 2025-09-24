@@ -21,6 +21,8 @@ import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
+// Enhanced food photo analyzer without barcode functionality
+
 export interface PhotoData {
   id: string;
   dataUrl: string;
