@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Utensils, Coffee, Sun, Sunset, Moon, Plus, Minus } from 'lucide-react';
@@ -96,16 +96,18 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
     fat: Math.round(productAnalysis.nutrition.per_serving.fat_g * portionSize * 10) / 10,
   };
 
-  const handlePortionChange = (value: number[]) => {
-    setPortionSize(value[0]);
-  };
-
   const incrementPortion = () => {
-    setPortionSize(prev => Math.min(5.0, Math.round((prev + 0.25) * 4) / 4));
+    setPortionSize(prev => {
+      if (prev < 1) return Math.min(1, prev + 0.25);
+      return Math.min(5.0, prev + 0.5);
+    });
   };
 
   const decrementPortion = () => {
-    setPortionSize(prev => Math.max(0.25, Math.round((prev - 0.25) * 4) / 4));
+    setPortionSize(prev => {
+      if (prev <= 1) return Math.max(0.25, prev - 0.25);
+      return Math.max(1, prev - 0.5);
+    });
   };
 
   const handleSaveToFoodLog = async () => {
@@ -209,7 +211,28 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             className="space-y-3"
           >
             <Label className="text-base font-semibold">Portion Size</Label>
-            <div className="flex items-center gap-4">
+            
+            {/* Portion Button Grid */}
+            <div className="grid grid-cols-5 gap-2">
+              {[0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5].map((size) => (
+                <Button
+                  key={size}
+                  variant={portionSize === size ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPortionSize(size)}
+                  className="h-10 text-sm font-medium"
+                >
+                  {size === 0.25 ? "¼" : 
+                   size === 0.5 ? "½" : 
+                   size === 0.75 ? "¾" : 
+                   size === 1.5 ? "1½" :
+                   size === 2.5 ? "2½" : size.toString()}
+                </Button>
+              ))}
+            </div>
+            
+            {/* Fine Control Buttons */}
+            <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -220,15 +243,15 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
                 <Minus className="h-4 w-4" />
               </Button>
               
-              <div className="flex-1">
-                <Slider
-                  value={[portionSize]}
-                  onValueChange={handlePortionChange}
-                  max={5.0}
-                  min={0.25}
-                  step={0.25}
-                  className="w-full"
-                />
+              <div className="text-center min-w-[120px]">
+                <span className="text-lg font-bold text-stats-exercises">{
+                  portionSize === 0.25 ? "¼" : 
+                  portionSize === 0.5 ? "½" : 
+                  portionSize === 0.75 ? "¾" : 
+                  portionSize === 1.5 ? "1½" :
+                  portionSize === 2.5 ? "2½" : portionSize.toString()
+                }x</span>
+                <span className="text-muted-foreground ml-1">serving{portionSize !== 1 ? 's' : ''}</span>
               </div>
               
               <Button
@@ -240,10 +263,6 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
               >
                 <Plus className="h-4 w-4" />
               </Button>
-            </div>
-            <div className="text-center">
-              <span className="text-lg font-bold text-stats-exercises">{portionSize}x</span>
-              <span className="text-muted-foreground ml-1">serving{portionSize !== 1 ? 's' : ''}</span>
             </div>
           </motion.div>
 
