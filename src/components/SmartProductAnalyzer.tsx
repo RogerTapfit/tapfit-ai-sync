@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, Loader2, X, Zap, Star, AlertTriangle,
-  CheckCircle, Info, Sparkles, Shield, Utensils
+  CheckCircle, Info, Sparkles, Shield, Utensils, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
@@ -12,6 +12,7 @@ import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { FoodItem } from '@/hooks/useNutrition';
+import { AddToFoodLogModal } from './AddToFoodLogModal';
 
 interface ProductAnalysis {
   product: {
@@ -73,6 +74,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ProductAnalysis | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showFoodLogModal, setShowFoodLogModal] = useState(false);
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -217,6 +219,19 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     setAnalysisResult(null);
     setSelectedImage(null);
     setIsAnalyzing(false);
+  };
+
+  const handleOpenFoodLogModal = () => {
+    setShowFoodLogModal(true);
+  };
+
+  const handleFoodLogSuccess = () => {
+    // Optional: Call onProductFound if parent component needs to be notified
+    if (analysisResult && onProductFound) {
+      const foodItem = convertToFoodItem(analysisResult);
+      onProductFound(foodItem);
+    }
+    resetAnalyzer();
   };
 
   // For embedded mode, always show the component
@@ -609,12 +624,12 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                   className="flex flex-col sm:flex-row gap-4 pt-6"
                 >
                   <Button
-                    onClick={handleAddToMeal}
+                    onClick={handleOpenFoodLogModal}
                     className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-stats-exercises to-stats-calories hover:from-stats-exercises/80 hover:to-stats-calories/80 shadow-xl"
                     size="lg"
                   >
-                    <Utensils className="mr-2 h-5 w-5" />
-                    🍽️ Add to Meal
+                    <Settings className="mr-2 h-5 w-5" />
+                    📝 Add to Food Log
                   </Button>
                   
                   <Button
@@ -632,6 +647,16 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Add to Food Log Modal */}
+      {analysisResult && (
+        <AddToFoodLogModal
+          isOpen={showFoodLogModal}
+          onClose={() => setShowFoodLogModal(false)}
+          productAnalysis={analysisResult}
+          onSuccess={handleFoodLogSuccess}
+        />
+      )}
     </AnimatePresence>
   );
 };
