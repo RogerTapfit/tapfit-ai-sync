@@ -471,7 +471,14 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                         </div>
                       </div>
 
-                      <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <Button 
+                        variant="outline" 
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent card click
+                          setSelectedRecipe(recipe);
+                        }}
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      >
                         View Full Recipe
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
@@ -505,9 +512,121 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Recipe details would go here */}
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Recipe details coming soon...</p>
+                {/* Recipe Overview */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold">{selectedRecipe.prepTime + selectedRecipe.cookTime}m</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Total Time</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold">{selectedRecipe.servings}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Servings</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Flame className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold">{selectedRecipe.nutrition.calories}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Calories</span>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Heart className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold text-green-500">{selectedRecipe.healthScore}%</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Health Score</span>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Tags
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className={getDifficultyColor(selectedRecipe.difficulty)}>
+                      {selectedRecipe.difficulty}
+                    </Badge>
+                    {selectedRecipe.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ingredients */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Leaf className="h-4 w-4 text-green-500" />
+                    Ingredients
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedRecipe.ingredients.map((ingredient, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${ingredient.available ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className="font-medium">{ingredient.name}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">{ingredient.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Instructions */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <ChefHat className="h-4 w-4 text-primary" />
+                    Instructions
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedRecipe.instructions.map((instruction, index) => (
+                      <div key={index} className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                          {index + 1}
+                        </div>
+                        <p className="text-sm leading-relaxed pt-0.5">{instruction}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Nutrition Info */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    Nutrition per Serving
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="font-semibold text-orange-500">{selectedRecipe.nutrition.calories}</div>
+                      <div className="text-xs text-muted-foreground">Calories</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="font-semibold text-blue-500">{selectedRecipe.nutrition.protein}g</div>
+                      <div className="text-xs text-muted-foreground">Protein</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="font-semibold text-yellow-500">{selectedRecipe.nutrition.carbs}g</div>
+                      <div className="text-xs text-muted-foreground">Carbs</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="font-semibold text-red-500">{selectedRecipe.nutrition.fat}g</div>
+                      <div className="text-xs text-muted-foreground">Fat</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="font-semibold text-green-500">{selectedRecipe.nutrition.fiber}g</div>
+                      <div className="text-xs text-muted-foreground">Fiber</div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
