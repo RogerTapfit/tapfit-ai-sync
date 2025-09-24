@@ -153,47 +153,25 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
       console.log('Recipe analysis starting...');
       
-      // Temporary mock response until edge function deployment is resolved
-      const mockResult = {
-        ingredients: ['Eggs', 'Vegetables', 'Seasonings'],
-        recipes: [
-          {
-            name: 'Healthy Scrambled Eggs',
-            description: 'A nutritious breakfast with fresh vegetables',
-            difficulty: 'Easy' as const,
-            prepTime: 5,
-            cookTime: 10,
-            servings: 2,
-            healthScore: 85,
-            tags: ['healthy', 'high-protein', 'quick'],
-            ingredients: [
-              { name: 'Eggs', amount: '3 large', available: true },
-              { name: 'Mixed vegetables', amount: '1/2 cup', available: true },
-              { name: 'Salt and pepper', amount: 'to taste', available: true }
-            ],
-            instructions: [
-              'Heat a non-stick pan over medium heat',
-              'Beat eggs in a bowl with salt and pepper',
-              'Add vegetables to pan and cook for 2 minutes',
-              'Pour in eggs and gently scramble until set',
-              'Serve immediately while hot'
-            ],
-            nutrition: {
-              calories: 320,
-              protein: 24,
-              carbs: 8,
-              fat: 18,
-              fiber: 3
-            }
-          }
-        ]
-      };
+      // Call the generateRecipes edge function
+      const { data: result, error } = await supabase.functions.invoke('generateRecipes', {
+        body: { photos: photoData }
+      });
 
-      setDetectedIngredients(mockResult.ingredients);
-      setRecommendations(mockResult.recipes);
-      onStateChange?.('ingredient_analysis', { recipeCount: mockResult.recipes.length });
+      if (error) {
+        console.error('Recipe generation error:', error);
+        throw new Error(error.message || 'Failed to generate recipes');
+      }
+
+      if (!result) {
+        throw new Error('No recipe data received from AI analysis');
+      }
+
+      setDetectedIngredients(result.ingredients || []);
+      setRecommendations(result.recipes || []);
+      onStateChange?.('ingredient_analysis', { recipeCount: result.recipes?.length || 0 });
       
-      toast.success(`Found ${mockResult.ingredients.length} ingredients and ${mockResult.recipes.length} recipe recommendations!`);
+      toast.success(`Found ${result.ingredients?.length || 0} ingredients and ${result.recipes?.length || 0} recipe recommendations!`);
       
     } catch (error) {
       console.error('Error analyzing ingredients:', error);
