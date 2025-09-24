@@ -1,15 +1,17 @@
-import { ArrowLeft, Sparkles, Zap, Stars } from "lucide-react";
+import { ArrowLeft, Sparkles, Zap, Stars, Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { EnhancedFoodPhotoAnalyzer } from "@/components/EnhancedFoodPhotoAnalyzer";
 import { FoodRecipeBuilder } from "@/components/FoodRecipeBuilder";
+import { SmartProductAnalyzer } from "@/components/SmartProductAnalyzer";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
 const FoodScanner = () => {
   const [currentTab, setCurrentTab] = useState('analyzer');
+  const [showProductAnalyzer, setShowProductAnalyzer] = useState(false);
 
   return (
     <>
@@ -87,7 +89,7 @@ const FoodScanner = () => {
             transition={{ delay: 0.6 }}
           >
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
+              <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
                 <TabsTrigger 
                   value="analyzer" 
                   className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-lg py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
@@ -95,6 +97,14 @@ const FoodScanner = () => {
                   <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="hidden xs:inline">Food Analyzer</span>
                   <span className="xs:hidden">Analyzer</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="product" 
+                  className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base lg:text-lg py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                >
+                  <Scan className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden xs:inline">Product Scanner</span>
+                  <span className="xs:hidden">Products</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="builder" 
@@ -116,6 +126,59 @@ const FoodScanner = () => {
                 </motion.div>
               </TabsContent>
 
+              <TabsContent value="product" className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center space-y-4"
+                >
+                  <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-6">
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 1.1, 1],
+                        rotate: [0, 5, -5, 0]
+                      }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        duration: 3,
+                        ease: "easeInOut"
+                      }}
+                      className="mx-auto w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4"
+                    >
+                      <Scan className="h-8 w-8 text-primary" />
+                    </motion.div>
+                    <h3 className="text-xl font-bold mb-2">Smart Product Analyzer</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Use AI vision to analyze any product's nutrition, safety, and health impact instantly
+                    </p>
+                    <Button 
+                      onClick={() => setShowProductAnalyzer(true)}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <Scan className="h-5 w-5" />
+                      Start Product Analysis
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="bg-green-50/50 border border-green-200 rounded-lg p-4">
+                      <div className="text-green-600 font-semibold mb-2">🔍 AI Vision Analysis</div>
+                      <p className="text-green-700">Identifies products from photos using advanced computer vision</p>
+                    </div>
+                    <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-4">
+                      <div className="text-blue-600 font-semibold mb-2">📊 Health Grading</div>
+                      <p className="text-blue-700">A+ to F grades based on nutrition, safety, and ingredient quality</p>
+                    </div>
+                    <div className="bg-purple-50/50 border border-purple-200 rounded-lg p-4">
+                      <div className="text-purple-600 font-semibold mb-2">🛡️ Safety Analysis</div>
+                      <p className="text-purple-700">Detects concerning additives, chemicals, and processing levels</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </TabsContent>
+
               <TabsContent value="builder" className="space-y-6">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -129,6 +192,15 @@ const FoodScanner = () => {
           </motion.div>
         </div>
       </div>
+
+      <SmartProductAnalyzer 
+        isOpen={showProductAnalyzer}
+        onClose={() => setShowProductAnalyzer(false)}
+        onProductFound={(foodItem) => {
+          // Handle adding to nutrition log here if needed
+          console.log('Product found:', foodItem);
+        }}
+      />
     </>
   );
 };
