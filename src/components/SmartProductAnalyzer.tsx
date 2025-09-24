@@ -176,17 +176,17 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const getGradeColor = (grade: string) => {
     switch (grade.toUpperCase()) {
       case 'A+':
-      case 'A': return 'text-green-600 bg-green-100 border-green-200';
+      case 'A': return 'text-stats-exercises bg-stats-exercises/20 border-stats-exercises shadow-lg shadow-stats-exercises/30';
       case 'A-':
-      case 'B+': return 'text-green-500 bg-green-50 border-green-200';
+      case 'B+': return 'text-stats-exercises bg-stats-exercises/15 border-stats-exercises/80 shadow-md shadow-stats-exercises/20';
       case 'B':
-      case 'B-': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+      case 'B-': return 'text-stats-calories bg-stats-calories/20 border-stats-calories shadow-md shadow-stats-calories/30';
       case 'C+':
-      case 'C': return 'text-orange-600 bg-orange-100 border-orange-200';
+      case 'C': return 'text-stats-duration bg-stats-duration/20 border-stats-duration shadow-md shadow-stats-duration/30';
       case 'C-':
       case 'D+':
-      case 'D': return 'text-red-600 bg-red-100 border-red-200';
-      default: return 'text-gray-600 bg-gray-100 border-gray-200';
+      case 'D': return 'text-stats-heart bg-stats-heart/20 border-stats-heart shadow-lg shadow-stats-heart/40';
+      default: return 'text-muted-foreground bg-muted/20 border-muted shadow-md';
     }
   };
 
@@ -239,32 +239,33 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
         className={containerClasses}
       >
         <Card className={cardClasses}>
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
+          <CardHeader className="bg-gradient-to-br from-primary/20 via-stats-calories/10 to-stats-heart/10 border-b border-primary/20">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-xl">
+              <CardTitle className="flex items-center gap-3 text-xl bg-gradient-to-r from-primary to-stats-calories bg-clip-text text-transparent">
                 <motion.div
                   animate={{ 
-                    scale: [1, 1.1, 1],
-                    rotate: [0, 5, -5, 0]
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 10, -10, 0]
                   }}
                   transition={{ 
                     repeat: Infinity, 
-                    duration: 3,
+                    duration: 2,
                     ease: "easeInOut"
                   }}
+                  className="animate-food-glow"
                 >
-                  <Sparkles className="h-6 w-6 text-primary" />
+                  <Sparkles className="h-7 w-7 text-primary drop-shadow-lg" />
                 </motion.div>
                 Smart Product Analyzer
               </CardTitle>
               {!embedded && (
-                <Button variant="ghost" size="sm" onClick={onClose}>
+                <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-primary/20 hover:text-primary">
                   <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
-            <p className="text-muted-foreground text-sm">
-              AI-powered health analysis of any product using computer vision
+            <p className="text-muted-foreground text-sm font-medium">
+              ✨ AI-powered health analysis using advanced computer vision
             </p>
           </CardHeader>
           
@@ -272,22 +273,22 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
             {!analysisResult && !isAnalyzing && (
               <div className="text-center space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                     <Button
                       onClick={() => handlePhotoCapture('camera')}
-                      className="w-full h-24 flex flex-col gap-2 text-lg"
+                      className="w-full h-24 flex flex-col gap-2 text-lg glow-button bg-gradient-to-r from-primary to-stats-heart hover:from-primary-glow hover:to-stats-heart shadow-lg"
                       size="lg"
                     >
-                      <Camera className="h-8 w-8" />
+                      <Camera className="h-8 w-8 drop-shadow-sm" />
                       Take Photo
                     </Button>
                   </motion.div>
                   
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                     <Button
                       onClick={() => handlePhotoCapture('gallery')}
                       variant="outline"
-                      className="w-full h-24 flex flex-col gap-2 text-lg"
+                      className="w-full h-24 flex flex-col gap-2 text-lg border-2 border-stats-duration/50 hover:border-stats-duration hover:bg-stats-duration/10 hover:text-stats-duration transition-all duration-300"
                       size="lg"
                     >
                       <Upload className="h-8 w-8" />
@@ -296,41 +297,63 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                   </motion.div>
                 </div>
                 
-                <div className="text-sm text-muted-foreground space-y-2">
+                <div className="text-sm text-muted-foreground space-y-3 bg-gradient-to-r from-stats-exercises/10 to-stats-calories/10 p-4 rounded-xl border border-stats-exercises/20">
                   <div className="flex items-center gap-2 justify-center">
-                    <Info className="h-4 w-4" />
-                    <span>Capture any product for comprehensive health analysis</span>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Info className="h-5 w-5 text-stats-exercises" />
+                    </motion.div>
+                    <span className="font-medium text-foreground">Capture any product for comprehensive health analysis</span>
                   </div>
-                  <p className="text-xs">
-                    Works with packaged foods, beverages, supplements, and fresh produce. Use JPG, PNG, or WEBP formats.
+                  <p className="text-xs bg-background/50 p-2 rounded-lg">
+                    🍎 Works with packaged foods, beverages, supplements, and fresh produce. Use JPG, PNG, or WEBP formats.
                   </p>
                 </div>
               </div>
             )}
 
             {isAnalyzing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center space-y-4 py-8"
-              >
-                <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-                <div>
-                  <h3 className="font-semibold text-lg">Analyzing Product...</h3>
-                  <p className="text-muted-foreground">
-                    Our AI is examining nutrition, safety, and health impact
-                  </p>
-                </div>
-                {selectedImage && (
-                  <div className="flex justify-center">
-                    <img
-                      src={selectedImage}
-                      alt="Analyzing product"
-                      className="w-32 h-32 object-cover rounded-lg border-2 border-primary/20"
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center space-y-6 py-8 bg-gradient-to-br from-primary/5 via-stats-duration/5 to-stats-calories/5 rounded-2xl border border-primary/20"
+                >
+                  <div className="relative">
+                    <Loader2 className="h-16 w-16 animate-spin mx-auto text-primary animate-pulse-glow" />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-primary/20 blur-md"
                     />
                   </div>
-                )}
-              </motion.div>
+                  <div>
+                    <motion.h3 
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="font-bold text-xl bg-gradient-to-r from-primary to-stats-calories bg-clip-text text-transparent"
+                    >
+                      🔍 Analyzing Product...
+                    </motion.h3>
+                    <p className="text-muted-foreground mt-2">
+                      Our AI is examining nutrition facts, ingredients, and health impact
+                    </p>
+                  </div>
+                  {selectedImage && (
+                    <motion.div 
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: 1 }}
+                      className="flex justify-center"
+                    >
+                      <img
+                        src={selectedImage}
+                        alt="Analyzing product"
+                        className="w-40 h-40 object-cover rounded-xl border-4 border-primary/30 shadow-2xl animate-pulse-glow"
+                      />
+                    </motion.div>
+                  )}
+                </motion.div>
             )}
 
             {analysisResult && (
@@ -340,62 +363,118 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 className="space-y-6"
               >
                 {/* Product Info & Grade */}
-                <div className="bg-muted/30 rounded-xl p-6 space-y-4">
+                <div className="bg-gradient-to-br from-primary/10 via-stats-calories/10 to-background/50 rounded-2xl p-6 space-y-4 border border-primary/20 shadow-xl">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold">{analysisResult.product.name}</h3>
+                      <motion.h3 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent"
+                      >
+                        {analysisResult.product.name}
+                      </motion.h3>
                       {analysisResult.product.brand && (
-                        <p className="text-muted-foreground">{analysisResult.product.brand}</p>
+                        <motion.p 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.1 }}
+                          className="text-stats-duration font-medium"
+                        >
+                          📦 {analysisResult.product.brand}
+                        </motion.p>
                       )}
                       {analysisResult.product.size && (
-                        <p className="text-sm text-muted-foreground">{analysisResult.product.size}</p>
+                        <motion.p 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="text-sm text-muted-foreground bg-background/50 px-2 py-1 rounded-md inline-block mt-1"
+                        >
+                          📏 {analysisResult.product.size}
+                        </motion.p>
                       )}
                     </div>
                     
-                    <div className="text-center">
-                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full text-2xl font-bold border-2 ${getGradeColor(analysisResult.health_grade.letter)}`}>
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                      className="text-center"
+                    >
+                      <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl text-3xl font-bold border-4 shadow-2xl animate-pulse-glow ${getGradeColor(analysisResult.health_grade.letter)}`}>
                         {analysisResult.health_grade.letter}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Health Score: {analysisResult.health_grade.score}/100
+                      <p className="text-xs text-muted-foreground mt-2 font-medium">
+                        Health Score: <span className="text-primary font-bold">{analysisResult.health_grade.score}/100</span>
                       </p>
-                    </div>
+                    </motion.div>
                   </div>
 
                   {selectedImage && (
-                    <div className="flex justify-center">
+                    <motion.div 
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="flex justify-center"
+                    >
                       <img
                         src={selectedImage}
                         alt={analysisResult.product.name}
-                        className="w-24 h-24 object-cover rounded-lg border"
+                        className="w-32 h-32 object-cover rounded-xl border-4 border-stats-exercises/50 shadow-lg"
                       />
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
                 {/* Nutrition Facts */}
-                <div className="bg-background rounded-xl border p-4">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <Utensils className="h-4 w-4" />
-                    Nutrition per {analysisResult.nutrition.serving_size}
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                    <div className="text-center p-2 bg-muted/50 rounded">
-                      <div className="font-bold text-lg">{analysisResult.nutrition.per_serving.calories}</div>
-                      <div className="text-xs text-muted-foreground">Calories</div>
-                    </div>
-                    <div className="text-center p-2 bg-muted/50 rounded">
-                      <div className="font-bold text-lg">{analysisResult.nutrition.per_serving.protein_g}g</div>
-                      <div className="text-xs text-muted-foreground">Protein</div>
-                    </div>
-                    <div className="text-center p-2 bg-muted/50 rounded">
-                      <div className="font-bold text-lg">{analysisResult.nutrition.per_serving.carbs_g}g</div>
-                      <div className="text-xs text-muted-foreground">Carbs</div>
-                    </div>
-                    <div className="text-center p-2 bg-muted/50 rounded">
-                      <div className="font-bold text-lg">{analysisResult.nutrition.per_serving.fat_g}g</div>
-                      <div className="text-xs text-muted-foreground">Fat</div>
-                    </div>
+                <div className="bg-gradient-to-r from-background via-stats-exercises/5 to-background rounded-2xl border-2 border-stats-exercises/30 p-6 shadow-xl">
+                  <motion.h4 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="font-bold mb-4 flex items-center gap-2 text-lg"
+                  >
+                    <Utensils className="h-5 w-5 text-stats-exercises animate-pulse" />
+                    <span className="bg-gradient-to-r from-stats-exercises to-stats-calories bg-clip-text text-transparent">
+                      🥄 Nutrition per {analysisResult.nutrition.serving_size}
+                    </span>
+                  </motion.h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="text-center p-4 bg-gradient-to-br from-stats-calories/20 to-stats-calories/5 rounded-xl border border-stats-calories/30 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="font-bold text-2xl text-stats-calories mb-1">{analysisResult.nutrition.per_serving.calories}</div>
+                      <div className="text-xs font-medium text-stats-calories/80">🔥 Calories</div>
+                    </motion.div>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-center p-4 bg-gradient-to-br from-stats-heart/20 to-stats-heart/5 rounded-xl border border-stats-heart/30 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="font-bold text-2xl text-stats-heart mb-1">{analysisResult.nutrition.per_serving.protein_g}g</div>
+                      <div className="text-xs font-medium text-stats-heart/80">💪 Protein</div>
+                    </motion.div>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-center p-4 bg-gradient-to-br from-stats-duration/20 to-stats-duration/5 rounded-xl border border-stats-duration/30 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="font-bold text-2xl text-stats-duration mb-1">{analysisResult.nutrition.per_serving.carbs_g}g</div>
+                      <div className="text-xs font-medium text-stats-duration/80">🌾 Carbs</div>
+                    </motion.div>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="text-center p-4 bg-gradient-to-br from-stats-exercises/20 to-stats-exercises/5 rounded-xl border border-stats-exercises/30 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="font-bold text-2xl text-stats-exercises mb-1">{analysisResult.nutrition.per_serving.fat_g}g</div>
+                      <div className="text-xs font-medium text-stats-exercises/80">🥑 Fat</div>
+                    </motion.div>
                   </div>
                 </div>
 
@@ -403,38 +482,60 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Pros */}
                   {analysisResult.analysis.pros.length > 0 && (
-                    <div className="bg-green-50/50 border border-green-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Health Benefits
+                    <motion.div 
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-gradient-to-br from-stats-exercises/20 to-stats-exercises/5 border-2 border-stats-exercises/40 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <h4 className="font-bold text-stats-exercises mb-3 flex items-center gap-2 text-lg">
+                        <CheckCircle className="h-5 w-5 animate-pulse" />
+                        ✅ Health Benefits
                       </h4>
-                      <ul className="text-sm space-y-1">
+                      <ul className="text-sm space-y-2">
                         {analysisResult.analysis.pros.map((pro, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-green-600 mt-0.5">•</span>
-                            <span>{pro}</span>
-                          </li>
+                          <motion.li 
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 + index * 0.1 }}
+                            className="flex items-start gap-3 bg-stats-exercises/10 p-2 rounded-lg"
+                          >
+                            <span className="text-stats-exercises mt-0.5 font-bold">✓</span>
+                            <span className="text-foreground font-medium">{pro}</span>
+                          </motion.li>
                         ))}
                       </ul>
-                    </div>
+                    </motion.div>
                   )}
 
                   {/* Cons */}
                   {analysisResult.analysis.cons.length > 0 && (
-                    <div className="bg-red-50/50 border border-red-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-red-800 mb-2 flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4" />
-                        Health Concerns
+                    <motion.div 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-gradient-to-br from-stats-heart/20 to-stats-heart/5 border-2 border-stats-heart/40 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <h4 className="font-bold text-stats-heart mb-3 flex items-center gap-2 text-lg">
+                        <AlertTriangle className="h-5 w-5 animate-pulse" />
+                        ⚠️ Health Concerns
                       </h4>
-                      <ul className="text-sm space-y-1">
+                      <ul className="text-sm space-y-2">
                         {analysisResult.analysis.cons.map((con, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-red-600 mt-0.5">•</span>
-                            <span>{con}</span>
-                          </li>
+                          <motion.li 
+                            key={index}
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 + index * 0.1 }}
+                            className="flex items-start gap-3 bg-stats-heart/10 p-2 rounded-lg"
+                          >
+                            <span className="text-stats-heart mt-0.5 font-bold">⚠</span>
+                            <span className="text-foreground font-medium">{con}</span>
+                          </motion.li>
                         ))}
                       </ul>
-                    </div>
+                    </motion.div>
                   )}
                 </div>
 
@@ -485,16 +586,31 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button onClick={handleAddToMeal} className="flex-1 gap-2">
-                    <Zap className="h-4 w-4" />
-                    Add to Meal
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                  className="flex flex-col sm:flex-row gap-4 pt-6"
+                >
+                  <Button
+                    onClick={handleAddToMeal}
+                    className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-stats-exercises to-stats-calories hover:from-stats-exercises/80 hover:to-stats-calories/80 shadow-xl"
+                    size="lg"
+                  >
+                    <Utensils className="mr-2 h-5 w-5" />
+                    🍽️ Add to Meal
                   </Button>
-                  <Button variant="outline" onClick={resetAnalyzer} className="gap-2">
-                    <Camera className="h-4 w-4" />
-                    Analyze Another
+                  
+                  <Button
+                    onClick={resetAnalyzer}
+                    variant="outline"
+                    className="flex-1 h-14 text-lg border-2 border-stats-duration/50 hover:border-stats-duration hover:bg-stats-duration/10 hover:text-stats-duration transition-all duration-300"
+                    size="lg"
+                  >
+                    <Zap className="mr-2 h-5 w-5" />
+                    🔍 Analyze Another
                   </Button>
-                </div>
+                </motion.div>
               </motion.div>
             )}
           </CardContent>
