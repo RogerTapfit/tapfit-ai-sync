@@ -97,17 +97,11 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   };
 
   const incrementPortion = () => {
-    setPortionSize(prev => {
-      if (prev < 1) return Math.min(1, prev + 0.25);
-      return Math.min(5.0, prev + 0.5);
-    });
+    setPortionSize(prev => Math.min(10, prev + 0.5));
   };
 
   const decrementPortion = () => {
-    setPortionSize(prev => {
-      if (prev <= 1) return Math.max(0.25, prev - 0.25);
-      return Math.max(1, prev - 0.5);
-    });
+    setPortionSize(prev => Math.max(0.5, prev - 0.5));
   };
 
   const handleSaveToFoodLog = async () => {
@@ -214,7 +208,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             
             {/* Portion Button Grid */}
             <div className="grid grid-cols-5 gap-2">
-              {[0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5].map((size) => (
+              {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5].map((size) => (
                 <Button
                   key={size}
                   variant={portionSize === size ? "default" : "outline"}
@@ -222,11 +216,11 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
                   onClick={() => setPortionSize(size)}
                   className="h-10 text-sm font-medium"
                 >
-                  {size === 0.25 ? "¼" : 
-                   size === 0.5 ? "½" : 
-                   size === 0.75 ? "¾" : 
-                   size === 1.5 ? "1½" :
-                   size === 2.5 ? "2½" : size.toString()}
+                  {size === 1.5 ? "1½" :
+                   size === 2.5 ? "2½" : 
+                   size === 3.5 ? "3½" :
+                   size === 4.5 ? "4½" :
+                   size === 5.5 ? "5½" : size.toString()}
                 </Button>
               ))}
             </div>
@@ -237,7 +231,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={decrementPortion}
-                disabled={portionSize <= 0.25}
+                disabled={portionSize <= 0.5}
                 className="h-8 w-8 p-0"
               >
                 <Minus className="h-4 w-4" />
@@ -245,11 +239,11 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
               
               <div className="text-center min-w-[120px]">
                 <span className="text-lg font-bold text-stats-exercises">{
-                  portionSize === 0.25 ? "¼" : 
-                  portionSize === 0.5 ? "½" : 
-                  portionSize === 0.75 ? "¾" : 
                   portionSize === 1.5 ? "1½" :
-                  portionSize === 2.5 ? "2½" : portionSize.toString()
+                  portionSize === 2.5 ? "2½" : 
+                  portionSize === 3.5 ? "3½" :
+                  portionSize === 4.5 ? "4½" :
+                  portionSize === 5.5 ? "5½" : portionSize.toString()
                 }x</span>
                 <span className="text-muted-foreground ml-1">serving{portionSize !== 1 ? 's' : ''}</span>
               </div>
@@ -258,7 +252,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={incrementPortion}
-                disabled={portionSize >= 5.0}
+                disabled={portionSize >= 10}
                 className="h-8 w-8 p-0"
               >
                 <Plus className="h-4 w-4" />
