@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Camera, Upload, Loader2, ChefHat, Clock, Users, 
-  Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight, Minus 
+  Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight, Minus, Info, AlertTriangle
 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { AnimatedNumber } from './AnimatedNumber';
+import { calculateRecipeNutrition, RecipeNutrition } from '@/services/nutritionCalculatorService';
 
 interface RecipeRecommendation {
   name: string;
@@ -57,6 +58,8 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
   const [recommendations, setRecommendations] = useState<RecipeRecommendation[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeRecommendation | null>(null);
   const [adjustedServings, setAdjustedServings] = useState<number>(1);
+  const [calculatedNutrition, setCalculatedNutrition] = useState<RecipeNutrition | null>(null);
+  const [showNutritionDetails, setShowNutritionDetails] = useState(false);
 
   const generateId = () => crypto.randomUUID();
 
@@ -546,6 +549,17 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                           e.stopPropagation(); // Prevent card click
                           setSelectedRecipe(recipe);
                           setAdjustedServings(recipe.servings);
+                          
+                          // Calculate accurate nutrition
+                          const ingredientStrings = recipe.ingredients.map(ing => `${ing.amount} ${ing.name}`);
+                          const instructionText = recipe.instructions.join(' ');
+                          const nutrition = calculateRecipeNutrition(
+                            recipe.name,
+                            recipe.servings,
+                            ingredientStrings,
+                            instructionText
+                          );
+                          setCalculatedNutrition(nutrition);
                         }}
                         className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                       >
@@ -587,6 +601,8 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                     onClick={() => {
                       setSelectedRecipe(null);
                       setAdjustedServings(1);
+                      setCalculatedNutrition(null);
+                      setShowNutritionDetails(false);
                     }}
                   >
                     <Plus className="h-4 w-4 rotate-45" />
@@ -704,42 +720,158 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
                 {/* Nutrition Info */}
                 <div>
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    Nutrition per Serving
-                  </h3>
-                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                     <div className="text-center p-3 bg-muted/30 rounded-lg">
-                       <div className="font-semibold text-orange-500">
-                         {Math.round(selectedRecipe.nutrition.calories * servingMultiplier)}
-                       </div>
-                       <div className="text-xs text-muted-foreground">Calories</div>
-                     </div>
-                     <div className="text-center p-3 bg-muted/30 rounded-lg">
-                       <div className="font-semibold text-blue-500">
-                         {Math.round(selectedRecipe.nutrition.protein * servingMultiplier)}g
-                       </div>
-                       <div className="text-xs text-muted-foreground">Protein</div>
-                     </div>
-                     <div className="text-center p-3 bg-muted/30 rounded-lg">
-                       <div className="font-semibold text-yellow-500">
-                         {Math.round(selectedRecipe.nutrition.carbs * servingMultiplier)}g
-                       </div>
-                       <div className="text-xs text-muted-foreground">Carbs</div>
-                     </div>
-                     <div className="text-center p-3 bg-muted/30 rounded-lg">
-                       <div className="font-semibold text-red-500">
-                         {Math.round(selectedRecipe.nutrition.fat * servingMultiplier)}g
-                       </div>
-                       <div className="text-xs text-muted-foreground">Fat</div>
-                     </div>
-                     <div className="text-center p-3 bg-muted/30 rounded-lg">
-                       <div className="font-semibold text-green-500">
-                         {Math.round(selectedRecipe.nutrition.fiber * servingMultiplier)}g
-                       </div>
-                       <div className="text-xs text-muted-foreground">Fiber</div>
-                     </div>
-                   </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      Nutrition per Serving
+                    </h3>
+                    {calculatedNutrition && (
+                      <div className="flex items-center gap-2">
+                        {calculatedNutrition.confidence < 0.7 && (
+                          <Badge variant="outline" className="text-xs">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Low Confidence
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowNutritionDetails(!showNutritionDetails)}
+                          className="text-xs"
+                        >
+                          <Info className="h-3 w-3 mr-1" />
+                          Details
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {calculatedNutrition ? (
+                    <>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <div className="text-center p-3 bg-muted/30 rounded-lg">
+                          <div className="font-semibold text-orange-500">
+                            {Math.round(calculatedNutrition.totals_per_serving.calories_kcal * servingMultiplier)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Calories</div>
+                        </div>
+                        <div className="text-center p-3 bg-muted/30 rounded-lg">
+                          <div className="font-semibold text-blue-500">
+                            {Math.round(calculatedNutrition.totals_per_serving.protein_g * servingMultiplier * 10) / 10}g
+                          </div>
+                          <div className="text-xs text-muted-foreground">Protein</div>
+                        </div>
+                        <div className="text-center p-3 bg-muted/30 rounded-lg">
+                          <div className="font-semibold text-yellow-500">
+                            {Math.round(calculatedNutrition.totals_per_serving.carbs_g * servingMultiplier * 10) / 10}g
+                          </div>
+                          <div className="text-xs text-muted-foreground">Carbs</div>
+                        </div>
+                        <div className="text-center p-3 bg-muted/30 rounded-lg">
+                          <div className="font-semibold text-red-500">
+                            {Math.round(calculatedNutrition.totals_per_serving.fat_g * servingMultiplier * 10) / 10}g
+                          </div>
+                          <div className="text-xs text-muted-foreground">Fat</div>
+                        </div>
+                        <div className="text-center p-3 bg-muted/30 rounded-lg">
+                          <div className="font-semibold text-green-500">
+                            {Math.round(calculatedNutrition.totals_per_serving.fiber_g * servingMultiplier * 10) / 10}g
+                          </div>
+                          <div className="text-xs text-muted-foreground">Fiber</div>
+                        </div>
+                      </div>
+                      
+                      {/* Nutrition Details */}
+                      <AnimatePresence>
+                        {showNutritionDetails && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-4 space-y-4"
+                          >
+                            {/* Confidence and USDA Credit */}
+                            <div className="p-3 bg-muted/20 rounded-lg">
+                              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                                <span>Confidence: {Math.round(calculatedNutrition.confidence * 100)}%</span>
+                                <span>Powered by USDA FoodData Central</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Values are estimates based on USDA data. See breakdown below for assumptions.
+                              </p>
+                            </div>
+                            
+                            {/* Ingredient Breakdown */}
+                            <div>
+                              <h4 className="font-semibold text-sm mb-2">Ingredient Breakdown</h4>
+                              <div className="space-y-2">
+                                {calculatedNutrition.ingredients_breakdown.map((ingredient, index) => (
+                                  <div key={index} className="p-2 bg-muted/10 rounded text-xs">
+                                    <div className="font-medium">{ingredient.name}</div>
+                                    <div className="text-muted-foreground">
+                                      {ingredient.grams_used}g → {ingredient.kcal} kcal, 
+                                      {ingredient.protein_g}g protein, {ingredient.carbs_g}g carbs, {ingredient.fat_g}g fat
+                                    </div>
+                                    <div className="text-muted-foreground mt-1 italic">
+                                      {ingredient.source}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            {/* Assumptions */}
+                            {calculatedNutrition.assumptions.length > 0 && (
+                              <div>
+                                <h4 className="font-semibold text-sm mb-2">Assumptions Made</h4>
+                                <ul className="space-y-1">
+                                  {calculatedNutrition.assumptions.map((assumption, index) => (
+                                    <li key={index} className="text-xs text-muted-foreground flex items-start gap-1">
+                                      <span className="text-yellow-500 mt-0.5">•</span>
+                                      {assumption}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      <div className="text-center p-3 bg-muted/30 rounded-lg">
+                        <div className="font-semibold text-orange-500">
+                          {Math.round(selectedRecipe.nutrition.calories * servingMultiplier)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Calories</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted/30 rounded-lg">
+                        <div className="font-semibold text-blue-500">
+                          {Math.round(selectedRecipe.nutrition.protein * servingMultiplier)}g
+                        </div>
+                        <div className="text-xs text-muted-foreground">Protein</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted/30 rounded-lg">
+                        <div className="font-semibold text-yellow-500">
+                          {Math.round(selectedRecipe.nutrition.carbs * servingMultiplier)}g
+                        </div>
+                        <div className="text-xs text-muted-foreground">Carbs</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted/30 rounded-lg">
+                        <div className="font-semibold text-red-500">
+                          {Math.round(selectedRecipe.nutrition.fat * servingMultiplier)}g
+                        </div>
+                        <div className="text-xs text-muted-foreground">Fat</div>
+                      </div>
+                      <div className="text-center p-3 bg-muted/30 rounded-lg">
+                        <div className="font-semibold text-green-500">
+                          {Math.round(selectedRecipe.nutrition.fiber * servingMultiplier)}g
+                        </div>
+                        <div className="text-xs text-muted-foreground">Fiber</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
