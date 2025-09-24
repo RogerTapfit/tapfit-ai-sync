@@ -151,22 +151,21 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
         }))
       );
 
-      // Call edge function to analyze ingredients and get recipe recommendations
-      const { data: result, error } = await supabase.functions.invoke('ingredient-recipe-analyzer', {
-        body: {
-          photos: photoData
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setDetectedIngredients(result.ingredients || []);
-      setRecommendations(result.recipes || []);
-      onStateChange?.('ingredient_analysis', { recipeCount: result.recipes?.length || 0 });
+      // Use FoodRecipeBuilder instead since ingredient-recipe-analyzer is causing issues
+      console.log('Recipe analysis requested but function unavailable');
+      toast.error('Recipe feature temporarily unavailable');
       
-      toast.success(`Found ${result.ingredients?.length || 0} ingredients and ${result.recipes?.length || 0} recipe recommendations!`);
+      // Temporary fallback data
+      const fallbackResult = {
+        ingredients: ['Ingredient analysis unavailable'],
+        recipes: []
+      };
+
+      setDetectedIngredients(fallbackResult.ingredients || []);
+      setRecommendations(fallbackResult.recipes || []);
+      onStateChange?.('ingredient_analysis', { recipeCount: fallbackResult.recipes?.length || 0 });
+      
+      toast.success('Photos processed - recipe feature coming soon!');
       
     } catch (error) {
       console.error('Error analyzing ingredients:', error);

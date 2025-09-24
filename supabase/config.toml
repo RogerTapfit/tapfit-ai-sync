@@ -50,6 +50,3 @@ verify_jwt = true
 
 [functions.analyze-body-scan-guest]
 verify_jwt = false
-
-[functions.ingredient-recipe-analyzer]
-verify_jwt = false
