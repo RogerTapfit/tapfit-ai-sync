@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle, 
-  Lightbulb, Target, MessageCircle, Package, Sparkles, QrCode 
+  Lightbulb, Target, MessageCircle, Package, Sparkles 
 } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -18,7 +18,6 @@ import { Capacitor } from '@capacitor/core';
 import { PhotoManager } from './PhotoManager';
 import { AnimatedCounter } from './AnimatedCounter';
 import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
-import { BarcodeScanner } from './BarcodeScanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -48,7 +47,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -380,20 +378,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     }
   };
 
-  const handleBarcodeProduct = (foodItem: FoodItem) => {
-    setEditingItems([foodItem]);
-    setAnalysisResult({
-      food_items: [foodItem],
-      total_calories: foodItem.calories,
-      total_protein: foodItem.protein,
-      total_carbs: foodItem.carbs,
-      total_fat: foodItem.fat,
-      confidence: foodItem.confidence,
-      clarifying_questions: []
-    });
-    onStateChange?.('results', { photoCount: 0, hasResults: true });
-  };
-
   const handleAiFoodItemsFound = (items: FoodItem[]) => {
     setEditingItems(items);
     const totalCalories = items.reduce((sum, item) => sum + item.calories, 0);
@@ -493,22 +477,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                   <span className="text-xs text-muted-foreground hidden sm:block">From gallery</span>
                 </Button>
               </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="sm:col-span-2 lg:col-span-1"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setBarcodeScannerOpen(true)}
-                  className="w-full h-16 sm:h-20 flex flex-col items-center gap-2 glow-hover border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all duration-300 touch-manipulation"
-                >
-                  <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-                  <span className="font-semibold text-sm sm:text-base">Scan Barcode</span>
-                  <span className="text-xs text-muted-foreground hidden sm:block">Live scanner</span>
-                </Button>
-              </motion.div>
             </div>
 
             <PhotoManager
@@ -567,7 +535,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                         <p className="font-medium text-foreground">Brand Recognition:</p>
                         <p className="text-muted-foreground">• Package fronts and backs</p>
                         <p className="text-muted-foreground">• Ingredient lists</p>
-                        <p className="text-muted-foreground">• Barcode area</p>
                       </div>
                     </div>
                   </div>
@@ -938,11 +905,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         </motion.div>
       )}
 
-      <BarcodeScanner
-        isOpen={barcodeScannerOpen}
-        onClose={() => setBarcodeScannerOpen(false)}
-        onProductFound={handleBarcodeProduct}
-      />
     </div>
   );
 };
