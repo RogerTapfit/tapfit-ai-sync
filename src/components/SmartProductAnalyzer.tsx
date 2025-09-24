@@ -101,7 +101,13 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       }
 
       if (data.error) {
-        toast.error(data.error);
+        if (data.error.includes('HEIC format')) {
+          toast.error('HEIC format not supported. Please take a new photo or select a JPG/PNG file.');
+        } else if (data.error.includes('Image format')) {
+          toast.error('Unsupported image format. Please use JPG, PNG, or WEBP format.');
+        } else {
+          toast.error(data.error);
+        }
         return;
       }
 
@@ -138,7 +144,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       // Web fallback
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.accept = 'image/jpeg,image/jpg,image/png,image/webp'; // Limit to supported formats
       if (source === 'camera') {
         input.setAttribute('capture', 'environment');
       }
@@ -146,6 +152,12 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       input.onchange = async (event) => {
         const file = (event.target as HTMLInputElement).files?.[0];
         if (file) {
+          // Check file type
+          if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+            toast.error('Please select a JPG, PNG, or WEBP image file');
+            return;
+          }
+          
           try {
             const base64 = await convertToBase64(file);
             const dataUrl = `data:${file.type};base64,${base64}`;
@@ -290,7 +302,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                     <span>Capture any product for comprehensive health analysis</span>
                   </div>
                   <p className="text-xs">
-                    Works with packaged foods, beverages, supplements, and fresh produce
+                    Works with packaged foods, beverages, supplements, and fresh produce. Use JPG, PNG, or WEBP formats.
                   </p>
                 </div>
               </div>
