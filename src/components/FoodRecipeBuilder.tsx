@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Camera, Upload, Loader2, ChefHat, Clock, Users, 
-  Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight 
+  Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight, Minus 
 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -56,6 +56,7 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
   const [recommendations, setRecommendations] = useState<RecipeRecommendation[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeRecommendation | null>(null);
+  const [adjustedServings, setAdjustedServings] = useState<number>(1);
 
   const generateId = () => crypto.randomUUID();
 
@@ -210,6 +211,78 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     if (score >= 40) return 'D';
     return 'F';
   };
+
+  // Utility functions for ingredient amount parsing and scaling
+  const parseAmount = (amountStr: string): { value: number; unit: string; original: string } => {
+    // Handle common fractions
+    const fractionMap: { [key: string]: number } = {
+      '1/4': 0.25, '1/3': 0.33, '1/2': 0.5, '2/3': 0.67, '3/4': 0.75,
+      '¼': 0.25, '⅓': 0.33, '½': 0.5, '⅔': 0.67, '¾': 0.75
+    };
+
+    // Handle "to taste", "pinch", etc.
+    const nonScalable = ['to taste', 'pinch', 'dash', 'handful', 'splash'];
+    if (nonScalable.some(term => amountStr.toLowerCase().includes(term))) {
+      return { value: 0, unit: amountStr, original: amountStr };
+    }
+
+    // Extract number (including fractions and decimals)
+    const match = amountStr.match(/^(\d+(?:\.\d+)?|\d*\s*[¼½¾⅓⅔]|\d+\/\d+)\s*(.*)$/);
+    if (!match) {
+      return { value: 0, unit: amountStr, original: amountStr };
+    }
+
+    let valueStr = match[1].trim();
+    const unit = match[2].trim();
+
+    // Handle fractions
+    if (fractionMap[valueStr]) {
+      return { value: fractionMap[valueStr], unit, original: amountStr };
+    }
+
+    // Handle mixed numbers (e.g., "1 1/2")
+    const mixedMatch = valueStr.match(/^(\d+)\s+(\d+\/\d+)$/);
+    if (mixedMatch) {
+      const whole = parseFloat(mixedMatch[1]);
+      const [num, den] = mixedMatch[2].split('/').map(Number);
+      return { value: whole + (num / den), unit, original: amountStr };
+    }
+
+    // Handle regular fractions (e.g., "3/4")
+    if (valueStr.includes('/')) {
+      const [num, den] = valueStr.split('/').map(Number);
+      return { value: num / den, unit, original: amountStr };
+    }
+
+    return { value: parseFloat(valueStr) || 0, unit, original: amountStr };
+  };
+
+  const scaleAmount = (amountStr: string, multiplier: number): string => {
+    const parsed = parseAmount(amountStr);
+    
+    if (parsed.value === 0) return parsed.original; // Non-scalable items
+    
+    const scaledValue = parsed.value * multiplier;
+    
+    // Format the scaled value nicely
+    if (scaledValue < 0.125) return `pinch ${parsed.unit}`.trim();
+    if (scaledValue === 0.25) return `¼ ${parsed.unit}`.trim();
+    if (scaledValue === 0.33) return `⅓ ${parsed.unit}`.trim();
+    if (scaledValue === 0.5) return `½ ${parsed.unit}`.trim();
+    if (scaledValue === 0.67) return `⅔ ${parsed.unit}`.trim();
+    if (scaledValue === 0.75) return `¾ ${parsed.unit}`.trim();
+    
+    // For other values, round appropriately
+    if (scaledValue < 1) {
+      return `${scaledValue.toFixed(2).replace(/\.?0+$/, '')} ${parsed.unit}`.trim();
+    } else if (scaledValue % 1 === 0) {
+      return `${scaledValue.toFixed(0)} ${parsed.unit}`.trim();
+    } else {
+      return `${scaledValue.toFixed(1)} ${parsed.unit}`.trim();
+    }
+  };
+
+  const servingMultiplier = selectedRecipe ? adjustedServings / selectedRecipe.servings : 1;
 
   return (
     <div className="space-y-8">
@@ -389,7 +462,10 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   transition={{ delay: index * 0.2 }}
                 >
                   <Card className="glow-card hover:glow-card-hover transition-all duration-300 cursor-pointer group"
-                        onClick={() => setSelectedRecipe(recipe)}>
+                        onClick={() => {
+                          setSelectedRecipe(recipe);
+                          setAdjustedServings(recipe.servings);
+                        }}>
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="space-y-2">
@@ -469,6 +545,7 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent card click
                           setSelectedRecipe(recipe);
+                          setAdjustedServings(recipe.servings);
                         }}
                         className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                       >
@@ -486,11 +563,17 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
       {/* Recipe Detail Modal would go here */}
       {selectedRecipe && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedRecipe(null);
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-background rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
             <Card>
               <CardHeader>
@@ -499,7 +582,13 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                     <CardTitle className="text-2xl">{selectedRecipe.name}</CardTitle>
                     <p className="text-muted-foreground mt-1">{selectedRecipe.description}</p>
                   </div>
-                  <Button variant="ghost" onClick={() => setSelectedRecipe(null)}>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => {
+                      setSelectedRecipe(null);
+                      setAdjustedServings(1);
+                    }}
+                  >
                     <Plus className="h-4 w-4 rotate-45" />
                   </Button>
                 </div>
@@ -514,20 +603,39 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                     </div>
                     <span className="text-xs text-muted-foreground">Total Time</span>
                   </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold">{selectedRecipe.servings}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">Servings</span>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Flame className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold">{selectedRecipe.nutrition.calories}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">Calories</span>
-                  </div>
+                   <div className="text-center">
+                     <div className="flex items-center justify-center gap-2 mb-1">
+                       <Users className="h-4 w-4 text-muted-foreground" />
+                       <div className="flex items-center gap-2">
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setAdjustedServings(Math.max(1, adjustedServings - 1))}
+                           disabled={adjustedServings <= 1}
+                           className="h-6 w-6 p-0"
+                         >
+                           <Minus className="h-3 w-3" />
+                         </Button>
+                         <span className="font-semibold min-w-[2ch] text-center">{adjustedServings}</span>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => setAdjustedServings(adjustedServings + 1)}
+                           className="h-6 w-6 p-0"
+                         >
+                           <Plus className="h-3 w-3" />
+                         </Button>
+                       </div>
+                     </div>
+                     <span className="text-xs text-muted-foreground">Servings</span>
+                   </div>
+                   <div className="text-center">
+                     <div className="flex items-center justify-center gap-1 mb-1">
+                       <Flame className="h-4 w-4 text-muted-foreground" />
+                       <span className="font-semibold">{Math.round(selectedRecipe.nutrition.calories * servingMultiplier)}</span>
+                     </div>
+                     <span className="text-xs text-muted-foreground">Calories</span>
+                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 mb-1">
                       <Heart className="h-4 w-4 text-muted-foreground" />
@@ -568,7 +676,9 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                           <div className={`w-2 h-2 rounded-full ${ingredient.available ? 'bg-green-500' : 'bg-red-500'}`} />
                           <span className="font-medium">{ingredient.name}</span>
                         </div>
-                        <span className="text-sm text-muted-foreground">{ingredient.amount}</span>
+                         <span className="text-sm text-muted-foreground font-medium">
+                           {scaleAmount(ingredient.amount, servingMultiplier)}
+                         </span>
                       </div>
                     ))}
                   </div>
@@ -598,28 +708,38 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                     <Flame className="h-4 w-4 text-orange-500" />
                     Nutrition per Serving
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <div className="font-semibold text-orange-500">{selectedRecipe.nutrition.calories}</div>
-                      <div className="text-xs text-muted-foreground">Calories</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <div className="font-semibold text-blue-500">{selectedRecipe.nutrition.protein}g</div>
-                      <div className="text-xs text-muted-foreground">Protein</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <div className="font-semibold text-yellow-500">{selectedRecipe.nutrition.carbs}g</div>
-                      <div className="text-xs text-muted-foreground">Carbs</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <div className="font-semibold text-red-500">{selectedRecipe.nutrition.fat}g</div>
-                      <div className="text-xs text-muted-foreground">Fat</div>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <div className="font-semibold text-green-500">{selectedRecipe.nutrition.fiber}g</div>
-                      <div className="text-xs text-muted-foreground">Fiber</div>
-                    </div>
-                  </div>
+                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                     <div className="text-center p-3 bg-muted/30 rounded-lg">
+                       <div className="font-semibold text-orange-500">
+                         {Math.round(selectedRecipe.nutrition.calories * servingMultiplier)}
+                       </div>
+                       <div className="text-xs text-muted-foreground">Calories</div>
+                     </div>
+                     <div className="text-center p-3 bg-muted/30 rounded-lg">
+                       <div className="font-semibold text-blue-500">
+                         {Math.round(selectedRecipe.nutrition.protein * servingMultiplier)}g
+                       </div>
+                       <div className="text-xs text-muted-foreground">Protein</div>
+                     </div>
+                     <div className="text-center p-3 bg-muted/30 rounded-lg">
+                       <div className="font-semibold text-yellow-500">
+                         {Math.round(selectedRecipe.nutrition.carbs * servingMultiplier)}g
+                       </div>
+                       <div className="text-xs text-muted-foreground">Carbs</div>
+                     </div>
+                     <div className="text-center p-3 bg-muted/30 rounded-lg">
+                       <div className="font-semibold text-red-500">
+                         {Math.round(selectedRecipe.nutrition.fat * servingMultiplier)}g
+                       </div>
+                       <div className="text-xs text-muted-foreground">Fat</div>
+                     </div>
+                     <div className="text-center p-3 bg-muted/30 rounded-lg">
+                       <div className="font-semibold text-green-500">
+                         {Math.round(selectedRecipe.nutrition.fiber * servingMultiplier)}g
+                       </div>
+                       <div className="text-xs text-muted-foreground">Fiber</div>
+                     </div>
+                   </div>
                 </div>
               </CardContent>
             </Card>
