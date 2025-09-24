@@ -132,8 +132,7 @@ const FoodScanner = () => {
                   transition={{ delay: 0.2 }}
                 >
                   <SmartProductAnalyzer 
-                    isOpen={true}
-                    onClose={() => {}}
+                    embedded={true}
                     onProductFound={(foodItem) => {
                       console.log('Product found:', foodItem);
                     }}

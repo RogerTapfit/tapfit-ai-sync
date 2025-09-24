@@ -61,12 +61,14 @@ interface SmartProductAnalyzerProps {
   onProductFound?: (foodItem: FoodItem) => void;
   onClose?: () => void;
   isOpen?: boolean;
+  embedded?: boolean;
 }
 
 export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   onProductFound,
   onClose,
-  isOpen = false
+  isOpen = false,
+  embedded = false
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<ProductAnalysis | null>(null);
@@ -205,17 +207,26 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     setIsAnalyzing(false);
   };
 
-  if (!isOpen) return null;
+  // For embedded mode, always show the component
+  if (!embedded && !isOpen) return null;
+
+  const containerClasses = embedded 
+    ? "w-full" 
+    : "fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4";
+
+  const cardClasses = embedded 
+    ? "w-full" 
+    : "w-full max-w-4xl max-h-[90vh] overflow-hidden";
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: embedded ? 1 : 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+        exit={{ opacity: 0, scale: embedded ? 1 : 0.9 }}
+        className={containerClasses}
       >
-        <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <Card className={cardClasses}>
           <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -234,9 +245,11 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 </motion.div>
                 Smart Product Analyzer
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
+              {!embedded && (
+                <Button variant="ghost" size="sm" onClick={onClose}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <p className="text-muted-foreground text-sm">
               AI-powered health analysis of any product using computer vision
