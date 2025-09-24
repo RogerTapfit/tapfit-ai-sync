@@ -403,7 +403,7 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                         <div className="flex items-center gap-1">
                           <Heart className="h-4 w-4 text-red-500" />
                           <span className={`text-sm font-semibold ${getHealthScoreColor(recipe.healthScore)}`}>
-                            {getHealthScoreGrade(recipe.healthScore)} {recipe.healthScore}%
+                            {getHealthScoreGrade(recipe.healthScore)}
                           </span>
                         </div>
                       </div>
