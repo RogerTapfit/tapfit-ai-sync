@@ -568,20 +568,36 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
 
                   {/* Alternatives */}
                   {analysisResult.analysis.alternatives.length > 0 && (
-                    <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-                        <Star className="h-4 w-4" />
-                        Healthier Alternatives
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.7 }}
+                      className="bg-gradient-to-br from-stats-duration/20 to-stats-duration/5 border-2 border-stats-duration/40 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 col-span-full"
+                    >
+                      <h4 className="font-bold text-stats-duration mb-3 flex items-center gap-2 text-lg">
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <Star className="h-5 w-5 animate-pulse" />
+                        </motion.div>
+                        💡 Healthier Alternatives
                       </h4>
-                      <ul className="text-sm space-y-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {analysisResult.analysis.alternatives.map((alt, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-blue-600 mt-0.5">•</span>
-                            <span>{alt}</span>
-                          </li>
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.8 + index * 0.1 }}
+                            className="flex items-center gap-3 bg-stats-duration/10 p-3 rounded-lg border border-stats-duration/20 hover:bg-stats-duration/15 transition-all duration-200"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-stats-duration animate-pulse"></div>
+                            <span className="text-foreground font-medium">{alt}</span>
+                          </motion.div>
                         ))}
-                      </ul>
-                    </div>
+                      </div>
+                    </motion.div>
                   )}
                 </div>
 
