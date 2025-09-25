@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import { CheckCircle, TrendingUp, TrendingDown, Play } from 'lucide-react';
 import { getMachineImageUrl } from '@/utils/machineImageUtils';
 
@@ -32,6 +32,7 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
   const [currentWeight, setCurrentWeight] = useState(exercise.recommended_weight);
   const [hasTriedRep, setHasTriedRep] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [sliderValue, setSliderValue] = useState([2]); // Default to "Just Right" (middle position)
   
   const machineImageUrl = getMachineImageUrl(exercise.machine);
 
@@ -40,27 +41,50 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
     setShowFeedback(true);
   };
 
-  const handleFeedback = (feedback: 'too_light' | 'perfect' | 'too_heavy') => {
+  const handleSliderChange = (value: number[]) => {
+    setSliderValue(value);
+    
+    const position = value[0];
     let newWeight = currentWeight;
-
-    switch (feedback) {
-      case 'too_light':
+    
+    switch (position) {
+      case 0: // Way Too Easy
+        newWeight = currentWeight + 20;
+        setCurrentWeight(newWeight);
+        setShowFeedback(false);
+        setHasTriedRep(false);
+        break;
+      case 1: // Too Light
         newWeight = currentWeight + 10;
         setCurrentWeight(newWeight);
         setShowFeedback(false);
         setHasTriedRep(false);
         break;
-      case 'too_heavy':
+      case 2: // Just Right
+        onWeightConfirmed(currentWeight);
+        return;
+      case 3: // Too Heavy
         newWeight = Math.max(10, currentWeight - 10);
         setCurrentWeight(newWeight);
         setShowFeedback(false);
         setHasTriedRep(false);
         break;
-      case 'perfect':
-        onWeightConfirmed(currentWeight);
-        return;
+      case 4: // Way Too Heavy
+        newWeight = Math.max(10, currentWeight - 20);
+        setCurrentWeight(newWeight);
+        setShowFeedback(false);
+        setHasTriedRep(false);
+        break;
     }
   };
+
+  const getSliderLabels = () => [
+    "Way Too Easy",
+    "Too Light", 
+    "Just Right",
+    "Too Heavy",
+    "Way Too Heavy"
+  ];
 
   return (
     <Card className="max-w-lg mx-auto m-4">
@@ -109,37 +133,39 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
             </div>
           </div>
         ) : showFeedback ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <p className="text-center text-sm text-muted-foreground px-2">
               How did that feel?
             </p>
             
-            <div className="space-y-3">
-              <Button 
-                onClick={() => handleFeedback('too_light')} 
-                variant="outline" 
-                className="w-full h-12 flex items-center justify-center gap-2"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Too Light (+10 lbs)
-              </Button>
+            <div className="space-y-4">
+              <Slider
+                value={sliderValue}
+                onValueChange={handleSliderChange}
+                min={0}
+                max={4}
+                step={1}
+                className="w-full"
+              />
               
-              <Button 
-                onClick={() => handleFeedback('perfect')} 
-                className="w-full h-12 flex items-center justify-center gap-2"
-              >
-                <CheckCircle className="h-4 w-4" />
-                Perfect Weight
-              </Button>
+              <div className="flex justify-between text-xs text-muted-foreground px-1">
+                {getSliderLabels().map((label, index) => (
+                  <span 
+                    key={index} 
+                    className={`text-center flex-1 ${sliderValue[0] === index ? 'text-primary font-medium' : ''}`}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
               
-              <Button 
-                onClick={() => handleFeedback('too_heavy')} 
-                variant="outline" 
-                className="w-full h-12 flex items-center justify-center gap-2"
-              >
-                <TrendingDown className="h-4 w-4" />
-                Too Heavy (-10 lbs)
-              </Button>
+              <div className="text-center text-sm text-muted-foreground">
+                {sliderValue[0] === 0 && "Adding 20 lbs"}
+                {sliderValue[0] === 1 && "Adding 10 lbs"}
+                {sliderValue[0] === 2 && "Perfect! Confirming weight"}
+                {sliderValue[0] === 3 && "Reducing 10 lbs"}
+                {sliderValue[0] === 4 && "Reducing 20 lbs"}
+              </div>
             </div>
           </div>
         ) : null}
