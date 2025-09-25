@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -340,7 +340,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col min-h-0">
+      <DialogContent className="sm:max-w-md h-[90vh] overflow-hidden flex flex-col min-h-0">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-xl">
@@ -361,6 +361,9 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             </Button>
           </div>
         </DialogHeader>
+        <DialogDescription className="sr-only">
+          Fill in the details and add this item to your log.
+        </DialogDescription>
 
         <ScrollArea className="flex-1 pr-4 min-h-0">
           <div className="space-y-6 py-4">
