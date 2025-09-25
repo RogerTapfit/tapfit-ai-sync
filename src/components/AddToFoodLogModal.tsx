@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Utensils, Coffee, Sun, Sunset, Moon, Plus, Minus, Mic } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
-import type { FoodItem, FoodEntry } from '@/hooks/useNutrition';
+import type { FoodItem, FoodEntry, AlcoholEntry } from '@/hooks/useNutrition';
 import VoiceInterface from './VoiceInterface';
 import FitnessChatbot from './FitnessChatbot';
 import { useAvatar } from '@/lib/avatarState';
@@ -89,12 +89,13 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 }) => {
   const [portionSize, setPortionSize] = useState(1.0);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeFromTime());
+  const [alcoholType, setAlcoholType] = useState<string>('beer');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'saving'>('idle');
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
-  const { saveFoodEntry } = useNutrition();
+  const { saveFoodEntry, saveAlcoholEntry } = useNutrition();
   const { avatar } = useAvatar();
 
   // Get avatar name, fallback to "FitBot"
@@ -102,15 +103,77 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 
   console.log('AddToFoodLogModal render - isVoiceChatOpen:', isVoiceChatOpen); // Debug log
 
-  // Check if product is alcohol
+  // Enhanced alcohol detection
   const isAlcohol = () => {
     const productName = productAnalysis.product.name.toLowerCase();
     const brandName = productAnalysis.product.brand?.toLowerCase() || '';
-    const alcoholKeywords = ['beer', 'wine', 'vodka', 'whiskey', 'rum', 'gin', 'tequila', 'alcohol', 'liquor', 'spirits', 'champagne', 'prosecco', 'cider', 'sake', 'bourbon', 'scotch', 'brandy', 'cognac', 'absinthe', 'mezcal'];
+    
+    const alcoholKeywords = [
+      'beer', 'wine', 'vodka', 'whiskey', 'rum', 'gin', 'tequila', 'alcohol', 'liquor', 'spirits', 
+      'champagne', 'prosecco', 'cider', 'sake', 'bourbon', 'scotch', 'brandy', 'cognac', 'absinthe', 
+      'mezcal', 'cocktail', 'martini', 'margarita', 'mojito', 'sangria', 'ale', 'lager', 'stout', 
+      'porter', 'ipa', 'pilsner', 'merlot', 'cabernet', 'chardonnay', 'sauvignon', 'riesling', 
+      'pinot', 'shiraz', 'malbec', 'alcohol'
+    ];
+    
+    const alcoholBrands = [
+      'budweiser', 'corona', 'heineken', 'stella artois', 'miller', 'coors', 'guinness', 'carlsberg', 
+      'bacardi', 'smirnoff', 'captain morgan', 'jose cuervo', 'johnnie walker', 'jack daniels', 
+      'grey goose', 'absolut', 'tanqueray', 'bombay', 'don julio', 'patron', 'hennessy', 'remy martin',
+      'moet', 'dom perignon', 'veuve clicquot', 'kendall jackson', 'robert mondavi', 'barefoot', 'yellowtail'
+    ];
     
     return alcoholKeywords.some(keyword => 
       productName.includes(keyword) || brandName.includes(keyword)
+    ) || alcoholBrands.some(brand => 
+      productName.includes(brand) || brandName.includes(brand)
     );
+  };
+
+  // Classify alcohol type
+  const getAlcoholType = () => {
+    const productName = productAnalysis.product.name.toLowerCase();
+    const brandName = productAnalysis.product.brand?.toLowerCase() || '';
+    const combinedName = `${brandName} ${productName}`.toLowerCase();
+    
+    if (combinedName.includes('beer') || combinedName.includes('ale') || combinedName.includes('lager') || 
+        combinedName.includes('stout') || combinedName.includes('porter') || combinedName.includes('ipa') || 
+        combinedName.includes('pilsner') || ['budweiser', 'corona', 'heineken', 'stella artois', 'miller', 'coors', 'guinness', 'carlsberg'].some(b => combinedName.includes(b))) {
+      return 'beer';
+    }
+    
+    if (combinedName.includes('wine') || combinedName.includes('merlot') || combinedName.includes('cabernet') || 
+        combinedName.includes('chardonnay') || combinedName.includes('sauvignon') || combinedName.includes('riesling') || 
+        combinedName.includes('pinot') || combinedName.includes('shiraz') || combinedName.includes('malbec') ||
+        combinedName.includes('champagne') || combinedName.includes('prosecco') || combinedName.includes('sangria')) {
+      return 'wine';
+    }
+    
+    if (combinedName.includes('vodka') || combinedName.includes('whiskey') || combinedName.includes('rum') || 
+        combinedName.includes('gin') || combinedName.includes('tequila') || combinedName.includes('bourbon') || 
+        combinedName.includes('scotch') || combinedName.includes('brandy') || combinedName.includes('cognac') || 
+        combinedName.includes('absinthe') || combinedName.includes('mezcal') || combinedName.includes('spirits')) {
+      return 'spirits';
+    }
+    
+    if (combinedName.includes('cider')) return 'cider';
+    if (combinedName.includes('sake')) return 'sake';
+    if (combinedName.includes('cocktail') || combinedName.includes('martini') || combinedName.includes('margarita') || combinedName.includes('mojito')) return 'cocktail';
+    
+    return 'other';
+  };
+
+  // Estimate alcohol content based on type
+  const getEstimatedAlcoholContent = (type: string) => {
+    switch (type) {
+      case 'beer': return 5.0;
+      case 'wine': return 12.0;
+      case 'spirits': return 40.0;
+      case 'cider': return 4.5;
+      case 'sake': return 15.0;
+      case 'cocktail': return 15.0;
+      default: return 5.0;
+    }
   };
 
   // Calculate adjusted nutrition values
@@ -133,75 +196,98 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
     try {
       setIsLoading(true);
 
-      const foodItem: FoodItem = {
-        name: `${productAnalysis.product.brand ? productAnalysis.product.brand + ' ' : ''}${productAnalysis.product.name}`,
-        quantity: `${portionSize} serving${portionSize !== 1 ? 's' : ''}`,
-        calories: adjustedNutrition.calories,
-        protein: adjustedNutrition.protein,
-        carbs: adjustedNutrition.carbs,
-        fat: adjustedNutrition.fat,
-        confidence: 0.95, // High confidence for scanned products
-      };
-
-      let photoData = {};
-      
-      // Upload photo FIRST if selectedImage exists
-      if (selectedImage) {
-        console.log('Starting photo upload for selectedImage:', selectedImage.substring(0, 50) + '...');
-        setUploadStatus('uploading');
+      // Check if this is alcohol and handle differently
+      if (isAlcohol()) {
+        const detectedAlcoholType = getAlcoholType();
+        const estimatedABV = getEstimatedAlcoholContent(detectedAlcoholType);
         
-        try {
-          const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(selectedImage, mealType);
+        const alcoholEntry: Omit<AlcoholEntry, 'id' | 'created_at'> = {
+          drink_type: alcoholType || detectedAlcoholType,
+          alcohol_content: estimatedABV,
+          quantity: portionSize,
+          logged_date: new Date().toISOString().split('T')[0],
+          logged_time: new Date().toTimeString().split(' ')[0],
+          notes: notes || undefined
+        };
+
+        console.log('Saving alcohol entry:', alcoholEntry);
+        await saveAlcoholEntry(alcoholEntry);
+        
+        toast.success('Alcohol entry saved successfully!', {
+          description: `${productAnalysis.product.name} logged as ${alcoholType || detectedAlcoholType}`,
+        });
+      } else {
+        // Regular food item
+        const foodItem: FoodItem = {
+          name: `${productAnalysis.product.brand ? productAnalysis.product.brand + ' ' : ''}${productAnalysis.product.name}`,
+          quantity: `${portionSize} serving${portionSize !== 1 ? 's' : ''}`,
+          calories: adjustedNutrition.calories,
+          protein: adjustedNutrition.protein,
+          carbs: adjustedNutrition.carbs,
+          fat: adjustedNutrition.fat,
+          confidence: 0.95,
+        };
+
+        let photoData = {};
+        
+        // Upload photo FIRST if selectedImage exists
+        if (selectedImage) {
+          console.log('Starting photo upload for selectedImage:', selectedImage.substring(0, 50) + '...');
+          setUploadStatus('uploading');
           
-          console.log('Photo upload result:', uploadResult);
-          
-          if (uploadResult.success && uploadResult.photoUrl) {
-            photoData = {
-              photo_url: uploadResult.photoUrl,
-              photo_storage_path: uploadResult.storagePath,
-              thumbnail_url: uploadResult.thumbnailUrl,
-            };
+          try {
+            const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(selectedImage, mealType);
             
-            console.log('Photo data prepared:', photoData);
-            toast.success('Photo uploaded successfully!');
-          } else {
-            console.error('Photo upload failed:', uploadResult);
-            toast.error('Failed to upload photo - continuing without photo');
+            console.log('Photo upload result:', uploadResult);
+            
+            if (uploadResult.success && uploadResult.photoUrl) {
+              photoData = {
+                photo_url: uploadResult.photoUrl,
+                photo_storage_path: uploadResult.storagePath,
+                thumbnail_url: uploadResult.thumbnailUrl,
+              };
+              
+              console.log('Photo data prepared:', photoData);
+              toast.success('Photo uploaded successfully!');
+            } else {
+              console.error('Photo upload failed:', uploadResult);
+              toast.error('Failed to upload photo - continuing without photo');
+            }
+          } catch (photoError) {
+            console.error('Photo upload error:', photoError);
+            toast.error('Photo upload failed - continuing without photo');
           }
-        } catch (photoError) {
-          console.error('Photo upload error:', photoError);
-          toast.error('Photo upload failed - continuing without photo');
         }
+
+        setUploadStatus('saving');
+        console.log('Creating food entry with photo data:', photoData);
+
+        const foodEntry: Omit<FoodEntry, 'id' | 'created_at'> = {
+          meal_type: mealType,
+          food_items: [foodItem],
+          total_calories: adjustedNutrition.calories,
+          total_protein: adjustedNutrition.protein,
+          total_carbs: adjustedNutrition.carbs,
+          total_fat: adjustedNutrition.fat,
+          ai_analyzed: true,
+          user_confirmed: true,
+          logged_date: new Date().toISOString().split('T')[0],
+          health_grade: productAnalysis.health_grade.letter,
+          notes: notes || undefined,
+          grade_score: getGradeScore(productAnalysis.health_grade.letter),
+          ...photoData,
+        };
+
+        console.log('Saving food entry:', foodEntry);
+        
+        const savedEntry = await saveFoodEntry(foodEntry);
+        
+        console.log('Food entry saved successfully:', savedEntry);
+        
+        toast.success('Added to food log successfully!', {
+          description: `${foodItem.name} has been logged for ${mealType}`,
+        });
       }
-
-      setUploadStatus('saving');
-      console.log('Creating food entry with photo data:', photoData);
-
-      const foodEntry: Omit<FoodEntry, 'id' | 'created_at'> = {
-        meal_type: isAlcohol() ? 'snack' : mealType,
-        food_items: [foodItem],
-        total_calories: adjustedNutrition.calories,
-        total_protein: adjustedNutrition.protein,
-        total_carbs: adjustedNutrition.carbs,
-        total_fat: adjustedNutrition.fat,
-        ai_analyzed: true,
-        user_confirmed: true,
-        logged_date: new Date().toISOString().split('T')[0],
-        health_grade: productAnalysis.health_grade.letter,
-        notes: notes || undefined,
-        grade_score: getGradeScore(productAnalysis.health_grade.letter),
-        ...photoData,
-      };
-
-      console.log('Saving food entry:', foodEntry);
-      
-      const savedEntry = await saveFoodEntry(foodEntry);
-      
-      console.log('Food entry saved successfully:', savedEntry);
-      
-      toast.success('Added to food log successfully!', {
-        description: `${foodItem.name} has been logged for ${mealType}`,
-      });
 
       onSuccess?.();
       onClose();
@@ -230,6 +316,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
     if (isOpen) {
       setPortionSize(1.0);
       setMealType(getMealTypeFromTime());
+      setAlcoholType(getAlcoholType() || 'beer');
       setNotes('');
       setUploadStatus('idle');
     }
@@ -401,6 +488,50 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             </motion.div>
           )}
 
+          {/* Alcohol Type - Only show for alcohol items */}
+          {isAlcohol() && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-3"
+            >
+              <Label className="text-base font-semibold">Alcohol Type</Label>
+              <RadioGroup value={alcoholType} onValueChange={setAlcoholType}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="beer" id="beer" />
+                    <Label htmlFor="beer" className="cursor-pointer font-medium">🍺 Beer</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="wine" id="wine" />
+                    <Label htmlFor="wine" className="cursor-pointer font-medium">🍷 Wine</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="spirits" id="spirits" />
+                    <Label htmlFor="spirits" className="cursor-pointer font-medium">🥃 Spirits</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cocktail" id="cocktail" />
+                    <Label htmlFor="cocktail" className="cursor-pointer font-medium">🍸 Cocktail</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cider" id="cider" />
+                    <Label htmlFor="cider" className="cursor-pointer font-medium">🍻 Cider</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="other" id="other" />
+                    <Label htmlFor="other" className="cursor-pointer font-medium">🥤 Other</Label>
+                  </div>
+                </div>
+              </RadioGroup>
+              <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                <span className="font-medium">Est. ABV:</span> {getEstimatedAlcoholContent(alcoholType)}% | 
+                <span className="font-medium ml-2">Quantity:</span> {portionSize} serving{portionSize !== 1 ? 's' : ''}
+              </div>
+            </motion.div>
+          )}
+
           {/* AI Assistant Chatbot */}
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
@@ -480,7 +611,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             >
               {uploadStatus === 'uploading' ? 'Uploading Photo...' : 
                uploadStatus === 'saving' ? 'Saving...' : 
-               'Add to Food Log'}
+               isAlcohol() ? 'Add to Alcohol Log' : 'Add to Food Log'}
             </Button>
           </motion.div>
         </div>

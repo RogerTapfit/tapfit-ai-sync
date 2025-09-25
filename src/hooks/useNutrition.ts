@@ -66,6 +66,17 @@ export interface DailyNutritionSummary {
   metabolism_readings_count: number;
 }
 
+export interface AlcoholEntry {
+  id: string;
+  drink_type: string;
+  alcohol_content: number;
+  quantity: number;
+  logged_date: string;
+  logged_time?: string;
+  notes?: string;
+  created_at: string;
+}
+
 // Type transformation functions
 const transformDatabaseToNutritionGoal = (data: any): NutritionGoal => ({
   id: data.id,
@@ -120,10 +131,22 @@ const transformDatabaseToDailySummary = (data: any): DailyNutritionSummary => ({
   metabolism_readings_count: data.metabolism_readings_count
 });
 
+const transformDatabaseToAlcoholEntry = (data: any): AlcoholEntry => ({
+  id: data.id,
+  drink_type: data.drink_type,
+  alcohol_content: data.alcohol_content || 0,
+  quantity: data.quantity || 1,
+  logged_date: data.logged_date,
+  logged_time: data.logged_time,
+  notes: data.notes,
+  created_at: data.created_at
+});
+
 export const useNutrition = () => {
   const [nutritionGoals, setNutritionGoals] = useState<NutritionGoal | null>(null);
   const [metabolismReadings, setMetabolismReadings] = useState<MetabolismReading[]>([]);
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
+  const [alcoholEntries, setAlcoholEntries] = useState<AlcoholEntry[]>([]);
   const [dailySummary, setDailySummary] = useState<DailyNutritionSummary | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -133,6 +156,7 @@ export const useNutrition = () => {
     loadTodaysSummary();
     loadRecentMetabolismReadings();
     loadTodaysFoodEntries();
+    loadTodaysAlcoholEntries();
   };
 
   // Load user nutrition data on mount and user change
@@ -145,6 +169,7 @@ export const useNutrition = () => {
           loadTodaysSummary();
           loadRecentMetabolismReadings();
           loadTodaysFoodEntries();
+          loadTodaysAlcoholEntries();
         }, 0);
       }
     });
@@ -154,6 +179,7 @@ export const useNutrition = () => {
     loadTodaysSummary();
     loadRecentMetabolismReadings();
     loadTodaysFoodEntries();
+    loadTodaysAlcoholEntries();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -521,6 +547,58 @@ export const useNutrition = () => {
     }
   };
 
+  const loadTodaysAlcoholEntries = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('alcohol_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('logged_date', today)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading alcohol entries:', error);
+        return;
+      }
+
+      setAlcoholEntries((data || []).map(transformDatabaseToAlcoholEntry));
+    } catch (error) {
+      console.error('Error loading alcohol entries:', error);
+    }
+  };
+
+  const saveAlcoholEntry = async (entry: Omit<AlcoholEntry, 'id' | 'created_at'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const { data, error } = await supabase
+        .from('alcohol_entries')
+        .insert({
+          user_id: user.id,
+          ...entry
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAlcoholEntries(prev => [transformDatabaseToAlcoholEntry(data), ...prev]);
+      toast.success('Alcohol entry saved!');
+      
+      return data;
+    } catch (error) {
+      console.error('Error saving alcohol entry:', error);
+      toast.error('Failed to save alcohol entry');
+      throw error;
+    }
+  };
+
   const getWeeklyFoodEntries = async (startDate: string, endDate: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -547,12 +625,14 @@ export const useNutrition = () => {
     nutritionGoals,
     metabolismReadings,
     foodEntries,
+    alcoholEntries,
     dailySummary,
     loading,
     saveNutritionGoals,
     addMetabolismReading,
     analyzeFoodImage,
     saveFoodEntry,
+    saveAlcoholEntry,
     updateFoodEntry,
     deleteFoodEntry,
     getWeeklyFoodEntries,
