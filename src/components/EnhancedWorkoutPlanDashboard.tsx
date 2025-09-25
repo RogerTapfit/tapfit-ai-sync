@@ -21,7 +21,7 @@ import {
 import { useWorkoutPlan } from '@/hooks/useWorkoutPlan';
 import { useMonthlyWorkoutPlan } from '@/hooks/useMonthlyWorkoutPlan';
 import { CalorieWorkoutAdapterService } from '@/services/calorieWorkoutAdapterService';
-import { CalibrationDayWorkout, CalibrationResult } from './CalibrationDayWorkout';
+import { SmartWeightRecommendation } from './SmartWeightRecommendation';
 import WorkoutPlanSetup from './WorkoutPlanSetup';
 import WeeklyWorkoutSchedule from './WeeklyWorkoutSchedule';
 import WorkoutCalendar from './WorkoutCalendar';
@@ -69,9 +69,9 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
     return () => clearTimeout(timer);
   }, [monthlyPlan, needsCalibration]);
 
-  const handleCalibrationComplete = async (results: CalibrationResult[]) => {
+  const handleCalibrationComplete = async (recommendations: any) => {
     setShowCalibration(false);
-    toast.success('Calibration completed! Your personalized plan is ready.');
+    toast.success('Smart recommendations completed successfully!');
     
     // Generate enhanced monthly plan with calibration data
     if (preferences) {
@@ -120,9 +120,16 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
   if (showCalibration) {
     return (
       <div className="container mx-auto p-6">
-        <CalibrationDayWorkout 
+        <SmartWeightRecommendation
+          userProfile={{
+            weight_lbs: 150, // This would come from user profile
+            age: 30,
+            experience_level: 'beginner',
+            primary_goal: 'general_fitness',
+            gender: 'other',
+            current_max_weights: {}
+          }}
           onComplete={handleCalibrationComplete}
-          onSkip={handleSkipCalibration}
         />
       </div>
     );
@@ -145,7 +152,7 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Zap className="mr-2 h-4 w-4" />
-            Start Calibration Day
+            Quick Setup (2 min)
           </Button>
         )}
       </div>
@@ -159,13 +166,13 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
                 <AlertCircle className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-primary">Calibration Recommended</h3>
-                <p className="text-sm text-muted-foreground">Optimize your training protocol</p>
+                <h3 className="text-xl font-bold text-primary">Smart Setup Recommended</h3>
+                <p className="text-sm text-muted-foreground">Get personalized weights instantly</p>
               </div>
             </div>
             
             <p className="text-sm text-muted-foreground mb-6">
-              Complete a fitness calibration to get precise weight recommendations and personalized training protocols.
+              Get AI-calculated starting weights based on your profile. Optional quick validation takes just 2 minutes.
             </p>
             
             <Button
@@ -173,7 +180,7 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Target className="w-4 h-4 mr-2" />
-              Begin Calibration (15 mins)
+              Smart Setup (2 mins)
             </Button>
           </CardContent>
         </Card>

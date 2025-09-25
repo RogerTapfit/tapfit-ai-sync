@@ -10,6 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User, Target, Dumbbell, Calendar, Heart } from 'lucide-react';
+import { SmartWeightRecommendation } from './SmartWeightRecommendation';
+import { UserWeightProfile } from '@/services/weightCalculationService';
 
 interface EnhancedProfile {
   age: number;
@@ -34,6 +36,7 @@ interface EnhancedOnboardingProps {
 const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showSmartRecommendation, setShowSmartRecommendation] = useState(false);
   const [profile, setProfile] = useState<EnhancedProfile>({
     age: 25,
     weight_kg: 70,
@@ -166,7 +169,8 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleComplete();
+      // Show smart weight recommendation instead of complete
+      setShowSmartRecommendation(true);
     }
   };
 
@@ -282,6 +286,35 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
       setLoading(false);
     }
   };
+
+  // Handle smart recommendation completion
+  const handleSmartRecommendationComplete = async () => {
+    await handleComplete();
+  };
+
+  // Convert profile to UserWeightProfile format for smart recommendations
+  const getUserWeightProfile = (): UserWeightProfile => {
+    return {
+      weight_lbs: profile.weight_lbs,
+      age: profile.age,
+      experience_level: profile.experience_level,
+      primary_goal: profile.primary_goal,
+      gender: profile.gender,
+      current_max_weights: {}
+    };
+  };
+
+  // Show smart weight recommendation screen
+  if (showSmartRecommendation) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <SmartWeightRecommendation
+          userProfile={getUserWeightProfile()}
+          onComplete={handleSmartRecommendationComplete}
+        />
+      </div>
+    );
+  }
   const renderStep = () => {
     switch (currentStep) {
       case 1:

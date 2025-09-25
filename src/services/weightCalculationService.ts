@@ -14,6 +14,22 @@ export interface ExerciseWeightCalculation {
   sets: number;
   reps: number;
   rest_seconds: number;
+  confidence?: 'high' | 'medium' | 'learning';
+}
+
+export interface WeightRecommendationInput {
+  userProfile: UserWeightProfile;
+  exerciseList: Array<{
+    name: string;
+    machine: string;
+    muscle_group: string;
+  }>;
+}
+
+export interface WeightRecommendationOutput {
+  exercises: ExerciseWeightCalculation[];
+  overall_confidence: 'high' | 'medium' | 'learning';
+  adjustment_suggestions: string[];
 }
 
 // Base multipliers for weight calculations
@@ -235,4 +251,67 @@ export function calculateProgressedWeight(
   const newWeight = currentWeight * (1 + progressionPercentage / 100);
   // Round to nearest 5lbs
   return Math.round(newWeight / 5) * 5;
+}
+
+/**
+ * Generate complete weight recommendations for all exercises
+ */
+export function generateCompleteWeightRecommendations(
+  input: WeightRecommendationInput
+): WeightRecommendationOutput {
+  const { userProfile, exerciseList } = input;
+  
+  const exercises: ExerciseWeightCalculation[] = exerciseList.map(exercise => {
+    const weight = calculateOptimalWeight(userProfile, exercise.name, exercise.machine);
+    const { sets, reps, rest_seconds } = calculateSetsAndReps(
+      userProfile.primary_goal,
+      userProfile.experience_level
+    );
+
+    // Determine confidence based on available data
+    let confidence: 'high' | 'medium' | 'learning' = 'learning';
+    if (userProfile.current_max_weights && Object.keys(userProfile.current_max_weights).length > 2) {
+      confidence = 'high';
+    } else if (userProfile.experience_level !== 'beginner') {
+      confidence = 'medium';
+    }
+
+    return {
+      exercise_name: exercise.name,
+      machine_name: exercise.machine,
+      recommended_weight: weight,
+      sets,
+      reps,
+      rest_seconds,
+      confidence
+    };
+  });
+
+  // Determine overall confidence
+  const highConfidenceCount = exercises.filter(e => e.confidence === 'high').length;
+  const mediumConfidenceCount = exercises.filter(e => e.confidence === 'medium').length;
+  
+  let overall_confidence: 'high' | 'medium' | 'learning' = 'learning';
+  if (highConfidenceCount > exercises.length / 2) {
+    overall_confidence = 'high';
+  } else if (mediumConfidenceCount + highConfidenceCount > exercises.length / 2) {
+    overall_confidence = 'medium';
+  }
+
+  // Generate suggestions
+  const adjustment_suggestions = [];
+  if (userProfile.experience_level === 'beginner') {
+    adjustment_suggestions.push('Focus on proper form over heavy weight');
+    adjustment_suggestions.push('Start with lighter weights and gradually increase');
+  }
+  if (overall_confidence === 'learning') {
+    adjustment_suggestions.push('We\'ll learn your preferences and adjust automatically');
+  }
+  adjustment_suggestions.push('Weights will auto-adjust based on your workout performance');
+
+  return {
+    exercises,
+    overall_confidence,
+    adjustment_suggestions
+  };
 }
