@@ -365,7 +365,7 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
       </Card>
 
       {/* Recommendations Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-0">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 sm:px-0">
         {recommendations.map((rec) => {
           const machineImageUrl = getMachineImageUrl(rec.machine);
           
@@ -374,11 +374,11 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3 mb-3">
                   {/* Machine Image */}
-                  <div className="w-full h-32 rounded-lg bg-gradient-to-br from-red-50/10 to-red-100/20 border border-red-200/30 overflow-hidden shadow-md">
+                  <div className="w-full h-64 rounded-lg bg-gradient-to-br from-red-50/10 to-red-100/20 border border-red-200/30 overflow-hidden shadow-md">
                     <img 
                       src={machineImageUrl} 
                       alt={rec.machine}
-                      className="w-full h-full object-contain p-2"
+                      className="w-full h-full object-contain p-3"
                     />
                   </div>
                   
