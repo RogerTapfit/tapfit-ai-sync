@@ -84,6 +84,39 @@ export class FoodPhotoUploadService {
   }
 
   /**
+   * Upload multiple food photos to Supabase Storage
+   */
+  static async uploadMultipleFoodPhotos(
+    photos: Array<{ dataUrl: string; type: string; file?: File }>,
+    mealType: string = 'meal'
+  ): Promise<{ success: boolean; photos: any[]; errors: string[] }> {
+    const results = [];
+    const errors = [];
+
+    for (const [index, photo] of photos.entries()) {
+      const filename = `food_photo_${Date.now()}_${index}.jpg`;
+      const result = await this.uploadFoodPhoto(photo.dataUrl, mealType, filename);
+      
+      if (result.success) {
+        results.push({
+          photoUrl: result.photoUrl,
+          storagePath: result.storagePath,
+          thumbnailUrl: result.thumbnailUrl,
+          photoType: photo.type
+        });
+      } else {
+        errors.push(`Photo ${index + 1}: ${result.error}`);
+      }
+    }
+
+    return {
+      success: results.length > 0,
+      photos: results,
+      errors
+    };
+  }
+
+  /**
    * Upload food photo to Supabase Storage
    */
   static async uploadFoodPhoto(
@@ -95,6 +128,11 @@ export class FoodPhotoUploadService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         return { success: false, error: 'User not authenticated' };
+      }
+
+      // Prevent base64 data URLs from being stored directly
+      if (typeof fileOrDataUrl === 'string' && !fileOrDataUrl.startsWith('data:')) {
+        return { success: false, error: 'Invalid data format - base64 data URLs not allowed' };
       }
 
       // Convert data URL to file if needed

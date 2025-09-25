@@ -242,16 +242,32 @@ const WeeklyNutritionCalendar = () => {
 
                 {/* Meal Entries */}
                 <div className="space-y-3">
-                  {selectedDayEntries.map((entry) => (
-                    <Card key={entry.id} className="p-4">
-                      <div className="flex items-start gap-4">
-                        {entry.photo_url && (
-                          <img 
-                            src={entry.photo_url} 
-                            alt="Food photo"
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                        )}
+                  {selectedDayEntries.map((entry) => {
+                    // Handle both new multiple photo format and legacy single photo format
+                    const photoUrls = entry.photo_urls || (entry.photo_url ? [entry.photo_url] : []);
+                    const thumbnailUrls = entry.thumbnail_urls || (entry.thumbnail_url ? [entry.thumbnail_url] : []);
+                    const validPhotos = photoUrls.filter(url => url && !url.startsWith('data:'));
+                    
+                    return (
+                      <Card key={entry.id} className="p-4">
+                        <div className="flex items-start gap-4">
+                          {validPhotos.length > 0 && (
+                            <div className="flex gap-2">
+                              {validPhotos.slice(0, 2).map((url, index) => (
+                                <img 
+                                  key={index}
+                                  src={thumbnailUrls[index] || url} 
+                                  alt={`Food photo ${index + 1}`}
+                                  className="w-16 h-16 rounded-lg object-cover border"
+                                />
+                              ))}
+                              {validPhotos.length > 2 && (
+                                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-sm font-medium">
+                                  +{validPhotos.length - 2}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
@@ -297,10 +313,11 @@ const WeeklyNutritionCalendar = () => {
                               "{entry.notes}"
                             </p>
                           )}
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}

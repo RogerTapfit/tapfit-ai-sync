@@ -723,8 +723,11 @@ export type Database = {
           meal_type: string
           notes: string | null
           photo_storage_path: string | null
+          photo_storage_paths: string[] | null
           photo_url: string | null
+          photo_urls: string[] | null
           thumbnail_url: string | null
+          thumbnail_urls: string[] | null
           total_calories: number
           total_carbs: number
           total_fat: number
@@ -745,8 +748,11 @@ export type Database = {
           meal_type: string
           notes?: string | null
           photo_storage_path?: string | null
+          photo_storage_paths?: string[] | null
           photo_url?: string | null
+          photo_urls?: string[] | null
           thumbnail_url?: string | null
+          thumbnail_urls?: string[] | null
           total_calories: number
           total_carbs?: number
           total_fat?: number
@@ -767,8 +773,11 @@ export type Database = {
           meal_type?: string
           notes?: string | null
           photo_storage_path?: string | null
+          photo_storage_paths?: string[] | null
           photo_url?: string | null
+          photo_urls?: string[] | null
           thumbnail_url?: string | null
+          thumbnail_urls?: string[] | null
           total_calories?: number
           total_carbs?: number
           total_fat?: number
@@ -778,6 +787,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      food_photos: {
+        Row: {
+          created_at: string | null
+          file_size: number | null
+          food_entry_id: string | null
+          id: string
+          photo_type: string | null
+          photo_url: string
+          storage_path: string
+          thumbnail_url: string | null
+          upload_timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_size?: number | null
+          food_entry_id?: string | null
+          id?: string
+          photo_type?: string | null
+          photo_url: string
+          storage_path: string
+          thumbnail_url?: string | null
+          upload_timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_size?: number | null
+          food_entry_id?: string | null
+          id?: string
+          photo_type?: string | null
+          photo_url?: string
+          storage_path?: string
+          thumbnail_url?: string | null
+          upload_timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_photos_food_entry_id_fkey"
+            columns: ["food_entry_id"]
+            isOneToOne: false
+            referencedRelation: "food_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gyms: {
         Row: {
@@ -2055,6 +2111,10 @@ export type Database = {
       calculate_user_power_level: {
         Args: { _user_id: string }
         Returns: number
+      }
+      clean_base64_photo_urls: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_old_food_entries: {
         Args: { _days_to_keep?: number }

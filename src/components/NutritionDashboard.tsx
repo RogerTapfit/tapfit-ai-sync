@@ -9,6 +9,7 @@ import {
   Target,
   TrendingUp,
   Calendar,
+  CalendarDays,
   Flame,
   Apple,
   Activity,
@@ -20,6 +21,7 @@ import FoodPhotoAnalyzer from './FoodPhotoAnalyzer';
 import WeeklyNutritionCalendar from './WeeklyNutritionCalendar';
 import MetabolismTracker from './MetabolismTracker';
 import FoodEntryList from './FoodEntryList';
+import { FoodPhotoGallery } from './FoodPhotoGallery';
 
 const NutritionDashboard = () => {
   const { nutritionGoals, dailySummary, metabolismReadings, refreshData } = useNutrition();
@@ -200,13 +202,17 @@ const NutritionDashboard = () => {
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Overview
+          <TabsTrigger value="today" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Today
           </TabsTrigger>
-          <TabsTrigger value="camera" className="flex items-center gap-2">
-            <Camera className="h-4 w-4 text-green-500" />
-            See Food
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="photos" className="flex items-center gap-2">
+            <Camera className="h-4 w-4" />
+            Photos
           </TabsTrigger>
           <TabsTrigger value="goals" className="flex items-center gap-2">
             <Target className="h-4 w-4" />
@@ -216,100 +222,26 @@ const NutritionDashboard = () => {
             <Activity className="h-4 w-4" />
             Metabolism
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Calendar
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Recent Meals */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Utensils className="h-5 w-5 text-primary" />
-                  Recent Meals
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {dailySummary?.meals_count === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">
-                      No meals logged today. Use the camera to add your first meal!
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Total meals logged:</span>
-                        <span className="font-medium">{dailySummary?.meals_count || 0}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metabolism Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  Metabolism Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {latestReading ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      {getMetabolismIcon(latestReading.reading_type)}
-                      <div>
-                        <p className="font-medium capitalize">
-                          {latestReading.reading_type.replace('_', ' ')} Mode
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(latestReading.created_at).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {latestReading.recommendations.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Recommendations:</p>
-                        <div className="space-y-1">
-                          {latestReading.recommendations.map((rec, index) => (
-                            <Badge key={index} variant="outline" className="mr-2">
-                              {rec}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-4">
-                    No metabolism readings yet. Connect your Lumen device or add manual readings.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="camera" className="space-y-4">
+        <TabsContent value="today" className="space-y-4">
           <FoodPhotoAnalyzer onDataChange={handleDataRefresh} />
         </TabsContent>
 
-        <TabsContent value="goals" className="space-y-4">
+        <TabsContent value="calendar">
+          <WeeklyNutritionCalendar />
+        </TabsContent>
+
+        <TabsContent value="photos">
+          <FoodPhotoGallery />
+        </TabsContent>
+
+        <TabsContent value="goals">
           <NutritionGoalsSetup />
         </TabsContent>
 
-        <TabsContent value="metabolism" className="space-y-4">
+        <TabsContent value="metabolism">
           <MetabolismTracker />
-        </TabsContent>
-
-        <TabsContent value="calendar" className="space-y-4">
-          <WeeklyNutritionCalendar />
         </TabsContent>
       </Tabs>
 

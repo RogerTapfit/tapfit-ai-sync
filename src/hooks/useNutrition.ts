@@ -42,6 +42,9 @@ export interface FoodEntry {
   photo_url?: string;
   photo_storage_path?: string;
   thumbnail_url?: string;
+  photo_urls?: string[];
+  photo_storage_paths?: string[];
+  thumbnail_urls?: string[];
   ai_analyzed: boolean;
   user_confirmed: boolean;
   notes?: string;

@@ -342,30 +342,41 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     setIsSaving(true);
 
     try {
-      // Upload photos if available
-      let photoUrl: string | undefined;
+      // Upload multiple photos if available
+      let photoUrls: string[] = [];
+      let photoStoragePaths: string[] = [];
+      let thumbnailUrls: string[] = [];
+      let photoUrl: string | undefined; // Keep for backward compatibility
       let photoStoragePath: string | undefined;
       let thumbnailUrl: string | undefined;
 
       if (photos.length > 0) {
         const { FoodPhotoUploadService } = await import('../services/foodPhotoUploadService');
-        const mainPhoto = photos[0]; // Use first photo as main photo
         
-        console.log('Uploading photo for food entry...');
-        const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(
-          mainPhoto.dataUrl,
-          mealType,
-          `food_${Date.now()}.jpg`
+        console.log(`Uploading ${photos.length} photos for food entry...`);
+        const uploadResults = await FoodPhotoUploadService.uploadMultipleFoodPhotos(
+          photos,
+          mealType
         );
         
-        if (uploadResult.success) {
-          photoUrl = uploadResult.photoUrl;
-          photoStoragePath = uploadResult.storagePath;
-          thumbnailUrl = uploadResult.thumbnailUrl;
-          console.log('Photo uploaded successfully:', uploadResult);
+        if (uploadResults.success) {
+          photoUrls = uploadResults.photos.map(p => p.photoUrl);
+          photoStoragePaths = uploadResults.photos.map(p => p.storagePath);
+          thumbnailUrls = uploadResults.photos.map(p => p.thumbnailUrl).filter(Boolean);
+          
+          // Set first photo for backward compatibility
+          photoUrl = photoUrls[0];
+          photoStoragePath = photoStoragePaths[0];
+          thumbnailUrl = thumbnailUrls[0];
+          
+          console.log('Photos uploaded successfully:', uploadResults);
+          
+          if (uploadResults.errors.length > 0) {
+            toast.error(`Some photos failed to upload: ${uploadResults.errors.join(', ')}`);
+          }
         } else {
-          console.error('Failed to upload photo:', uploadResult.error);
-          toast.error('Photo upload failed, but food entry will still be saved');
+          console.error('Failed to upload photos:', uploadResults.errors);
+          toast.error('Photo uploads failed, but food entry will still be saved');
         }
       }
 
@@ -384,6 +395,11 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         photo_url: photoUrl,
         photo_storage_path: photoStoragePath,
         thumbnail_url: thumbnailUrl,
+        ...(photoUrls.length > 0 && { 
+          photo_urls: photoUrls,
+          photo_storage_paths: photoStoragePaths,
+          thumbnail_urls: thumbnailUrls.length > 0 ? thumbnailUrls : undefined
+        }),
         ai_analyzed: true,
         user_confirmed: true,
         notes: notes,
