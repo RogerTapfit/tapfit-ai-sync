@@ -408,6 +408,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cycle_tracking: {
+        Row: {
+          average_cycle_length: number
+          average_period_length: number
+          created_at: string
+          id: string
+          is_enabled: boolean
+          last_period_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_cycle_length?: number
+          average_period_length?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_period_start: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_cycle_length?: number
+          average_period_length?: number
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_period_start?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_activity_summary: {
         Row: {
           activity_date: string
@@ -1847,6 +1880,19 @@ export type Database = {
         Args: { _avatar_config: Json; _serial_number: number }
         Returns: Json
       }
+      get_cycle_insights: {
+        Args: { _phase: Database["public"]["Enums"]["cycle_phase"] }
+        Returns: Json
+      }
+      get_cycle_phase: {
+        Args: {
+          _cycle_length: number
+          _last_period_start: string
+          _period_length: number
+          _target_date: string
+        }
+        Returns: Database["public"]["Enums"]["cycle_phase"]
+      }
       get_power_level_tier: {
         Args: { _score: number }
         Returns: string
@@ -1926,6 +1972,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "trainer" | "admin"
+      cycle_phase: "menstrual" | "follicular" | "ovulation" | "luteal"
       scan_status: "queued" | "processing" | "done" | "error"
     }
     CompositeTypes: {
@@ -2055,6 +2102,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "trainer", "admin"],
+      cycle_phase: ["menstrual", "follicular", "ovulation", "luteal"],
       scan_status: ["queued", "processing", "done", "error"],
     },
   },
