@@ -573,6 +573,51 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_database: {
+        Row: {
+          calorie_burn_rate: number | null
+          created_at: string
+          difficulty_level: string
+          equipment_category: string
+          exercise_name: string
+          exercise_type: string
+          form_instructions: string | null
+          id: string
+          is_active: boolean
+          machine_name: string | null
+          muscle_groups: string[]
+          progression_notes: string | null
+        }
+        Insert: {
+          calorie_burn_rate?: number | null
+          created_at?: string
+          difficulty_level: string
+          equipment_category: string
+          exercise_name: string
+          exercise_type: string
+          form_instructions?: string | null
+          id?: string
+          is_active?: boolean
+          machine_name?: string | null
+          muscle_groups: string[]
+          progression_notes?: string | null
+        }
+        Update: {
+          calorie_burn_rate?: number | null
+          created_at?: string
+          difficulty_level?: string
+          equipment_category?: string
+          exercise_name?: string
+          exercise_type?: string
+          form_instructions?: string | null
+          id?: string
+          is_active?: boolean
+          machine_name?: string | null
+          muscle_groups?: string[]
+          progression_notes?: string | null
+        }
+        Relationships: []
+      }
       exercise_logs: {
         Row: {
           completed_at: string
@@ -854,6 +899,78 @@ export type Database = {
           reading_value?: number | null
           recommendations?: string[] | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_workout_progress: {
+        Row: {
+          created_at: string
+          current_week: number
+          id: string
+          nutrition_compliance: Json | null
+          performance_metrics: Json | null
+          progress_notes: string | null
+          updated_at: string
+          user_id: string
+          weekly_adaptations: Json | null
+          workout_plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_week?: number
+          id?: string
+          nutrition_compliance?: Json | null
+          performance_metrics?: Json | null
+          progress_notes?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_adaptations?: Json | null
+          workout_plan_id: string
+        }
+        Update: {
+          created_at?: string
+          current_week?: number
+          id?: string
+          nutrition_compliance?: Json | null
+          performance_metrics?: Json | null
+          progress_notes?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_adaptations?: Json | null
+          workout_plan_id?: string
+        }
+        Relationships: []
+      }
+      monthly_workout_templates: {
+        Row: {
+          created_at: string
+          fitness_level: string
+          id: string
+          is_active: boolean
+          primary_goal: string
+          template_data: Json
+          updated_at: string
+          week_structure: Json
+        }
+        Insert: {
+          created_at?: string
+          fitness_level: string
+          id?: string
+          is_active?: boolean
+          primary_goal: string
+          template_data?: Json
+          updated_at?: string
+          week_structure?: Json
+        }
+        Update: {
+          created_at?: string
+          fitness_level?: string
+          id?: string
+          is_active?: boolean
+          primary_goal?: string
+          template_data?: Json
+          updated_at?: string
+          week_structure?: Json
         }
         Relationships: []
       }
@@ -1252,6 +1369,45 @@ export type Database = {
           },
         ]
       }
+      user_calibration_results: {
+        Row: {
+          baseline_weights: Json
+          calibration_date: string
+          completed_at: string
+          created_at: string
+          endurance_metrics: Json
+          fitness_assessment: string | null
+          id: string
+          recommendations: Json | null
+          strength_metrics: Json
+          user_id: string
+        }
+        Insert: {
+          baseline_weights?: Json
+          calibration_date?: string
+          completed_at?: string
+          created_at?: string
+          endurance_metrics?: Json
+          fitness_assessment?: string | null
+          id?: string
+          recommendations?: Json | null
+          strength_metrics?: Json
+          user_id: string
+        }
+        Update: {
+          baseline_weights?: Json
+          calibration_date?: string
+          completed_at?: string
+          created_at?: string
+          endurance_metrics?: Json
+          fitness_assessment?: string | null
+          id?: string
+          recommendations?: Json | null
+          strength_metrics?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_challenges: {
         Row: {
           challenge_id: string
@@ -1543,6 +1699,42 @@ export type Database = {
           progression_reason?: string | null
           user_id?: string
           week_number?: number | null
+        }
+        Relationships: []
+      }
+      workout_adaptations: {
+        Row: {
+          adaptation_applied: Json
+          adaptation_reason: string | null
+          adaptation_week: number
+          created_at: string
+          id: string
+          nutrition_trigger: Json | null
+          performance_trigger: Json | null
+          user_id: string
+          workout_plan_id: string
+        }
+        Insert: {
+          adaptation_applied: Json
+          adaptation_reason?: string | null
+          adaptation_week: number
+          created_at?: string
+          id?: string
+          nutrition_trigger?: Json | null
+          performance_trigger?: Json | null
+          user_id: string
+          workout_plan_id: string
+        }
+        Update: {
+          adaptation_applied?: Json
+          adaptation_reason?: string | null
+          adaptation_week?: number
+          created_at?: string
+          id?: string
+          nutrition_trigger?: Json | null
+          performance_trigger?: Json | null
+          user_id?: string
+          workout_plan_id?: string
         }
         Relationships: []
       }
