@@ -206,25 +206,6 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           >
             <Label className="text-base font-semibold">Portion Size</Label>
             
-            {/* Portion Button Grid */}
-            <div className="grid grid-cols-5 gap-2">
-              {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5].map((size) => (
-                <Button
-                  key={size}
-                  variant={portionSize === size ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPortionSize(size)}
-                  className="h-10 text-sm font-medium"
-                >
-                  {size === 1.5 ? "1½" :
-                   size === 2.5 ? "2½" : 
-                   size === 3.5 ? "3½" :
-                   size === 4.5 ? "4½" :
-                   size === 5.5 ? "5½" : size.toString()}
-                </Button>
-              ))}
-            </div>
-            
             {/* Fine Control Buttons */}
             <div className="flex items-center justify-center gap-4">
               <Button
