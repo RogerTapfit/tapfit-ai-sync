@@ -364,7 +364,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsChatbotOpen(!isChatbotOpen)}
-                className="text-xs px-3 py-1 h-7"
+                className="text-xs px-3 py-1 h-7 border-2 border-blue-500/60 bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:border-blue-400/80 hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all duration-200"
               >
                 {isChatbotOpen ? `Hide ${avatarName}` : `Ask ${avatarName}`}
               </Button>
