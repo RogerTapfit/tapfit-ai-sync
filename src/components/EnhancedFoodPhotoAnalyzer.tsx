@@ -18,6 +18,7 @@ import { Capacitor } from '@capacitor/core';
 import { PhotoManager } from './PhotoManager';
 import { AnimatedCounter } from './AnimatedCounter';
 import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
+import { PhotoUploadValidator } from './PhotoUploadValidator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { processImageFile } from '../utils/heicConverter';
@@ -50,6 +51,8 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [storageValidated, setStorageValidated] = useState(false);
+  const [showValidation, setShowValidation] = useState(true);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -337,12 +340,18 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       return;
     }
 
+    // MANDATORY PHOTO REQUIREMENT
+    if (photos.length === 0) {
+      toast.error('Please add at least one photo before saving the food entry');
+      return;
+    }
+
     if (isSaving) return; // Prevent multiple submissions
 
     setIsSaving(true);
 
     try {
-      // Upload multiple photos if available
+      // Upload multiple photos - THIS IS NOW MANDATORY
       let photoUrls: string[] = [];
       let photoStoragePaths: string[] = [];
       let thumbnailUrls: string[] = [];
@@ -350,34 +359,42 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       let photoStoragePath: string | undefined;
       let thumbnailUrl: string | undefined;
 
-      if (photos.length > 0) {
-        const { FoodPhotoUploadService } = await import('../services/foodPhotoUploadService');
-        
-        console.log(`Uploading ${photos.length} photos for food entry...`);
-        const uploadResults = await FoodPhotoUploadService.uploadMultipleFoodPhotos(
-          photos,
-          mealType
-        );
-        
-        if (uploadResults.success) {
-          photoUrls = uploadResults.photos.map(p => p.photoUrl);
-          photoStoragePaths = uploadResults.photos.map(p => p.storagePath);
-          thumbnailUrls = uploadResults.photos.map(p => p.thumbnailUrl).filter(Boolean);
-          
-          // Set first photo for backward compatibility
-          photoUrl = photoUrls[0];
-          photoStoragePath = photoStoragePaths[0];
-          thumbnailUrl = thumbnailUrls[0];
-          
-          console.log('Photos uploaded successfully:', uploadResults);
-          
-          if (uploadResults.errors.length > 0) {
-            toast.error(`Some photos failed to upload: ${uploadResults.errors.join(', ')}`);
-          }
-        } else {
-          console.error('Failed to upload photos:', uploadResults.errors);
-          toast.error('Photo uploads failed, but food entry will still be saved');
-        }
+      console.log(`Uploading ${photos.length} photos for food entry (REQUIRED)...`);
+      
+      const { FoodPhotoUploadService } = await import('../services/foodPhotoUploadService');
+      const uploadResults = await FoodPhotoUploadService.uploadMultipleFoodPhotos(
+        photos,
+        mealType
+      );
+      
+      // STRICT VALIDATION: Food entry cannot be saved without photos
+      if (!uploadResults.success || uploadResults.photos.length === 0) {
+        console.error('Critical: Photo upload failed completely:', uploadResults.errors);
+        toast.error('Failed to upload photos. Food entry cannot be saved without photos. Please try again.');
+        setIsSaving(false);
+        return;
+      }
+
+      photoUrls = uploadResults.photos.map(p => p.photoUrl);
+      photoStoragePaths = uploadResults.photos.map(p => p.storagePath);
+      thumbnailUrls = uploadResults.photos.map(p => p.thumbnailUrl).filter(Boolean);
+      
+      // Set first photo for backward compatibility
+      photoUrl = photoUrls[0];
+      photoStoragePath = photoStoragePaths[0];
+      thumbnailUrl = thumbnailUrls[0];
+      
+      console.log('Photos uploaded successfully:', {
+        totalPhotos: uploadResults.photos.length,
+        successfulUploads: photoUrls.length,
+        errors: uploadResults.errors.length
+      });
+      
+      // Show partial success warning if some photos failed
+      if (uploadResults.errors.length > 0) {
+        toast.warning(`${photoUrls.length} photos uploaded successfully, ${uploadResults.errors.length} failed: ${uploadResults.errors.join(', ')}`);
+      } else {
+        toast.success(`All ${photoUrls.length} photos uploaded successfully!`);
       }
 
       const totalCalories = editingItems.reduce((sum, item) => sum + item.calories, 0);
@@ -457,6 +474,18 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
 
   return (
     <div className="space-y-8">
+      {/* Storage Validation */}
+      {showValidation && (
+        <PhotoUploadValidator 
+          onValidationComplete={(isValid) => {
+            setStorageValidated(isValid);
+            if (isValid) {
+              setTimeout(() => setShowValidation(false), 3000);
+            }
+          }}
+        />
+      )}
+
       <Card className="glow-card border-gradient overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" />
