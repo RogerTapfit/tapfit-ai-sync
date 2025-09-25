@@ -50,7 +50,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   useEffect(() => {
     setMessages([{
       id: '1',
-      text: `👋 Hey there! I'm ${avatarName}, your AI fitness coach. Ask me about workouts, nutrition, form tips, or anything fitness-related!`,
+      text: `👋 Hey there! I'm ${avatarName}, your personal AI fitness companion. I'm here to support you on your fitness journey with workouts, nutrition advice, motivation, and emotional support whenever you need it!`,
       isUser: false,
       timestamp: new Date()
     }]);
@@ -150,19 +150,24 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
       <CardHeader className="p-4 pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
               {miniUrl ? (
                 <img
                   src={miniUrl}
-                  alt="Bot avatar"
+                  alt={`${avatarName} avatar`}
                   loading="lazy"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback to bot icon if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              ) : (
-                <Bot className="h-4 w-4" />
-              )}
+              ) : null}
+              <Bot className={`h-4 w-4 text-primary/60 ${miniUrl ? 'hidden' : ''}`} />
             </div>
-            <CardTitle className="text-sm">{avatarName} AI Coach</CardTitle>
+            <CardTitle className="text-sm font-semibold">{avatarName}</CardTitle>
           </div>
           <div className="flex gap-1">
             <Button
@@ -231,10 +236,10 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
             <div className="p-4 pt-0">
               <div className="grid grid-cols-2 gap-2">
                 {[ 
-                  { icon: Dumbbell, text: "Workout tips", message: "Give me some workout tips for today" },
-                  { icon: Apple, text: "Nutrition advice", message: "What should I eat for better performance?" },
-                  { icon: Heart, text: "Recovery tips", message: "How can I improve my recovery?" },
-                  { icon: Target, text: "Set goals", message: "Help me set realistic fitness goals" }
+                  { icon: Dumbbell, text: "Workout tips", message: "Give me some workout tips and motivation for today" },
+                  { icon: Apple, text: "Nutrition advice", message: "What should I eat for better performance and health?" },
+                  { icon: Heart, text: "Recovery & support", message: "Help me with recovery tips and motivation" },
+                  { icon: Target, text: "Set goals", message: "Help me set realistic fitness goals and stay motivated" }
                 ].map((action, index) => (
                   <Button
                     key={index}
@@ -256,7 +261,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Ask about fitness, nutrition, workouts..."
+                  placeholder={`Chat with ${avatarName} about anything fitness, nutrition, or motivation...`}
                   className="flex-1 text-sm"
                   disabled={isLoading}
                 />
