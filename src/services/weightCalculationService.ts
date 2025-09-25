@@ -32,11 +32,11 @@ export interface WeightRecommendationOutput {
   adjustment_suggestions: string[];
 }
 
-// Base multipliers for weight calculations
+// Base multipliers for weight calculations (percentage of bodyweight)
 const BASE_FACTORS = {
-  beginner: 0.15,
-  intermediate: 0.3,
-  advanced: 0.5
+  beginner: 0.5,    // 50% of bodyweight as starting point
+  intermediate: 0.8, // 80% of bodyweight 
+  advanced: 1.2     // 120% of bodyweight
 } as const;
 
 const GOAL_MULTIPLIERS = {
@@ -48,24 +48,46 @@ const GOAL_MULTIPLIERS = {
 
 // Exercise-specific modifiers (relative to bodyweight baseline)
 const EXERCISE_MODIFIERS = {
-  // Upper body exercises
+  // Upper body exercises - more realistic ratios
   'chest_press': 0.8,
-  'bench_press': 0.7,
-  'shoulder_press': 0.5,
-  'lat_pulldown': 0.6,
-  'seated_row': 0.6,
-  'bicep_curl': 0.2,
-  'tricep_extension': 0.25,
+  'bench_press': 0.75,
+  'shoulder_press': 0.6,
+  'lat_pulldown': 0.7,
+  'seated_row': 0.7,
+  'bicep_curl': 0.3,
+  'tricep_extension': 0.35,
   
-  // Lower body exercises
-  'leg_press': 1.5,
-  'squat': 0.8,
-  'leg_curl': 0.4,
-  'leg_extension': 0.5,
-  'calf_raise': 0.8,
+  // Lower body exercises - much stronger than upper body
+  'leg_press': 2.2,  // Legs can handle 2-3x bodyweight easily
+  'squat': 1.0,
+  'leg_curl': 0.5,
+  'leg_extension': 0.6,
+  'calf_raise': 1.0,
   
   // Default for unlisted exercises
-  'default': 0.6
+  'default': 0.7
+} as const;
+
+// Minimum weight floors for each exercise type (in lbs)
+const MINIMUM_WEIGHTS = {
+  // Upper body minimums
+  'chest_press': 30,
+  'bench_press': 45,
+  'shoulder_press': 25,
+  'lat_pulldown': 40,
+  'seated_row': 35,
+  'bicep_curl': 15,
+  'tricep_extension': 15,
+  
+  // Lower body minimums
+  'leg_press': 80,
+  'squat': 45,
+  'leg_curl': 25,
+  'leg_extension': 30,
+  'calf_raise': 45,
+  
+  // Default minimum
+  'default': 25
 } as const;
 
 // Gender modifiers
@@ -111,17 +133,20 @@ export function calculateOptimalWeight(
   const ageModifier = Math.max(0.5, 1 - ageAdjustment); // Minimum 50% modifier
   
   // Get exercise-specific modifier
-  const exerciseKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
-  const exerciseModifier = EXERCISE_MODIFIERS[exerciseKey as keyof typeof EXERCISE_MODIFIERS] || EXERCISE_MODIFIERS.default;
+  const exerciseModifierKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
+  const exerciseModifier = EXERCISE_MODIFIERS[exerciseModifierKey as keyof typeof EXERCISE_MODIFIERS] || EXERCISE_MODIFIERS.default;
   
-  // Calculate final weight (convert lbs to kg for internal calculation, then back to lbs)
-  const weight_kg = weight_lbs * 0.453592;
-  const baseWeight = weight_kg * baseFactor * goalMultiplier * genderModifier * ageModifier * exerciseModifier;
+  // Calculate final weight using bodyweight directly (already in lbs)
+  const baseWeight = weight_lbs * baseFactor * goalMultiplier * genderModifier * ageModifier * exerciseModifier;
   
-  // Convert back to lbs and round to nearest 5 lbs
-  const baseWeightLbs = baseWeight * 2.2;
-  const roundedWeight = Math.round(baseWeightLbs / 5) * 5;
-  return Math.max(10, roundedWeight); // Minimum 10lbs
+  // Round to nearest 5 lbs
+  const roundedWeight = Math.round(baseWeight / 5) * 5;
+  
+  // Apply minimum weight floor for this exercise
+  const minimumWeightKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
+  const minimumWeight = MINIMUM_WEIGHTS[minimumWeightKey as keyof typeof MINIMUM_WEIGHTS] || MINIMUM_WEIGHTS.default;
+  
+  return Math.max(minimumWeight, roundedWeight);
 }
 
 /**
