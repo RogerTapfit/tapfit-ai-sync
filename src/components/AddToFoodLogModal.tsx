@@ -239,6 +239,22 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Selected Photo Preview */}
+          {selectedImage && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-center"
+            >
+              <img
+                src={selectedImage}
+                alt="Selected food photo for analysis"
+                loading="lazy"
+                className="w-40 h-40 object-cover rounded-xl border-4 border-stats-exercises/40 shadow-md"
+              />
+            </motion.div>
+          )}
+
           {/* Product Info */}
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
