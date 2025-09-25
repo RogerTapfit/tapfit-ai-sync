@@ -11,8 +11,8 @@ const AvatarSelection: React.FC = () => {
   return (
     <>
       <SEO
-        title="Choose Avatar | TapFit"
-        description="Select your avatar character from our collection of fitness companions"
+        title="Choose Coach | TapFit"
+        description="Select your coach character from our collection of fitness companions"
       />
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-6">
@@ -26,7 +26,7 @@ const AvatarSelection: React.FC = () => {
               <ArrowLeft className="w-4 h-4" />
               Back
             </Button>
-            <h1 className="text-2xl font-bold">Choose Your Avatar</h1>
+            <h1 className="text-2xl font-bold">Choose Your Coach</h1>
           </div>
           <AvatarGallery />
         </div>

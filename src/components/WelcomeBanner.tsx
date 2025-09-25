@@ -71,7 +71,7 @@ export const WelcomeBanner: React.FC = () => {
             <Link to="/avatars">
               <Button variant="outline" size="sm" className="gap-2">
                 <User className="w-4 h-4" />
-                Choose Avatar
+                Choose Coach
               </Button>
             </Link>
           )}

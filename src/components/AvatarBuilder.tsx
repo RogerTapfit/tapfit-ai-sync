@@ -16,7 +16,7 @@ export const AvatarBuilder = ({ onClose, isFirstTime = false }: AvatarBuilderPro
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              {isFirstTime ? 'Choose Your Avatar' : 'Manage Avatars'}
+              {isFirstTime ? 'Choose Your Coach' : 'Manage Coaches'}
             </h1>
             <p className="text-muted-foreground">
               Drag-and-drop images into the grid to create or update avatars. Reorder by dragging tiles.

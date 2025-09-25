@@ -101,7 +101,7 @@ export const AvatarGallery: React.FC = () => {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Choose Your Avatar</CardTitle>
+          <CardTitle>Choose Your Coach</CardTitle>
         </CardHeader>
         <CardContent>
           {loading || avatarLoading ? (

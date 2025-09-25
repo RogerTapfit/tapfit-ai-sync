@@ -320,8 +320,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <div className="relative flex items-center gap-4 justify-center">
           <User className="h-8 w-8" />
           <div className="flex flex-col items-start">
-            <span className="text-2xl font-black">CHOOSE AVATAR</span>
-            <span className="text-sm font-normal opacity-90">Customize Your Character</span>
+            <span className="text-2xl font-black">CHOOSE COACH</span>
+            <span className="text-sm font-normal opacity-90">Customize Your Coach</span>
           </div>
         </div>
       </Button>
