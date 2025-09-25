@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { Utensils, Coffee, Sun, Sunset, Moon, Plus, Minus } from 'lucide-react';
+import { Utensils, Coffee, Sun, Sunset, Moon, Plus, Minus, Mic } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import type { FoodItem, FoodEntry } from '@/hooks/useNutrition';
+import VoiceInterface from './VoiceInterface';
 
 interface ProductAnalysis {
   product: {
@@ -86,6 +86,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeFromTime());
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const { saveFoodEntry } = useNutrition();
 
   // Check if product is alcohol
@@ -184,10 +185,21 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Utensils className="h-5 w-5 text-stats-exercises" />
-            Add to Food Log
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Utensils className="h-5 w-5 text-stats-exercises" />
+              Add to Food Log
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsVoiceChatOpen(true)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Mic className="h-4 w-4 mr-2" />
+              Voice Chat
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -351,6 +363,12 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           </motion.div>
         </div>
       </DialogContent>
+
+      {/* Voice Chat Interface */}
+      <VoiceInterface 
+        isOpen={isVoiceChatOpen}
+        onToggle={() => setIsVoiceChatOpen(!isVoiceChatOpen)}
+      />
     </Dialog>
   );
 };
