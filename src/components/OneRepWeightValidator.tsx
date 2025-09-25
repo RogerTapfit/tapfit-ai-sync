@@ -99,11 +99,11 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleStartRep} className="flex-1" size="lg">
-                <Play className="h-4 w-4 mr-2" />
+              <Button onClick={handleStartRep} className="flex-1 h-16 text-lg font-semibold" size="lg">
+                <Play className="h-5 w-5 mr-2" />
                 Did One Rep
               </Button>
-              <Button onClick={onSkip} variant="outline" size="lg" className="sm:w-auto">
+              <Button onClick={onSkip} variant="outline" size="lg" className="sm:w-auto h-16">
                 Skip
               </Button>
             </div>
