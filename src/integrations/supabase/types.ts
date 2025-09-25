@@ -56,6 +56,45 @@ export type Database = {
         }
         Relationships: []
       }
+      alcohol_entries: {
+        Row: {
+          alcohol_content: number | null
+          created_at: string
+          drink_type: string
+          id: string
+          logged_date: string
+          logged_time: string | null
+          notes: string | null
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alcohol_content?: number | null
+          created_at?: string
+          drink_type: string
+          id?: string
+          logged_date?: string
+          logged_time?: string | null
+          notes?: string | null
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alcohol_content?: number | null
+          created_at?: string
+          drink_type?: string
+          id?: string
+          logged_date?: string
+          logged_time?: string | null
+          notes?: string | null
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       avatar_achievements: {
         Row: {
           achievement_data: Json

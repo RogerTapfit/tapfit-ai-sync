@@ -68,6 +68,12 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
+    if (day.alcoholEntries.length > 0) {
+      indicators.push(
+        <div key="alcohol" className="w-2 h-2 bg-red-500 rounded-full" />
+      );
+    }
+
     if (day.steps > 0) {
       indicators.push(
         <div key="steps" className="w-2 h-2 bg-purple-500 rounded-full" />
@@ -141,7 +147,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
 
             {/* Legend */}
             <Card className="p-3 glow-card">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 text-xs sm:text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
                   <span className="truncate">Completed</span>
@@ -153,6 +159,10 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
                   <span className="truncate">Food Logged</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                  <span className="truncate">Alcohol</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
@@ -241,7 +251,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
             {/* Monthly Stats Summary */}
             <Card className="p-3 sm:p-4 glow-card">
               <h3 className="font-semibold mb-3 text-sm sm:text-base">Monthly Overview</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 text-center">
                 <div className="space-y-1">
                   <div className="text-lg sm:text-2xl font-bold text-stats-exercises">
                     {calendarDays.reduce((sum, day) => 
@@ -267,6 +277,14 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   <div className="text-xs text-muted-foreground">Meals</div>
                 </div>
                 <div className="space-y-1">
+                  <div className="text-lg sm:text-2xl font-bold text-red-600">
+                    {calendarDays.reduce((sum, day) => 
+                      sum + (day?.dailyStats.alcoholDrinks || 0), 0
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Drinks</div>
+                </div>
+                <div className="space-y-1">
                   <div className="text-lg sm:text-2xl font-bold text-yellow-500">
                     {calendarDays.reduce((sum, day) => 
                       sum + (day?.dailyStats.tapCoinsEarned || 0), 0
@@ -274,7 +292,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   </div>
                   <div className="text-xs text-muted-foreground">Tap Coins</div>
                 </div>
-                <div className="space-y-1 col-span-2 sm:col-span-1">
+                <div className="space-y-1">
                   <div className="text-lg sm:text-2xl font-bold text-stats-duration">
                     {calendarDays.filter(day => day?.hasActivity).length}
                   </div>

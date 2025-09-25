@@ -9,6 +9,7 @@ export interface CalendarDay {
   dateString: string;
   workouts: WorkoutActivity[];
   foodEntries: FoodActivity[];
+  alcoholEntries: AlcoholActivity[];
   tapCoins: TapCoinsActivity[];
   steps: number;
   calories: number;
@@ -18,6 +19,7 @@ export interface CalendarDay {
     exercisesCompleted: number;
     workoutDuration: number;
     tapCoinsEarned: number;
+    alcoholDrinks: number;
   };
   hasActivity: boolean;
 }
@@ -50,6 +52,15 @@ export interface TapCoinsActivity {
   time: string;
 }
 
+export interface AlcoholActivity {
+  id: string;
+  drinkType: string;
+  quantity: number;
+  alcoholContent: number;
+  time: string;
+  notes?: string;
+}
+
 export const useCalendarData = (userId?: string) => {
   const [loading, setLoading] = useState(false);
   const [calendarData, setCalendarData] = useState<Map<string, CalendarDay>>(new Map());
@@ -72,7 +83,7 @@ export const useCalendarData = (userId?: string) => {
       const endDateStr = endDate.toISOString().split('T')[0];
 
       // Fetch comprehensive data in parallel
-      const [workoutLogsResponse, foodEntriesResponse, dailyStepsResponse, tapCoinsResponse] = await Promise.all([
+      const [workoutLogsResponse, foodEntriesResponse, alcoholEntriesResponse, dailyStepsResponse, tapCoinsResponse] = await Promise.all([
         supabase
           .from('workout_logs')
           .select('*')
@@ -82,6 +93,13 @@ export const useCalendarData = (userId?: string) => {
           
         supabase
           .from('food_entries')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('logged_date', startDateStr)
+          .lte('logged_date', endDateStr),
+          
+        supabase
+          .from('alcohol_entries')
           .select('*')
           .eq('user_id', userId)
           .gte('logged_date', startDateStr)
@@ -106,6 +124,7 @@ export const useCalendarData = (userId?: string) => {
       const newCalendarData = new Map<string, CalendarDay>();
       const workoutLogs = workoutLogsResponse.data || [];
       const fetchedFoodEntries = foodEntriesResponse.data || [];
+      const alcoholEntries = alcoholEntriesResponse.data || [];
       const dailySteps = dailyStepsResponse.data || [];
       const tapCoinsTransactions = tapCoinsResponse.data || [];
 
@@ -139,6 +158,18 @@ export const useCalendarData = (userId?: string) => {
             time: new Date(food.created_at).toISOString()
           }));
         
+        // Get alcohol entries for this day
+        const dayAlcoholEntries: AlcoholActivity[] = alcoholEntries
+          .filter(alcohol => alcohol.logged_date === dateString)
+          .map(alcohol => ({
+            id: alcohol.id,
+            drinkType: alcohol.drink_type,
+            quantity: alcohol.quantity,
+            alcoholContent: alcohol.alcohol_content || 0,
+            time: new Date(alcohol.created_at).toISOString(),
+            notes: alcohol.notes
+          }));
+        
         // Get steps for this day
         const dayStep = dailySteps.find(step => step.recorded_date === dateString);
         
@@ -161,12 +192,14 @@ export const useCalendarData = (userId?: string) => {
         const totalTapCoinsEarned = dayTapCoins
           .filter(coin => coin.amount > 0)
           .reduce((sum, coin) => sum + coin.amount, 0);
+        const totalAlcoholDrinks = dayAlcoholEntries.reduce((sum, alcohol) => sum + alcohol.quantity, 0);
         
         newCalendarData.set(dateString, {
           date: currentDate,
           dateString,
           workouts: dayWorkouts,
           foodEntries: dayFoodEntries,
+          alcoholEntries: dayAlcoholEntries,
           tapCoins: dayTapCoins,
           steps: dayStep?.step_count || 0,
           calories: totalWorkoutCalories,
@@ -175,9 +208,10 @@ export const useCalendarData = (userId?: string) => {
             caloriesConsumed: totalConsumedCalories,
             exercisesCompleted: totalExercises,
             workoutDuration: totalWorkoutDuration,
-            tapCoinsEarned: totalTapCoinsEarned
+            tapCoinsEarned: totalTapCoinsEarned,
+            alcoholDrinks: totalAlcoholDrinks
           },
-          hasActivity: dayWorkouts.length > 0 || dayFoodEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0
+          hasActivity: dayWorkouts.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0
         });
       }
 
@@ -229,6 +263,7 @@ export const useCalendarData = (userId?: string) => {
           dateString,
           workouts: [],
           foodEntries: [],
+          alcoholEntries: [],
           tapCoins: [],
           steps: 0,
           calories: 0,
@@ -237,7 +272,8 @@ export const useCalendarData = (userId?: string) => {
             caloriesConsumed: 0,
             exercisesCompleted: 0,
             workoutDuration: 0,
-            tapCoinsEarned: 0
+            tapCoinsEarned: 0,
+            alcoholDrinks: 0
           },
           hasActivity: false
         });

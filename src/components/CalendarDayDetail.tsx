@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity } from '@/hooks/useCalendarData';
+import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity } from '@/hooks/useCalendarData';
 import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
 import { ConsumedCaloriesBreakdown } from './calendar/ConsumedCaloriesBreakdown';
 import { ExercisesBreakdown } from './calendar/ExercisesBreakdown';
@@ -21,7 +21,8 @@ import {
   Camera,
   ChevronRight,
   Apple,
-  Coins
+  Coins,
+  Wine
 } from 'lucide-react';
 
 interface CalendarDayDetailProps {
@@ -314,6 +315,50 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
               </div>
             )}
 
+            {/* Alcohol Entries Section */}
+            {day.alcoholEntries.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Wine className="h-5 w-5 text-red-500" />
+                  Alcohol Consumption ({day.alcoholEntries.length})
+                </h3>
+                <div className="space-y-3">
+                  {day.alcoholEntries.map((alcohol) => (
+                    <Card key={alcohol.id} className="p-4 glow-card border-red-500/20">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Wine className="h-4 w-4 text-red-500" />
+                            <span className="font-semibold">{alcohol.drinkType}</span>
+                            {alcohol.alcoholContent > 0 && (
+                              <Badge variant="outline" className="text-red-500 border-red-500/30">
+                                {alcohol.alcoholContent}% ABV
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(alcohol.time).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                            <div className="text-red-600 font-medium">
+                              {alcohol.quantity} {alcohol.quantity === 1 ? 'drink' : 'drinks'}
+                            </div>
+                          </div>
+                          {alcohol.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{alcohol.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Tap Coins Section */}
             {day.tapCoins.length > 0 && (
               <div>
@@ -360,7 +405,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                   <div className="text-4xl">😴</div>
                   <h3 className="text-lg font-semibold text-muted-foreground">Rest Day</h3>
                   <p className="text-sm text-muted-foreground">
-                    No workouts or food logged on this day
+                    No workouts, food, or alcohol logged on this day
                   </p>
                 </div>
               </Card>
