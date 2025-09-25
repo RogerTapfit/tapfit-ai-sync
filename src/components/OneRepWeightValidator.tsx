@@ -72,7 +72,7 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
       <CardContent className="space-y-6 px-4 pb-6">
         {/* Machine Image */}
         <div className="flex justify-center">
-          <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-xl bg-gradient-to-br from-red-50/10 to-red-100/20 border border-red-200/30 overflow-hidden shadow-md">
+          <div className="w-80 h-80 sm:w-96 sm:h-96 rounded-xl bg-gradient-to-br from-red-50/10 to-red-100/20 overflow-hidden shadow-md">
             <img 
               src={machineImageUrl} 
               alt={exercise.machine}
