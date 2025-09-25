@@ -9,6 +9,7 @@ import { Camera, Search, Calendar, Filter, Eye, Trash2, Download } from 'lucide-
 import { format } from 'date-fns';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
+import { getBestPhotoUrl, getBestThumbnailUrl } from '@/utils/photoUtils';
 
 interface PhotoData {
   id: string;
@@ -44,26 +45,24 @@ export const FoodPhotoGallery: React.FC<FoodPhotoGalleryProps> = ({ className })
         const photoEntries: PhotoData[] = [];
         
         foodEntries.forEach(entry => {
-          // Handle both new multiple photo format and legacy single photo format
-          const urls = entry.photo_urls || (entry.photo_url ? [entry.photo_url] : []);
-          const thumbnails = entry.thumbnail_urls || (entry.thumbnail_url ? [entry.thumbnail_url] : []);
+          // Try to get any available photo using our helper
+          const photoUrl = getBestPhotoUrl(entry as any);
+          const thumbnailUrl = getBestThumbnailUrl(entry as any);
           
-          urls.forEach((url, index) => {
-            // Check if URL is valid and not a base64 data URL
-            if (url && !url.startsWith('data:') && url.trim() !== '') {
-              photoEntries.push({
-                id: `${entry.id}-${index}`,
-                photo_url: url,
-                thumbnail_url: thumbnails[index] || url,
-                meal_type: entry.meal_type,
-                logged_date: entry.logged_date,
-                created_at: entry.created_at,
-                total_calories: entry.total_calories,
-                food_items: entry.food_items || [],
-                notes: entry.notes
-              });
-            }
-          });
+          // If we found any photo, add it to the gallery
+          if (photoUrl) {
+            photoEntries.push({
+              id: entry.id,
+              photo_url: photoUrl,
+              thumbnail_url: thumbnailUrl || photoUrl,
+              meal_type: entry.meal_type,
+              logged_date: entry.logged_date,
+              created_at: entry.created_at,
+              total_calories: entry.total_calories,
+              food_items: entry.food_items || [],
+              notes: entry.notes
+            });
+          }
         });
         
         console.log(`Loaded ${photoEntries.length} valid photos from ${foodEntries.length} food entries`);

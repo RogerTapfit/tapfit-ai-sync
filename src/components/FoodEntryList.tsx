@@ -17,6 +17,7 @@ import {
 import { FoodEntry, useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
+import { getBestThumbnailUrl } from '@/utils/photoUtils';
 
 interface FoodEntryListProps {
   isOpen: boolean;
@@ -160,11 +161,11 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                       {/* Food Photo */}
                       <div className="w-full h-48 sm:w-24 sm:h-24 bg-muted flex-shrink-0 flex items-center justify-center">
                         {(() => {
-                          // Find the first available photo from any source
-                          const photoUrl = entry.photo_url || 
-                                         (entry.photo_urls && entry.photo_urls[0]) ||
-                                         entry.thumbnail_url || 
-                                         (entry.thumbnail_urls && entry.thumbnail_urls[0]);
+                          const photoUrl = getBestThumbnailUrl(entry);
+                          
+                          if (photoUrl) {
+                            console.log(`[FoodEntryList] Displaying photo for entry ${entry.id}:`, photoUrl);
+                          }
                           
                           return photoUrl ? (
                             <img 

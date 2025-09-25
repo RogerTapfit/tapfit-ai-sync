@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getBestThumbnailUrl } from '@/utils/photoUtils';
 import { useNutrition } from './useNutrition';
 import { useDailyStats } from './useDailyStats';
 import { useWorkoutPlan } from './useWorkoutPlan';
@@ -153,12 +154,7 @@ export const useCalendarData = (userId?: string) => {
         const dayFoodEntries: FoodActivity[] = fetchedFoodEntries
           .filter(food => food.logged_date === dateString)
           .map(food => {
-            // Prefer main photo, then arrays, then thumbnail fallbacks
-            const anyFood = food as any;
-            const photoUrl = anyFood.photo_url 
-              || (Array.isArray(anyFood.photo_urls) && anyFood.photo_urls[0])
-              || anyFood.thumbnail_url
-              || (Array.isArray(anyFood.thumbnail_urls) && anyFood.thumbnail_urls[0]);
+            const photoUrl = getBestThumbnailUrl(food as any);
             return ({
               id: food.id,
               mealType: food.meal_type,
