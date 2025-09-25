@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, TrendingUp, TrendingDown, Play } from 'lucide-react';
+import { getMachineImageUrl } from '@/utils/machineImageUtils';
 
 interface ExerciseRecommendation {
   id: string;
@@ -31,6 +32,8 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
   const [currentWeight, setCurrentWeight] = useState(exercise.recommended_weight);
   const [hasTriedRep, setHasTriedRep] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  
+  const machineImageUrl = getMachineImageUrl(exercise.machine);
 
   const handleStartRep = () => {
     setHasTriedRep(true);
@@ -67,6 +70,17 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-6 px-4 pb-6">
+        {/* Machine Image */}
+        <div className="flex justify-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-muted/30 overflow-hidden shadow-md">
+            <img 
+              src={machineImageUrl} 
+              alt={exercise.machine}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        
         <div className="text-center">
           <div className="text-4xl sm:text-5xl font-bold text-primary mb-2">
             {currentWeight} lbs
