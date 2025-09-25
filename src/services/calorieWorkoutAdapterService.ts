@@ -277,7 +277,7 @@ export class CalorieWorkoutAdapterService {
       // Save to workout_adaptations table
       const { error } = await supabase
         .from('workout_adaptations')
-        .insert([{
+        .insert({
           user_id: trigger.user_id,
           workout_plan_id: workoutPlan.id,
           adaptation_week: this.getCurrentWeekNumber(),
@@ -285,13 +285,13 @@ export class CalorieWorkoutAdapterService {
             calorie_variance: trigger.calorie_variance,
             health_grade: trigger.health_grade,
             nutrition_summary: trigger.nutrition_data
-          },
+          } as any,
           adaptation_applied: {
             adaptations: trigger.adaptation_applied,
             trigger_date: trigger.trigger_date
-          },
+          } as any,
           adaptation_reason: trigger.reasoning
-        }]);
+        } as any);
 
       if (error) {
         console.error('Error saving adaptation trigger:', error);

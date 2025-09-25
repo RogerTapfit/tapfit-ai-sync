@@ -148,8 +148,8 @@ export class MonthlyWorkoutService {
           exercises,
           templateData,
           weekIntensity,
-          userProfile,
-          week
+          week,
+          userProfile
         )
       };
       
@@ -203,8 +203,8 @@ export class MonthlyWorkoutService {
           exercises,
           templateData,
           intensity,
-          userProfile,
-          preferences.current_fitness_level
+          preferences.current_fitness_level,
+          userProfile
         )
       };
 
@@ -266,8 +266,8 @@ export class MonthlyWorkoutService {
           exercise,
           templateData,
           intensity,
-          userProfile,
-          i + 1
+          i + 1,
+          userProfile
         );
         selectedExercises.push(exerciseDetails);
       }

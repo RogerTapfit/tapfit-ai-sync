@@ -1,7 +1,7 @@
-import WorkoutPlanDashboard from "@/components/WorkoutPlanDashboard";
+import EnhancedWorkoutPlanDashboard from "@/components/EnhancedWorkoutPlanDashboard";
 
 const WorkoutPlan = () => {
-  return <WorkoutPlanDashboard />;
+  return <EnhancedWorkoutPlanDashboard />;
 };
 
 export default WorkoutPlan;
