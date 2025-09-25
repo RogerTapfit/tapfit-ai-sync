@@ -60,43 +60,43 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
   };
 
   return (
-    <Card className="max-w-lg mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="text-xl">{exercise.name}</CardTitle>
-        <p className="text-muted-foreground">Try one rep to find your perfect weight</p>
+    <Card className="max-w-lg mx-auto m-4">
+      <CardHeader className="text-center px-4 py-6">
+        <CardTitle className="text-lg sm:text-xl">{exercise.name}</CardTitle>
+        <p className="text-muted-foreground text-sm">Try one rep to find your perfect weight</p>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 px-4 pb-6">
         <div className="text-center">
-          <div className="text-5xl font-bold text-primary mb-2">
+          <div className="text-4xl sm:text-5xl font-bold text-primary mb-2">
             {currentWeight} lbs
           </div>
-          <Badge variant="outline">
+          <Badge variant="outline" className="text-xs sm:text-sm">
             {exercise.sets} sets × {exercise.reps} reps
           </Badge>
         </div>
 
         {!hasTriedRep ? (
           <div className="space-y-4">
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-2 px-2">
               <p className="text-sm text-muted-foreground">
                 Load {currentWeight} lbs and try one rep with proper form
               </p>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button onClick={handleStartRep} className="flex-1" size="lg">
                 <Play className="h-4 w-4 mr-2" />
                 Did One Rep
               </Button>
-              <Button onClick={onSkip} variant="outline" size="lg">
+              <Button onClick={onSkip} variant="outline" size="lg" className="sm:w-auto">
                 Skip
               </Button>
             </div>
           </div>
         ) : showFeedback ? (
           <div className="space-y-4">
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground px-2">
               How did that feel?
             </p>
             
@@ -130,7 +130,7 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
           </div>
         ) : null}
         
-        <div className="text-center">
+        <div className="text-center px-2">
           <p className="text-xs text-muted-foreground">
             We'll adjust automatically during your workouts
           </p>

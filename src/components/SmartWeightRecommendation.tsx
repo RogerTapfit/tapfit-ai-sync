@@ -341,21 +341,21 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-6">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Brain className="h-5 w-5 text-primary" />
                 Smart Weight Recommendations
               </CardTitle>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 AI-calculated starting weights based on your profile
               </p>
             </div>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="self-start sm:self-center">
               <Lightbulb className="h-4 w-4 mr-1" />
               Intelligent Setup
             </Badge>
@@ -364,17 +364,18 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
       </Card>
 
       {/* Recommendations Grid */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-0">
         {recommendations.map((rec) => (
           <Card key={rec.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold">{rec.name}</h3>
+                <h3 className="font-semibold text-sm sm:text-base">{rec.name}</h3>
                 <Badge 
                   variant={rec.confidence === 'high' ? 'default' : rec.confidence === 'medium' ? 'secondary' : 'outline'}
+                  className="text-xs"
                 >
-                  {rec.confidence === 'high' ? 'High Confidence' : 
-                   rec.confidence === 'medium' ? 'Medium Confidence' : 'Learning'}
+                  {rec.confidence === 'high' ? 'High' : 
+                   rec.confidence === 'medium' ? 'Medium' : 'Learning'}
                 </Badge>
               </div>
               
@@ -399,21 +400,30 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
 
       {/* Action Buttons */}
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="text-center space-y-4">
             <div className="space-y-2">
-              <h3 className="font-semibold">Ready to get started?</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-lg">Ready to get started?</h3>
+              <p className="text-sm text-muted-foreground px-2">
                 Try one rep of each exercise to perfectly tune your weights, or start immediately
               </p>
             </div>
             
-            <div className="flex gap-3 justify-center">
-              <Button onClick={startOneRepValidation} variant="default" className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={startOneRepValidation} 
+                variant="default" 
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
+              >
                 <Sparkles className="h-4 w-4" />
-                One-Rep Tuning (Recommended)
+                <span className="sm:hidden">One-Rep Tuning</span>
+                <span className="hidden sm:inline">One-Rep Tuning (Recommended)</span>
               </Button>
-              <Button onClick={() => completeRecommendations()} variant="outline">
+              <Button 
+                onClick={() => completeRecommendations()} 
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Start Working Out Now
               </Button>
             </div>
