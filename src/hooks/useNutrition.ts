@@ -40,6 +40,8 @@ export interface FoodEntry {
   total_carbs: number;
   total_fat: number;
   photo_url?: string;
+  photo_storage_path?: string;
+  thumbnail_url?: string;
   ai_analyzed: boolean;
   user_confirmed: boolean;
   notes?: string;
@@ -47,6 +49,7 @@ export interface FoodEntry {
   created_at: string;
   health_grade?: string;
   grade_score?: number;
+  analysis_confidence?: number;
 }
 
 export interface DailyNutritionSummary {
@@ -434,6 +437,12 @@ export const useNutrition = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
+      console.log('Saving food entry with photo data:', {
+        photo_url: entry.photo_url,
+        photo_storage_path: entry.photo_storage_path,
+        thumbnail_url: entry.thumbnail_url
+      });
+
       const { data, error } = await supabase
         .from('food_entries')
         .insert({
@@ -445,6 +454,8 @@ export const useNutrition = () => {
         .single();
 
       if (error) throw error;
+
+      console.log('Food entry saved successfully with photo data:', data);
 
       setFoodEntries(prev => [transformDatabaseToFoodEntry(data), ...prev]);
       

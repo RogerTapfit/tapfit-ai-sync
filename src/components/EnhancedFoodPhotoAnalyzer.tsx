@@ -342,6 +342,33 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     setIsSaving(true);
 
     try {
+      // Upload photos if available
+      let photoUrl: string | undefined;
+      let photoStoragePath: string | undefined;
+      let thumbnailUrl: string | undefined;
+
+      if (photos.length > 0) {
+        const { FoodPhotoUploadService } = await import('../services/foodPhotoUploadService');
+        const mainPhoto = photos[0]; // Use first photo as main photo
+        
+        console.log('Uploading photo for food entry...');
+        const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(
+          mainPhoto.dataUrl,
+          mealType,
+          `food_${Date.now()}.jpg`
+        );
+        
+        if (uploadResult.success) {
+          photoUrl = uploadResult.photoUrl;
+          photoStoragePath = uploadResult.storagePath;
+          thumbnailUrl = uploadResult.thumbnailUrl;
+          console.log('Photo uploaded successfully:', uploadResult);
+        } else {
+          console.error('Failed to upload photo:', uploadResult.error);
+          toast.error('Photo upload failed, but food entry will still be saved');
+        }
+      }
+
       const totalCalories = editingItems.reduce((sum, item) => sum + item.calories, 0);
       const totalProtein = editingItems.reduce((sum, item) => sum + item.protein, 0);
       const totalCarbs = editingItems.reduce((sum, item) => sum + item.carbs, 0);
@@ -354,7 +381,9 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         total_protein: totalProtein,
         total_carbs: totalCarbs,
         total_fat: totalFat,
-        photo_url: photos[0]?.dataUrl,
+        photo_url: photoUrl,
+        photo_storage_path: photoStoragePath,
+        thumbnail_url: thumbnailUrl,
         ai_analyzed: true,
         user_confirmed: true,
         notes: notes,

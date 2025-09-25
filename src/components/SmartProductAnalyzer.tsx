@@ -218,9 +218,26 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     setShowFoodLogModal(true);
   };
 
-  const handleFoodLogSuccess = () => {
-    // Optional: Call onProductFound if parent component needs to be notified
-    if (analysisResult && onProductFound) {
+  const handleFoodLogSuccess = async () => {
+    // Upload photo if available and notify parent
+    if (analysisResult && onProductFound && selectedImage) {
+      try {
+        const { FoodPhotoUploadService } = await import('../services/foodPhotoUploadService');
+        
+        console.log('Uploading product photo...');
+        const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(
+          selectedImage,
+          'product',
+          `product_${Date.now()}.jpg`
+        );
+        
+        if (uploadResult.success) {
+          console.log('Product photo uploaded successfully:', uploadResult);
+        }
+      } catch (error) {
+        console.error('Failed to upload product photo:', error);
+      }
+      
       const foodItem = convertToFoodItem(analysisResult);
       onProductFound(foodItem);
     }
