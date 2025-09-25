@@ -49,7 +49,8 @@ export const FoodPhotoGallery: React.FC<FoodPhotoGalleryProps> = ({ className })
           const thumbnails = entry.thumbnail_urls || (entry.thumbnail_url ? [entry.thumbnail_url] : []);
           
           urls.forEach((url, index) => {
-            if (url && !url.startsWith('data:')) { // Skip base64 data URLs
+            // Check if URL is valid and not a base64 data URL
+            if (url && !url.startsWith('data:') && url.trim() !== '') {
               photoEntries.push({
                 id: `${entry.id}-${index}`,
                 photo_url: url,
@@ -65,6 +66,7 @@ export const FoodPhotoGallery: React.FC<FoodPhotoGalleryProps> = ({ className })
           });
         });
         
+        console.log(`Loaded ${photoEntries.length} valid photos from ${foodEntries.length} food entries`);
         setPhotos(photoEntries);
         setFilteredPhotos(photoEntries);
       } catch (error) {
@@ -233,6 +235,10 @@ export const FoodPhotoGallery: React.FC<FoodPhotoGalleryProps> = ({ className })
                       alt="Food photo"
                       className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
                       loading="lazy"
+                      onError={(e) => {
+                        console.error('Failed to load image:', photo.photo_url);
+                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiNmM2Y0ZjYiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI4MCIgcj0iMjAiIGZpbGw9IiM5Y2EzYWYiLz48L3N2Zz4=';
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                     <div className="absolute bottom-2 left-2">

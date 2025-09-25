@@ -15,6 +15,28 @@ export class FoodPhotoUploadService {
   private static readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   
   /**
+   * Initialize bucket if needed
+   */
+  static async ensureBucketExists(): Promise<void> {
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === this.BUCKET_NAME);
+      
+      if (!bucketExists) {
+        console.log('Creating food-photos bucket...');
+        await supabase.storage.createBucket(this.BUCKET_NAME, {
+          public: true,
+          allowedMimeTypes: this.ALLOWED_TYPES,
+          fileSizeLimit: this.MAX_FILE_SIZE
+        });
+      }
+    } catch (error) {
+      console.warn('Bucket initialization warning:', error);
+      // Continue anyway - bucket might exist or be created externally
+    }
+  }
+
+  /**
    * Validate photo file before upload
    */
   static validatePhoto(file: File): { valid: boolean; error?: string } {
@@ -90,12 +112,24 @@ export class FoodPhotoUploadService {
     photos: Array<{ dataUrl: string; type: string; file?: File }>,
     mealType: string = 'meal'
   ): Promise<{ success: boolean; photos: any[]; errors: string[] }> {
+    // Ensure bucket exists first
+    await this.ensureBucketExists();
+    
     const results = [];
     const errors = [];
 
     for (const [index, photo] of photos.entries()) {
       const filename = `food_photo_${Date.now()}_${index}.jpg`;
-      const result = await this.uploadFoodPhoto(photo.dataUrl, mealType, filename);
+      
+      // Use the file if available, otherwise convert from dataUrl
+      let fileToUpload: File;
+      if (photo.file) {
+        fileToUpload = photo.file;
+      } else {
+        fileToUpload = this.dataURLtoFile(photo.dataUrl, filename);
+      }
+      
+      const result = await this.uploadFoodPhoto(fileToUpload, mealType, filename);
       
       if (result.success) {
         results.push({
@@ -125,21 +159,23 @@ export class FoodPhotoUploadService {
     originalFilename?: string
   ): Promise<PhotoUploadResult> {
     try {
+      // Ensure bucket exists first
+      await this.ensureBucketExists();
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         return { success: false, error: 'User not authenticated' };
       }
 
-      // Prevent base64 data URLs from being stored directly
-      if (typeof fileOrDataUrl === 'string' && !fileOrDataUrl.startsWith('data:')) {
-        return { success: false, error: 'Invalid data format - base64 data URLs not allowed' };
-      }
-
       // Convert data URL to file if needed
       let file: File;
       if (typeof fileOrDataUrl === 'string') {
-        const filename = originalFilename || `food_photo_${Date.now()}.jpg`;
-        file = this.dataURLtoFile(fileOrDataUrl, filename);
+        if (fileOrDataUrl.startsWith('data:')) {
+          const filename = originalFilename || `food_photo_${Date.now()}.jpg`;
+          file = this.dataURLtoFile(fileOrDataUrl, filename);
+        } else {
+          return { success: false, error: 'Invalid file format' };
+        }
       } else {
         file = fileOrDataUrl;
       }
@@ -168,6 +204,8 @@ export class FoodPhotoUploadService {
         thumbnailFile = processedFile;
       }
 
+      console.log(`Uploading to bucket: ${this.BUCKET_NAME}, path: ${fileName}`);
+
       // Upload original photo
       const { data: photoData, error: photoError } = await supabase.storage
         .from(this.BUCKET_NAME)
@@ -178,7 +216,7 @@ export class FoodPhotoUploadService {
 
       if (photoError) {
         console.error('Photo upload error:', photoError);
-        return { success: false, error: photoError.message };
+        return { success: false, error: `Upload failed: ${photoError.message}` };
       }
 
       // Upload thumbnail
@@ -220,7 +258,7 @@ export class FoodPhotoUploadService {
       };
     } catch (error) {
       console.error('Error uploading food photo:', error);
-      return { success: false, error: 'Failed to upload photo. Please try again.' };
+      return { success: false, error: `Failed to upload photo: ${error}` };
     }
   }
 
