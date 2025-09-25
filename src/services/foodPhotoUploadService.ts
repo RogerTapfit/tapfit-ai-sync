@@ -437,26 +437,53 @@ export class FoodPhotoUploadService {
   }
 
   /**
-   * Get photo URL from storage path
+   * Get photo URL from storage path (public) and normalize inputs
    */
   static getPhotoUrl(storagePath: string): string {
     if (!storagePath) return '';
-    // If already a full URL, return as-is
     if (/^https?:\/\//i.test(storagePath)) return storagePath;
+
+    // Detect bucket from path if included
+    let bucket = this.BUCKET_NAME;
+    if (/^food_photos\//i.test(storagePath)) bucket = 'food_photos';
+    if (/^food-photos\//i.test(storagePath)) bucket = 'food-photos';
 
     // Normalize path: remove any leading domain/storage prefix and bucket prefix
     let path = storagePath
-      // Remove any accidentally stored full public prefix
-      .replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/food-photos\//i, '')
+      .replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/(public|sign)\/(food-photos|food_photos)\//i, '')
+      .replace(new RegExp(`^(${bucket}|${this.BUCKET_NAME})\/`), '')
       .replace(/^\/+/, '');
 
-    if (path.startsWith(`${this.BUCKET_NAME}/`)) {
-      path = path.replace(new RegExp(`^${this.BUCKET_NAME}/`), '');
-    }
-
     const { data: { publicUrl } } = supabase.storage
-      .from(this.BUCKET_NAME)
+      .from(bucket)
       .getPublicUrl(path);
     return publicUrl;
+  }
+
+  /**
+   * Create a signed URL for a storage path (works for private buckets)
+   */
+  static async getSignedUrl(storagePath: string, expiresInSec: number = 60 * 60): Promise<string | undefined> {
+    if (!storagePath) return undefined;
+    if (/^https?:\/\//i.test(storagePath)) return storagePath;
+
+    let bucket = this.BUCKET_NAME;
+    if (/^food_photos\//i.test(storagePath)) bucket = 'food_photos';
+    if (/^food-photos\//i.test(storagePath)) bucket = 'food-photos';
+
+    let path = storagePath
+      .replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/(public|sign)\/(food-photos|food_photos)\//i, '')
+      .replace(new RegExp(`^(${bucket}|${this.BUCKET_NAME})\/`), '')
+      .replace(/^\/+/, '');
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, expiresInSec);
+
+    if (error) {
+      console.warn('Failed to create signed URL for', path, error);
+      return undefined;
+    }
+    return data?.signedUrl;
   }
 }

@@ -234,9 +234,29 @@ export const FoodPhotoGallery: React.FC<FoodPhotoGalleryProps> = ({ className })
                       alt="Food photo"
                       className="w-full h-32 object-cover group-hover:scale-105 transition-transform"
                       loading="lazy"
-                      onError={(e) => {
+                      onError={async (e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        const entry: any = foodEntries.find(fe => fe.id === photo.id || `${fe.id}` === `${photo.id}`);
+                        const storagePath = entry?.photo_storage_path || entry?.photo_storage_paths?.[0];
+                        if (storagePath) {
+                          const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                          const signed = await FoodPhotoUploadService.getSignedUrl(storagePath, 60 * 60 * 6);
+                          if (signed) {
+                            img.src = signed;
+                            return;
+                          }
+                        }
+                        const match = img.src.match(/\/storage\/v1\/object\/(?:public|sign)\/food-photos\/(.+)$/i);
+                        if (match?.[1]) {
+                          const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                          const signed = await FoodPhotoUploadService.getSignedUrl(match[1], 60 * 60 * 6);
+                          if (signed) {
+                            img.src = signed;
+                            return;
+                          }
+                        }
                         console.error('Failed to load image:', photo.photo_url);
-                        e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiNmM2Y0ZjYiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI4MCIgcj0iMjAiIGZpbGw9IiM5Y2EzYWYiLz48L3N2Zz4=';
+                        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDIwMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiNmM2Y0ZjYiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI4MCIgcj0iMjAiIGZpbGw9IiM5Y2EzYWYiLz48L3N2Zz4=';
                       }}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
@@ -267,6 +287,28 @@ export const FoodPhotoGallery: React.FC<FoodPhotoGalleryProps> = ({ className })
                       src={photo.photo_url}
                       alt="Food photo"
                       className="w-full max-h-96 object-contain rounded-lg"
+                      onError={async (e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        const entry: any = foodEntries.find(fe => fe.id === photo.id || `${fe.id}` === `${photo.id}`);
+                        const storagePath = entry?.photo_storage_path || entry?.photo_storage_paths?.[0];
+                        if (storagePath) {
+                          const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                          const signed = await FoodPhotoUploadService.getSignedUrl(storagePath, 60 * 60 * 6);
+                          if (signed) {
+                            img.src = signed;
+                            return;
+                          }
+                        }
+                        const match = img.src.match(/\/storage\/v1\/object\/(?:public|sign)\/food-photos\/(.+)$/i);
+                        if (match?.[1]) {
+                          const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                          const signed = await FoodPhotoUploadService.getSignedUrl(match[1], 60 * 60 * 6);
+                          if (signed) {
+                            img.src = signed;
+                            return;
+                          }
+                        }
+                      }}
                     />
                     
                     <div className="grid grid-cols-2 gap-4 text-sm">

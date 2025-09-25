@@ -172,9 +172,31 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                               src={photoUrl} 
                               alt="Food"
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                console.warn(`[FoodEntryList] Image failed to load for entry ${entry.id}:`, photoUrl);
-                                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                              onError={async (e) => {
+                                const img = e.currentTarget as HTMLImageElement;
+                                console.warn(`[FoodEntryList] Public URL failed for entry ${entry.id}. Retrying with signed URL...`);
+                                // Try storage paths first
+                                const storagePath = (entry as any).photo_storage_path || (entry as any).photo_storage_paths?.[0];
+                                if (storagePath) {
+                                  const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                                  const signed = await FoodPhotoUploadService.getSignedUrl(storagePath, 60 * 60 * 6);
+                                  if (signed) {
+                                    img.src = signed;
+                                    return;
+                                  }
+                                }
+                                // Try to extract path from the current URL if possible
+                                const match = img.src.match(/\/storage\/v1\/object\/(?:public|sign)\/food-photos\/(.+)$/i);
+                                if (match?.[1]) {
+                                  const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                                  const signed = await FoodPhotoUploadService.getSignedUrl(match[1], 60 * 60 * 6);
+                                  if (signed) {
+                                    img.src = signed;
+                                    return;
+                                  }
+                                }
+                                // Hide broken image icon
+                                img.style.display = 'none';
                               }}
                             />
                           ) : (
