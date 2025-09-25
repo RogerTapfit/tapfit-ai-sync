@@ -31,8 +31,8 @@ export const useRealtimeChat = () => {
 
   // Get the correct WebSocket URL for the project
   const getWebSocketURL = () => {
-    // Use the project's Supabase URL directly
-    return `wss://pbrayxmqzdxsmhqmzygc.functions.supabase.co/realtime-voice-chat`;
+    // Use the correct Supabase Functions WebSocket URL format
+    return `wss://pbrayxmqzdxsmhqmzygc.supabase.co/functions/v1/realtime-voice-chat`;
   };
 
   const connect = useCallback(async () => {
@@ -51,7 +51,7 @@ export const useRealtimeChat = () => {
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log("WebSocket connected");
+        console.log("WebSocket connected successfully!");
         setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
       };
 
@@ -119,8 +119,12 @@ export const useRealtimeChat = () => {
       };
 
       wsRef.current.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        setVoiceState(prev => ({ ...prev, error: 'Connection error', isConnected: false }));
+        console.error("WebSocket connection error:", error);
+        setVoiceState(prev => ({ 
+          ...prev, 
+          error: 'Failed to connect to voice chat. Please try again.', 
+          isConnected: false 
+        }));
       };
 
       wsRef.current.onclose = () => {
