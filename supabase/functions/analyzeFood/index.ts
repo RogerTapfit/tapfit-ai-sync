@@ -1,7 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { crypto } from "https://deno.land/std@0.194.0/crypto/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -12,54 +11,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Generate SHA-256 hash for image caching
-async function generateImageHash(photos: any[]): Promise<string> {
-  const imageData = photos.map(photo => photo.base64).join('');
-  const encoder = new TextEncoder();
-  const data = encoder.encode(imageData);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Check if analysis is cached
-async function getCachedAnalysis(supabase: any, imageHash: string, mealType: string) {
-  const { data, error } = await supabase
-    .from('food_analysis_cache')
-    .select('*')
-    .eq('image_hash', imageHash)
-    .eq('meal_type', mealType)
-    .gt('expires_at', new Date().toISOString())
-    .single();
-    
-  if (error || !data) return null;
-  return data;
-}
-
-// Store analysis in cache
-async function cacheAnalysis(supabase: any, imageHash: string, mealType: string, analysisResult: any, userId?: string) {
-  const { error } = await supabase
-    .from('food_analysis_cache')
-    .insert({
-      image_hash: imageHash,
-      meal_type: mealType,
-      analysis_result: analysisResult,
-      user_id: userId
-    });
-    
-  if (error) {
-    console.warn('Failed to cache analysis:', error);
-  }
-}
-
-// Update cache hit count
-async function updateCacheHit(supabase: any, cacheId: string) {
-  await supabase
-    .from('food_analysis_cache')
-    .update({ cache_hits: supabase.raw('cache_hits + 1') })
-    .eq('id', cacheId);
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -67,7 +18,7 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    let { imageBase64, mealType, forceRefresh = false } = await req.json();
+    let { imageBase64, mealType } = await req.json();
     
     // Handle multiple photos
     let photos = [];
@@ -82,37 +33,6 @@ serve(async (req) => {
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
-
-    // Generate image hash for caching
-    const imageHash = await generateImageHash(photos);
-    console.log('Generated image hash:', imageHash);
-
-    // Check cache first (unless force refresh is requested)
-    if (!forceRefresh) {
-      const cachedResult = await getCachedAnalysis(supabase, imageHash, mealType || 'unknown');
-      if (cachedResult) {
-        console.log('Returning cached analysis, hit count:', cachedResult.cache_hits + 1);
-        
-        // Update cache hit count
-        await updateCacheHit(supabase, cachedResult.id);
-        
-        // Return cached result with metadata
-        const response = {
-          ...cachedResult.analysis_result,
-          _cache_metadata: {
-            cached: true,
-            cache_created: cachedResult.created_at,
-            cache_hits: cachedResult.cache_hits + 1
-          }
-        };
-        
-        return new Response(JSON.stringify(response), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
-    console.log('No cache found or refresh requested, calling OpenAI');
 
     const photoAnalysis = photos.map((photo: any, index: number) => {
       switch (photo.type) {
@@ -129,10 +49,10 @@ serve(async (req) => {
 
     const prompt = `Analyze these ${photos.length} food image(s) and provide detailed nutritional information. 
 
+IMPORTANT: Be extremely consistent in your analysis. Use standardized portion sizes and nutritional values for identical foods.
+
 Photo Analysis Instructions:
 ${photoAnalysis}
-
-IMPORTANT: Be extremely consistent in your analysis. Use the same methodology every time for identical or similar foods.
 
 Return a JSON object with this exact structure:
 {
@@ -163,18 +83,15 @@ Return a JSON object with this exact structure:
 }
 
 Enhanced Analysis Guidelines:
+- Use standardized portion estimates for consistency (e.g., always use 100g for similar meat portions)
 - Cross-reference nutrition labels with visual portions for accuracy
 - If nutrition labels are visible, use exact values and scale by visual portion
 - Identify specific brands and product types from packages
 - Note preparation methods (grilled, fried, baked, etc.)
-- Ask clarifying questions about quantities (e.g., "How many slices of pizza?")
 - Be more precise with brand products vs homemade items
 - Use nutrition label data when available for exact macro calculations
-- Consider ingredient substitutions (vegan cheese, plant-based milk, etc.)
-- Provide confidence scores based on image quality and label visibility
 - Pay special attention to meat products, protein sources, and their preparation methods
-- Accurately identify different types of meat (chicken, beef, pork, fish, etc.)
-- BE CONSISTENT: Always use the same portion estimates and nutritional values for visually identical foods`;
+- BE CONSISTENT: Always use the same nutritional values for visually identical foods`;
 
     console.log('Sending request to OpenAI with', photos.length, 'photos');
 
@@ -189,7 +106,7 @@ Enhanced Analysis Guidelines:
         messages: [
           { 
             role: 'system', 
-            content: 'You are a certified nutritionist and food expert with expertise in identifying all types of food including meat products, vegetables, grains, and prepared foods. Analyze food images and provide accurate nutritional information. Always return valid JSON. CRITICAL: Be extremely consistent in your analysis - identical foods should always get identical nutritional estimates and health grades.' 
+            content: 'You are a certified nutritionist and food expert. Analyze food images and provide accurate, CONSISTENT nutritional information. For identical or very similar foods, always provide identical nutritional estimates and health assessments. Always return valid JSON.' 
           },
           { 
             role: 'user', 
@@ -206,7 +123,7 @@ Enhanced Analysis Guidelines:
           }
         ],
         temperature: 0, // Maximum consistency
-        seed: 42, // Deterministic seed for consistent results
+        seed: 12345, // Fixed seed for deterministic results
         max_tokens: 1000,
       }),
     });
@@ -246,20 +163,7 @@ Enhanced Analysis Guidelines:
 
     console.log('Generated nutrition analysis:', JSON.stringify(nutritionData, null, 2));
 
-    // Cache the new analysis
-    await cacheAnalysis(supabase, imageHash, mealType || 'unknown', nutritionData);
-
-    // Add cache metadata to response
-    const responseData = {
-      ...nutritionData,
-      _cache_metadata: {
-        cached: false,
-        freshly_analyzed: true,
-        cache_hits: 0
-      }
-    };
-
-    return new Response(JSON.stringify(responseData), {
+    return new Response(JSON.stringify(nutritionData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

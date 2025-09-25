@@ -54,7 +54,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [isSaving, setIsSaving] = useState(false);
   const [storageValidated, setStorageValidated] = useState(false);
   const [showValidation, setShowValidation] = useState(true);
-  const [cacheMetadata, setCacheMetadata] = useState<any>(null);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -184,21 +183,16 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       // Enhanced analysis with multiple images
       const result = await analyzeFoodImage(
         JSON.stringify(photoData), 
-        mealType,
-        forceRefresh
+        mealType
       );
       
-      // Extract cache metadata if present
-      const { _cache_metadata, ...analysisData } = result;
-      setCacheMetadata(_cache_metadata || null);
-      
-      setAnalysisResult(analysisData);
-      setEditingItems(analysisData.food_items || []);
+      setAnalysisResult(result);
+      setEditingItems(result.food_items || []);
       onStateChange?.('results', { photoCount: photos.length, hasResults: true });
       
       // Initialize portion multipliers
       const initialMultipliers: { [key: number]: number } = {};
-      (analysisData.food_items || []).forEach((_: any, index: number) => {
+      (result.food_items || []).forEach((_: any, index: number) => {
         initialMultipliers[index] = 1;
       });
       setPortionMultipliers(initialMultipliers);
@@ -704,35 +698,6 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                 <Check className="h-5 w-5 text-green-500" />
                 Analysis Results
               </CardTitle>
-              {cacheMetadata && (
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    {cacheMetadata.cached ? (
-                      <>
-                        <Clock className="h-4 w-4" />
-                        <span>Previously analyzed • {cacheMetadata.cache_hits} views</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        <span>Freshly analyzed</span>
-                      </>
-                    )}
-                  </div>
-                  {cacheMetadata.cached && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAnalyzeImages(true)}
-                      disabled={analyzing || loading}
-                      className="h-7 px-2 text-xs"
-                    >
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Re-analyze
-                    </Button>
-                  )}
-                </div>
-              )}
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Health Grade Analysis */}
