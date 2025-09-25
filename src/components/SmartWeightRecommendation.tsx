@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { calculateOptimalWeight, calculateSetsAndReps, UserWeightProfile } from '@/services/weightCalculationService';
 import { OneRepWeightValidator } from './OneRepWeightValidator';
+import { getMachineImageUrl } from '@/utils/machineImageUtils';
 
 interface ExerciseRecommendation {
   id: string;
@@ -365,19 +366,35 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
 
       {/* Recommendations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-0">
-        {recommendations.map((rec) => (
-          <Card key={rec.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-sm sm:text-base">{rec.name}</h3>
-                <Badge 
-                  variant={rec.confidence === 'high' ? 'default' : rec.confidence === 'medium' ? 'secondary' : 'outline'}
-                  className="text-xs"
-                >
-                  {rec.confidence === 'high' ? 'High' : 
-                   rec.confidence === 'medium' ? 'Medium' : 'Learning'}
-                </Badge>
-              </div>
+        {recommendations.map((rec) => {
+          const machineImageUrl = getMachineImageUrl(rec.machine);
+          
+          return (
+            <Card key={rec.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3 mb-3">
+                  {/* Machine Image */}
+                  <div className="w-12 h-12 rounded-lg bg-muted/30 overflow-hidden shadow-sm flex-shrink-0">
+                    <img 
+                      src={machineImageUrl} 
+                      alt={rec.machine}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-sm sm:text-base truncate">{rec.name}</h3>
+                      <Badge 
+                        variant={rec.confidence === 'high' ? 'default' : rec.confidence === 'medium' ? 'secondary' : 'outline'}
+                        className="text-xs ml-2 flex-shrink-0"
+                      >
+                        {rec.confidence === 'high' ? 'High' : 
+                         rec.confidence === 'medium' ? 'Medium' : 'Learning'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
               
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -395,7 +412,7 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
       {/* Action Buttons */}
