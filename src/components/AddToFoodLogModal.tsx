@@ -10,6 +10,7 @@ import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import type { FoodItem, FoodEntry } from '@/hooks/useNutrition';
 import VoiceInterface from './VoiceInterface';
+import FitnessChatbot from './FitnessChatbot';
 
 interface ProductAnalysis {
   product: {
@@ -87,6 +88,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const { saveFoodEntry } = useNutrition();
 
   console.log('AddToFoodLogModal render - isVoiceChatOpen:', isVoiceChatOpen); // Debug log
@@ -325,6 +327,34 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
               </RadioGroup>
             </motion.div>
           )}
+
+          {/* AI Assistant Chatbot */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">AI Assistant</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsChatbotOpen(!isChatbotOpen)}
+                className="text-xs px-3 py-1 h-7"
+              >
+                {isChatbotOpen ? 'Hide Assistant' : 'Ask Questions'}
+              </Button>
+            </div>
+            {isChatbotOpen && (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <FitnessChatbot
+                  isOpen={true}
+                  onToggle={() => setIsChatbotOpen(!isChatbotOpen)}
+                />
+              </div>
+            )}
+          </motion.div>
 
           {/* Notes */}
           <motion.div 
