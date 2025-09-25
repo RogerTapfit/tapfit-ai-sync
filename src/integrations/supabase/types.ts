@@ -710,6 +710,39 @@ export type Database = {
         }
         Relationships: []
       }
+      food_analysis_cache: {
+        Row: {
+          analysis_result: Json
+          cache_hits: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          image_hash: string
+          meal_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          analysis_result: Json
+          cache_hits?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_hash: string
+          meal_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          analysis_result?: Json
+          cache_hits?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_hash?: string
+          meal_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       food_entries: {
         Row: {
           ai_analyzed: boolean
@@ -2140,6 +2173,10 @@ export type Database = {
         Returns: number
       }
       clean_base64_photo_urls: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_food_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

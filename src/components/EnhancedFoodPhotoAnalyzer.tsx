@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle, 
-  Lightbulb, Target, MessageCircle, Package, Sparkles 
+  Lightbulb, Target, MessageCircle, Package, Sparkles, RefreshCw, Clock, Plus, Minus 
 } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -54,6 +54,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [isSaving, setIsSaving] = useState(false);
   const [storageValidated, setStorageValidated] = useState(false);
   const [showValidation, setShowValidation] = useState(true);
+  const [cacheMetadata, setCacheMetadata] = useState<any>(null);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -163,7 +164,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     });
   };
 
-  const handleAnalyzeImages = async () => {
+  const handleAnalyzeImages = async (forceRefresh = false) => {
     if (photos.length === 0 || !mealType) {
       toast.error('Please add at least one photo and select meal type');
       return;
@@ -183,16 +184,21 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       // Enhanced analysis with multiple images
       const result = await analyzeFoodImage(
         JSON.stringify(photoData), 
-        mealType
+        mealType,
+        forceRefresh
       );
       
-      setAnalysisResult(result);
-      setEditingItems(result.food_items || []);
+      // Extract cache metadata if present
+      const { _cache_metadata, ...analysisData } = result;
+      setCacheMetadata(_cache_metadata || null);
+      
+      setAnalysisResult(analysisData);
+      setEditingItems(analysisData.food_items || []);
       onStateChange?.('results', { photoCount: photos.length, hasResults: true });
       
       // Initialize portion multipliers
       const initialMultipliers: { [key: number]: number } = {};
-      (result.food_items || []).forEach((_: any, index: number) => {
+      (analysisData.food_items || []).forEach((_: any, index: number) => {
         initialMultipliers[index] = 1;
       });
       setPortionMultipliers(initialMultipliers);
@@ -637,7 +643,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
             whileTap={{ scale: 0.98 }}
           >
             <Button
-              onClick={handleAnalyzeImages}
+              onClick={() => handleAnalyzeImages()}
               disabled={photos.length === 0 || !mealType || analyzing || loading}
               className="w-full glow-button bg-gradient-to-r from-primary to-primary/80 border-0 text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
@@ -698,6 +704,35 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                 <Check className="h-5 w-5 text-green-500" />
                 Analysis Results
               </CardTitle>
+              {cacheMetadata && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    {cacheMetadata.cached ? (
+                      <>
+                        <Clock className="h-4 w-4" />
+                        <span>Previously analyzed • {cacheMetadata.cache_hits} views</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        <span>Freshly analyzed</span>
+                      </>
+                    )}
+                  </div>
+                  {cacheMetadata.cached && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAnalyzeImages(true)}
+                      disabled={analyzing || loading}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Re-analyze
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Health Grade Analysis */}

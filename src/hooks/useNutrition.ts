@@ -447,11 +447,11 @@ export const useNutrition = () => {
     }
   };
 
-  const analyzeFoodImage = async (imageBase64: string, mealType: string) => {
+  const analyzeFoodImage = async (imageBase64: string, mealType: string, forceRefresh = false) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('analyzeFood', {
-        body: { imageBase64, mealType }
+        body: { imageBase64, mealType, forceRefresh }
       });
 
       if (error) throw error;
