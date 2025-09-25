@@ -440,9 +440,23 @@ export class FoodPhotoUploadService {
    * Get photo URL from storage path
    */
   static getPhotoUrl(storagePath: string): string {
+    if (!storagePath) return '';
+    // If already a full URL, return as-is
+    if (/^https?:\/\//i.test(storagePath)) return storagePath;
+
+    // Normalize path: remove any leading domain/storage prefix and bucket prefix
+    let path = storagePath
+      // Remove any accidentally stored full public prefix
+      .replace(/^https?:\/\/[^/]+\/storage\/v1\/object\/public\/food-photos\//i, '')
+      .replace(/^\/+/, '');
+
+    if (path.startsWith(`${this.BUCKET_NAME}/`)) {
+      path = path.replace(new RegExp(`^${this.BUCKET_NAME}/`), '');
+    }
+
     const { data: { publicUrl } } = supabase.storage
       .from(this.BUCKET_NAME)
-      .getPublicUrl(storagePath);
+      .getPublicUrl(path);
     return publicUrl;
   }
 }

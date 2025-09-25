@@ -172,9 +172,23 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                               src={photoUrl} 
                               alt="Food"
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.warn(`[FoodEntryList] Image failed to load for entry ${entry.id}:`, photoUrl);
+                                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                              }}
                             />
                           ) : (
-                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            (() => {
+                              console.warn('[FoodEntryList] No photo found for entry', entry.id, {
+                                photo_url: (entry as any).photo_url,
+                                photo_urls: (entry as any).photo_urls,
+                                thumbnail_url: (entry as any).thumbnail_url,
+                                thumbnail_urls: (entry as any).thumbnail_urls,
+                                photo_storage_path: (entry as any).photo_storage_path,
+                                photo_storage_paths: (entry as any).photo_storage_paths,
+                              });
+                              return <ImageIcon className="h-8 w-8 text-muted-foreground" />;
+                            })()
                           );
                         })()}
                       </div>
