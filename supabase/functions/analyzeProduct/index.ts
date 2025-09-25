@@ -87,7 +87,7 @@ CRITICAL REQUIREMENTS:
 - Identify any concerning additives, preservatives, or chemicals
 - Provide specific health recommendations and alternatives
 
-Return JSON in this exact format:
+IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
 {
   "product": {
     "name": "Product name",
@@ -164,23 +164,43 @@ Return JSON in this exact format:
     
     console.log('OpenAI Response:', content);
 
-    // Parse the JSON response - handle markdown wrapping
+    // Parse the JSON response - handle markdown wrapping and extract JSON
     let analysisResult;
     try {
-      // Remove markdown code blocks if present
-      let cleanContent = content;
-      if (content.includes('```json')) {
-        cleanContent = content.replace(/```json\n?/g, '').replace(/\n?```/g, '');
+      let cleanContent = content.trim();
+      
+      // Try to extract JSON from the response
+      if (cleanContent.includes('```json')) {
+        // Extract content between ```json and ```
+        const jsonMatch = cleanContent.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          cleanContent = jsonMatch[1].trim();
+        }
+      } else if (cleanContent.includes('{')) {
+        // Find the first { and last } to extract JSON
+        const firstBrace = cleanContent.indexOf('{');
+        const lastBrace = cleanContent.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
+        }
       }
+      
       analysisResult = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response as JSON:', parseError);
       console.error('Raw content:', content);
-      // Fallback response
-      analysisResult = {
-        error: 'Failed to analyze product - invalid response format',
-        raw_response: content
-      };
+      
+      // Return error response that matches expected format
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to analyze product - invalid response format',
+          raw_response: content
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     return new Response(
