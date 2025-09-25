@@ -551,8 +551,8 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 <div className="space-y-4">
                   {/* Safety Info */}
                   {(analysisResult.safety.concerning_additives.length > 0 || analysisResult.safety.forever_chemicals) && (
-                    <div className="bg-yellow-50/50 border border-yellow-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+                     <div className="bg-gradient-to-br from-red-50/80 to-orange-50/80 border border-red-200/50 rounded-xl p-4 shadow-sm">
+                       <h4 className="font-semibold text-red-700 mb-2 flex items-center gap-2">
                         <Shield className="h-4 w-4" />
                         Safety Information
                       </h4>
