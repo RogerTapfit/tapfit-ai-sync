@@ -148,7 +148,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
         <DialogTrigger asChild>
           {trigger || defaultTrigger}
         </DialogTrigger>
-        <DialogContent className="max-w-full sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-hidden glow-card p-4 sm:p-6">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-4xl max-h-[95vh] overflow-y-auto glow-card p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
               <CalendarIcon className="h-6 w-6 text-primary" />
@@ -156,7 +156,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-visible">
             {/* Calendar Header */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">{formatMonth()}</h2>
@@ -238,9 +238,9 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
             </Card>
 
             {/* Calendar Grid */}
-            <Card className="p-4 glow-card">
+            <Card className="p-3 sm:p-4 glow-card">
               {loading ? (
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-2">
                   {Array.from({ length: 42 }, (_, i) => (
                     <div key={i} className="aspect-square bg-muted animate-pulse rounded-lg"></div>
                   ))}
@@ -248,23 +248,23 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
               ) : (
                 <div className="space-y-2">
                   {/* Week day headers */}
-                  <div className="grid grid-cols-7 gap-2 mb-2">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
                     {weekDays.map((day) => (
-                      <div key={day} className="text-center text-sm font-semibold text-muted-foreground p-2">
+                      <div key={day} className="text-center text-xs sm:text-sm font-semibold text-muted-foreground p-1 sm:p-2">
                         {day}
                       </div>
                     ))}
                   </div>
 
                   {/* Calendar days */}
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2">
                     {calendarDays.map((day, index) => (
                       <button
                         key={index}
                         onClick={() => handleDayClick(day)}
                         disabled={!day}
                         className={`
-                          aspect-square p-2 rounded-lg border transition-all duration-200 relative
+                          aspect-square p-1 sm:p-2 rounded-lg border transition-all duration-200 relative min-h-[40px] sm:min-h-[60px]
                           ${day && isCurrentMonth(day)
                             ? 'hover:bg-accent/50 border-border'
                             : 'border-transparent text-muted-foreground/50'
@@ -281,13 +281,13 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                       >
                         {day && (
                           <>
-                            <div className="text-sm">
+                            <div className="text-xs sm:text-sm">
                               {day.date.getDate()}
                             </div>
                             
                             {/* Activity indicators */}
                             {day.hasActivity && (
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-1">
+                              <div className="absolute bottom-0.5 sm:bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5 sm:gap-1">
                                 {getActivityIndicators(day)}
                               </div>
                             )}
