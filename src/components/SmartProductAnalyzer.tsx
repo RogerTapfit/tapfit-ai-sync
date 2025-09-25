@@ -568,7 +568,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                         )}
                         <div>
                           <span className="font-medium">Processing level: </span>
-                          <Badge variant="outline">{analysisResult.safety.processing_level}</Badge>
+                          <Badge className="bg-purple-100 text-purple-700 border-purple-300 hover:bg-purple-200">{analysisResult.safety.processing_level}</Badge>
                         </div>
                       </div>
                     </div>
