@@ -73,24 +73,32 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         if (source === 'camera') input.capture = 'environment';
         
         return new Promise<void>((resolve) => {
-          input.onchange = (e) => {
+          input.onchange = async (e) => {
             const selectedFile = (e.target as HTMLInputElement).files?.[0];
             if (selectedFile) {
               try {
                 const processedFile = await processImageFile(selectedFile);
                 const reader = new FileReader();
-              reader.onload = (event) => {
-                const newPhoto: PhotoData = {
-                  id: generateId(),
-                  dataUrl: event.target?.result as string,
-                  file: processedFile,
-                  type: 'main_dish',
-                  analyzed: false
+                reader.onload = (event) => {
+                  const newPhoto: PhotoData = {
+                    id: generateId(),
+                    dataUrl: event.target?.result as string,
+                    file: processedFile,
+                    type: 'main_dish',
+                    analyzed: false
+                  };
+                  setPhotos(prev => [...prev, newPhoto]);
+                  onStateChange?.('photos_added', { photoCount: photos.length + 1 });
                 };
-        setPhotos(prev => [...prev, newPhoto]);
-        onStateChange?.('photos_added', { photoCount: photos.length + 1 });
-              };
-              reader.readAsDataURL(selectedFile);
+                reader.readAsDataURL(processedFile);
+                resolve();
+              } catch (error) {
+                console.error('Failed to process image:', error);
+                toast.error('Failed to process image. Please try again.');
+                resolve();
+              }
+            } else {
+              resolve();
             }
           };
           input.click();
