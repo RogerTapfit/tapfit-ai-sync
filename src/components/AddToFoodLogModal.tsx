@@ -223,9 +223,16 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
               )}
               {productAnalysis.product.name}
             </h3>
-            {productAnalysis.product.size && (
-              <p className="text-sm text-muted-foreground">{productAnalysis.product.size}</p>
-            )}
+            <div className="flex flex-col gap-1 mt-2">
+              {productAnalysis.product.size && (
+                <p className="text-sm text-muted-foreground">{productAnalysis.product.size}</p>
+              )}
+              {productAnalysis.nutrition.serving_size && (
+                <p className="text-sm text-stats-exercises font-medium">
+                  Per serving: {productAnalysis.nutrition.serving_size}
+                </p>
+              )}
+            </div>
           </motion.div>
 
           {/* Portion Size */}
