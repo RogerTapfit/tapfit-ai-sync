@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Apple, Coffee, UtensilsCrossed, Moon, Clock } from 'lucide-react';
+import { Apple, Coffee, UtensilsCrossed, Moon, Clock, ImageIcon } from 'lucide-react';
 import { FoodActivity } from '@/hooks/useCalendarData';
+import { FoodEntry } from '@/hooks/useNutrition';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ConsumedCaloriesBreakdownProps {
   open: boolean;
@@ -20,6 +22,50 @@ export const ConsumedCaloriesBreakdown: React.FC<ConsumedCaloriesBreakdownProps>
   totalCalories,
   date,
 }) => {
+  const [detailedFoodEntries, setDetailedFoodEntries] = useState<FoodEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch detailed food entries when dialog opens
+  useEffect(() => {
+    if (open && foodEntries.length > 0) {
+      fetchDetailedFoodEntries();
+    }
+  }, [open, foodEntries]);
+
+  const fetchDetailedFoodEntries = async () => {
+    setLoading(true);
+    try {
+      const entryIds = foodEntries.map(entry => entry.id);
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .in('id', entryIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Transform the data to match FoodEntry type
+      const transformedData = (data || []).map(entry => ({
+        ...entry,
+        meal_type: entry.meal_type as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+        food_items: Array.isArray(entry.food_items) ? entry.food_items.map((item: any) => ({
+          name: item.name || '',
+          quantity: item.quantity || '',
+          calories: item.calories || 0,
+          protein: item.protein || 0,
+          carbs: item.carbs || 0,
+          fat: item.fat || 0,
+          confidence: item.confidence
+        })) : []
+      })) as unknown as FoodEntry[];
+      
+      setDetailedFoodEntries(transformedData);
+    } catch (error) {
+      console.error('Error fetching detailed food entries:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -131,13 +177,17 @@ export const ConsumedCaloriesBreakdown: React.FC<ConsumedCaloriesBreakdownProps>
                 {foodEntries.map((entry, index) => (
                   <Card key={index} className="p-4 hover:bg-accent/50 transition-colors">
                     <div className="flex items-start gap-4">
-                      {entry.photoUrl && (
-                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      {entry.photoUrl ? (
+                        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 border-primary/20">
                           <img
                             src={entry.photoUrl}
-                            alt="Food"
-                            className="w-full h-full object-cover"
+                            alt="Food photo"
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
                           />
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 rounded-lg flex-shrink-0 bg-muted/50 border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                          <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
                         </div>
                       )}
                       <div className="flex-1">
@@ -170,9 +220,47 @@ export const ConsumedCaloriesBreakdown: React.FC<ConsumedCaloriesBreakdownProps>
                           </div>
                         </div>
                         
-                        {/* Food Items List */}
+                         {/* Food Items List */}
                         <div className="text-sm space-y-1">
-                          <div className="text-muted-foreground">Food items logged for this meal</div>
+                          <div className="text-muted-foreground mb-2">Food items logged for this meal:</div>
+                          {loading ? (
+                            <div className="text-xs text-muted-foreground">Loading food details...</div>
+                          ) : (
+                            (() => {
+                              const detailedEntry = detailedFoodEntries.find(de => de.id === entry.id);
+                              if (detailedEntry && detailedEntry.food_items && detailedEntry.food_items.length > 0) {
+                                return (
+                                  <div className="space-y-2">
+                                    {detailedEntry.food_items.map((item, itemIndex) => (
+                                      <div key={itemIndex} className="bg-accent/30 rounded-lg p-3 border-l-2 border-l-primary/30">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1">
+                                            <div className="font-medium text-sm">{item.name}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                              Quantity: {item.quantity}
+                                            </div>
+                                            <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+                                              <span>{item.calories} cal</span>
+                                              <span>{item.protein}g protein</span>
+                                              <span>{item.carbs}g carbs</span>
+                                              <span>{item.fat}g fat</span>
+                                            </div>
+                                            {item.confidence && (
+                                              <div className="text-xs text-muted-foreground/80 mt-1">
+                                                Confidence: {Math.round(item.confidence * 100)}%
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              } else {
+                                return <div className="text-xs text-muted-foreground">No detailed food items available</div>;
+                              }
+                            })()
+                          )}
                         </div>
                       </div>
                     </div>
