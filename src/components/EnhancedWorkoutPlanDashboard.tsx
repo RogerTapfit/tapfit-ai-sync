@@ -152,45 +152,45 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
 
       {/* Calibration Status */}
       {needsCalibration && (
-        <Card className="relative overflow-hidden border-purple-500/40 bg-gradient-to-br from-purple-900/20 via-background to-purple-800/10 shadow-2xl hover:shadow-purple-600/30 transition-all duration-700 group">
-          {/* Animated purple glow background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-purple-500/10 to-purple-400/20 opacity-70 animate-pulse" />
-          <div className="absolute inset-0 bg-gradient-to-45deg from-transparent via-purple-500/5 to-transparent animate-pulse delay-500" />
+        <Card className="relative overflow-hidden border-blue-500/40 bg-gradient-to-br from-blue-900/20 via-background to-blue-800/10 shadow-2xl hover:shadow-blue-600/30 transition-all duration-700 group">
+          {/* Animated blue glow background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-blue-500/10 to-blue-400/20 opacity-70 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-45deg from-transparent via-blue-500/5 to-transparent animate-pulse delay-500" />
           
           {/* Inner glow layer */}
-          <div className="absolute inset-[1px] rounded-lg bg-gradient-to-br from-purple-950/80 via-background/90 to-purple-900/60 backdrop-blur-sm" 
+          <div className="absolute inset-[1px] rounded-lg bg-gradient-to-br from-blue-950/80 via-background/90 to-blue-900/60 backdrop-blur-sm" 
                style={{
-                 background: 'linear-gradient(135deg, hsl(245 60% 15% / 0.8), hsl(260 80% 25% / 0.6))',
-                 boxShadow: 'inset 0 1px 0 hsl(260 100% 65% / 0.2)'
+                 background: 'linear-gradient(135deg, hsl(225 70% 15% / 0.8), hsl(220 80% 25% / 0.6))',
+                 boxShadow: 'inset 0 1px 0 hsl(220 100% 60% / 0.2)'
                }} />
           
           {/* Futuristic border glow */}
           <div className="absolute inset-0 rounded-lg" 
                style={{
-                 background: 'linear-gradient(90deg, transparent, hsl(260 100% 65% / 0.4), transparent)',
+                 background: 'linear-gradient(90deg, transparent, hsl(220 100% 60% / 0.4), transparent)',
                  mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
                  maskComposite: 'subtract',
                  padding: '2px'
                }} />
           
           <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-3 text-purple-300 font-bold text-2xl tracking-wide drop-shadow-lg">
-              <AlertCircle className="h-7 w-7 text-purple-400 animate-pulse drop-shadow-[0_0_8px_hsl(260_100%_65%)]" />
-              <span className="bg-gradient-to-r from-purple-200 via-purple-300 to-purple-200 bg-clip-text text-transparent">
+            <CardTitle className="flex items-center gap-3 text-blue-300 font-bold text-2xl tracking-wide drop-shadow-lg">
+              <AlertCircle className="h-7 w-7 text-blue-400 animate-pulse drop-shadow-[0_0_8px_hsl(220_100%_60%)]" />
+              <span className="bg-gradient-to-r from-blue-200 via-blue-300 to-blue-200 bg-clip-text text-transparent">
                 Calibration Recommended
               </span>
             </CardTitle>
           </CardHeader>
           
           <CardContent className="relative z-10">
-            <p className="text-purple-100/90 mb-8 text-lg leading-relaxed font-medium drop-shadow-sm">
+            <p className="text-blue-100/90 mb-8 text-lg leading-relaxed font-medium drop-shadow-sm">
               Complete a fitness calibration to get precise weight recommendations and personalized training.
             </p>
             <Button 
               onClick={() => setShowCalibration(true)} 
-              className="w-full relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-500 to-purple-600 hover:from-purple-500 hover:via-purple-400 hover:to-purple-500 text-white font-bold text-lg py-8 border border-purple-400/50 backdrop-blur-sm group-hover:scale-[1.03] transition-all duration-500 shadow-[0_0_25px_hsl(260_100%_65%/0.4)] hover:shadow-[0_0_40px_hsl(260_100%_65%/0.7),0_0_60px_hsl(280_100%_50%/0.3)]"
+              className="w-full relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-500 hover:via-blue-400 hover:to-blue-500 text-white font-bold text-lg py-8 border border-blue-400/50 backdrop-blur-sm group-hover:scale-[1.03] transition-all duration-500 shadow-[0_0_25px_hsl(220_100%_60%/0.4)] hover:shadow-[0_0_40px_hsl(220_100%_60%/0.7),0_0_60px_hsl(210_100%_45%/0.3)]"
               style={{
-                boxShadow: '0 0 25px hsl(260 100% 65% / 0.4), 0 4px 15px hsl(260 100% 65% / 0.2), inset 0 1px 0 hsl(260 100% 75% / 0.3)'
+                boxShadow: '0 0 25px hsl(220 100% 60% / 0.4), 0 4px 15px hsl(220 100% 60% / 0.2), inset 0 1px 0 hsl(200 100% 70% / 0.3)'
               }}
             >
               {/* Button inner glow */}
@@ -200,7 +200,7 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
               <span className="drop-shadow-lg">Begin Calibration (15 mins)</span>
               
               {/* Futuristic pulse animation */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-300/20 to-purple-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-300/20 to-blue-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             </Button>
           </CardContent>
         </Card>

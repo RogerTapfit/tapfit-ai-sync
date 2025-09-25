@@ -49,26 +49,26 @@ All colors MUST be HSL for proper theming.
     --gradient-secondary: linear-gradient(135deg, hsl(0 0% 12%), hsl(0 0% 18%));
     --gradient-card: linear-gradient(135deg, hsl(0 0% 8%) 0%, hsl(0 0% 12%) 100%);
     
-    /* Purple futuristic theme colors */
-    --purple-primary: 260 100% 65%;
-    --purple-glow: 270 100% 75%;
-    --purple-dark: 245 60% 25%;
-    --purple-accent: 280 100% 50%;
+    /* Neon dark blue futuristic theme colors */
+    --blue-primary: 220 100% 60%;
+    --blue-glow: 200 100% 70%;
+    --blue-dark: 225 70% 20%;
+    --blue-accent: 210 100% 45%;
     
-    /* Purple gradients */
-    --gradient-purple: linear-gradient(135deg, hsl(260 100% 65%), hsl(280 100% 50%));
-    --gradient-purple-dark: linear-gradient(135deg, hsl(245 60% 15%), hsl(260 80% 25%));
-    --gradient-purple-glow: linear-gradient(135deg, hsl(260 100% 65% / 0.3), hsl(280 100% 50% / 0.2));
+    /* Blue gradients */
+    --gradient-blue: linear-gradient(135deg, hsl(220 100% 60%), hsl(210 100% 45%));
+    --gradient-blue-dark: linear-gradient(135deg, hsl(225 70% 15%), hsl(220 80% 25%));
+    --gradient-blue-glow: linear-gradient(135deg, hsl(220 100% 60% / 0.3), hsl(210 100% 45% / 0.2));
     
     /* Glow effects */
     --glow-primary: 0 0 20px hsl(0 84% 60% / 0.3);
     --glow-secondary: 0 0 30px hsl(0 84% 60% / 0.2);
     --glow-intense: 0 0 40px hsl(0 100% 70% / 0.4);
     
-    /* Purple glow effects */
-    --glow-purple: 0 0 25px hsl(260 100% 65% / 0.4);
-    --glow-purple-intense: 0 0 40px hsl(260 100% 65% / 0.6), 0 0 60px hsl(280 100% 50% / 0.3);
-    --glow-purple-soft: 0 0 15px hsl(270 100% 75% / 0.3);
+    /* Blue glow effects */
+    --glow-blue: 0 0 25px hsl(220 100% 60% / 0.4);
+    --glow-blue-intense: 0 0 40px hsl(220 100% 60% / 0.6), 0 0 60px hsl(210 100% 45% / 0.3);
+    --glow-blue-soft: 0 0 15px hsl(200 100% 70% / 0.3);
     
     /* Shadows with red tint */
     --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3), 0 0 0 1px hsl(0 0% 15%);
