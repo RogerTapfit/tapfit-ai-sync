@@ -204,6 +204,8 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
           fitness_assessment: userProfile.experience_level,
           recommendations: generateSmartRecommendations(),
           completed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
