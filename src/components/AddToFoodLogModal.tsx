@@ -605,33 +605,34 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             />
           </motion.div>
 
-          {/* Action Buttons */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="flex gap-3 pt-2"
-          >
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveToFoodLog}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg"
-              disabled={isLoading}
-            >
-              {uploadStatus === 'uploading' ? 'Uploading Photo...' : 
-               uploadStatus === 'saving' ? 'Saving...' : 
-               isAlcohol() ? 'Add to Alcohol Log' : 'Add to Food Log'}
-            </Button>
-          </motion.div>
           </div>
         </ScrollArea>
+
+        {/* Action Buttons - Fixed at bottom */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="flex gap-3 pt-4 flex-shrink-0"
+        >
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="flex-1"
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveToFoodLog}
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg"
+            disabled={isLoading}
+          >
+            {uploadStatus === 'uploading' ? 'Uploading Photo...' : 
+             uploadStatus === 'saving' ? 'Saving...' : 
+             isAlcohol() ? 'Add to Alcohol Log' : 'Add to Food Log'}
+          </Button>
+        </motion.div>
       </DialogContent>
     </Dialog>
 
