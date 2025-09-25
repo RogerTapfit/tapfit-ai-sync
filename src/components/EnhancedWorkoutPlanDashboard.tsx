@@ -152,55 +152,199 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
 
       {/* Calibration Status */}
       {needsCalibration && (
-        <Card className="relative overflow-hidden border-blue-500/40 bg-gradient-to-br from-blue-900/20 via-background to-blue-800/10 shadow-2xl hover:shadow-blue-600/30 transition-all duration-700 group">
-          {/* Animated blue glow background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-blue-500/10 to-blue-400/20 opacity-70 animate-pulse" />
-          <div className="absolute inset-0 bg-gradient-to-45deg from-transparent via-blue-500/5 to-transparent animate-pulse delay-500" />
+        <Card className="relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
+          {/* Dark Tron background with grid pattern */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(circle at 50% 50%, hsl(0 70% 15% / 0.8) 0%, hsl(0 0% 3%) 70%),
+                linear-gradient(90deg, transparent 48%, hsl(0 100% 50% / 0.1) 49%, hsl(0 100% 50% / 0.1) 51%, transparent 52%),
+                linear-gradient(0deg, transparent 48%, hsl(0 100% 50% / 0.1) 49%, hsl(0 100% 50% / 0.1) 51%, transparent 52%)
+              `,
+              backgroundSize: '100% 100%, 40px 40px, 40px 40px'
+            }}
+          />
           
-          {/* Inner glow layer */}
-          <div className="absolute inset-[1px] rounded-lg bg-gradient-to-br from-blue-950/80 via-background/90 to-blue-900/60 backdrop-blur-sm" 
-               style={{
-                 background: 'linear-gradient(135deg, hsl(225 70% 15% / 0.8), hsl(220 80% 25% / 0.6))',
-                 boxShadow: 'inset 0 1px 0 hsl(220 100% 60% / 0.2)'
-               }} />
+          {/* Animated neon red glow layers */}
+          <div 
+            className="absolute inset-0 opacity-70 animate-pulse"
+            style={{
+              background: 'var(--gradient-tron-glow)',
+              filter: 'blur(20px)'
+            }}
+          />
           
-          {/* Futuristic border glow */}
-          <div className="absolute inset-0 rounded-lg" 
-               style={{
-                 background: 'linear-gradient(90deg, transparent, hsl(220 100% 60% / 0.4), transparent)',
-                 mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                 maskComposite: 'subtract',
-                 padding: '2px'
-               }} />
-          
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-3 text-blue-300 font-bold text-2xl tracking-wide drop-shadow-lg">
-              <AlertCircle className="h-7 w-7 text-blue-400 animate-pulse drop-shadow-[0_0_8px_hsl(220_100%_60%)]" />
-              <span className="bg-gradient-to-r from-blue-200 via-blue-300 to-blue-200 bg-clip-text text-transparent">
-                Calibration Recommended
-              </span>
-            </CardTitle>
-          </CardHeader>
-          
-          <CardContent className="relative z-10">
-            <p className="text-blue-100/90 mb-8 text-lg leading-relaxed font-medium drop-shadow-sm">
-              Complete a fitness calibration to get precise weight recommendations and personalized training.
-            </p>
-            <Button 
-              onClick={() => setShowCalibration(true)} 
-              className="w-full relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-500 hover:via-blue-400 hover:to-blue-500 text-white font-bold text-lg py-8 border border-blue-400/50 backdrop-blur-sm group-hover:scale-[1.03] transition-all duration-500 shadow-[0_0_25px_hsl(220_100%_60%/0.4)] hover:shadow-[0_0_40px_hsl(220_100%_60%/0.7),0_0_60px_hsl(210_100%_45%/0.3)]"
+          {/* Tron-style animated border */}
+          <div className="absolute inset-0 rounded-lg">
+            {/* Top border */}
+            <div 
+              className="absolute top-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"
               style={{
-                boxShadow: '0 0 25px hsl(220 100% 60% / 0.4), 0 4px 15px hsl(220 100% 60% / 0.2), inset 0 1px 0 hsl(200 100% 70% / 0.3)'
+                width: '100%',
+                boxShadow: 'var(--glow-tron-red)'
+              }}
+            />
+            
+            {/* Bottom border */}
+            <div 
+              className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"
+              style={{
+                width: '100%',
+                boxShadow: 'var(--glow-tron-red)',
+                animationDelay: '1s'
+              }}
+            />
+            
+            {/* Left border */}
+            <div 
+              className="absolute left-0 top-0 w-[2px] bg-gradient-to-b from-transparent via-red-500 to-transparent animate-pulse"
+              style={{
+                height: '100%',
+                boxShadow: 'var(--glow-tron-red)',
+                animationDelay: '0.5s'
+              }}
+            />
+            
+            {/* Right border */}
+            <div 
+              className="absolute right-0 top-0 w-[2px] bg-gradient-to-b from-transparent via-red-500 to-transparent animate-pulse"
+              style={{
+                height: '100%',
+                boxShadow: 'var(--glow-tron-red)',
+                animationDelay: '1.5s'
+              }}
+            />
+          </div>
+          
+          {/* Intense hover glow effect */}
+          <div 
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500"
+            style={{
+              background: 'var(--gradient-tron-glow)',
+              boxShadow: 'var(--glow-tron-ultra)',
+              filter: 'blur(30px)'
+            }}
+          />
+          
+          {/* Content */}
+          <CardContent className="relative z-10 p-8 space-y-6">
+            {/* Header with icon and intense glow */}
+            <div className="flex items-center gap-4">
+              <div 
+                className="p-4 rounded-full relative"
+                style={{
+                  background: 'radial-gradient(circle, hsl(0 100% 50% / 0.3), transparent)',
+                  boxShadow: 'var(--glow-tron-intense)'
+                }}
+              >
+                {/* Rotating ring around icon */}
+                <div 
+                  className="absolute inset-0 rounded-full border-2 animate-spin"
+                  style={{
+                    borderColor: 'hsl(0 100% 50%) transparent hsl(0 100% 50%) transparent',
+                    boxShadow: '0 0 20px hsl(0 100% 50% / 0.8)'
+                  }}
+                />
+                
+                <AlertCircle 
+                  className="w-8 h-8 animate-pulse relative z-10"
+                  style={{ 
+                    color: 'hsl(0 100% 65%)',
+                    filter: 'drop-shadow(0 0 10px hsl(0 100% 50%))'
+                  }}
+                />
+              </div>
+              <div>
+                <h3 
+                  className="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent font-mono tracking-wider"
+                  style={{
+                    backgroundImage: 'linear-gradient(135deg, hsl(0 100% 65%), hsl(15 100% 50%), hsl(0 100% 65%))',
+                    textShadow: '0 0 20px hsl(0 100% 50% / 0.8)'
+                  }}
+                >
+                  CALIBRATION
+                </h3>
+                <h3 
+                  className="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent font-mono tracking-wider"
+                  style={{
+                    backgroundImage: 'linear-gradient(135deg, hsl(0 100% 65%), hsl(15 100% 50%), hsl(0 100% 65%))',
+                    textShadow: '0 0 20px hsl(0 100% 50% / 0.8)'
+                  }}
+                >
+                  RECOMMENDED
+                </h3>
+                <p 
+                  className="text-sm mt-2 font-mono tracking-wide"
+                  style={{ 
+                    color: 'hsl(0 100% 80%)',
+                    textShadow: '0 0 10px hsl(0 100% 50% / 0.5)'
+                  }}
+                >
+                  &gt; OPTIMIZE_TRAINING_PROTOCOL
+                </p>
+              </div>
+            </div>
+
+            {/* Description with Tron styling */}
+            <div className="space-y-2">
+              <p 
+                className="text-lg leading-relaxed font-mono"
+                style={{ 
+                  color: 'hsl(0 100% 85%)',
+                  textShadow: '0 0 8px hsl(0 100% 50% / 0.3)'
+                }}
+              >
+                &gt; EXECUTE fitness_calibration.exe
+              </p>
+              <p 
+                className="text-base leading-relaxed"
+                style={{ color: 'hsl(0 90% 75%)' }}
+              >
+                Complete a fitness calibration to get precise weight 
+                recommendations and personalized training protocols.
+              </p>
+            </div>
+
+            {/* Tron-style action button */}
+            <Button
+              onClick={() => setShowCalibration(true)}
+              size="lg"
+              className="w-full text-xl font-bold font-mono relative overflow-hidden group/btn transition-all duration-300 tracking-wider"
+              style={{
+                background: 'var(--gradient-tron-red)',
+                border: '2px solid hsl(0 100% 50%)',
+                boxShadow: 'var(--glow-tron-intense), inset 0 2px 0 hsl(0 100% 65% / 0.3)',
+                color: 'white',
+                textShadow: '0 0 10px hsl(0 100% 50%)'
               }}
             >
-              {/* Button inner glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              {/* Animated scanning line */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover/btn:opacity-100"
+                style={{
+                  background: 'linear-gradient(90deg, transparent, hsl(0 100% 80% / 0.8), transparent)',
+                  animation: 'scan 2s infinite linear'
+                }}
+              />
               
-              <Target className="mr-3 h-6 w-6 drop-shadow-lg" />
-              <span className="drop-shadow-lg">Begin Calibration (15 mins)</span>
+              {/* Corner decorations */}
+              <div className="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-red-400" />
+              <div className="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-red-400" />
+              <div className="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-red-400" />
+              <div className="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-red-400" />
               
-              {/* Futuristic pulse animation */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-300/20 to-blue-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              {/* Icon with enhanced glow */}
+              <Target 
+                className="w-6 h-6 mr-3 transition-transform duration-300 group-hover/btn:rotate-180 relative z-10"
+                style={{ 
+                  color: 'hsl(0 100% 80%)',
+                  filter: 'drop-shadow(0 0 8px hsl(0 100% 50%))'
+                }}
+              />
+              
+              {/* Text content */}
+              <span className="relative z-10">BEGIN_CALIBRATION [15_MINS]</span>
             </Button>
           </CardContent>
         </Card>
