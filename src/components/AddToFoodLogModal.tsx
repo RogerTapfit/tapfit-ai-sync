@@ -340,7 +340,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col min-h-0">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-xl">
@@ -362,7 +362,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 pr-4 min-h-0">
           <div className="space-y-6 py-4">
           {/* Selected Photo Preview */}
           {selectedImage && (
