@@ -336,7 +336,7 @@ export default function BodyScanResults({ result, user }: { result: BodyScanResu
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Est. Weight</p>
-          <p className="text-xl font-semibold">{weightEstimateKg ? `${weightEstimateKg.toFixed(1)} kg` : '—'}</p>
+          <p className="text-xl font-semibold">{weightEstimateKg ? `${Math.round(weightEstimateKg * 2.2)} lbs` : '—'}</p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">BMI</p>

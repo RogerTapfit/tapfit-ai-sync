@@ -337,7 +337,7 @@ export class MonthlyWorkoutService {
           exercise.exercise_name,
           exercise.machine_name || exercise.exercise_name
         );
-        weight_guidance = `Recommended: ${weight}kg (${Math.round(weight * 2.2)}lbs)`;
+        weight_guidance = `Recommended: ${Math.round(weight * 2.2)}lbs`;
       } catch (error) {
         console.error('Error calculating weight:', error);
       }
@@ -383,7 +383,7 @@ export class MonthlyWorkoutService {
   private static getProgressionMetrics(goal: string) {
     const baseMetrics = {
       weekly_volume_increase: 5, // 5% per week
-      weight_progression: 2.5, // 2.5kg increments
+      weight_progression: 5, // 5lbs increments
       endurance_progression: 10 // 10% duration increase
     };
 

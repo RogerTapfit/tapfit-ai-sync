@@ -450,15 +450,15 @@ export const CalibrationDayWorkout: React.FC<CalibrationDayWorkoutProps> = ({
             {currentExercise.category === 'strength' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="weight">Weight Used (kg)</Label>
+                  <Label htmlFor="weight">Weight Used (lbs)</Label>
                   <Input
                     id="weight"
                     type="number"
-                    placeholder={`Start with ${currentExercise.baseline_weight}kg`}
-                    value={currentResult.weight_used || ''}
+                    placeholder={`Start with ${Math.round(currentExercise.baseline_weight * 2.2)}lbs`}
+                    value={currentResult.weight_used ? Math.round(currentResult.weight_used * 2.2) : ''}
                     onChange={(e) => setCurrentResult(prev => ({ 
-                      ...prev, 
-                      weight_used: parseInt(e.target.value) || 0 
+                      ...prev,
+                      weight_used: (parseInt(e.target.value) || 0) / 2.2 
                     }))}
                   />
                 </div>
@@ -582,7 +582,7 @@ export const CalibrationDayWorkout: React.FC<CalibrationDayWorkoutProps> = ({
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     {result.weight_used && (
-                      <span>{result.weight_used}kg</span>
+                      <span>{Math.round(result.weight_used * 2.2)}lbs</span>
                     )}
                     {result.reps_completed > 0 && (
                       <span>{result.reps_completed} reps</span>

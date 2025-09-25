@@ -15,7 +15,7 @@ interface DailyStats {
 }
 
 interface UserProfile {
-  weight_kg?: number;
+  weight_lbs?: number;
   age?: number;
   gender?: string;
   height_cm?: number;
@@ -49,7 +49,11 @@ export const useDailyStats = (userId?: string): DailyStats => {
         .single();
 
       if (data) {
-        setUserProfile(data);
+        // Convert weight from kg (stored in DB) to lbs (used in interface)
+        setUserProfile({
+          ...data,
+          weight_lbs: data.weight_kg ? data.weight_kg * 2.2 : undefined
+        });
       }
     };
 

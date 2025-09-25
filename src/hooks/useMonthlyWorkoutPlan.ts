@@ -205,7 +205,7 @@ export const useMonthlyWorkoutPlan = () => {
 
         if (profileData) {
           userProfile = {
-            weight_kg: profileData.weight_kg || 70,
+            weight_lbs: (profileData.weight_kg || 70) * 2.2,
             age: profileData.age || 30,
             experience_level: calibrationResults.fitness_assessment as any || 'beginner',
             primary_goal: preferences.primary_goal as any,

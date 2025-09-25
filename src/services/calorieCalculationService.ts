@@ -1,5 +1,5 @@
 interface UserProfile {
-  weight_kg?: number;
+  weight_lbs?: number;
   age?: number;
   gender?: string;
   height_cm?: number;
@@ -32,12 +32,13 @@ export class CalorieCalculationService {
     userProfile: UserProfile
   ): number {
     const { duration_minutes, muscle_group, total_reps, completed_exercises } = workoutData;
-    const { weight_kg = 70, age = 30, gender = 'male' } = userProfile;
+    const { weight_lbs = 154, age = 30, gender = 'male' } = userProfile;
 
     // Get MET value for muscle group
     const metValue = this.MET_VALUES[muscle_group as keyof typeof this.MET_VALUES] || this.MET_VALUES.default;
     
-    // Base calculation: MET * weight_kg * time_hours
+    // Base calculation: MET * weight_kg * time_hours (convert lbs to kg for calculation)
+    const weight_kg = weight_lbs * 0.453592;
     const timeHours = (duration_minutes || 30) / 60;
     let baseCalories = metValue * weight_kg * timeHours;
 
@@ -62,7 +63,10 @@ export class CalorieCalculationService {
     steps: number,
     userProfile: UserProfile
   ): number {
-    const { weight_kg = 70, gender = 'male' } = userProfile;
+    const { weight_lbs = 154, gender = 'male' } = userProfile;
+    
+    // Convert to kg for calculation
+    const weight_kg = weight_lbs * 0.453592;
     
     // Base calories per step varies by weight and gender
     let caloriesPerStep = 0.04; // Base value
@@ -129,7 +133,10 @@ export class CalorieCalculationService {
     duration_minutes: number,
     userProfile: UserProfile
   ): number {
-    const { weight_kg = 70, age = 30, gender = 'male' } = userProfile;
+    const { weight_lbs = 154, age = 30, gender = 'male' } = userProfile;
+    
+    // Convert to kg for calculation
+    const weight_kg = weight_lbs * 0.453592;
     
     // Calculate max heart rate
     const maxHeartRate = 220 - age;

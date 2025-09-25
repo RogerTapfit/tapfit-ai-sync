@@ -1,5 +1,5 @@
 export interface UserWeightProfile {
-  weight_kg: number;
+  weight_lbs: number;
   age: number;
   experience_level: 'beginner' | 'intermediate' | 'advanced';
   primary_goal: 'fat_loss' | 'muscle_building' | 'general_fitness' | 'strength_training';
@@ -68,7 +68,7 @@ export function calculateOptimalWeight(
   machineName: string
 ): number {
   const {
-    weight_kg,
+    weight_lbs,
     age,
     experience_level,
     primary_goal,
@@ -98,12 +98,14 @@ export function calculateOptimalWeight(
   const exerciseKey = exerciseName.toLowerCase().replace(/\s+/g, '_');
   const exerciseModifier = EXERCISE_MODIFIERS[exerciseKey as keyof typeof EXERCISE_MODIFIERS] || EXERCISE_MODIFIERS.default;
   
-  // Calculate final weight
+  // Calculate final weight (convert lbs to kg for internal calculation, then back to lbs)
+  const weight_kg = weight_lbs * 0.453592;
   const baseWeight = weight_kg * baseFactor * goalMultiplier * genderModifier * ageModifier * exerciseModifier;
   
-  // Round to nearest 5 lbs/2.5 kg and ensure minimum weight
-  const roundedWeight = Math.round(baseWeight / 2.5) * 2.5;
-  return Math.max(5, roundedWeight); // Minimum 5kg/10lbs
+  // Convert back to lbs and round to nearest 5 lbs
+  const baseWeightLbs = baseWeight * 2.2;
+  const roundedWeight = Math.round(baseWeightLbs / 5) * 5;
+  return Math.max(10, roundedWeight); // Minimum 10lbs
 }
 
 /**
@@ -231,6 +233,6 @@ export function calculateProgressedWeight(
   progressionPercentage: number
 ): number {
   const newWeight = currentWeight * (1 + progressionPercentage / 100);
-  // Round to nearest 2.5kg/5lbs
-  return Math.round(newWeight / 2.5) * 2.5;
+  // Round to nearest 5lbs
+  return Math.round(newWeight / 5) * 5;
 }
