@@ -348,7 +348,18 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             className="space-y-3 p-4 rounded-lg border-2 border-red-500/50 bg-red-500/5 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
           >
             <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">{avatarName}</Label>
+              <div className="flex items-center gap-2">
+                {avatar?.mini_image_url && (
+                  <div className="w-6 h-6 rounded-full overflow-hidden border border-red-500/30">
+                    <img
+                      src={avatar.mini_image_url}
+                      alt={`${avatarName} avatar`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <Label className="text-base font-semibold">{avatarName}</Label>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
