@@ -618,7 +618,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 >
                   <Button
                     onClick={handleOpenFoodLogModal}
-                    className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-stats-exercises to-stats-calories hover:from-stats-exercises/80 hover:to-stats-calories/80 shadow-xl"
+                    className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-xl"
                     size="lg"
                   >
                     <Settings className="mr-2 h-5 w-5" />
