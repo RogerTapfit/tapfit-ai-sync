@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCalendarData, CalendarDay } from '@/hooks/useCalendarData';
 import { CalendarDayDetail } from './CalendarDayDetail';
+import { useCycleTracking } from '@/hooks/useCycleTracking';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -12,7 +15,9 @@ import {
   Dumbbell,
   Utensils,
   Activity,
-  Footprints
+  Footprints,
+  Moon,
+  Droplets
 } from 'lucide-react';
 import { useAuth } from './AuthGuard';
 
@@ -25,6 +30,8 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
   const [selectedDay, setSelectedDay] = useState<CalendarDay | null>(null);
   const [showDayDetail, setShowDayDetail] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [showCycleData, setShowCycleData] = useState(true);
+  const { isEnabled: cycleTrackingEnabled } = useCycleTracking();
 
   const {
     calendarDays,
@@ -86,6 +93,27 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
+    // Add cycle tracking indicators
+    if (showCycleData && cycleTrackingEnabled && day.cyclePhase) {
+      if (day.cyclePhase.isInPeriod) {
+        indicators.push(
+          <div key="period" className="w-2 h-2 bg-red-600 rounded-full" />
+        );
+      } else if (day.cyclePhase.isOvulation) {
+        indicators.push(
+          <div key="ovulation" className="w-2 h-2 bg-purple-600 rounded-full" />
+        );
+      } else if (day.cyclePhase.isFertileWindow) {
+        indicators.push(
+          <div key="fertile" className="w-2 h-2 bg-blue-400 rounded-full" />
+        );
+      } else if (day.cyclePhase.phase === 'luteal') {
+        indicators.push(
+          <div key="luteal" className="w-2 h-2 bg-indigo-600 rounded-full" />
+        );
+      }
+    }
+
     return indicators;
   };
 
@@ -132,22 +160,36 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
             {/* Calendar Header */}
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">{formatMonth()}</h2>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={goToToday}>
-                  Today
-                </Button>
-                <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={goToNextMonth}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-4">
+                {cycleTrackingEnabled && (
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="show-cycle"
+                      checked={showCycleData}
+                      onCheckedChange={setShowCycleData}
+                    />
+                    <Label htmlFor="show-cycle" className="text-sm">
+                      Show Cycle Data
+                    </Label>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={goToToday}>
+                    Today
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={goToNextMonth}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
             {/* Legend */}
             <Card className="p-3 glow-card">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 text-xs sm:text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
                   <span className="truncate">Completed</span>
@@ -172,6 +214,26 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
                   <span className="truncate">Tap Coins</span>
                 </div>
+                {showCycleData && cycleTrackingEnabled && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-red-600 rounded-full flex-shrink-0"></div>
+                      <span className="truncate">Period</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-600 rounded-full flex-shrink-0"></div>
+                      <span className="truncate">Ovulation</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-400 rounded-full flex-shrink-0"></div>
+                      <span className="truncate">Fertile</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-indigo-600 rounded-full flex-shrink-0"></div>
+                      <span className="truncate">Luteal</span>
+                    </div>
+                  </>
+                )}
               </div>
             </Card>
 
@@ -298,6 +360,22 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   </div>
                   <div className="text-xs text-muted-foreground">Active Days</div>
                 </div>
+                {showCycleData && cycleTrackingEnabled && (
+                  <>
+                    <div className="space-y-1">
+                      <div className="text-lg sm:text-2xl font-bold text-red-600">
+                        {calendarDays.filter(day => day?.cyclePhase?.isInPeriod).length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Period Days</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-lg sm:text-2xl font-bold text-purple-600">
+                        {calendarDays.filter(day => day?.cyclePhase?.isOvulation).length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">Ovulation</div>
+                    </div>
+                  </>
+                )}
               </div>
             </Card>
           </div>

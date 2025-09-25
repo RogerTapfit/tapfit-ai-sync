@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity } from '@/hooks/useCalendarData';
+import { useCycleTracking } from '@/hooks/useCycleTracking';
 import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
 import { ConsumedCaloriesBreakdown } from './calendar/ConsumedCaloriesBreakdown';
 import { ExercisesBreakdown } from './calendar/ExercisesBreakdown';
@@ -22,7 +23,11 @@ import {
   ChevronRight,
   Apple,
   Coins,
-  Wine
+  Wine,
+  Moon,
+  Droplets,
+  Heart,
+  TrendingUp
 } from 'lucide-react';
 
 interface CalendarDayDetailProps {
@@ -37,6 +42,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
   onOpenChange,
 }) => {
   const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
+  const { getCycleInsights } = useCycleTracking();
 
   if (!day) return null;
 
@@ -126,6 +132,47 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Cycle Phase Info */}
+            {day.cyclePhase && (
+              <Card className="p-4 glow-card border-l-4 border-l-primary">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Moon className="h-5 w-5 text-primary" />
+                  Cycle Phase
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      {day.cyclePhase.isInPeriod && <Droplets className="h-4 w-4 text-red-500" />}
+                      {day.cyclePhase.isOvulation && <Activity className="h-4 w-4 text-purple-500" />}
+                      {day.cyclePhase.isFertileWindow && !day.cyclePhase.isOvulation && <Heart className="h-4 w-4 text-blue-400" />}
+                      <span className="font-medium capitalize">{day.cyclePhase.phase} Phase</span>
+                    </span>
+                    <Badge variant="secondary">Day {day.cyclePhase.cycleDay}</Badge>
+                  </div>
+                  {day.cyclePhase.phase && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {getCycleInsights(day.cyclePhase.phase).phase_description}
+                      </p>
+                      {getCycleInsights(day.cyclePhase.phase).calorie_adjustment > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-orange-600">
+                          <TrendingUp className="h-4 w-4" />
+                          Higher metabolism: +{getCycleInsights(day.cyclePhase.phase).calorie_adjustment} cal/day
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {getCycleInsights(day.cyclePhase.phase).workout_recommendations.slice(0, 3).map((rec, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {rec.replace('_', ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+
             {/* Daily Summary - Clickable Cards */}
             <Card className="glow-card p-4">
               <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">

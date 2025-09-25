@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNutrition } from './useNutrition';
 import { useDailyStats } from './useDailyStats';
 import { useWorkoutPlan } from './useWorkoutPlan';
+import { useCycleTracking, type CyclePhaseInfo } from './useCycleTracking';
 
 export interface CalendarDay {
   date: Date;
@@ -22,6 +23,7 @@ export interface CalendarDay {
     alcoholDrinks: number;
   };
   hasActivity: boolean;
+  cyclePhase?: CyclePhaseInfo | null;
 }
 
 export interface WorkoutActivity {
@@ -69,6 +71,7 @@ export const useCalendarData = (userId?: string) => {
   const { weeklySchedule } = useWorkoutPlan();
   const { foodEntries } = useNutrition();
   const dailyStats = useDailyStats(userId);
+  const { calculatePhaseInfo } = useCycleTracking();
 
   // Function to generate calendar data for a given month
   const generateCalendarData = async (month: Date) => {
@@ -194,6 +197,10 @@ export const useCalendarData = (userId?: string) => {
           .reduce((sum, coin) => sum + coin.amount, 0);
         const totalAlcoholDrinks = dayAlcoholEntries.reduce((sum, alcohol) => sum + alcohol.quantity, 0);
         
+        // Calculate cycle phase for this day
+        const cyclePhase = calculatePhaseInfo(currentDate);
+        const hasActivity = dayWorkouts.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || (cyclePhase !== null);
+        
         newCalendarData.set(dateString, {
           date: currentDate,
           dateString,
@@ -211,7 +218,8 @@ export const useCalendarData = (userId?: string) => {
             tapCoinsEarned: totalTapCoinsEarned,
             alcoholDrinks: totalAlcoholDrinks
           },
-          hasActivity: dayWorkouts.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0
+          hasActivity,
+          cyclePhase
         });
       }
 
@@ -258,25 +266,32 @@ export const useCalendarData = (userId?: string) => {
       const dateString = current.toISOString().split('T')[0];
       
       if (current.getMonth() === month) {
-        days.push(calendarData.get(dateString) || {
-          date: new Date(current),
-          dateString,
-          workouts: [],
-          foodEntries: [],
-          alcoholEntries: [],
-          tapCoins: [],
-          steps: 0,
-          calories: 0,
-          dailyStats: {
-            caloriesBurned: 0,
-            caloriesConsumed: 0,
-            exercisesCompleted: 0,
-            workoutDuration: 0,
-            tapCoinsEarned: 0,
-            alcoholDrinks: 0
-          },
-          hasActivity: false
-        });
+        const existingDay = calendarData.get(dateString);
+        if (existingDay) {
+          days.push(existingDay);
+        } else {
+          const cyclePhase = calculatePhaseInfo(new Date(current));
+          days.push({
+            date: new Date(current),
+            dateString,
+            workouts: [],
+            foodEntries: [],
+            alcoholEntries: [],
+            tapCoins: [],
+            steps: 0,
+            calories: 0,
+            dailyStats: {
+              caloriesBurned: 0,
+              caloriesConsumed: 0,
+              exercisesCompleted: 0,
+              workoutDuration: 0,
+              tapCoinsEarned: 0,
+              alcoholDrinks: 0
+            },
+            hasActivity: cyclePhase !== null,
+            cyclePhase
+          });
+        }
       } else {
         days.push(null);
       }
