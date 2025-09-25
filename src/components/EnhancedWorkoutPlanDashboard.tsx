@@ -187,12 +187,15 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="monthly-plan">30-Day Plan</TabsTrigger>
-          <TabsTrigger value="schedule">Weekly Schedule</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="setup">Setup</TabsTrigger>
+        <TabsList
+          className="w-full overflow-x-auto whitespace-nowrap flex gap-2 sticky top-0 z-20 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-lg p-1"
+          aria-label="Workout plan views"
+        >
+          <TabsTrigger className="flex-shrink-0" value="overview">Overview</TabsTrigger>
+          <TabsTrigger className="flex-shrink-0" value="monthly-plan">30-Day Plan</TabsTrigger>
+          <TabsTrigger className="flex-shrink-0" value="schedule">Weekly Schedule</TabsTrigger>
+          <TabsTrigger className="flex-shrink-0" value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger className="flex-shrink-0" value="setup">Setup</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
