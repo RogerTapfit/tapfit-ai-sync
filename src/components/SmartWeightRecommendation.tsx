@@ -370,11 +370,11 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
           const machineImageUrl = getMachineImageUrl(rec.machine);
           
           return (
-            <Card key={rec.id}>
+            <Card key={rec.id} className="relative overflow-hidden border-l-4 border-l-red-500/60 glow-card">
               <CardContent className="p-4">
                 <div className="flex flex-col gap-3 mb-3">
                   {/* Machine Image */}
-                  <div className="w-full h-32 rounded-lg bg-muted/30 overflow-hidden shadow-md">
+                  <div className="w-full h-32 rounded-lg bg-gradient-to-br from-red-50/10 to-red-100/20 border border-red-200/30 overflow-hidden shadow-md">
                     <img 
                       src={machineImageUrl} 
                       alt={rec.machine}
