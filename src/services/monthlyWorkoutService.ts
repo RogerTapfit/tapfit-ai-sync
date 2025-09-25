@@ -84,26 +84,77 @@ export class MonthlyWorkoutService {
   }
 
   /**
-   * Get workout template based on fitness level and goal
+   * Get workout template based on fitness level and goal with fallbacks
    */
   private static async getWorkoutTemplate(
     fitness_level: string,
     primary_goal: string
   ): Promise<MonthlyWorkoutTemplate | null> {
-    const { data, error } = await supabase
+    // Try exact match first
+    let { data, error } = await supabase
       .from('monthly_workout_templates')
       .select('*')
       .eq('fitness_level', fitness_level)
       .eq('primary_goal', primary_goal)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching workout template:', error);
       return null;
     }
 
-    return data as MonthlyWorkoutTemplate;
+    // If exact match found, return it
+    if (data) {
+      return data as MonthlyWorkoutTemplate;
+    }
+
+    // Fallback 1: Try same fitness level with general_fitness goal
+    ({ data, error } = await supabase
+      .from('monthly_workout_templates')
+      .select('*')
+      .eq('fitness_level', fitness_level)
+      .eq('primary_goal', 'general_fitness')
+      .eq('is_active', true)
+      .maybeSingle());
+
+    if (data && !error) {
+      console.log(`Using fallback template: ${fitness_level} + general_fitness for ${fitness_level} + ${primary_goal}`);
+      return data as MonthlyWorkoutTemplate;
+    }
+
+    // Fallback 2: Try beginner with same goal
+    if (fitness_level !== 'beginner') {
+      ({ data, error } = await supabase
+        .from('monthly_workout_templates')
+        .select('*')
+        .eq('fitness_level', 'beginner')
+        .eq('primary_goal', primary_goal)
+        .eq('is_active', true)
+        .maybeSingle());
+
+      if (data && !error) {
+        console.log(`Using fallback template: beginner + ${primary_goal} for ${fitness_level} + ${primary_goal}`);
+        return data as MonthlyWorkoutTemplate;
+      }
+    }
+
+    // Fallback 3: Try beginner + general_fitness (most basic template)
+    ({ data, error } = await supabase
+      .from('monthly_workout_templates')
+      .select('*')
+      .eq('fitness_level', 'beginner')
+      .eq('primary_goal', 'general_fitness')
+      .eq('is_active', true)
+      .maybeSingle());
+
+    if (data && !error) {
+      console.log(`Using fallback template: beginner + general_fitness for ${fitness_level} + ${primary_goal}`);
+      return data as MonthlyWorkoutTemplate;
+    }
+
+    console.error(`No workout template found for ${fitness_level} + ${primary_goal}, even with fallbacks`);
+    return null;
   }
 
   /**
