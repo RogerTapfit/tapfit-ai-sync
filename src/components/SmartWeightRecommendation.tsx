@@ -193,20 +193,49 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
       }, {} as any);
 
       // Save to database
-      const { error } = await supabase
+      const today = new Date().toISOString().split('T')[0];
+
+      // Check if we already have a calibration result for today
+      const { data: existing } = await supabase
         .from('user_calibration_results')
-        .upsert({
-          user_id: user.id,
-          calibration_date: new Date().toISOString().split('T')[0],
-          strength_metrics,
-          endurance_metrics: {},
-          baseline_weights,
-          fitness_assessment: userProfile.experience_level,
-          recommendations: generateSmartRecommendations(),
-          completed_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('calibration_date', today)
+        .maybeSingle();
+
+      let error: any = null;
+      if (existing?.id) {
+        // Update existing record (avoids needing a unique constraint for upsert)
+        const { error: updateErr } = await supabase
+          .from('user_calibration_results')
+          .update({
+            strength_metrics,
+            endurance_metrics: {},
+            baseline_weights,
+            fitness_assessment: userProfile.experience_level,
+            recommendations: generateSmartRecommendations(),
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        error = updateErr || null;
+      } else {
+        // Insert new record
+        const { error: insertErr } = await supabase
+          .from('user_calibration_results')
+          .insert({
+            user_id: user.id,
+            calibration_date: today,
+            strength_metrics,
+            endurance_metrics: {},
+            baseline_weights,
+            fitness_assessment: userProfile.experience_level,
+            recommendations: generateSmartRecommendations(),
+            completed_at: new Date().toISOString()
+          });
+        error = insertErr || null;
+      }
+
+      if (error) throw error;
 
       if (error) throw error;
 
