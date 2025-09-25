@@ -665,6 +665,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
           onClose={() => setShowFoodLogModal(false)}
           productAnalysis={analysisResult}
           onSuccess={handleFoodLogSuccess}
+          selectedImage={selectedImage}
         />
       )}
     </AnimatePresence>

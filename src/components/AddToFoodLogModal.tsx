@@ -12,6 +12,7 @@ import type { FoodItem, FoodEntry } from '@/hooks/useNutrition';
 import VoiceInterface from './VoiceInterface';
 import FitnessChatbot from './FitnessChatbot';
 import { useAvatar } from '@/lib/avatarState';
+import { FoodPhotoUploadService } from '@/services/foodPhotoUploadService';
 
 interface ProductAnalysis {
   product: {
@@ -61,6 +62,7 @@ interface AddToFoodLogModalProps {
   onClose: () => void;
   productAnalysis: ProductAnalysis;
   onSuccess?: () => void;
+  selectedImage?: string;
 }
 
 const getMealTypeFromTime = (): 'breakfast' | 'lunch' | 'dinner' | 'snack' => {
@@ -83,6 +85,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   onClose,
   productAnalysis,
   onSuccess,
+  selectedImage,
 }) => {
   const [portionSize, setPortionSize] = useState(1.0);
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeFromTime());
@@ -139,6 +142,25 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         confidence: 0.95, // High confidence for scanned products
       };
 
+      let photoData = {};
+      
+      // Upload photo if selectedImage exists
+      if (selectedImage) {
+        try {
+          const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(selectedImage, mealType);
+          if (uploadResult.success) {
+            photoData = {
+              photo_url: uploadResult.photoUrl,
+              photo_storage_path: uploadResult.storagePath,
+              thumbnail_url: uploadResult.thumbnailUrl,
+            };
+          }
+        } catch (photoError) {
+          console.warn('Photo upload failed:', photoError);
+          // Continue without photo data
+        }
+      }
+
       const foodEntry: Omit<FoodEntry, 'id' | 'created_at'> = {
         meal_type: isAlcohol() ? 'snack' : mealType, // Default alcohol to snack category
         food_items: [foodItem],
@@ -152,6 +174,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         health_grade: productAnalysis.health_grade.letter,
         notes: notes || undefined,
         grade_score: getGradeScore(productAnalysis.health_grade.letter),
+        ...photoData,
       };
 
       await saveFoodEntry(foodEntry);
