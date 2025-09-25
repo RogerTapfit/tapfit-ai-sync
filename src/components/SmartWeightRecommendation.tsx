@@ -372,27 +372,25 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
           return (
             <Card key={rec.id}>
               <CardContent className="p-4">
-                <div className="flex items-start gap-3 mb-3">
+                <div className="flex flex-col gap-3 mb-3">
                   {/* Machine Image */}
-                  <div className="w-12 h-12 rounded-lg bg-muted/30 overflow-hidden shadow-sm flex-shrink-0">
+                  <div className="w-full h-32 rounded-lg bg-muted/30 overflow-hidden shadow-md">
                     <img 
                       src={machineImageUrl} 
                       alt={rec.machine}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain p-2"
                     />
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-sm sm:text-base truncate">{rec.name}</h3>
-                      <Badge 
-                        variant={rec.confidence === 'high' ? 'default' : rec.confidence === 'medium' ? 'secondary' : 'outline'}
-                        className="text-xs ml-2 flex-shrink-0"
-                      >
-                        {rec.confidence === 'high' ? 'High' : 
-                         rec.confidence === 'medium' ? 'Medium' : 'Learning'}
-                      </Badge>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm sm:text-base">{rec.name}</h3>
+                    <Badge 
+                      variant={rec.confidence === 'high' ? 'default' : rec.confidence === 'medium' ? 'secondary' : 'outline'}
+                      className="text-xs"
+                    >
+                      {rec.confidence === 'high' ? 'High' : 
+                       rec.confidence === 'medium' ? 'Medium' : 'Learning'}
+                    </Badge>
                   </div>
                 </div>
               
