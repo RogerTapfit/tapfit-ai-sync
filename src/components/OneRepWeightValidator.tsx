@@ -72,11 +72,11 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
       <CardContent className="space-y-6 px-4 pb-6">
         {/* Machine Image */}
         <div className="flex justify-center">
-          <div className="w-80 h-80 sm:w-96 sm:h-96 rounded-xl bg-white/5 overflow-hidden shadow-[0_0_40px_rgba(239,68,68,0.4)]">
+          <div className="w-80 h-80 sm:w-96 sm:h-96 rounded-xl bg-white/5 overflow-hidden">
             <img 
               src={machineImageUrl} 
               alt={exercise.machine}
-              className="w-full h-full object-contain p-2 drop-shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+              className="w-full h-full object-contain p-2"
             />
           </div>
         </div>
