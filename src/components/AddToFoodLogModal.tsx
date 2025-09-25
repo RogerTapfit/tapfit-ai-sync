@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Utensils, Coffee, Sun, Sunset, Moon, Plus, Minus, Mic } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -339,8 +340,8 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Utensils className="h-5 w-5 text-stats-exercises" />
@@ -361,7 +362,8 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 py-4">
           {/* Selected Photo Preview */}
           {selectedImage && (
             <motion.div 
@@ -628,7 +630,8 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
                isAlcohol() ? 'Add to Alcohol Log' : 'Add to Food Log'}
             </Button>
           </motion.div>
-        </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
 
