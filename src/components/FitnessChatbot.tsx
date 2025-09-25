@@ -195,7 +195,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
       {!isMinimized && (
         <>
           <CardContent className="flex-1 p-0 flex flex-col min-h-0">
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4 border-2 border-blue-500/50 bg-blue-500/5 shadow-[0_0_20px_rgba(59,130,246,0.3)] rounded-lg mx-2 mb-2">
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div
