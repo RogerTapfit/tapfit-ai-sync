@@ -91,6 +91,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(getMealTypeFromTime());
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'saving'>('idle');
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const { saveFoodEntry } = useNutrition();
@@ -144,25 +145,40 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 
       let photoData = {};
       
-      // Upload photo if selectedImage exists
+      // Upload photo FIRST if selectedImage exists
       if (selectedImage) {
+        console.log('Starting photo upload for selectedImage:', selectedImage.substring(0, 50) + '...');
+        setUploadStatus('uploading');
+        
         try {
           const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(selectedImage, mealType);
-          if (uploadResult.success) {
+          
+          console.log('Photo upload result:', uploadResult);
+          
+          if (uploadResult.success && uploadResult.photoUrl) {
             photoData = {
               photo_url: uploadResult.photoUrl,
               photo_storage_path: uploadResult.storagePath,
               thumbnail_url: uploadResult.thumbnailUrl,
             };
+            
+            console.log('Photo data prepared:', photoData);
+            toast.success('Photo uploaded successfully!');
+          } else {
+            console.error('Photo upload failed:', uploadResult);
+            toast.error('Failed to upload photo - continuing without photo');
           }
         } catch (photoError) {
-          console.warn('Photo upload failed:', photoError);
-          // Continue without photo data
+          console.error('Photo upload error:', photoError);
+          toast.error('Photo upload failed - continuing without photo');
         }
       }
 
+      setUploadStatus('saving');
+      console.log('Creating food entry with photo data:', photoData);
+
       const foodEntry: Omit<FoodEntry, 'id' | 'created_at'> = {
-        meal_type: isAlcohol() ? 'snack' : mealType, // Default alcohol to snack category
+        meal_type: isAlcohol() ? 'snack' : mealType,
         food_items: [foodItem],
         total_calories: adjustedNutrition.calories,
         total_protein: adjustedNutrition.protein,
@@ -177,7 +193,11 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         ...photoData,
       };
 
-      await saveFoodEntry(foodEntry);
+      console.log('Saving food entry:', foodEntry);
+      
+      const savedEntry = await saveFoodEntry(foodEntry);
+      
+      console.log('Food entry saved successfully:', savedEntry);
       
       toast.success('Added to food log successfully!', {
         description: `${foodItem.name} has been logged for ${mealType}`,
@@ -190,6 +210,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       toast.error('Failed to save to food log');
     } finally {
       setIsLoading(false);
+      setUploadStatus('idle');
     }
   };
 
@@ -210,6 +231,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       setPortionSize(1.0);
       setMealType(getMealTypeFromTime());
       setNotes('');
+      setUploadStatus('idle');
     }
   }, [isOpen]);
 
@@ -456,7 +478,9 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
               className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg"
               disabled={isLoading}
             >
-              {isLoading ? 'Saving...' : 'Add to Food Log'}
+              {uploadStatus === 'uploading' ? 'Uploading Photo...' : 
+               uploadStatus === 'saving' ? 'Saving...' : 
+               'Add to Food Log'}
             </Button>
           </motion.div>
         </div>
