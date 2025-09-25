@@ -22,6 +22,7 @@ import WeeklyNutritionCalendar from './WeeklyNutritionCalendar';
 import MetabolismTracker from './MetabolismTracker';
 import FoodEntryList from './FoodEntryList';
 import { FoodPhotoGallery } from './FoodPhotoGallery';
+import { PhotoStorageMonitor } from './PhotoStorageMonitor';
 
 const NutritionDashboard = () => {
   const { nutritionGoals, dailySummary, metabolismReadings, refreshData } = useNutrition();
@@ -233,7 +234,10 @@ const NutritionDashboard = () => {
         </TabsContent>
 
         <TabsContent value="photos">
-          <FoodPhotoGallery />
+          <div className="space-y-4">
+            <PhotoStorageMonitor />
+            <FoodPhotoGallery />
+          </div>
         </TabsContent>
 
         <TabsContent value="goals">

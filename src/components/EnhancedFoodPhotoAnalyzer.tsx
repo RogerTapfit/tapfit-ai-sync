@@ -19,6 +19,7 @@ import { PhotoManager } from './PhotoManager';
 import { AnimatedCounter } from './AnimatedCounter';
 import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
 import { PhotoUploadValidator } from './PhotoUploadValidator';
+import { PhotoStorageMonitor } from './PhotoStorageMonitor';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { processImageFile } from '../utils/heicConverter';

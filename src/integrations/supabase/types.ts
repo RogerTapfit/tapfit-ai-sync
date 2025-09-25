@@ -1069,6 +1069,33 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_upload_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          photo_count: number | null
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          photo_count?: number | null
+          success: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          photo_count?: number | null
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       power_level_history: {
         Row: {
           created_at: string
@@ -2178,6 +2205,14 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_user_upload_success_rate: {
+        Args: { _days?: number; _user_id: string }
+        Returns: {
+          success_rate: number
+          successful_uploads: number
+          total_attempts: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2192,6 +2227,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_photo_upload_attempt: {
+        Args: {
+          _error_message?: string
+          _photo_count?: number
+          _success: boolean
+          _user_id: string
+        }
+        Returns: undefined
       }
       refresh_daily_nutrition_summary_for_user: {
         Args: { _user_id: string }

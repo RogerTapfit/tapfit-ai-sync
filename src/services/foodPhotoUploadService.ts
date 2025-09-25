@@ -163,14 +163,28 @@ export class FoodPhotoUploadService {
   }
 
   /**
-   * Upload multiple food photos to Supabase Storage
+   * Upload multiple food photos to Supabase Storage with logging
    */
   static async uploadMultipleFoodPhotos(
     photos: Array<{ dataUrl: string; type: string; file?: File }>,
     mealType: string = 'meal'
   ): Promise<{ success: boolean; photos: any[]; errors: string[] }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
     // Ensure bucket exists first
-    await this.ensureBucketExists();
+    const bucketReady = await this.ensureBucketExists();
+    if (!bucketReady) {
+      // Log the failure
+      if (user) {
+        await supabase.rpc('log_photo_upload_attempt', {
+          _user_id: user.id,
+          _success: false,
+          _error_message: 'Storage bucket not accessible',
+          _photo_count: photos.length
+        });
+      }
+      return { success: false, photos: [], errors: ['Storage bucket not accessible'] };
+    }
     
     const results = [];
     const errors = [];
@@ -198,6 +212,16 @@ export class FoodPhotoUploadService {
       } else {
         errors.push(`Photo ${index + 1}: ${result.error}`);
       }
+    }
+
+    // Log the overall result
+    if (user) {
+      await supabase.rpc('log_photo_upload_attempt', {
+        _user_id: user.id,
+        _success: results.length > 0,
+        _error_message: errors.length > 0 ? errors.join('; ') : null,
+        _photo_count: photos.length
+      });
     }
 
     return {
