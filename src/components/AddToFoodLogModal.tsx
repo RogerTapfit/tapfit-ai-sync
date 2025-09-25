@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import type { FoodItem, FoodEntry } from '@/hooks/useNutrition';
 import VoiceInterface from './VoiceInterface';
 import FitnessChatbot from './FitnessChatbot';
+import { useAvatar } from '@/lib/avatarState';
 
 interface ProductAnalysis {
   product: {
@@ -90,6 +91,10 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const { saveFoodEntry } = useNutrition();
+  const { avatar } = useAvatar();
+
+  // Get avatar name, fallback to "FitBot"
+  const avatarName = avatar?.name || "FitBot";
 
   console.log('AddToFoodLogModal render - isVoiceChatOpen:', isVoiceChatOpen); // Debug log
 
@@ -343,14 +348,14 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             className="space-y-3"
           >
             <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">AI Assistant</Label>
+              <Label className="text-base font-semibold">{avatarName}</Label>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsChatbotOpen(!isChatbotOpen)}
                 className="text-xs px-3 py-1 h-7"
               >
-                {isChatbotOpen ? 'Hide Assistant' : 'Ask Questions'}
+                {isChatbotOpen ? `Hide ${avatarName}` : `Ask ${avatarName}`}
               </Button>
             </div>
             {isChatbotOpen && (
