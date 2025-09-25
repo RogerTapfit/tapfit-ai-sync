@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -13,9 +12,11 @@ import {
   Dumbbell,
   TrendingUp,
   Target,
-  Brain
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import { calculateOptimalWeight, calculateSetsAndReps, UserWeightProfile } from '@/services/weightCalculationService';
+import { OneRepWeightValidator } from './OneRepWeightValidator';
 
 interface ExerciseRecommendation {
   id: string;
@@ -53,6 +54,7 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
   const [showValidation, setShowValidation] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationMode, setValidationMode] = useState<'quick' | 'one_rep'>('one_rep');
 
   // Generate initial recommendations
   useEffect(() => {
@@ -91,13 +93,43 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
     generateRecommendations();
   }, [userProfile]);
 
-  const startValidation = () => {
+  const startOneRepValidation = () => {
+    setValidationMode('one_rep');
     setShowValidation(true);
     setCurrentValidationIndex(0);
   };
 
-  const skipValidation = () => {
-    completeRecommendations();
+  const startQuickValidation = () => {
+    setValidationMode('quick');
+    setShowValidation(true);
+    setCurrentValidationIndex(0);
+  };
+
+  const handleWeightConfirmed = (finalWeight: number) => {
+    const updatedRecs = [...recommendations];
+    updatedRecs[currentValidationIndex] = {
+      ...updatedRecs[currentValidationIndex],
+      recommended_weight: finalWeight,
+      confidence: 'high'
+    };
+    setRecommendations(updatedRecs);
+
+    // Move to next exercise or complete
+    if (currentValidationIndex < Math.min(2, recommendations.length - 1)) {
+      setCurrentValidationIndex(currentValidationIndex + 1);
+    } else {
+      setShowValidation(false);
+      completeRecommendations();
+    }
+  };
+
+  const skipCurrentExercise = () => {
+    if (currentValidationIndex < Math.min(2, recommendations.length - 1)) {
+      setCurrentValidationIndex(currentValidationIndex + 1);
+    } else {
+      setShowValidation(false);
+      completeRecommendations();
+    }
   };
 
   const handleValidationFeedback = (feedback: 'too_light' | 'just_right' | 'too_heavy') => {
@@ -238,6 +270,18 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
   }
 
   if (showValidation) {
+    if (validationMode === 'one_rep') {
+      const currentRec = recommendations[currentValidationIndex];
+      return (
+        <OneRepWeightValidator
+          exercise={currentRec}
+          onWeightConfirmed={handleWeightConfirmed}
+          onSkip={skipCurrentExercise}
+        />
+      );
+    }
+    
+    // Keep existing quick validation as fallback
     const currentRec = recommendations[currentValidationIndex];
     return (
       <Card className="max-w-2xl mx-auto">
@@ -360,18 +404,28 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
             <div className="space-y-2">
               <h3 className="font-semibold">Ready to get started?</h3>
               <p className="text-sm text-muted-foreground">
-                You can validate a few key weights (2 minutes) or start working out immediately
+                Try one rep of each exercise to perfectly tune your weights, or start immediately
               </p>
             </div>
             
             <div className="flex gap-3 justify-center">
-              <Button onClick={startValidation} variant="default">
-                Quick Validation (2 min)
+              <Button onClick={startOneRepValidation} variant="default" className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                One-Rep Tuning (Recommended)
               </Button>
-              <Button onClick={skipValidation} variant="outline">
+              <Button onClick={() => completeRecommendations()} variant="outline">
                 Start Working Out Now
               </Button>
             </div>
+            
+            <Button 
+              onClick={startQuickValidation} 
+              variant="ghost" 
+              size="sm"
+              className="text-muted-foreground"
+            >
+              Quick validation instead
+            </Button>
             
             <p className="text-xs text-muted-foreground">
               Don't worry - we'll adjust weights automatically based on your performance

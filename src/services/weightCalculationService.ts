@@ -32,11 +32,11 @@ export interface WeightRecommendationOutput {
   adjustment_suggestions: string[];
 }
 
-// Base multipliers for weight calculations (percentage of bodyweight)
+// Base multipliers for weight calculations (percentage of bodyweight) - More aggressive
 const BASE_FACTORS = {
-  beginner: 0.5,    // 50% of bodyweight as starting point
-  intermediate: 0.8, // 80% of bodyweight 
-  advanced: 1.2     // 120% of bodyweight
+  beginner: 0.7,    // 70% of bodyweight as starting point  
+  intermediate: 1.1, // 110% of bodyweight 
+  advanced: 1.5     // 150% of bodyweight
 } as const;
 
 const GOAL_MULTIPLIERS = {
@@ -68,26 +68,26 @@ const EXERCISE_MODIFIERS = {
   'default': 0.7
 } as const;
 
-// Minimum weight floors for each exercise type (in lbs)
+// Minimum weight floors for each exercise type (in lbs) - More aggressive starting points
 const MINIMUM_WEIGHTS = {
-  // Upper body minimums
-  'chest_press': 30,
-  'bench_press': 45,
-  'shoulder_press': 25,
-  'lat_pulldown': 40,
-  'seated_row': 35,
-  'bicep_curl': 15,
-  'tricep_extension': 15,
+  // Upper body minimums - higher starting points for adults
+  'chest_press': 80,     // Start at 80+ lbs for chest press
+  'bench_press': 95,
+  'shoulder_press': 50,   // Start at 50+ lbs for shoulders  
+  'lat_pulldown': 70,    // Start at 70+ lbs for lat pulldown
+  'seated_row': 60,
+  'bicep_curl': 25,
+  'tricep_extension': 25,
   
-  // Lower body minimums
-  'leg_press': 80,
-  'squat': 45,
-  'leg_curl': 25,
-  'leg_extension': 30,
-  'calf_raise': 45,
+  // Lower body minimums - much higher for legs
+  'leg_press': 150,      // Start at 150+ lbs for leg press
+  'squat': 95,
+  'leg_curl': 40,
+  'leg_extension': 50,
+  'calf_raise': 90,
   
   // Default minimum
-  'default': 25
+  'default': 50
 } as const;
 
 // Gender modifiers
