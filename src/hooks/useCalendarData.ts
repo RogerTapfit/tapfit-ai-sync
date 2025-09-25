@@ -152,14 +152,22 @@ export const useCalendarData = (userId?: string) => {
         // Get food entries for this day
         const dayFoodEntries: FoodActivity[] = fetchedFoodEntries
           .filter(food => food.logged_date === dateString)
-          .map(food => ({
-            id: food.id,
-            mealType: food.meal_type,
-            totalCalories: food.total_calories,
-            photoUrl: food.photo_url,
-            healthGrade: food.health_grade,
-            time: new Date(food.created_at).toISOString()
-          }));
+          .map(food => {
+            // Prefer main photo, then arrays, then thumbnail fallbacks
+            const anyFood = food as any;
+            const photoUrl = anyFood.photo_url 
+              || (Array.isArray(anyFood.photo_urls) && anyFood.photo_urls[0])
+              || anyFood.thumbnail_url
+              || (Array.isArray(anyFood.thumbnail_urls) && anyFood.thumbnail_urls[0]);
+            return ({
+              id: food.id,
+              mealType: food.meal_type,
+              totalCalories: food.total_calories,
+              photoUrl: photoUrl || undefined,
+              healthGrade: food.health_grade,
+              time: new Date(food.created_at).toISOString()
+            });
+          });
         
         // Get alcohol entries for this day
         const dayAlcoholEntries: AlcoholActivity[] = alcoholEntries
