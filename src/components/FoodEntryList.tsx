@@ -159,15 +159,23 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                     <div className="flex flex-col sm:flex-row">
                       {/* Food Photo */}
                       <div className="w-full h-48 sm:w-24 sm:h-24 bg-muted flex-shrink-0 flex items-center justify-center">
-                        {entry.photo_url ? (
-                          <img 
-                            src={entry.photo_url} 
-                            alt="Food"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                        )}
+                        {(() => {
+                          // Find the first available photo from any source
+                          const photoUrl = entry.photo_url || 
+                                         (entry.photo_urls && entry.photo_urls[0]) ||
+                                         entry.thumbnail_url || 
+                                         (entry.thumbnail_urls && entry.thumbnail_urls[0]);
+                          
+                          return photoUrl ? (
+                            <img 
+                              src={photoUrl} 
+                              alt="Food"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          );
+                        })()}
                       </div>
 
                       {/* Main Content */}
