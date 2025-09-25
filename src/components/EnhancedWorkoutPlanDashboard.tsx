@@ -152,199 +152,28 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
 
       {/* Calibration Status */}
       {needsCalibration && (
-        <Card className="relative overflow-hidden group cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-          {/* Dark Tron background with grid pattern */}
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: `
-                radial-gradient(circle at 50% 50%, hsl(0 70% 15% / 0.8) 0%, hsl(0 0% 3%) 70%),
-                linear-gradient(90deg, transparent 48%, hsl(0 100% 50% / 0.1) 49%, hsl(0 100% 50% / 0.1) 51%, transparent 52%),
-                linear-gradient(0deg, transparent 48%, hsl(0 100% 50% / 0.1) 49%, hsl(0 100% 50% / 0.1) 51%, transparent 52%)
-              `,
-              backgroundSize: '100% 100%, 40px 40px, 40px 40px'
-            }}
-          />
-          
-          {/* Animated neon red glow layers */}
-          <div 
-            className="absolute inset-0 opacity-70 animate-pulse"
-            style={{
-              background: 'var(--gradient-tron-glow)',
-              filter: 'blur(20px)'
-            }}
-          />
-          
-          {/* Tron-style animated border */}
-          <div className="absolute inset-0 rounded-lg">
-            {/* Top border */}
-            <div 
-              className="absolute top-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"
-              style={{
-                width: '100%',
-                boxShadow: 'var(--glow-tron-red)'
-              }}
-            />
-            
-            {/* Bottom border */}
-            <div 
-              className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"
-              style={{
-                width: '100%',
-                boxShadow: 'var(--glow-tron-red)',
-                animationDelay: '1s'
-              }}
-            />
-            
-            {/* Left border */}
-            <div 
-              className="absolute left-0 top-0 w-[2px] bg-gradient-to-b from-transparent via-red-500 to-transparent animate-pulse"
-              style={{
-                height: '100%',
-                boxShadow: 'var(--glow-tron-red)',
-                animationDelay: '0.5s'
-              }}
-            />
-            
-            {/* Right border */}
-            <div 
-              className="absolute right-0 top-0 w-[2px] bg-gradient-to-b from-transparent via-red-500 to-transparent animate-pulse"
-              style={{
-                height: '100%',
-                boxShadow: 'var(--glow-tron-red)',
-                animationDelay: '1.5s'
-              }}
-            />
-          </div>
-          
-          {/* Intense hover glow effect */}
-          <div 
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500"
-            style={{
-              background: 'var(--gradient-tron-glow)',
-              boxShadow: 'var(--glow-tron-ultra)',
-              filter: 'blur(30px)'
-            }}
-          />
-          
-          {/* Content */}
-          <CardContent className="relative z-10 p-8 space-y-6">
-            {/* Header with icon and intense glow */}
-            <div className="flex items-center gap-4">
-              <div 
-                className="p-4 rounded-full relative"
-                style={{
-                  background: 'radial-gradient(circle, hsl(0 100% 50% / 0.3), transparent)',
-                  boxShadow: 'var(--glow-tron-intense)'
-                }}
-              >
-                {/* Rotating ring around icon */}
-                <div 
-                  className="absolute inset-0 rounded-full border-2 animate-spin"
-                  style={{
-                    borderColor: 'hsl(0 100% 50%) transparent hsl(0 100% 50%) transparent',
-                    boxShadow: '0 0 20px hsl(0 100% 50% / 0.8)'
-                  }}
-                />
-                
-                <AlertCircle 
-                  className="w-8 h-8 animate-pulse relative z-10"
-                  style={{ 
-                    color: 'hsl(0 100% 65%)',
-                    filter: 'drop-shadow(0 0 10px hsl(0 100% 50%))'
-                  }}
-                />
+        <Card className="border-2 border-primary/30 bg-gradient-to-br from-card via-card to-card/80 hover:border-primary/50 transition-colors duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
+                <AlertCircle className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 
-                  className="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent font-mono tracking-wider"
-                  style={{
-                    backgroundImage: 'linear-gradient(135deg, hsl(0 100% 65%), hsl(15 100% 50%), hsl(0 100% 65%))',
-                    textShadow: '0 0 20px hsl(0 100% 50% / 0.8)'
-                  }}
-                >
-                  CALIBRATION
-                </h3>
-                <h3 
-                  className="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent font-mono tracking-wider"
-                  style={{
-                    backgroundImage: 'linear-gradient(135deg, hsl(0 100% 65%), hsl(15 100% 50%), hsl(0 100% 65%))',
-                    textShadow: '0 0 20px hsl(0 100% 50% / 0.8)'
-                  }}
-                >
-                  RECOMMENDED
-                </h3>
-                <p 
-                  className="text-sm mt-2 font-mono tracking-wide"
-                  style={{ 
-                    color: 'hsl(0 100% 80%)',
-                    textShadow: '0 0 10px hsl(0 100% 50% / 0.5)'
-                  }}
-                >
-                  &gt; OPTIMIZE_TRAINING_PROTOCOL
-                </p>
+                <h3 className="text-xl font-bold text-primary">Calibration Recommended</h3>
+                <p className="text-sm text-muted-foreground">Optimize your training protocol</p>
               </div>
             </div>
-
-            {/* Description with Tron styling */}
-            <div className="space-y-2">
-              <p 
-                className="text-lg leading-relaxed font-mono"
-                style={{ 
-                  color: 'hsl(0 100% 85%)',
-                  textShadow: '0 0 8px hsl(0 100% 50% / 0.3)'
-                }}
-              >
-                &gt; EXECUTE fitness_calibration.exe
-              </p>
-              <p 
-                className="text-base leading-relaxed"
-                style={{ color: 'hsl(0 90% 75%)' }}
-              >
-                Complete a fitness calibration to get precise weight 
-                recommendations and personalized training protocols.
-              </p>
-            </div>
-
-            {/* Tron-style action button */}
+            
+            <p className="text-sm text-muted-foreground mb-6">
+              Complete a fitness calibration to get precise weight recommendations and personalized training protocols.
+            </p>
+            
             <Button
               onClick={() => setShowCalibration(true)}
-              size="lg"
-              className="w-full text-xl font-bold font-mono relative overflow-hidden group/btn transition-all duration-300 tracking-wider"
-              style={{
-                background: 'var(--gradient-tron-red)',
-                border: '2px solid hsl(0 100% 50%)',
-                boxShadow: 'var(--glow-tron-intense), inset 0 2px 0 hsl(0 100% 65% / 0.3)',
-                color: 'white',
-                textShadow: '0 0 10px hsl(0 100% 50%)'
-              }}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {/* Animated scanning line */}
-              <div 
-                className="absolute inset-0 opacity-0 group-hover/btn:opacity-100"
-                style={{
-                  background: 'linear-gradient(90deg, transparent, hsl(0 100% 80% / 0.8), transparent)',
-                  animation: 'scan 2s infinite linear'
-                }}
-              />
-              
-              {/* Corner decorations */}
-              <div className="absolute top-1 left-1 w-4 h-4 border-t-2 border-l-2 border-red-400" />
-              <div className="absolute top-1 right-1 w-4 h-4 border-t-2 border-r-2 border-red-400" />
-              <div className="absolute bottom-1 left-1 w-4 h-4 border-b-2 border-l-2 border-red-400" />
-              <div className="absolute bottom-1 right-1 w-4 h-4 border-b-2 border-r-2 border-red-400" />
-              
-              {/* Icon with enhanced glow */}
-              <Target 
-                className="w-6 h-6 mr-3 transition-transform duration-300 group-hover/btn:rotate-180 relative z-10"
-                style={{ 
-                  color: 'hsl(0 100% 80%)',
-                  filter: 'drop-shadow(0 0 8px hsl(0 100% 50%))'
-                }}
-              />
-              
-              {/* Text content */}
-              <span className="relative z-10">BEGIN_CALIBRATION [15_MINS]</span>
+              <Target className="w-4 h-4 mr-2" />
+              Begin Calibration (15 mins)
             </Button>
           </CardContent>
         </Card>
