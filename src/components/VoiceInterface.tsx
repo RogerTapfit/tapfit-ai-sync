@@ -26,6 +26,8 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isOpen, onToggle }) => 
 
   const [textInput, setTextInput] = useState('');
 
+  console.log('VoiceInterface render - isOpen:', isOpen); // Debug log
+
   const handleConnect = async () => {
     await connect();
   };
@@ -63,7 +65,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isOpen, onToggle }) => 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
     >
       <Card className="w-full max-w-md bg-card border-border shadow-lg">
         <CardHeader className="pb-4">

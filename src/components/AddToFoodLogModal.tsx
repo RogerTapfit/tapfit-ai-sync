@@ -89,6 +89,8 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const { saveFoodEntry } = useNutrition();
 
+  console.log('AddToFoodLogModal render - isVoiceChatOpen:', isVoiceChatOpen); // Debug log
+
   // Check if product is alcohol
   const isAlcohol = () => {
     const productName = productAnalysis.product.name.toLowerCase();
@@ -182,7 +184,8 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   }, [isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -193,7 +196,10 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsVoiceChatOpen(true)}
+              onClick={() => {
+                console.log('Voice Chat button clicked'); // Debug log
+                setIsVoiceChatOpen(true);
+              }}
               className="text-muted-foreground hover:text-foreground"
             >
               <Mic className="h-4 w-4 mr-2" />
@@ -363,12 +369,13 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           </motion.div>
         </div>
       </DialogContent>
-
-      {/* Voice Chat Interface */}
-      <VoiceInterface 
-        isOpen={isVoiceChatOpen}
-        onToggle={() => setIsVoiceChatOpen(!isVoiceChatOpen)}
-      />
     </Dialog>
+
+    {/* Voice Chat Interface - Outside dialog to avoid z-index conflicts */}
+    <VoiceInterface 
+      isOpen={isVoiceChatOpen}
+      onToggle={() => setIsVoiceChatOpen(!isVoiceChatOpen)}
+    />
+    </>
   );
 };
