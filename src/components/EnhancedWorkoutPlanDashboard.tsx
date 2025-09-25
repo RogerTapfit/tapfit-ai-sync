@@ -152,19 +152,24 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
 
       {/* Calibration Status */}
       {needsCalibration && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertCircle className="h-5 w-5" />
+        <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-background via-background to-primary/5 shadow-elegant hover:shadow-glow transition-all duration-500 group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 opacity-60 animate-pulse" />
+          <div className="absolute inset-[1px] rounded-lg bg-gradient-to-br from-background/95 via-background to-primary/5 backdrop-blur-sm" />
+          <CardHeader className="relative z-10">
+            <CardTitle className="flex items-center gap-2 text-primary font-bold text-xl tracking-wide">
+              <AlertCircle className="h-6 w-6 text-primary animate-pulse" />
               Calibration Recommended
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-orange-700 mb-4">
+          <CardContent className="relative z-10">
+            <p className="text-foreground/80 mb-6 text-lg leading-relaxed">
               Complete a fitness calibration to get precise weight recommendations and personalized training.
             </p>
-            <Button onClick={() => setShowCalibration(true)} variant="outline">
-              <Target className="mr-2 h-4 w-4" />
+            <Button 
+              onClick={() => setShowCalibration(true)} 
+              className="w-full bg-gradient-to-r from-primary via-primary-glow to-primary hover:from-primary-glow hover:to-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.6)] transition-all duration-300 font-semibold text-lg py-6 border-primary/30 backdrop-blur-sm group-hover:scale-[1.02]"
+            >
+              <Target className="mr-3 h-5 w-5" />
               Begin Calibration (15 mins)
             </Button>
           </CardContent>
