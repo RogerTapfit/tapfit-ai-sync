@@ -33,6 +33,7 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
   const [hasTriedRep, setHasTriedRep] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [sliderValue, setSliderValue] = useState([2]); // Default to "Just Right" (middle position)
+  const [pendingWeight, setPendingWeight] = useState(exercise.recommended_weight);
   
   const machineImageUrl = getMachineImageUrl(exercise.machine);
 
@@ -50,31 +51,37 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
     switch (position) {
       case 0: // Way Too Easy
         newWeight = currentWeight + 20;
-        setCurrentWeight(newWeight);
-        setShowFeedback(false);
-        setHasTriedRep(false);
         break;
       case 1: // Too Light
         newWeight = currentWeight + 10;
-        setCurrentWeight(newWeight);
-        setShowFeedback(false);
-        setHasTriedRep(false);
         break;
       case 2: // Just Right
-        onWeightConfirmed(currentWeight);
-        return;
+        newWeight = currentWeight;
+        break;
       case 3: // Too Heavy
         newWeight = Math.max(10, currentWeight - 10);
-        setCurrentWeight(newWeight);
-        setShowFeedback(false);
-        setHasTriedRep(false);
         break;
       case 4: // Way Too Heavy
         newWeight = Math.max(10, currentWeight - 20);
-        setCurrentWeight(newWeight);
-        setShowFeedback(false);
-        setHasTriedRep(false);
         break;
+    }
+    
+    setPendingWeight(newWeight);
+  };
+
+  const handleSubmit = () => {
+    const position = sliderValue[0];
+    
+    if (position === 2) {
+      // Just Right - confirm current weight
+      onWeightConfirmed(currentWeight);
+    } else {
+      // Apply weight change and try again
+      setCurrentWeight(pendingWeight);
+      setShowFeedback(false);
+      setHasTriedRep(false);
+      setSliderValue([2]); // Reset to "Just Right"
+      setPendingWeight(pendingWeight);
     }
   };
 
@@ -133,41 +140,67 @@ export const OneRepWeightValidator: React.FC<OneRepWeightValidatorProps> = ({
             </div>
           </div>
         ) : showFeedback ? (
-          <div className="space-y-6">
-            <p className="text-center text-sm text-muted-foreground px-2">
-              How did that feel?
-            </p>
-            
-            <div className="space-y-4">
-              <Slider
-                value={sliderValue}
-                onValueChange={handleSliderChange}
-                min={0}
-                max={4}
-                step={1}
-                className="w-full"
-              />
+            <div className="space-y-6">
+              <p className="text-center text-sm text-muted-foreground px-2">
+                How did that feel?
+              </p>
               
-              <div className="flex justify-between text-xs text-muted-foreground px-1">
-                {getSliderLabels().map((label, index) => (
-                  <span 
-                    key={index} 
-                    className={`text-center flex-1 ${sliderValue[0] === index ? 'text-primary font-medium' : ''}`}
+              <div className="space-y-6">
+                <div className="relative">
+                  <Slider
+                    value={sliderValue}
+                    onValueChange={handleSliderChange}
+                    min={0}
+                    max={4}
+                    step={1}
+                    className="w-full enhanced-slider"
+                  />
+                  
+                  <div className="flex justify-between text-xs text-muted-foreground px-1 mt-3">
+                    {getSliderLabels().map((label, index) => (
+                      <span 
+                        key={index} 
+                        className={`text-center flex-1 transition-colors duration-200 ${
+                          sliderValue[0] === index 
+                            ? 'text-primary font-semibold' 
+                            : 'hover:text-foreground'
+                        }`}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="text-center space-y-4">
+                  <div className="text-sm font-medium">
+                    {sliderValue[0] === 0 && (
+                      <span className="text-orange-500">Next try: {pendingWeight} lbs (+20 lbs)</span>
+                    )}
+                    {sliderValue[0] === 1 && (
+                      <span className="text-yellow-500">Next try: {pendingWeight} lbs (+10 lbs)</span>
+                    )}
+                    {sliderValue[0] === 2 && (
+                      <span className="text-green-500">Perfect! Confirming {currentWeight} lbs</span>
+                    )}
+                    {sliderValue[0] === 3 && (
+                      <span className="text-orange-500">Next try: {pendingWeight} lbs (-10 lbs)</span>
+                    )}
+                    {sliderValue[0] === 4 && (
+                      <span className="text-red-500">Next try: {pendingWeight} lbs (-20 lbs)</span>
+                    )}
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSubmit} 
+                    className="w-full h-12 text-base font-semibold"
+                    size="lg"
                   >
-                    {label}
-                  </span>
-                ))}
-              </div>
-              
-              <div className="text-center text-sm text-muted-foreground">
-                {sliderValue[0] === 0 && "Adding 20 lbs"}
-                {sliderValue[0] === 1 && "Adding 10 lbs"}
-                {sliderValue[0] === 2 && "Perfect! Confirming weight"}
-                {sliderValue[0] === 3 && "Reducing 10 lbs"}
-                {sliderValue[0] === 4 && "Reducing 20 lbs"}
+                    {sliderValue[0] === 2 ? "Confirm Weight" : "Try This Weight"}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
         ) : null}
         
         <div className="text-center px-2">
