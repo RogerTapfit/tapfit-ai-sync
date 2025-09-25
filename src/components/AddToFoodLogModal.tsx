@@ -88,6 +88,17 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { saveFoodEntry } = useNutrition();
 
+  // Check if product is alcohol
+  const isAlcohol = () => {
+    const productName = productAnalysis.product.name.toLowerCase();
+    const brandName = productAnalysis.product.brand?.toLowerCase() || '';
+    const alcoholKeywords = ['beer', 'wine', 'vodka', 'whiskey', 'rum', 'gin', 'tequila', 'alcohol', 'liquor', 'spirits', 'champagne', 'prosecco', 'cider', 'sake', 'bourbon', 'scotch', 'brandy', 'cognac', 'absinthe', 'mezcal'];
+    
+    return alcoholKeywords.some(keyword => 
+      productName.includes(keyword) || brandName.includes(keyword)
+    );
+  };
+
   // Calculate adjusted nutrition values
   const adjustedNutrition = {
     calories: Math.round(productAnalysis.nutrition.per_serving.calories * portionSize),
@@ -119,7 +130,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       };
 
       const foodEntry: Omit<FoodEntry, 'id' | 'created_at'> = {
-        meal_type: mealType,
+        meal_type: isAlcohol() ? 'snack' : mealType, // Default alcohol to snack category
         food_items: [foodItem],
         total_calories: adjustedNutrition.calories,
         total_protein: adjustedNutrition.protein,
@@ -269,31 +280,33 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             </div>
           </motion.div>
 
-          {/* Meal Type */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="space-y-3"
-          >
-            <Label className="text-base font-semibold">Meal Type</Label>
-            <RadioGroup value={mealType} onValueChange={(value) => setMealType(value as any)}>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(mealTypeIcons).map(([type, Icon]) => (
-                  <div key={type} className="flex items-center space-x-2">
-                    <RadioGroupItem value={type} id={type} />
-                    <Label 
-                      htmlFor={type} 
-                      className="flex items-center gap-2 cursor-pointer capitalize font-medium"
-                    >
-                      <Icon className="h-4 w-4" />
-                      {type}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </RadioGroup>
-          </motion.div>
+          {/* Meal Type - Only show for non-alcohol items */}
+          {!isAlcohol() && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-3"
+            >
+              <Label className="text-base font-semibold">Meal Type</Label>
+              <RadioGroup value={mealType} onValueChange={(value) => setMealType(value as any)}>
+                <div className="grid grid-cols-2 gap-3">
+                  {Object.entries(mealTypeIcons).map(([type, Icon]) => (
+                    <div key={type} className="flex items-center space-x-2">
+                      <RadioGroupItem value={type} id={type} />
+                      <Label 
+                        htmlFor={type} 
+                        className="flex items-center gap-2 cursor-pointer capitalize font-medium"
+                      >
+                        <Icon className="h-4 w-4" />
+                        {type}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
+            </motion.div>
+          )}
 
           {/* Notes */}
           <motion.div 
