@@ -108,6 +108,12 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
     const productName = productAnalysis.product.name.toLowerCase();
     const brandName = productAnalysis.product.brand?.toLowerCase() || '';
     
+    console.log('🍺 Alcohol Detection Debug:', {
+      productName,
+      brandName,
+      fullProduct: productAnalysis.product
+    });
+    
     const alcoholKeywords = [
       'beer', 'wine', 'vodka', 'whiskey', 'rum', 'gin', 'tequila', 'alcohol', 'liquor', 'spirits', 
       'champagne', 'prosecco', 'cider', 'sake', 'bourbon', 'scotch', 'brandy', 'cognac', 'absinthe', 
@@ -123,11 +129,14 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       'moet', 'dom perignon', 'veuve clicquot', 'kendall jackson', 'robert mondavi', 'barefoot', 'yellowtail'
     ];
     
-    return alcoholKeywords.some(keyword => 
+    const isAlcoholic = alcoholKeywords.some(keyword => 
       productName.includes(keyword) || brandName.includes(keyword)
     ) || alcoholBrands.some(brand => 
       productName.includes(brand) || brandName.includes(brand)
     );
+    
+    console.log('🍺 Is Alcohol?', isAlcoholic);
+    return isAlcoholic;
   };
 
   // Classify alcohol type
@@ -201,6 +210,11 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         const detectedAlcoholType = getAlcoholType();
         const estimatedABV = getEstimatedAlcoholContent(detectedAlcoholType);
         
+        console.log('🍺 ALCOHOL DETECTED! Saving to alcohol_entries table');
+        console.log('🍺 Product:', productAnalysis.product.name);
+        console.log('🍺 Brand:', productAnalysis.product.brand);
+        console.log('🍺 Detected Type:', detectedAlcoholType);
+        
         const alcoholEntry: Omit<AlcoholEntry, 'id' | 'created_at'> = {
           drink_type: alcoholType || detectedAlcoholType,
           alcohol_content: estimatedABV,
@@ -210,7 +224,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           notes: notes || undefined
         };
 
-        console.log('Saving alcohol entry:', alcoholEntry);
+        console.log('🍺 Alcohol entry to save:', alcoholEntry);
         await saveAlcoholEntry(alcoholEntry);
         
         toast.success('Alcohol entry saved successfully!', {
