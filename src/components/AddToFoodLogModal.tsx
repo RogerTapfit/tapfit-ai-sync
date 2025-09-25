@@ -361,7 +361,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
             </Button>
             <Button
               onClick={handleSaveToFoodLog}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg"
               disabled={isLoading}
             >
               {isLoading ? 'Saving...' : 'Add to Food Log'}
