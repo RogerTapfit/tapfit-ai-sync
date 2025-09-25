@@ -50,7 +50,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   useEffect(() => {
     setMessages([{
       id: '1',
-      text: `👋 Hey there! I'm ${avatarName}, your personal AI fitness companion. I'm here to support you on your fitness journey with workouts, nutrition advice, motivation, and emotional support whenever you need it!`,
+      text: `👋 Hi! I'm ${avatarName}, your AI fitness companion. Ready to help with workouts, nutrition, and motivation!`,
       isUser: false,
       timestamp: new Date()
     }]);
@@ -236,10 +236,10 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
             <div className="p-4 pt-0">
               <div className="grid grid-cols-2 gap-2">
                 {[ 
-                  { icon: Dumbbell, text: "Workout tips", message: "Give me some workout tips and motivation for today" },
-                  { icon: Apple, text: "Nutrition advice", message: "What should I eat for better performance and health?" },
-                  { icon: Heart, text: "Recovery & support", message: "Help me with recovery tips and motivation" },
-                  { icon: Target, text: "Set goals", message: "Help me set realistic fitness goals and stay motivated" }
+                  { icon: Dumbbell, text: "Workout tips", message: "Give me workout tips" },
+                  { icon: Apple, text: "Nutrition advice", message: "What should I eat?" },
+                  { icon: Heart, text: "Recovery & support", message: "Recovery tips?" },
+                  { icon: Target, text: "Set goals", message: "Help set fitness goals" }
                 ].map((action, index) => (
                   <Button
                     key={index}
