@@ -20,6 +20,7 @@ import { AnimatedCounter } from './AnimatedCounter';
 import { FoodChatInterface, ChatMessage } from './FoodChatInterface';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { processImageFile } from '../utils/heicConverter';
 
 // Enhanced food photo analyzer without barcode functionality
 
@@ -75,12 +76,14 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
           input.onchange = (e) => {
             const selectedFile = (e.target as HTMLInputElement).files?.[0];
             if (selectedFile) {
-              const reader = new FileReader();
+              try {
+                const processedFile = await processImageFile(selectedFile);
+                const reader = new FileReader();
               reader.onload = (event) => {
                 const newPhoto: PhotoData = {
                   id: generateId(),
                   dataUrl: event.target?.result as string,
-                  file: selectedFile,
+                  file: processedFile,
                   type: 'main_dish',
                   analyzed: false
                 };

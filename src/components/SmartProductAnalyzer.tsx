@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { FoodItem } from '@/hooks/useNutrition';
 import { AddToFoodLogModal } from './AddToFoodLogModal';
+import { processImageFile } from '../utils/heicConverter';
 
 interface ProductAnalysis {
   product: {
@@ -103,13 +104,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       }
 
       if (data.error) {
-        if (data.error.includes('HEIC format')) {
-          toast.error('HEIC format not supported. Please take a new photo or select a JPG/PNG file.');
-        } else if (data.error.includes('Image format')) {
-          toast.error('Unsupported image format. Please use JPG, PNG, or WEBP format.');
-        } else {
-          toast.error(data.error);
-        }
+        toast.error(data.error);
         return;
       }
 
@@ -146,7 +141,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       // Web fallback
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/jpeg,image/jpg,image/png,image/webp'; // Limit to supported formats
+      input.accept = 'image/*'; // Accept all image formats including HEIC
       if (source === 'camera') {
         input.setAttribute('capture', 'environment');
       }
@@ -154,19 +149,17 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       input.onchange = async (event) => {
         const file = (event.target as HTMLInputElement).files?.[0];
         if (file) {
-          // Check file type
-          if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
-            toast.error('Please select a JPG, PNG, or WEBP image file');
-            return;
-          }
-          
           try {
-            const base64 = await convertToBase64(file);
-            const dataUrl = `data:${file.type};base64,${base64}`;
+            // Convert HEIC files if needed
+            const processedFile = await processImageFile(file);
+            
+            const base64 = await convertToBase64(processedFile);
+            const dataUrl = `data:${processedFile.type};base64,${base64}`;
             setSelectedImage(dataUrl);
             await analyzeProduct(base64);
           } catch (error) {
-            toast.error('Failed to process image');
+            console.error('Failed to process image:', error);
+            toast.error('Failed to process image. Please try again.');
           }
         }
       };
