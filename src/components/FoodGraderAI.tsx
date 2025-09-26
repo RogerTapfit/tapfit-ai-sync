@@ -7,6 +7,7 @@ import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { calculateHealthGrade, getGradeColor, getGradeBgColor, GradeResult } from '@/utils/healthGrading';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 
 
 interface AnalysisResult {
@@ -122,7 +123,7 @@ export const FoodGraderAI = () => {
         total_fat: analysisResult.total_fat,
         ai_analyzed: true,
         user_confirmed: true,
-        logged_date: new Date().toISOString().split('T')[0],
+        logged_date: getCurrentLocalDate(),
         health_grade: gradeResult.grade,
         grade_score: gradeResult.score,
         notes: `AI Analysis: ${gradeResult.insight}. ${gradeResult.recommendation}`

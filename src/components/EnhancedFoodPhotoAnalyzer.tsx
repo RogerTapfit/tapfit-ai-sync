@@ -23,6 +23,7 @@ import { PhotoStorageMonitor } from './PhotoStorageMonitor';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { processImageFile } from '../utils/heicConverter';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 
 // Enhanced food photo analyzer without barcode functionality
 
@@ -421,7 +422,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         ai_analyzed: true,
         user_confirmed: true,
         notes: notes,
-        logged_date: new Date().toISOString().split('T')[0]
+        logged_date: getCurrentLocalDate()
       });
 
       // Reset form

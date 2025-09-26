@@ -14,6 +14,7 @@ import VoiceInterface from './VoiceInterface';
 import FitnessChatbot from './FitnessChatbot';
 import { useAvatar } from '@/lib/avatarState';
 import { FoodPhotoUploadService } from '@/services/foodPhotoUploadService';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 
 interface ProductAnalysis {
   product: {
@@ -220,7 +221,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           drink_type: alcoholType || detectedAlcoholType,
           alcohol_content: estimatedABV,
           quantity: portionSize,
-          logged_date: new Date().toISOString().split('T')[0],
+          logged_date: getCurrentLocalDate(),
           logged_time: new Date().toTimeString().split(' ')[0],
           notes: notes || undefined
         };
@@ -286,7 +287,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
           total_fat: adjustedNutrition.fat,
           ai_analyzed: true,
           user_confirmed: true,
-          logged_date: new Date().toISOString().split('T')[0],
+          logged_date: getCurrentLocalDate(),
           health_grade: productAnalysis.health_grade.letter,
           notes: notes || undefined,
           grade_score: getGradeScore(productAnalysis.health_grade.letter),

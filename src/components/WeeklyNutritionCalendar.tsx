@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Camera, Utensils, TrendingUp, Eye } from 'lucide-react';
 import { useNutrition, FoodEntry } from '@/hooks/useNutrition';
 import { format, startOfWeek, addDays, isToday, isSameDay } from 'date-fns';
+import { formatDateForDatabase } from '@/utils/dateUtils';
 
 const WeeklyNutritionCalendar = () => {
   const { getWeeklyFoodEntries, nutritionGoals } = useNutrition();
@@ -26,8 +27,8 @@ const WeeklyNutritionCalendar = () => {
     try {
       const weekEnd = addDays(weekStart, 6);
       const entries = await getWeeklyFoodEntries(
-        weekStart.toISOString().split('T')[0],
-        weekEnd.toISOString().split('T')[0]
+        formatDateForDatabase(weekStart),
+        formatDateForDatabase(weekEnd)
       );
       setWeeklyEntries(entries);
     } catch (error) {
@@ -50,7 +51,7 @@ const WeeklyNutritionCalendar = () => {
   };
 
   const getEntriesForDay = (day: Date) => {
-    const dayString = day.toISOString().split('T')[0];
+    const dayString = formatDateForDatabase(day);
     return weeklyEntries.filter(entry => entry.logged_date === dayString);
   };
 

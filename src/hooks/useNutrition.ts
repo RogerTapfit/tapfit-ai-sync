@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 
 export interface NutritionGoal {
   id: string;
@@ -256,7 +257,7 @@ export const useNutrition = () => {
             if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
               const summary = transformDatabaseToDailySummary(payload.new);
               // Only update if it's today's summary
-              const today = new Date().toISOString().split('T')[0];
+              const today = getCurrentLocalDate();
               if (summary.summary_date === today) {
                 setDailySummary(summary);
               }
@@ -324,7 +325,7 @@ export const useNutrition = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getCurrentLocalDate();
       
       const { data, error } = await supabase
         .from('daily_nutrition_summary')
