@@ -146,9 +146,31 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
   // Check if an entry appears to be alcohol but was saved as food (incorrect classification)
   const isIncorrectlyClassifiedAlcohol = (entry: FoodEntry) => {
     const foodNames = entry.food_items.map(item => item.name.toLowerCase()).join(' ');
-    const alcoholKeywords = ['stella artois', 'beer', 'wine', 'vodka', 'whiskey', 'rum', 'gin', 'tequila', 'alcohol', 'liquor', 'spirits'];
-    return alcoholKeywords.some(keyword => foodNames.includes(keyword)) && 
-           ['breakfast', 'lunch', 'dinner', 'snack'].includes(entry.meal_type);
+    
+    // First check for obvious food items that should never be flagged as alcohol
+    const foodExclusionPatterns = [
+      /\b(cheez|cheese|crackers|chips|snack|cookie|bread|cereal|original|flavor|cheddar)\b/i
+    ];
+    
+    if (foodExclusionPatterns.some(pattern => pattern.test(foodNames))) {
+      return false;
+    }
+    
+    // Use word-boundary regex for alcohol detection to avoid false positives
+    const alcoholPatterns = [
+      /\b(stella\s+artois|heineken|budweiser|corona|modelo)\b/i, // Beer brands
+      /\b(beer|lager|ale|stout|pilsner)\b/i, // Beer types
+      /\b(wine|merlot|cabernet|chardonnay|pinot)\b/i, // Wine
+      /\b(vodka|whiskey|whisky|rum|tequila|bourbon|scotch)\b/i, // Spirits
+      /\b(gin\s+and\s+tonic|gin\s+fizz)\b/i, // Gin cocktails (avoid plain "gin")
+      /\b(alcohol|liquor|spirits|cocktail|martini|mojito)\b/i, // General alcohol terms
+      /\d+%\s*(abv|alcohol|vol)/i // ABV indicators
+    ];
+    
+    const hasAlcoholMatch = alcoholPatterns.some(pattern => pattern.test(foodNames));
+    const isFoodMealType = ['breakfast', 'lunch', 'dinner', 'snack'].includes(entry.meal_type);
+    
+    return hasAlcoholMatch && isFoodMealType;
   };
 
   const handleDelete = async (entryId: string) => {
