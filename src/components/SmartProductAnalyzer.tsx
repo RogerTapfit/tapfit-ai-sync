@@ -111,6 +111,24 @@ interface ProductAnalysis {
   ingredients_analysis?: string;
 }
 
+interface SafetyData {
+  hasActiveRecalls: boolean;
+  recalls: Array<{
+    recall_number: string;
+    reason_for_recall: string;
+    product_description: string;
+    distribution_pattern: string;
+    recall_initiation_date: string;
+    status: string;
+    classification: string;
+    recalling_firm: string;
+    voluntary_mandated: string;
+  }>;
+  safetyAlerts: string[];
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  lastUpdated: string;
+}
+
 interface SmartProductAnalyzerProps {
   onProductFound?: (foodItem: FoodItem) => void;
   onClose?: () => void;
@@ -129,6 +147,8 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showFoodLogModal, setShowFoodLogModal] = useState(false);
   const [expandedChemicalSection, setExpandedChemicalSection] = useState<string | null>(null);
+  const [safetyData, setSafetyData] = useState<SafetyData | null>(null);
+  const [isCheckingSafety, setIsCheckingSafety] = useState(false);
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -162,8 +182,11 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       }
 
       setAnalysisResult(data);
-      toast.success('Product analyzed successfully!');
       
+      // Check product safety after successful analysis
+      await checkProductSafety(data.product.name, data.product.brand);
+      
+      toast.success('Product analyzed successfully!');
     } catch (error) {
       console.error('Error analyzing product:', error);
       toast.error('Failed to analyze product. Please try again.');
@@ -261,11 +284,49 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     }
   };
 
+  const checkProductSafety = async (productName: string, brandName?: string) => {
+    setIsCheckingSafety(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('checkProductSafety', {
+        body: { productName, brandName }
+      });
+
+      if (error) {
+        console.error('Safety check error:', error);
+        return;
+      }
+
+      if (data && !data.error) {
+        setSafetyData(data);
+        
+        // Show safety alerts if any
+        if (data.safetyAlerts && data.safetyAlerts.length > 0) {
+          data.safetyAlerts.forEach((alert: string) => {
+            if (alert.includes('CLASS I')) {
+              toast.error(alert, { duration: 10000 });
+            } else if (alert.includes('RECALL')) {
+              toast.error(alert, { duration: 8000 });
+            } else if (alert.includes('🔴') || alert.includes('⚠️')) {
+              toast.error(alert, { duration: 6000 });
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking product safety:', error);
+    } finally {
+      setIsCheckingSafety(false);
+    }
+  };
+
   const resetAnalyzer = () => {
     setAnalysisResult(null);
     setSelectedImage(null);
     setIsAnalyzing(false);
     setExpandedChemicalSection(null);
+    setSafetyData(null);
+    setIsCheckingSafety(false);
   };
 
   const handleOpenFoodLogModal = () => {
@@ -441,6 +502,93 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6"
               >
+                {/* Safety Alerts & Recalls */}
+                {(safetyData?.safetyAlerts.length > 0 || safetyData?.hasActiveRecalls) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-2xl p-6 space-y-4 border-2 shadow-xl ${
+                      safetyData.riskLevel === 'critical' 
+                        ? 'bg-red-500/10 border-red-500/50 shadow-red-500/30' 
+                        : safetyData.riskLevel === 'high'
+                        ? 'bg-orange-500/10 border-orange-500/50 shadow-orange-500/30'
+                        : safetyData.riskLevel === 'medium'
+                        ? 'bg-yellow-500/10 border-yellow-500/50 shadow-yellow-500/30'
+                        : 'bg-blue-500/10 border-blue-500/50 shadow-blue-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Shield className={`h-6 w-6 ${
+                        safetyData.riskLevel === 'critical' 
+                          ? 'text-red-500' 
+                          : safetyData.riskLevel === 'high'
+                          ? 'text-orange-500'
+                          : safetyData.riskLevel === 'medium'
+                          ? 'text-yellow-500'
+                          : 'text-blue-500'
+                      }`} />
+                      <h4 className="text-lg font-bold">
+                        {safetyData.riskLevel === 'critical' && '🚨 CRITICAL SAFETY ALERT'}
+                        {safetyData.riskLevel === 'high' && '⚠️ HIGH RISK WARNINGS'}
+                        {safetyData.riskLevel === 'medium' && '⚠️ SAFETY CONCERNS'}
+                        {safetyData.riskLevel === 'low' && 'ℹ️ SAFETY INFORMATION'}
+                      </h4>
+                    </div>
+
+                    {/* Active Recalls */}
+                    {safetyData.hasActiveRecalls && (
+                      <div className="space-y-3">
+                        <h5 className="font-semibold text-red-600 flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          Active Product Recalls
+                        </h5>
+                        {safetyData.recalls.map((recall, index) => (
+                          <div key={index} className="bg-background/50 rounded-lg p-4 border border-red-200/50">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-start">
+                                <span className="font-medium text-red-700">
+                                  Recall #{recall.recall_number}
+                                </span>
+                                <Badge variant="destructive" className="text-xs">
+                                  {recall.classification}
+                                </Badge>
+                              </div>
+                              <p className="text-sm font-medium">{recall.reason_for_recall}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Company: {recall.recalling_firm} | Date: {recall.recall_initiation_date}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Distribution: {recall.distribution_pattern}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chemical Safety Alerts */}
+                    {safetyData.safetyAlerts.length > 0 && (
+                      <div className="space-y-3">
+                        <h5 className="font-semibold flex items-center gap-2">
+                          <Beaker className="h-5 w-5" />
+                          Chemical Safety Alerts
+                        </h5>
+                        <div className="space-y-2">
+                          {safetyData.safetyAlerts.map((alert, index) => (
+                            <div key={index} className="bg-background/50 rounded-lg p-3 border border-current/20">
+                              <p className="text-sm font-medium">{alert}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Last updated: {new Date(safetyData.lastUpdated).toLocaleString()}
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Product Info & Grade */}
                 <div className="bg-gradient-to-br from-primary/10 via-stats-calories/10 to-background/50 rounded-2xl p-6 space-y-4 border border-primary/20 shadow-xl">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1047,6 +1195,93 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 </div>
 
                 {/* Alternatives */}
+                {(safetyData?.safetyAlerts.length > 0 || safetyData?.hasActiveRecalls) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-2xl p-6 space-y-4 border-2 shadow-xl ${
+                      safetyData.riskLevel === 'critical' 
+                        ? 'bg-red-500/10 border-red-500/50 shadow-red-500/30' 
+                        : safetyData.riskLevel === 'high'
+                        ? 'bg-orange-500/10 border-orange-500/50 shadow-orange-500/30'
+                        : safetyData.riskLevel === 'medium'
+                        ? 'bg-yellow-500/10 border-yellow-500/50 shadow-yellow-500/30'
+                        : 'bg-blue-500/10 border-blue-500/50 shadow-blue-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Shield className={`h-6 w-6 ${
+                        safetyData.riskLevel === 'critical' 
+                          ? 'text-red-500' 
+                          : safetyData.riskLevel === 'high'
+                          ? 'text-orange-500'
+                          : safetyData.riskLevel === 'medium'
+                          ? 'text-yellow-500'
+                          : 'text-blue-500'
+                      }`} />
+                      <h4 className="text-lg font-bold">
+                        {safetyData.riskLevel === 'critical' && '🚨 CRITICAL SAFETY ALERT'}
+                        {safetyData.riskLevel === 'high' && '⚠️ HIGH RISK WARNINGS'}
+                        {safetyData.riskLevel === 'medium' && '⚠️ SAFETY CONCERNS'}
+                        {safetyData.riskLevel === 'low' && 'ℹ️ SAFETY INFORMATION'}
+                      </h4>
+                    </div>
+
+                    {/* Active Recalls */}
+                    {safetyData.hasActiveRecalls && (
+                      <div className="space-y-3">
+                        <h5 className="font-semibold text-red-600 flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          Active Product Recalls
+                        </h5>
+                        {safetyData.recalls.map((recall, index) => (
+                          <div key={index} className="bg-background/50 rounded-lg p-4 border border-red-200/50">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-start">
+                                <span className="font-medium text-red-700">
+                                  Recall #{recall.recall_number}
+                                </span>
+                                <Badge variant="destructive" className="text-xs">
+                                  {recall.classification}
+                                </Badge>
+                              </div>
+                              <p className="text-sm font-medium">{recall.reason_for_recall}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Company: {recall.recalling_firm} | Date: {recall.recall_initiation_date}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Distribution: {recall.distribution_pattern}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chemical Safety Alerts */}
+                    {safetyData.safetyAlerts.length > 0 && (
+                      <div className="space-y-3">
+                        <h5 className="font-semibold flex items-center gap-2">
+                          <Beaker className="h-5 w-5" />
+                          Chemical Safety Alerts
+                        </h5>
+                        <div className="space-y-2">
+                          {safetyData.safetyAlerts.map((alert, index) => (
+                            <div key={index} className="bg-background/50 rounded-lg p-3 border border-current/20">
+                              <p className="text-sm font-medium">{alert}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Last updated: {new Date(safetyData.lastUpdated).toLocaleString()}
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Alternatives */}
                 {analysisResult.analysis.alternatives.length > 0 && (
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
@@ -1105,6 +1340,13 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                     <Zap className="mr-2 h-5 w-5" />
                     🔍 Analyze Another
                   </Button>
+                  
+                  {isCheckingSafety && (
+                    <div className="flex items-center justify-center gap-2 text-stats-duration bg-stats-duration/10 rounded-lg p-3 border border-stats-duration/30">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm font-medium">Checking FDA recalls...</span>
+                    </div>
+                  )}
                 </motion.div>
               </motion.div>
             )}

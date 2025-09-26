@@ -36,5 +36,11 @@ enable_signup = true
 [functions.analyzeFood]
 verify_jwt = false
 
+[functions.analyzeProduct]
+verify_jwt = false
+
+[functions.checkProductSafety]
+verify_jwt = false
+
 [functions.generateRecipes]
 verify_jwt = false
