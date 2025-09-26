@@ -112,13 +112,9 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 
   console.log('AddToFoodLogModal render - isVoiceChatOpen:', isVoiceChatOpen); // Debug log
 
-  // Enhanced alcohol detection with comprehensive analysis
+  // Enhanced alcohol detection with machine vision as PRIMARY source
   const isAlcohol = () => {
-    // PRIORITY 1: Use machine vision analysis if available
-    if (productAnalysis.alcohol_analysis?.is_alcoholic_beverage) {
-      console.log('✅ Machine vision detected alcohol:', productAnalysis.alcohol_analysis);
-      return true;
-    }
+    if (!productAnalysis) return false;
     
     const productName = productAnalysis.product.name.toLowerCase();
     const brandName = productAnalysis.product.brand?.toLowerCase() || '';
@@ -128,28 +124,40 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       productName,
       brandName,
       combinedText,
-      fullProduct: productAnalysis.product,
-      nutrition: productAnalysis.nutrition
+      machineVisionResult: productAnalysis.alcohol_analysis,
+      fullProduct: productAnalysis.product
     });
     
-    // Foods that should never be considered alcohol (safety net)
-    const foodExclusions = [
-      'cheese', 'cheez', 'cracker', 'cookie', 'bread', 'pasta', 'rice', 'chicken', 'beef', 'pork',
-      'fruit', 'vegetable', 'milk', 'yogurt', 'cereal', 'granola', 'nuts', 'chips', 'snack',
-      'chocolate', 'candy', 'ice cream', 'sauce', 'dressing', 'oil', 'vinegar', 'spice'
+    // ENHANCED FOOD EXCLUSIONS - Check first for obvious non-alcoholic items
+    const foodExclusionKeywords = [
+      'chip', 'chips', 'cookie', 'cookies', 'cracker', 'crackers', 'snack', 'snacks',
+      'food', 'cereal', 'bread', 'candy', 'chocolate', 'cheese', 'cheez', 'pretzel',
+      'nuts', 'granola', 'bar', 'protein', 'supplement', 'vitamin', 'soda', 'juice',
+      'water', 'coffee', 'tea', 'milk', 'yogurt', 'fruit', 'vegetable', 'sauce',
+      'dressing', 'pasta', 'rice', 'chicken', 'beef', 'pork', 'fish', 'turkey'
     ];
     
-    // Check if this is obviously food first
-    const isObviouslyFood = foodExclusions.some(food => {
-      const regex = new RegExp(`\\b${food}`, 'i');
+    const isObviouslyFood = foodExclusionKeywords.some(keyword => {
+      const regex = new RegExp(`\\b${keyword}`, 'i');
       return regex.test(combinedText);
     });
     
     if (isObviouslyFood) {
-      console.log('🍺 Obviously food - skipping alcohol detection');
+      console.log('🍪 FOOD EXCLUSION: Obviously food item detected, excluding from alcohol classification:', combinedText);
       return false;
     }
+    
+    // PRIMARY: Use machine vision results as the authoritative source
+    if (productAnalysis.alcohol_analysis?.is_alcoholic_beverage !== undefined) {
+      const isAlcoholic = productAnalysis.alcohol_analysis.is_alcoholic_beverage;
+      console.log('🤖 MACHINE VISION (PRIMARY): Alcohol detection result:', isAlcoholic, 'for product:', combinedText);
+      console.log('🤖 Machine vision data:', productAnalysis.alcohol_analysis);
+      return isAlcoholic;
+    }
 
+    // FALLBACK: Text-based detection only when machine vision unavailable
+    console.log('📝 FALLBACK: Using text-based alcohol detection (machine vision unavailable)');
+    
     // Enhanced alcohol keywords including variations and common terms
     const alcoholKeywords = [
       'beer', 'wine', 'vodka', 'whiskey', 'whisky', 'rum', 'gin', 'tequila', 'liquor', 'spirits', 
@@ -172,20 +180,12 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       'white claw', 'truly', 'bud light', 'modelo', 'dos equis', 'tecate', 'pacifico', 'negra modelo'
     ];
 
-    // Check for percentage indicators (common in alcohol products)
-    const percentagePattern = /(\d+(?:\.\d+)?)\s*%\s*(abv|alcohol|vol)/i;
-    const hasPercentage = percentagePattern.test(combinedText);
-    
-    // Check for alcohol-related terms
-    const alcoholTerms = ['alcoholic beverage', 'contains alcohol', 'alcohol by volume', 'proof'];
-    const hasAlcoholTerms = alcoholTerms.some(term => combinedText.includes(term.toLowerCase()));
-    
     // Use word boundary regex for more precise matching
     const matchesAlcoholKeyword = alcoholKeywords.some(keyword => {
       const regex = new RegExp(`\\b${keyword.replace(/\s+/g, '\\s+')}\\b`, 'i');
       const matches = regex.test(combinedText);
       if (matches) {
-        console.log(`🍺 Matched alcohol keyword: "${keyword}" in "${combinedText}"`);
+        console.log(`📝 FALLBACK: Matched alcohol keyword: "${keyword}" in "${combinedText}"`);
       }
       return matches;
     });
@@ -194,28 +194,15 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       const regex = new RegExp(`\\b${brand.replace(/\s+/g, '\\s+')}\\b`, 'i');
       const matches = regex.test(combinedText);
       if (matches) {
-        console.log(`🍺 Matched alcohol brand: "${brand}" in "${combinedText}"`);
+        console.log(`📝 FALLBACK: Matched alcohol brand: "${brand}" in "${combinedText}"`);
       }
       return matches;
     });
-
-    // Check nutrition for alcohol content (some products might have this data)
-    const nutritionText = JSON.stringify(productAnalysis.nutrition).toLowerCase();
-    const hasAlcoholInNutrition = nutritionText.includes('alcohol') || nutritionText.includes('ethanol');
     
-    const isAlcoholic = matchesAlcoholKeyword || matchesAlcoholBrand || hasPercentage || hasAlcoholTerms || hasAlcoholInNutrition;
+    const textBasedResult = matchesAlcoholKeyword || matchesAlcoholBrand;
+    console.log('📝 FALLBACK: Text-based detection result:', textBasedResult, 'for product:', combinedText);
     
-    console.log('🍺 Enhanced alcohol detection result:', {
-      isAlcoholic,
-      matchesAlcoholKeyword,
-      matchesAlcoholBrand,
-      hasPercentage,
-      hasAlcoholTerms,
-      hasAlcoholInNutrition,
-      percentageMatch: percentagePattern.exec(combinedText)
-    });
-    
-    return isAlcoholic;
+    return textBasedResult;
   };
 
   // Classify alcohol type
@@ -267,8 +254,17 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
     return 'other';
   };
 
-  // Estimate alcohol content based on type
+  // Get alcohol content - use ACTUAL ABV from machine vision when available
   const getEstimatedAlcoholContent = (type: string) => {
+    // PRIMARY: Use actual ABV from machine vision analysis
+    if (productAnalysis.alcohol_analysis?.alcohol_content_percentage) {
+      const actualABV = productAnalysis.alcohol_analysis.alcohol_content_percentage;
+      console.log('🤖 Using ACTUAL ABV from machine vision:', actualABV + '%');
+      return actualABV;
+    }
+    
+    // FALLBACK: Generic estimates by type only when actual data unavailable
+    console.log('📝 FALLBACK: Using generic ABV estimate for type:', type);
     switch (type) {
       case 'beer': return 5.0;
       case 'wine': return 12.0;
@@ -276,6 +272,8 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       case 'cider': return 4.5;
       case 'sake': return 15.0;
       case 'cocktail': return 15.0;
+      case 'hard_seltzer': return 5.0;
+      case 'liqueur': return 20.0;
       default: return 5.0;
     }
   };
@@ -309,6 +307,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         console.log('🍺 Product:', productAnalysis.product.name);
         console.log('🍺 Brand:', productAnalysis.product.brand);
         console.log('🍺 Detected Type:', detectedAlcoholType);
+        console.log('🍺 ABV:', estimatedABV + '%', productAnalysis.alcohol_analysis?.alcohol_content_percentage ? '(from machine vision)' : '(estimated)');
         
         const alcoholEntry: Omit<AlcoholEntry, 'id' | 'created_at'> = {
           drink_type: alcoholType || detectedAlcoholType,
@@ -320,10 +319,11 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         };
 
         console.log('🍺 Alcohol entry to save:', alcoholEntry);
-        await saveAlcoholEntry(alcoholEntry);
+        const savedAlcoholEntry = await saveAlcoholEntry(alcoholEntry);
+        console.log('🍺 Alcohol entry saved successfully:', savedAlcoholEntry);
         
         toast.success('Alcohol entry saved successfully!', {
-          description: `${productAnalysis.product.name} logged as ${alcoholType || detectedAlcoholType}`,
+          description: `${productAnalysis.product.name} (${estimatedABV}% ABV) logged as ${alcoholType || detectedAlcoholType}`,
         });
       } else {
         // Regular food item
