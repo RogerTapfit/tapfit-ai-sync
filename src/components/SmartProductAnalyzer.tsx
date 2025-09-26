@@ -1011,29 +1011,51 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 
                          {/* Enhanced Alternatives */}
                          <div>
-                           <h5 className="font-semibold text-green-600 mb-3">💚 Healthier Alternatives:</h5>
+                           <h5 className="font-semibold text-stats-duration mb-3">💡 Healthier Sugar Alternatives:</h5>
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                             {analysisResult.sugar_analysis.healthier_alternatives?.map((alt, index) => (
-                               <div key={index} className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
-                                 <div className="flex justify-between items-start mb-1">
-                                   <span className="font-medium text-green-700">{alt.name}</span>
-                                   {alt.glycemic_index !== undefined && (
-                                     <Badge className="bg-green-500/20 text-green-700 border-green-500/50 text-xs">
-                                       GI: {alt.glycemic_index}
-                                     </Badge>
+                             {analysisResult.sugar_analysis.healthier_alternatives?.map((alt, index) => {
+                               const colors = [
+                                 'bg-stats-exercises/10 border-stats-exercises/30 text-stats-exercises',
+                                 'bg-stats-calories/10 border-stats-calories/30 text-stats-calories', 
+                                 'bg-stats-duration/10 border-stats-duration/30 text-stats-duration',
+                                 'bg-stats-heart/10 border-stats-heart/30 text-stats-heart'
+                               ];
+                               const colorClass = colors[index % colors.length];
+                               return (
+                                 <div key={index} className={`p-3 rounded-lg border ${colorClass}`}>
+                                   <div className="flex justify-between items-start mb-1">
+                                     <span className="font-medium">{alt.name}</span>
+                                     {alt.glycemic_index !== undefined && (
+                                       <Badge className={`text-xs ${
+                                         alt.glycemic_index <= 35 ? 'bg-stats-exercises/20 text-stats-exercises border-stats-exercises/50' :
+                                         alt.glycemic_index <= 55 ? 'bg-stats-duration/20 text-stats-duration border-stats-duration/50' :
+                                         'bg-stats-heart/20 text-stats-heart border-stats-heart/50'
+                                       }`}>
+                                         GI: {alt.glycemic_index}
+                                       </Badge>
+                                     )}
+                                   </div>
+                                   {alt.benefits && (
+                                     <p className="text-xs opacity-80">{alt.benefits}</p>
                                    )}
                                  </div>
-                                 {alt.benefits && (
-                                   <p className="text-xs text-green-600">{alt.benefits}</p>
-                                 )}
-                               </div>
-                             )) || (
+                               );
+                             }) || (
                                /* Fallback for legacy structure */
-                               analysisResult.sugar_analysis.natural_alternatives?.map((alt, index) => (
-                                 <Badge key={index} className="bg-green-500/20 text-green-700 border-green-500/50">
-                                   {alt}
-                                 </Badge>
-                               ))
+                               analysisResult.sugar_analysis.natural_alternatives?.map((alt, index) => {
+                                 const colors = [
+                                   'bg-stats-exercises/20 text-stats-exercises border-stats-exercises/50',
+                                   'bg-stats-calories/20 text-stats-calories border-stats-calories/50', 
+                                   'bg-stats-duration/20 text-stats-duration border-stats-duration/50',
+                                   'bg-stats-heart/20 text-stats-heart border-stats-heart/50'
+                                 ];
+                                 const colorClass = colors[index % colors.length];
+                                 return (
+                                   <Badge key={index} className={colorClass}>
+                                     {alt}
+                                   </Badge>
+                                 );
+                               })
                              )}
                            </div>
                          </div>
@@ -1142,18 +1164,27 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                                      </p>
                                    )}
                                    
-                                   {dye.alternative_colorings && dye.alternative_colorings.length > 0 && (
-                                     <div className="mt-3">
-                                       <span className="text-xs font-medium text-green-600">Natural Alternatives:</span>
-                                       <div className="flex flex-wrap gap-1 mt-1">
-                                         {dye.alternative_colorings.map((alt, i) => (
-                                           <Badge key={i} className="bg-green-500/20 text-green-700 border-green-500/50 text-xs">
-                                             {alt}
-                                           </Badge>
-                                         ))}
-                                       </div>
-                                     </div>
-                                   )}
+                                    {dye.alternative_colorings && dye.alternative_colorings.length > 0 && (
+                                      <div className="mt-3">
+                                        <span className="text-xs font-medium text-stats-duration">Natural Color Alternatives:</span>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {dye.alternative_colorings.map((alt, i) => {
+                                            const altColors = [
+                                              'bg-stats-exercises/20 text-stats-exercises border-stats-exercises/50',
+                                              'bg-stats-calories/20 text-stats-calories border-stats-calories/50',
+                                              'bg-stats-duration/20 text-stats-duration border-stats-duration/50',
+                                              'bg-stats-heart/20 text-stats-heart border-stats-heart/50'
+                                            ];
+                                            const altColorClass = altColors[i % altColors.length];
+                                            return (
+                                              <Badge key={i} className={`text-xs ${altColorClass}`}>
+                                                {alt}
+                                              </Badge>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    )}
                                  </div>
                               ))}
                             </div>
@@ -1527,30 +1558,39 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.7 }}
-                      className="bg-gradient-to-br from-stats-duration/20 to-stats-duration/5 border-2 border-stats-duration/40 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 col-span-full"
+                      className="bg-gradient-to-br from-primary/10 via-stats-calories/10 to-stats-duration/10 border-2 border-primary/30 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 col-span-full"
                     >
-                      <h4 className="font-bold text-stats-duration mb-3 flex items-center gap-2 text-lg">
+                      <h4 className="font-bold text-primary mb-3 flex items-center gap-2 text-lg">
                         <motion.div
                           animate={{ rotate: [0, 10, -10, 0] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
-                          <Star className="h-5 w-5 animate-pulse" />
+                          <Star className="h-5 w-5 animate-pulse text-stats-calories" />
                         </motion.div>
-                        💡 Healthier Alternatives
+                        💡 Healthier Product Alternatives
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {analysisResult.analysis.alternatives.map((alt, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.8 + index * 0.1 }}
-                            className="flex items-center gap-3 bg-stats-duration/10 p-3 rounded-lg border border-stats-duration/20 hover:bg-stats-duration/15 transition-all duration-200"
-                          >
-                            <div className="w-2 h-2 rounded-full bg-stats-duration animate-pulse"></div>
-                            <span className="text-foreground font-medium">{alt}</span>
-                          </motion.div>
-                        ))}
+                        {analysisResult.analysis.alternatives.map((alt, index) => {
+                          const colors = [
+                            'bg-stats-exercises/10 border-stats-exercises/20 hover:bg-stats-exercises/15',
+                            'bg-stats-calories/10 border-stats-calories/20 hover:bg-stats-calories/15', 
+                            'bg-stats-duration/10 border-stats-duration/20 hover:bg-stats-duration/15',
+                            'bg-stats-heart/10 border-stats-heart/20 hover:bg-stats-heart/15'
+                          ];
+                          const colorClass = colors[index % colors.length];
+                          return (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.8 + index * 0.1 }}
+                              className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${colorClass}`}
+                            >
+                              <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                              <span className="text-sm font-medium">{alt}</span>
+                            </motion.div>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}
