@@ -105,7 +105,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 
   console.log('AddToFoodLogModal render - isVoiceChatOpen:', isVoiceChatOpen); // Debug log
 
-  // Enhanced alcohol detection with word boundary matching
+  // Enhanced alcohol detection with comprehensive analysis
   const isAlcohol = () => {
     const productName = productAnalysis.product.name.toLowerCase();
     const brandName = productAnalysis.product.brand?.toLowerCase() || '';
@@ -115,44 +115,61 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       productName,
       brandName,
       combinedText,
-      fullProduct: productAnalysis.product
+      fullProduct: productAnalysis.product,
+      nutrition: productAnalysis.nutrition
     });
     
     // Foods that should never be considered alcohol (safety net)
     const foodExclusions = [
       'cheese', 'cheez', 'cracker', 'cookie', 'bread', 'pasta', 'rice', 'chicken', 'beef', 'pork',
-      'fruit', 'vegetable', 'milk', 'yogurt', 'cereal', 'granola', 'nuts', 'chips', 'snack'
+      'fruit', 'vegetable', 'milk', 'yogurt', 'cereal', 'granola', 'nuts', 'chips', 'snack',
+      'chocolate', 'candy', 'ice cream', 'sauce', 'dressing', 'oil', 'vinegar', 'spice'
     ];
     
     // Check if this is obviously food first
-    const isObviouslyfood = foodExclusions.some(food => {
+    const isObviouslyFood = foodExclusions.some(food => {
       const regex = new RegExp(`\\b${food}`, 'i');
       return regex.test(combinedText);
     });
     
-    if (isObviouslyfood) {
+    if (isObviouslyFood) {
       console.log('🍺 Obviously food - skipping alcohol detection');
       return false;
     }
-    
+
+    // Enhanced alcohol keywords including variations and common terms
     const alcoholKeywords = [
-      'beer', 'wine', 'vodka', 'whiskey', 'rum', 'gin', 'tequila', 'liquor', 'spirits', 
+      'beer', 'wine', 'vodka', 'whiskey', 'whisky', 'rum', 'gin', 'tequila', 'liquor', 'spirits', 
       'champagne', 'prosecco', 'cider', 'sake', 'bourbon', 'scotch', 'brandy', 'cognac', 'absinthe', 
       'mezcal', 'cocktail', 'martini', 'margarita', 'mojito', 'sangria', 'ale', 'lager', 'stout', 
       'porter', 'pilsner', 'merlot', 'cabernet', 'chardonnay', 'sauvignon', 'riesling', 
-      'pinot', 'shiraz', 'malbec'
+      'pinot', 'shiraz', 'malbec', 'ipa', 'pale ale', 'wheat beer', 'light beer', 'draft',
+      'alcoholic', 'abv', 'proof', 'distilled', 'fermented', 'brewed', 'vintage', 'reserve',
+      'seltzers', 'hard seltzer', 'malt', 'liqueur', 'schnapps', 'ouzo', 'sambuca', 'kahlua'
     ];
     
+    // Expanded brand list with more common alcohol brands
     const alcoholBrands = [
       'budweiser', 'corona', 'heineken', 'stella artois', 'miller', 'coors', 'guinness', 'carlsberg', 
       'bacardi', 'smirnoff', 'captain morgan', 'jose cuervo', 'johnnie walker', 'jack daniels', 
       'grey goose', 'absolut', 'tanqueray', 'bombay', 'don julio', 'patron', 'hennessy', 'remy martin',
-      'moet', 'dom perignon', 'veuve clicquot', 'kendall jackson', 'robert mondavi', 'barefoot', 'yellowtail'
+      'moet', 'dom perignon', 'veuve clicquot', 'kendall jackson', 'robert mondavi', 'barefoot', 'yellowtail',
+      'blue moon', 'sam adams', 'new belgium', 'stone brewing', 'sierra nevada', 'dogfish head',
+      'titos', 'ciroc', 'belvedere', 'ketel one', 'crown royal', 'jameson', 'macallan', 'glenfiddich',
+      'white claw', 'truly', 'bud light', 'modelo', 'dos equis', 'tecate', 'pacifico', 'negra modelo'
     ];
+
+    // Check for percentage indicators (common in alcohol products)
+    const percentagePattern = /(\d+(?:\.\d+)?)\s*%\s*(abv|alcohol|vol)/i;
+    const hasPercentage = percentagePattern.test(combinedText);
+    
+    // Check for alcohol-related terms
+    const alcoholTerms = ['alcoholic beverage', 'contains alcohol', 'alcohol by volume', 'proof'];
+    const hasAlcoholTerms = alcoholTerms.some(term => combinedText.includes(term.toLowerCase()));
     
     // Use word boundary regex for more precise matching
     const matchesAlcoholKeyword = alcoholKeywords.some(keyword => {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+      const regex = new RegExp(`\\b${keyword.replace(/\s+/g, '\\s+')}\\b`, 'i');
       const matches = regex.test(combinedText);
       if (matches) {
         console.log(`🍺 Matched alcohol keyword: "${keyword}" in "${combinedText}"`);
@@ -168,13 +185,21 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       }
       return matches;
     });
+
+    // Check nutrition for alcohol content (some products might have this data)
+    const nutritionText = JSON.stringify(productAnalysis.nutrition).toLowerCase();
+    const hasAlcoholInNutrition = nutritionText.includes('alcohol') || nutritionText.includes('ethanol');
     
-    const isAlcoholic = matchesAlcoholKeyword || matchesAlcoholBrand;
+    const isAlcoholic = matchesAlcoholKeyword || matchesAlcoholBrand || hasPercentage || hasAlcoholTerms || hasAlcoholInNutrition;
     
-    console.log('🍺 Final alcohol detection result:', {
+    console.log('🍺 Enhanced alcohol detection result:', {
       isAlcoholic,
       matchesAlcoholKeyword,
-      matchesAlcoholBrand
+      matchesAlcoholBrand,
+      hasPercentage,
+      hasAlcoholTerms,
+      hasAlcoholInNutrition,
+      percentageMatch: percentagePattern.exec(combinedText)
     });
     
     return isAlcoholic;
