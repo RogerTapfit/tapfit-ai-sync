@@ -1558,43 +1558,33 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.7 }}
-                      className="bg-gradient-to-br from-primary/10 via-stats-calories/10 to-stats-duration/10 border-2 border-primary/30 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 col-span-full"
+                      className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 col-span-full"
                     >
-                      <h4 className="font-bold text-primary mb-3 flex items-center gap-2 text-lg">
+                      <h4 className="font-bold text-primary mb-4 flex items-center gap-2 text-lg">
                         <motion.div
                           animate={{ rotate: [0, 10, -10, 0] }}
                           transition={{ duration: 2, repeat: Infinity }}
                         >
-                          <Star className="h-5 w-5 animate-pulse text-stats-calories" />
+                          <Star className="h-5 w-5 animate-pulse text-primary" />
                         </motion.div>
                         💡 Healthier Product Alternatives
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {analysisResult.analysis.alternatives.map((alt, index) => {
-                          const colors = [
-                            'bg-stats-exercises/10 border-stats-exercises/20 hover:bg-stats-exercises/15',
-                            'bg-stats-calories/10 border-stats-calories/20 hover:bg-stats-calories/15', 
-                            'bg-stats-duration/10 border-stats-duration/20 hover:bg-stats-duration/15',
-                            'bg-stats-heart/10 border-stats-heart/20 hover:bg-stats-heart/15'
-                          ];
-                          const colorClass = colors[index % colors.length];
-                          return (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.8 + index * 0.1 }}
-                              className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${colorClass}`}
-                            >
-                              <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                              <span className="text-sm font-medium">{alt}</span>
-                            </motion.div>
-                          );
-                        })}
+                      <div className="grid grid-cols-1 gap-2">
+                        {analysisResult.analysis.alternatives.map((alt, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.8 + index * 0.1 }}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-200"
+                          >
+                            <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                            <span className="text-sm font-medium text-foreground">{alt}</span>
+                          </motion.div>
+                        ))}
                       </div>
                     </motion.div>
                   )}
-
                 {/* Action Buttons */}
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
