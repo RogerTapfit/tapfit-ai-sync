@@ -23,6 +23,13 @@ interface ProductAnalysis {
     size?: string;
     confidence: number;
   };
+  alcohol_analysis?: {
+    is_alcoholic_beverage: boolean;
+    alcohol_content_percentage: number;
+    alcohol_indicators_found: string[];
+    beverage_category: string;
+    visual_alcohol_text: string;
+  };
   nutrition: {
     serving_size: string;
     per_serving: {
@@ -107,6 +114,12 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 
   // Enhanced alcohol detection with comprehensive analysis
   const isAlcohol = () => {
+    // PRIORITY 1: Use machine vision analysis if available
+    if (productAnalysis.alcohol_analysis?.is_alcoholic_beverage) {
+      console.log('✅ Machine vision detected alcohol:', productAnalysis.alcohol_analysis);
+      return true;
+    }
+    
     const productName = productAnalysis.product.name.toLowerCase();
     const brandName = productAnalysis.product.brand?.toLowerCase() || '';
     const combinedText = `${brandName} ${productName}`.trim();
@@ -207,6 +220,22 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
 
   // Classify alcohol type
   const getAlcoholType = () => {
+    // PRIORITY 1: Use machine vision beverage category if available
+    if (productAnalysis.alcohol_analysis?.beverage_category && 
+        productAnalysis.alcohol_analysis.beverage_category !== 'non_alcoholic') {
+      const category = productAnalysis.alcohol_analysis.beverage_category.toLowerCase();
+      
+      // Map machine vision categories to our alcohol types
+      if (category.includes('beer') || category.includes('lager') || category.includes('ale')) return 'beer';
+      if (category.includes('wine') || category.includes('champagne') || category.includes('sparkling')) return 'wine';
+      if (category.includes('spirit') || category.includes('whiskey') || category.includes('vodka') || 
+          category.includes('rum') || category.includes('gin') || category.includes('tequila')) return 'spirits';
+      if (category.includes('seltzer') || category.includes('hard_seltzer')) return 'hard_seltzer';
+      if (category.includes('cider')) return 'cider';
+      if (category.includes('cocktail') || category.includes('mixed')) return 'cocktail';
+      if (category.includes('liqueur')) return 'liqueur';
+    }
+    
     const productName = productAnalysis.product.name.toLowerCase();
     const brandName = productAnalysis.product.brand?.toLowerCase() || '';
     const combinedName = `${brandName} ${productName}`.toLowerCase();

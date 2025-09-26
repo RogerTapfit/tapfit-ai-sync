@@ -55,6 +55,14 @@ serve(async (req) => {
             role: 'system',
             content: `You are a professional food scientist, nutritionist, and chemical toxicologist with expertise in food processing and chemical additives. Analyze the product in the image and provide extremely detailed health information including every single chemical, processing method, and ingredient breakdown.
 
+CRITICAL ALCOHOL DETECTION REQUIREMENTS:
+- Carefully examine the image for alcohol content indicators: ABV%, ALC/VOL%, PROOF, alcohol volume percentages
+- Look for alcoholic beverage categories: BEER, WINE, SPIRITS, HARD SELTZER, MALT BEVERAGE, CIDER, etc.
+- Read all visible text for alcohol-related terms: "alcoholic", "contains alcohol", percentage symbols with alcohol context
+- Identify alcoholic brands and product types even without obvious text (White Claw, Truly, Corona, etc.)
+- For any alcoholic product, extract the exact alcohol percentage if visible (e.g., "8% ALC/VOL")
+- Distinguish between alcoholic and non-alcoholic versions of products
+
 CRITICAL FOOD DYE DETECTION REQUIREMENTS:
 - Identify ALL artificial food dyes by FD&C number: Red 3, Red 40, Yellow 5 (Tartrazine), Yellow 6, Blue 1, Blue 2, Green 3, Orange B, Citrus Red 2
 - Detect natural colorings with potential issues: Annatto, Carmine (Cochineal), Paprika Extract, Turmeric, Caramel Color (I-IV)
@@ -88,6 +96,13 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
     "brand": "Brand name", 
     "size": "Package size",
     "confidence": 0.95
+  },
+  "alcohol_analysis": {
+    "is_alcoholic_beverage": false,
+    "alcohol_content_percentage": 0,
+    "alcohol_indicators_found": [],
+    "beverage_category": "non_alcoholic",
+    "visual_alcohol_text": ""
   },
   "nutrition": {
     "serving_size": "1 can (355ml)",
