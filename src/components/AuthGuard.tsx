@@ -122,22 +122,6 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
 
   if (!user && !isGuest) {
     console.log('🔐 AuthGuard: No user, showing fallback...');
-    
-    // Mobile debug mode - temporarily bypass auth for testing
-    if (isNative && window.location.hash.includes('debug=true')) {
-      console.log('🔐 AuthGuard: Mobile debug mode - bypassing auth');
-      return <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h2 className="text-xl font-semibold">Mobile Debug Mode</h2>
-          <p className="text-muted-foreground">Auth bypassed for testing</p>
-          <p className="text-sm">Platform: {platform}</p>
-          <button onClick={() => window.location.hash = ''} className="px-4 py-2 bg-primary text-primary-foreground rounded">
-            Exit Debug Mode
-          </button>
-        </div>
-      </div>;
-    }
-    
     return <>{fallback}</>;
   }
 

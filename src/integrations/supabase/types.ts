@@ -904,6 +904,36 @@ export type Database = {
           },
         ]
       }
+      guest_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          last_activity: string
+          session_token: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity?: string
+          session_token: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          last_activity?: string
+          session_token?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       gyms: {
         Row: {
           address: string | null
@@ -1357,6 +1387,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_events: {
+        Row: {
+          created_at: string
+          event_details: Json
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_details?: Json
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_details?: Json
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       smart_pin_data: {
         Row: {
@@ -2242,6 +2302,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_old_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_food_entries: {
         Args: { _days_to_keep?: number }
         Returns: undefined
@@ -2348,6 +2412,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_event: {
+        Args: {
+          _event_details?: Json
+          _event_type?: string
+          _ip_address?: unknown
+          _user_agent?: string
+          _user_id?: string
+        }
+        Returns: undefined
+      }
       mask_sensitive_data: {
         Args: { data: Json }
         Returns: Json
@@ -2378,6 +2452,10 @@ export type Database = {
       }
       update_user_power_level: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      validate_guest_session: {
+        Args: { session_token: string }
         Returns: boolean
       }
       validate_session_for_sensitive_data: {

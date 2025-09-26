@@ -9,6 +9,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { GuestSessionManager } from '@/lib/guestSecurity';
+import { sanitizeInput, isValidEmail, logFailedAuthAttempt } from '@/lib/utils';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -50,12 +52,16 @@ const Auth = () => {
       try {
         await supabase.auth.signOut({ scope: 'global' } as any);
       } catch {}
+      
+      // Create secure guest session
+      const sessionToken = await GuestSessionManager.createGuestSession();
+      
       const { error } = await supabase.auth.signInAnonymously();
       if (!error) {
         localStorage.setItem('tapfit_guest', '1');
         toast({
           title: 'Guest mode enabled',
-          description: 'Nothing will be saved or stored. Create an account anytime.',
+          description: 'Session expires in 30 minutes. Create an account anytime.',
         });
         window.location.href = '/';
         return;
@@ -63,12 +69,21 @@ const Auth = () => {
       throw error;
     } catch (err: any) {
       // Fallback: enable local-only guest mode when anonymous auth is disabled
-      localStorage.setItem('tapfit_guest', '1');
-      toast({
-        title: 'Guest mode (local only)',
-        description: 'Anonymous auth is disabled. You can explore, but data will not be saved.',
-      });
-      window.location.href = '/';
+      try {
+        await GuestSessionManager.createGuestSession();
+        localStorage.setItem('tapfit_guest', '1');
+        toast({
+          title: 'Guest mode (local only)',
+          description: 'Session expires in 30 minutes. You can explore, but data will not be saved.',
+        });
+        window.location.href = '/';
+      } catch (sessionError) {
+        toast({
+          title: 'Guest mode failed',
+          description: 'Unable to start guest session. Please try again.',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -78,14 +93,30 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeInput(email);
+      const sanitizedPassword = sanitizeInput(password);
+
+      // Validate email format
+      if (!isValidEmail(sanitizedEmail)) {
+        throw new Error('Please enter a valid email address');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: sanitizedEmail,
+        password: sanitizedPassword,
       });
 
       if (error) throw error;
 
       if (data.user) {
+        // Log successful auth event
+        await supabase.rpc('log_security_event', {
+          _user_id: data.user.id,
+          _event_type: 'successful_login',
+          _event_details: { method: 'email_password' }
+        });
+
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
@@ -93,6 +124,19 @@ const Auth = () => {
         window.location.href = '/';
       }
     } catch (error: any) {
+      // Log failed attempt
+      logFailedAuthAttempt(email);
+      
+      await supabase.rpc('log_security_event', {
+        _user_id: null,
+        _event_type: 'failed_login',
+        _event_details: { 
+          method: 'email_password',
+          error: error.message,
+          email_domain: email.split('@')[1] || 'unknown'
+        }
+      });
+
       toast({
         title: "Login failed",
         description: error.message,
@@ -105,6 +149,30 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedPassword = sanitizeInput(password);
+    const sanitizedName = sanitizeInput(fullName);
+    
+    // Validate inputs
+    if (!isValidEmail(sanitizedEmail)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (sanitizedPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (password !== confirmPassword) {
       toast({
@@ -121,13 +189,13 @@ const Auth = () => {
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: sanitizedEmail,
+        password: sanitizedPassword,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            first_name: fullName.trim(),
-            full_name: fullName.trim()
+            first_name: sanitizedName,
+            full_name: sanitizedName
           }
         }
       });
@@ -135,6 +203,13 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Log successful registration event
+        await supabase.rpc('log_security_event', {
+          _user_id: data.user.id,
+          _event_type: 'user_registration',
+          _event_details: { method: 'email_password' }
+        });
+
         toast({
           title: "Account created!",
           description: "Welcome to TapFit! You can now start tracking your workouts.",
@@ -142,6 +217,17 @@ const Auth = () => {
         window.location.href = '/';
       }
     } catch (error: any) {
+      // Log failed registration attempt
+      await supabase.rpc('log_security_event', {
+        _user_id: null,
+        _event_type: 'failed_registration',
+        _event_details: { 
+          method: 'email_password',
+          error: error.message,
+          email_domain: sanitizedEmail.split('@')[1] || 'unknown'
+        }
+      });
+
       toast({
         title: "Sign up failed",
         description: error.message,
