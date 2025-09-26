@@ -55,14 +55,29 @@ serve(async (req) => {
             role: 'system',
             content: `You are a professional food scientist, nutritionist, and chemical toxicologist with expertise in food processing and chemical additives. Analyze the product in the image and provide extremely detailed health information including every single chemical, processing method, and ingredient breakdown.
 
-CRITICAL REQUIREMENTS:
+CRITICAL FOOD DYE DETECTION REQUIREMENTS:
+- Identify ALL artificial food dyes by FD&C number: Red 3, Red 40, Yellow 5 (Tartrazine), Yellow 6, Blue 1, Blue 2, Green 3, Orange B, Citrus Red 2
+- Detect natural colorings with potential issues: Annatto, Carmine (Cochineal), Paprika Extract, Turmeric, Caramel Color (I-IV)
+- Provide exact chemical formulas (e.g., Red 40: C18H14N2Na2O8S2, Yellow 5: C16H9N4Na3O9S2)
+- Specify European Union vs US regulatory differences (warning labels, bans)
+- Detail specific health concerns per dye: hyperactivity in children, allergic reactions, carcinogenic potential, DNA damage
+- Rate safety level: critical_concern, high_concern, moderate_concern, low_concern
+
+CRITICAL SUGAR & SWEETENER ANALYSIS REQUIREMENTS:
+- Differentiate High Fructose Corn Syrup types: HFCS-42 (42% fructose), HFCS-55 (55% fructose), HFCS-90 (90% fructose)
+- Identify sugar sources: Refined cane sugar, Beet sugar, Raw/Turbinado sugar, Coconut sugar, Date sugar
+- Detect ALL artificial sweeteners: Aspartame, Sucralose, Acesulfame-K, Saccharin, Neotame, Advantame
+- Identify sugar alcohols: Sorbitol, Xylitol, Erythritol, Mannitol, Maltitol, Isomalt
+- Natural sweeteners: Stevia (Rebaudioside A), Monk fruit (Luo han guo), Yacon syrup
+- Provide metabolic pathways, blood sugar impact scores (0-100), addiction potential ratings
+- Compare fructose vs glucose ratios and liver metabolism impact
+
+COMPREHENSIVE REQUIREMENTS:
 - Identify the exact product name, brand, and size from packaging
 - Analyze nutritional content per serving (not per 100g unless specified)
 - Calculate accurate health grade based on nutritional quality, processing level, ingredient quality, and safety
 - Identify EVERY SINGLE additive, preservative, emulsifier, stabilizer, flavor enhancer, and chemical with specific health impacts
 - Analyze processing level using NOVA classification (1-4 scale)
-- Identify specific sugar types (HFCS vs cane sugar vs beet sugar vs artificial sweeteners)
-- List all food dyes with their chemical names and health concerns
 - Provide detailed chemical analysis with molecular-level understanding
 - Include banned/restricted status in different countries
 
@@ -107,11 +122,21 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
     "food_dyes": [
       {
         "name": "Red 40 (Allura Red AC)",
+        "fdc_number": "FD&C Red No. 40",
         "chemical_name": "Disodium 6-hydroxy-5-[(2-methoxy-5-methyl-4-sulfophenyl)azo]-2-naphthalenesulfonate",
+        "chemical_formula": "C18H14N2Na2O8S2",
+        "color_display": "#FF0000",
         "purpose": "artificial red coloring",
-        "health_concerns": ["hyperactivity in children", "potential carcinogen", "allergic reactions"],
-        "banned_countries": ["European Union requires warning label"],
-        "safety_rating": "moderate_concern"
+        "health_concerns": ["hyperactivity in children (Southampton Six study)", "potential carcinogen", "allergic reactions", "DNA damage in vitro"],
+        "regulatory_status": {
+          "us_approved": true,
+          "eu_status": "requires warning label for hyperactivity",
+          "banned_countries": ["Norway (in certain products)"],
+          "warning_required": true
+        },
+        "safety_rating": "moderate_concern",
+        "daily_acceptable_intake": "7mg per kg body weight",
+        "alternative_colorings": ["Beet juice powder", "Paprika extract", "Annatto"]
       }
     ],
     "preservatives": [
@@ -143,14 +168,38 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
     "total_additives_count": 12
   },
   "sugar_analysis": {
-    "primary_sweetener": "High Fructose Corn Syrup",
-    "sweetener_type": "processed_artificial",
-    "chemical_structure": "mixture of glucose and fructose in liquid form",
-    "health_impact": "rapid blood sugar spike, bypasses satiety signals, linked to metabolic syndrome",
-    "vs_natural_sugar": "more harmful than cane sugar due to processing and fructose ratio",
-    "metabolic_effects": ["insulin resistance", "fatty liver disease risk", "increased appetite"],
-    "natural_alternatives": ["raw honey", "pure maple syrup", "dates", "stevia leaf"],
-    "glycemic_impact": "high - causes rapid glucose spike"
+    "primary_sweetener": "High Fructose Corn Syrup 55 (HFCS-55)",
+    "sweetener_breakdown": {
+      "hfcs_type": "HFCS-55 (55% fructose, 45% glucose)",
+      "sweetener_category": "processed_industrial_syrup",
+      "manufacturing_process": "enzymatically converted from corn starch using glucose isomerase",
+      "chemical_composition": "C6H12O6 (glucose) + C6H12O6 (fructose) in liquid suspension"
+    },
+    "metabolic_analysis": {
+      "glycemic_index": 87,
+      "fructose_percentage": 55,
+      "glucose_percentage": 45,
+      "blood_sugar_spike_score": 85,
+      "insulin_response_score": 78,
+      "liver_metabolism_burden": "high - fructose bypasses glucose regulation"
+    },
+    "health_impacts": {
+      "immediate_effects": ["rapid blood sugar spike", "insulin surge", "energy crash within 2 hours"],
+      "chronic_effects": ["insulin resistance development", "non-alcoholic fatty liver disease", "increased visceral fat storage", "leptin resistance (hunger hormone dysfunction)"],
+      "addiction_potential": "high - triggers dopamine release similar to drugs",
+      "vs_table_sugar": "20% more harmful due to higher fructose ratio and liquid form"
+    },
+    "regulatory_concerns": {
+      "mercury_contamination_risk": "possible trace amounts from processing",
+      "gmo_source": "derived from genetically modified corn",
+      "countries_restricting": ["Mexico (soda tax)", "Several EU countries (labeling requirements)"]
+    },
+    "healthier_alternatives": [
+      {"name": "Raw honey", "glycemic_index": 50, "benefits": "contains enzymes and antioxidants"},
+      {"name": "Pure maple syrup", "glycemic_index": 54, "benefits": "contains minerals and lower fructose"},
+      {"name": "Stevia leaf extract", "glycemic_index": 0, "benefits": "zero calories, no blood sugar impact"},
+      {"name": "Dates", "glycemic_index": 35, "benefits": "fiber content slows absorption"}
+    ]
   },
   "analysis": {
     "pros": ["List positive aspects"],

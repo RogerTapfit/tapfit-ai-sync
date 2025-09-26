@@ -55,11 +55,21 @@ interface ProductAnalysis {
   chemical_analysis: {
     food_dyes: Array<{
       name: string;
+      fdc_number?: string;
       chemical_name?: string;
+      chemical_formula?: string;
+      color_display?: string;
       purpose: string;
       health_concerns: string[];
-      banned_countries?: string[];
+      regulatory_status?: {
+        us_approved: boolean;
+        eu_status: string;
+        banned_countries?: string[];
+        warning_required: boolean;
+      };
       safety_rating: string;
+      daily_acceptable_intake?: string;
+      alternative_colorings?: string[];
     }>;
     preservatives: Array<{
       name: string;
@@ -85,13 +95,43 @@ interface ProductAnalysis {
   };
   sugar_analysis: {
     primary_sweetener: string;
-    sweetener_type: string;
+    sweetener_breakdown?: {
+      hfcs_type?: string;
+      sweetener_category: string;
+      manufacturing_process?: string;
+      chemical_composition?: string;
+    };
+    metabolic_analysis?: {
+      glycemic_index: number;
+      fructose_percentage?: number;
+      glucose_percentage?: number;
+      blood_sugar_spike_score: number;
+      insulin_response_score?: number;
+      liver_metabolism_burden?: string;
+    };
+    health_impacts?: {
+      immediate_effects: string[];
+      chronic_effects: string[];
+      addiction_potential?: string;
+      vs_table_sugar?: string;
+    };
+    regulatory_concerns?: {
+      mercury_contamination_risk?: string;
+      gmo_source?: string;
+      countries_restricting?: string[];
+    };
+    healthier_alternatives: Array<{
+      name: string;
+      glycemic_index?: number;
+      benefits?: string;
+    }>;
+    sweetener_type?: string;
     chemical_structure?: string;
-    health_impact: string;
+    health_impact?: string;
     vs_natural_sugar?: string;
-    metabolic_effects: string[];
-    natural_alternatives: string[];
-    glycemic_impact: string;
+    metabolic_effects?: string[];
+    natural_alternatives?: string[];
+    glycemic_impact?: string;
   };
   analysis: {
     pros: string[];
@@ -786,71 +826,218 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                       🍯 Sugar Impact Analysis
                     </h4>
                     
-                    <div className="space-y-4">
-                      {/* Primary Sweetener */}
-                      <div className="p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-pink-600">Primary Sweetener:</span>
-                          <Badge className={`${
-                            analysisResult.sugar_analysis.sweetener_type.includes('artificial') || 
-                            analysisResult.sugar_analysis.sweetener_type.includes('processed') 
-                              ? 'bg-red-500/20 text-red-700 border-red-500/50'
-                              : 'bg-green-500/20 text-green-700 border-green-500/50'
-                          }`}>
-                            {analysisResult.sugar_analysis.sweetener_type}
-                          </Badge>
-                        </div>
-                        <p className="text-lg font-semibold text-pink-700">{analysisResult.sugar_analysis.primary_sweetener}</p>
-                        {analysisResult.sugar_analysis.chemical_structure && (
-                          <p className="text-xs text-muted-foreground mt-1">🧬 {analysisResult.sugar_analysis.chemical_structure}</p>
-                        )}
-                      </div>
-
-                      {/* Health Impact */}
-                      <div className="p-3 bg-red-500/5 rounded-lg border-l-4 border-red-500">
-                        <p className="text-sm text-foreground">
-                          <span className="text-red-600 font-bold">Health Impact: </span>
-                          {analysisResult.sugar_analysis.health_impact}
-                        </p>
-                        {analysisResult.sugar_analysis.vs_natural_sugar && (
-                          <p className="text-sm text-foreground mt-2">
-                            <span className="text-red-600 font-bold">vs Natural Sugar: </span>
-                            {analysisResult.sugar_analysis.vs_natural_sugar}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Metabolic Effects */}
-                      <div>
-                        <h5 className="font-semibold text-pink-600 mb-2">⚠️ Metabolic Effects:</h5>
-                        <div className="grid grid-cols-1 gap-2">
-                          {analysisResult.sugar_analysis.metabolic_effects.map((effect, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md border border-red-500/20">
-                              <AlertTriangle className="h-4 w-4 text-red-500" />
-                              <span className="text-sm text-foreground">{effect}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Glycemic Impact */}
-                      <div className="p-3 bg-orange-500/10 rounded-lg">
-                        <span className="font-bold text-orange-600">Glycemic Impact: </span>
-                        <span className="text-foreground">{analysisResult.sugar_analysis.glycemic_impact}</span>
-                      </div>
-
-                      {/* Natural Alternatives */}
-                      <div>
-                        <h5 className="font-semibold text-green-600 mb-2">💚 Natural Alternatives:</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {analysisResult.sugar_analysis.natural_alternatives.map((alt, index) => (
-                            <Badge key={index} className="bg-green-500/20 text-green-700 border-green-500/50">
-                              {alt}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                       {/* Enhanced Sugar Analysis */}
+                       <div className="space-y-4">
+                         {/* Primary Sweetener with Enhanced Details */}
+                         <div className="p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
+                           <div className="flex items-center justify-between mb-3">
+                             <span className="font-bold text-pink-600">Primary Sweetener:</span>
+                             <Badge className={`${
+                               (analysisResult.sugar_analysis.sweetener_breakdown?.sweetener_category?.includes('artificial') || 
+                                analysisResult.sugar_analysis.sweetener_breakdown?.sweetener_category?.includes('processed') ||
+                                analysisResult.sugar_analysis.sweetener_type?.includes('artificial') || 
+                                analysisResult.sugar_analysis.sweetener_type?.includes('processed'))
+                                 ? 'bg-red-500/20 text-red-700 border-red-500/50'
+                                 : 'bg-green-500/20 text-green-700 border-green-500/50'
+                             }`}>
+                               {analysisResult.sugar_analysis.sweetener_breakdown?.sweetener_category || analysisResult.sugar_analysis.sweetener_type}
+                             </Badge>
+                           </div>
+                           <p className="text-lg font-semibold text-pink-700">{analysisResult.sugar_analysis.primary_sweetener}</p>
+                           
+                           {/* Enhanced Chemical Details */}
+                           {analysisResult.sugar_analysis.sweetener_breakdown && (
+                             <div className="mt-3 space-y-2 bg-pink-500/5 p-3 rounded border border-pink-500/20">
+                               {analysisResult.sugar_analysis.sweetener_breakdown.hfcs_type && (
+                                 <p className="text-sm"><span className="font-medium">Type:</span> {analysisResult.sugar_analysis.sweetener_breakdown.hfcs_type}</p>
+                               )}
+                               {analysisResult.sugar_analysis.sweetener_breakdown.manufacturing_process && (
+                                 <p className="text-xs text-muted-foreground">🏭 {analysisResult.sugar_analysis.sweetener_breakdown.manufacturing_process}</p>
+                               )}
+                               {analysisResult.sugar_analysis.sweetener_breakdown.chemical_composition && (
+                                 <p className="text-xs text-muted-foreground font-mono">⚗️ {analysisResult.sugar_analysis.sweetener_breakdown.chemical_composition}</p>
+                               )}
+                             </div>
+                           )}
+                           
+                           {/* Fallback for legacy structure */}
+                           {analysisResult.sugar_analysis.chemical_structure && !analysisResult.sugar_analysis.sweetener_breakdown && (
+                             <p className="text-xs text-muted-foreground mt-1">🧬 {analysisResult.sugar_analysis.chemical_structure}</p>
+                           )}
+                         </div>
+                
+                         {/* Enhanced Metabolic Analysis */}
+                         {analysisResult.sugar_analysis.metabolic_analysis && (
+                           <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                             <h5 className="font-semibold text-orange-600 mb-3">📊 Metabolic Impact Analysis</h5>
+                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                               <div className="text-center p-2 bg-red-500/10 rounded border border-red-500/20">
+                                 <div className="font-bold text-lg text-red-600">{analysisResult.sugar_analysis.metabolic_analysis.glycemic_index}</div>
+                                 <div className="text-xs">Glycemic Index</div>
+                               </div>
+                               <div className="text-center p-2 bg-orange-500/10 rounded border border-orange-500/20">
+                                 <div className="font-bold text-lg text-orange-600">{analysisResult.sugar_analysis.metabolic_analysis.blood_sugar_spike_score}</div>
+                                 <div className="text-xs">Blood Sugar Spike</div>
+                               </div>
+                               {analysisResult.sugar_analysis.metabolic_analysis.insulin_response_score && (
+                                 <div className="text-center p-2 bg-purple-500/10 rounded border border-purple-500/20">
+                                   <div className="font-bold text-lg text-purple-600">{analysisResult.sugar_analysis.metabolic_analysis.insulin_response_score}</div>
+                                   <div className="text-xs">Insulin Response</div>
+                                 </div>
+                               )}
+                               {analysisResult.sugar_analysis.metabolic_analysis.fructose_percentage && (
+                                 <div className="col-span-2 p-2 bg-red-500/10 rounded border border-red-500/20">
+                                   <div className="text-sm">
+                                     <span className="font-medium">Fructose:</span> {analysisResult.sugar_analysis.metabolic_analysis.fructose_percentage}% | 
+                                     <span className="font-medium ml-2">Glucose:</span> {analysisResult.sugar_analysis.metabolic_analysis.glucose_percentage}%
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                             {analysisResult.sugar_analysis.metabolic_analysis.liver_metabolism_burden && (
+                               <div className="mt-3 p-2 bg-red-500/5 rounded border-l-4 border-red-500">
+                                 <p className="text-sm text-red-600">
+                                   <span className="font-medium">Liver Impact:</span> {analysisResult.sugar_analysis.metabolic_analysis.liver_metabolism_burden}
+                                 </p>
+                               </div>
+                             )}
+                           </div>
+                         )}
+                
+                         {/* Enhanced Health Impacts */}
+                         {analysisResult.sugar_analysis.health_impacts ? (
+                           <div className="space-y-3">
+                             {/* Immediate Effects */}
+                             <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                               <h6 className="font-semibold text-yellow-600 mb-2">⚡ Immediate Effects (0-2 hours):</h6>
+                               <div className="space-y-1">
+                                 {analysisResult.sugar_analysis.health_impacts.immediate_effects.map((effect, i) => (
+                                   <div key={i} className="flex items-center gap-2 text-sm">
+                                     <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                                     <span>{effect}</span>
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
+                
+                             {/* Chronic Effects */}
+                             <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30">
+                               <h6 className="font-semibold text-red-600 mb-2">⚠️ Long-term Health Risks:</h6>
+                               <div className="space-y-1">
+                                 {analysisResult.sugar_analysis.health_impacts.chronic_effects.map((effect, i) => (
+                                   <div key={i} className="flex items-center gap-2 text-sm">
+                                     <AlertTriangle className="h-3 w-3 text-red-500" />
+                                     <span>{effect}</span>
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
+                
+                             {/* Addiction Potential & Comparison */}
+                             {(analysisResult.sugar_analysis.health_impacts.addiction_potential || analysisResult.sugar_analysis.health_impacts.vs_table_sugar) && (
+                               <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                                 {analysisResult.sugar_analysis.health_impacts.addiction_potential && (
+                                   <p className="text-sm mb-2">
+                                     <span className="font-bold text-purple-600">Addiction Risk:</span> {analysisResult.sugar_analysis.health_impacts.addiction_potential}
+                                   </p>
+                                 )}
+                                 {analysisResult.sugar_analysis.health_impacts.vs_table_sugar && (
+                                   <p className="text-sm">
+                                     <span className="font-bold text-purple-600">vs Table Sugar:</span> {analysisResult.sugar_analysis.health_impacts.vs_table_sugar}
+                                   </p>
+                                 )}
+                               </div>
+                             )}
+                           </div>
+                         ) : (
+                           /* Fallback for legacy structure */
+                           <div className="space-y-3">
+                             {/* Health Impact */}
+                             <div className="p-3 bg-red-500/5 rounded-lg border-l-4 border-red-500">
+                               <p className="text-sm text-foreground">
+                                 <span className="text-red-600 font-bold">Health Impact: </span>
+                                 {analysisResult.sugar_analysis.health_impact}
+                               </p>
+                               {analysisResult.sugar_analysis.vs_natural_sugar && (
+                                 <p className="text-sm text-foreground mt-2">
+                                   <span className="text-red-600 font-bold">vs Natural Sugar: </span>
+                                   {analysisResult.sugar_analysis.vs_natural_sugar}
+                                 </p>
+                               )}
+                             </div>
+                
+                             {/* Metabolic Effects */}
+                             {analysisResult.sugar_analysis.metabolic_effects && (
+                               <div>
+                                 <h5 className="font-semibold text-pink-600 mb-2">⚠️ Metabolic Effects:</h5>
+                                 <div className="grid grid-cols-1 gap-2">
+                                   {analysisResult.sugar_analysis.metabolic_effects.map((effect, index) => (
+                                     <div key={index} className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md border border-red-500/20">
+                                       <AlertTriangle className="h-4 w-4 text-red-500" />
+                                       <span className="text-sm text-foreground">{effect}</span>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+                             )}
+                
+                             {/* Glycemic Impact */}
+                             {analysisResult.sugar_analysis.glycemic_impact && (
+                               <div className="p-3 bg-orange-500/10 rounded-lg">
+                                 <span className="font-bold text-orange-600">Glycemic Impact: </span>
+                                 <span className="text-foreground">{analysisResult.sugar_analysis.glycemic_impact}</span>
+                               </div>
+                             )}
+                           </div>
+                         )}
+                
+                         {/* Regulatory Concerns */}
+                         {analysisResult.sugar_analysis.regulatory_concerns && (
+                           <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                             <h6 className="font-semibold text-orange-600 mb-2">🚨 Regulatory & Safety Concerns:</h6>
+                             <div className="space-y-2 text-sm">
+                               {analysisResult.sugar_analysis.regulatory_concerns.mercury_contamination_risk && (
+                                 <p><span className="font-medium">Mercury Risk:</span> {analysisResult.sugar_analysis.regulatory_concerns.mercury_contamination_risk}</p>
+                               )}
+                               {analysisResult.sugar_analysis.regulatory_concerns.gmo_source && (
+                                 <p><span className="font-medium">GMO Source:</span> {analysisResult.sugar_analysis.regulatory_concerns.gmo_source}</p>
+                               )}
+                               {analysisResult.sugar_analysis.regulatory_concerns.countries_restricting && (
+                                 <p><span className="font-medium">Global Restrictions:</span> {analysisResult.sugar_analysis.regulatory_concerns.countries_restricting.join(', ')}</p>
+                               )}
+                             </div>
+                           </div>
+                         )}
+                
+                         {/* Enhanced Alternatives */}
+                         <div>
+                           <h5 className="font-semibold text-green-600 mb-3">💚 Healthier Alternatives:</h5>
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             {analysisResult.sugar_analysis.healthier_alternatives?.map((alt, index) => (
+                               <div key={index} className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                                 <div className="flex justify-between items-start mb-1">
+                                   <span className="font-medium text-green-700">{alt.name}</span>
+                                   {alt.glycemic_index !== undefined && (
+                                     <Badge className="bg-green-500/20 text-green-700 border-green-500/50 text-xs">
+                                       GI: {alt.glycemic_index}
+                                     </Badge>
+                                   )}
+                                 </div>
+                                 {alt.benefits && (
+                                   <p className="text-xs text-green-600">{alt.benefits}</p>
+                                 )}
+                               </div>
+                             )) || (
+                               /* Fallback for legacy structure */
+                               analysisResult.sugar_analysis.natural_alternatives?.map((alt, index) => (
+                                 <Badge key={index} className="bg-green-500/20 text-green-700 border-green-500/50">
+                                   {alt}
+                                 </Badge>
+                               ))
+                             )}
+                           </div>
+                         </div>
+                       </div>
                   </motion.div>
                 )}
 
@@ -882,39 +1069,92 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                           </button>
                           {expandedChemicalSection === 'dyes' && (
                             <div className="mt-3 space-y-3">
-                              {analysisResult.chemical_analysis.food_dyes.map((dye, index) => (
-                                <div key={index} className="p-3 bg-red-500/10 rounded-md border border-red-500/20">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="font-bold text-red-700">{dye.name}</span>
-                                    <Badge className={`${
-                                      dye.safety_rating === 'high_concern' ? 'bg-red-600/80 text-white' :
-                                      dye.safety_rating === 'moderate_concern' ? 'bg-orange-500/80 text-white' :
-                                      'bg-yellow-500/80 text-white'
-                                    }`}>
-                                      {dye.safety_rating.replace('_', ' ')}
-                                    </Badge>
-                                  </div>
-                                  {dye.chemical_name && (
-                                    <p className="text-xs text-muted-foreground mb-1">🧬 {dye.chemical_name}</p>
-                                  )}
-                                  <p className="text-sm text-foreground mb-2">
-                                    <span className="font-medium">Purpose:</span> {dye.purpose}
-                                  </p>
-                                  <div className="space-y-1">
-                                    <span className="font-medium text-red-600">Health Concerns:</span>
-                                    {dye.health_concerns.map((concern, i) => (
-                                      <div key={i} className="flex items-center gap-2 text-sm">
-                                        <AlertTriangle className="h-3 w-3 text-red-500" />
-                                        <span>{concern}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  {dye.banned_countries && (
-                                    <p className="text-xs text-red-600 mt-2">
-                                      <span className="font-medium">Restrictions:</span> {dye.banned_countries.join(', ')}
-                                    </p>
-                                  )}
-                                </div>
+                               {analysisResult.chemical_analysis.food_dyes.map((dye, index) => (
+                                 <div key={index} className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+                                   <div className="flex items-center justify-between mb-3">
+                                     <div className="flex items-center gap-3">
+                                       <div 
+                                         className="w-8 h-8 rounded-full border-2 border-white shadow-lg"
+                                         style={{ backgroundColor: dye.color_display || '#FF0000' }}
+                                       />
+                                       <div>
+                                         <span className="font-bold text-red-700">{dye.name}</span>
+                                         {dye.fdc_number && (
+                                           <p className="text-xs text-muted-foreground">{dye.fdc_number}</p>
+                                         )}
+                                       </div>
+                                     </div>
+                                     <Badge className={`${
+                                       dye.safety_rating === 'critical_concern' ? 'bg-red-600/90 text-white animate-pulse' :
+                                       dye.safety_rating === 'high_concern' ? 'bg-red-600/80 text-white' :
+                                       dye.safety_rating === 'moderate_concern' ? 'bg-orange-500/80 text-white' :
+                                       'bg-yellow-500/80 text-white'
+                                     }`}>
+                                       {dye.safety_rating.replace('_', ' ')}
+                                     </Badge>
+                                   </div>
+                                   
+                                   {dye.chemical_name && (
+                                     <p className="text-xs text-muted-foreground mb-1">🧬 {dye.chemical_name}</p>
+                                   )}
+                                   {dye.chemical_formula && (
+                                     <p className="text-xs text-muted-foreground mb-2 font-mono">⚗️ {dye.chemical_formula}</p>
+                                   )}
+                                   
+                                   <p className="text-sm text-foreground mb-3">
+                                     <span className="font-medium">Purpose:</span> {dye.purpose}
+                                   </p>
+                                   
+                                   <div className="space-y-2 mb-3">
+                                     <span className="font-medium text-red-600">Health Concerns:</span>
+                                     {dye.health_concerns.map((concern, i) => (
+                                       <div key={i} className="flex items-start gap-2 text-sm bg-red-500/5 p-2 rounded">
+                                         <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
+                                         <span>{concern}</span>
+                                       </div>
+                                     ))}
+                                   </div>
+                                   
+                                   {dye.regulatory_status && (
+                                     <div className="bg-orange-500/10 p-3 rounded border border-orange-500/30">
+                                       <div className="grid grid-cols-2 gap-2 text-xs">
+                                         <div>
+                                           <span className="font-medium">US Status:</span> {dye.regulatory_status.us_approved ? '✅ Approved' : '❌ Banned'}
+                                         </div>
+                                         <div>
+                                           <span className="font-medium">EU Status:</span> {dye.regulatory_status.eu_status}
+                                         </div>
+                                       </div>
+                                       {dye.regulatory_status.banned_countries && dye.regulatory_status.banned_countries.length > 0 && (
+                                         <p className="text-xs text-red-600 mt-2">
+                                           <span className="font-medium">Restrictions:</span> {dye.regulatory_status.banned_countries.join(', ')}
+                                         </p>
+                                       )}
+                                       {dye.regulatory_status.warning_required && (
+                                         <p className="text-xs text-orange-600 mt-1">⚠️ Warning labels required</p>
+                                       )}
+                                     </div>
+                                   )}
+                                   
+                                   {dye.daily_acceptable_intake && (
+                                     <p className="text-xs text-muted-foreground mt-2">
+                                       <span className="font-medium">Daily Limit:</span> {dye.daily_acceptable_intake}
+                                     </p>
+                                   )}
+                                   
+                                   {dye.alternative_colorings && dye.alternative_colorings.length > 0 && (
+                                     <div className="mt-3">
+                                       <span className="text-xs font-medium text-green-600">Natural Alternatives:</span>
+                                       <div className="flex flex-wrap gap-1 mt-1">
+                                         {dye.alternative_colorings.map((alt, i) => (
+                                           <Badge key={i} className="bg-green-500/20 text-green-700 border-green-500/50 text-xs">
+                                             {alt}
+                                           </Badge>
+                                         ))}
+                                       </div>
+                                     </div>
+                                   )}
+                                 </div>
                               ))}
                             </div>
                           )}
