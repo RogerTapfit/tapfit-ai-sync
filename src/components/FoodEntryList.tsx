@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,8 @@ import {
   Trash2, 
   Image as ImageIcon,
   ChevronLeft,
-  Award
+  Award,
+  Loader2
 } from 'lucide-react';
 import { FoodEntry, AlcoholEntry, useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -26,8 +27,39 @@ interface FoodEntryListProps {
 }
 
 const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) => {
-  const { foodEntries, alcoholEntries, deleteFoodEntry, loading } = useNutrition();
+  const { deleteFoodEntry, loading, getAllFoodEntries, getAllAlcoholEntries } = useNutrition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [allFoodEntries, setAllFoodEntries] = useState<FoodEntry[]>([]);
+  const [allAlcoholEntries, setAllAlcoholEntries] = useState<AlcoholEntry[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+
+  // Load all entries when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadAllEntries();
+    }
+  }, [isOpen]);
+
+  const loadAllEntries = async () => {
+    setIsLoadingEntries(true);
+    try {
+      const [foodEntries, alcoholEntries] = await Promise.all([
+        getAllFoodEntries(),
+        getAllAlcoholEntries()
+      ]);
+      
+      console.log('Loaded all food entries:', foodEntries.length);
+      console.log('Loaded all alcohol entries:', alcoholEntries.length);
+      
+      setAllFoodEntries(foodEntries);
+      setAllAlcoholEntries(alcoholEntries);
+    } catch (error) {
+      console.error('Error loading all entries:', error);
+      toast.error('Failed to load food history');
+    } finally {
+      setIsLoadingEntries(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -122,6 +154,8 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
     try {
       await deleteFoodEntry(entryId);
       toast.success('Food entry deleted successfully');
+      // Reload all entries after deletion
+      await loadAllEntries();
       onDataChange?.();
     } catch (error) {
       console.error('Error deleting food entry:', error);
@@ -133,13 +167,13 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
 
   // Combine and sort all entries by date (newest first)
   const combinedEntries = [
-    ...foodEntries.map(entry => ({ ...entry, type: 'food' as const })),
-    ...alcoholEntries.map(entry => ({ ...entry, type: 'alcohol' as const }))
+    ...allFoodEntries.map(entry => ({ ...entry, type: 'food' as const })),
+    ...allAlcoholEntries.map(entry => ({ ...entry, type: 'alcohol' as const }))
   ].sort((a, b) => 
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  const totalEntries = foodEntries.length + alcoholEntries.length;
+  const totalEntries = allFoodEntries.length + allAlcoholEntries.length;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -162,17 +196,23 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
         </DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
-            {combinedEntries.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Utensils className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    No food or alcohol entries yet. Start by adding your first meal!
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
+          {isLoadingEntries ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Loading food history...</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {combinedEntries.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <Utensils className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      No food or alcohol entries yet. Start by adding your first meal!
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
               combinedEntries.map((entry) => (
                 entry.type === 'alcohol' ? (
                   // Alcohol Entry
@@ -402,7 +442,8 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                 )
               ))
             )}
-          </div>
+            </div>
+          )}
         </ScrollArea>
       </DialogContent>
     </Dialog>

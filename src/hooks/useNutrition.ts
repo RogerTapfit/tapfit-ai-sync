@@ -625,6 +625,46 @@ export const useNutrition = () => {
     }
   };
 
+  const getAllFoodEntries = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const { data, error } = await supabase
+        .from('food_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(transformDatabaseToFoodEntry);
+    } catch (error) {
+      console.error('Error loading all food entries:', error);
+      return [];
+    }
+  };
+
+  const getAllAlcoholEntries = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const { data, error } = await supabase
+        .from('alcohol_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(transformDatabaseToAlcoholEntry);
+    } catch (error) {
+      console.error('Error loading all alcohol entries:', error);
+      return [];
+    }
+  };
+
   return {
     nutritionGoals,
     metabolismReadings,
@@ -640,6 +680,8 @@ export const useNutrition = () => {
     updateFoodEntry,
     deleteFoodEntry,
     getWeeklyFoodEntries,
+    getAllFoodEntries,
+    getAllAlcoholEntries,
     refreshData
   };
 };
