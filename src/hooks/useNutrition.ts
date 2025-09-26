@@ -326,6 +326,7 @@ export const useNutrition = () => {
       if (!user) return;
 
       const today = getCurrentLocalDate();
+      console.log('🍎 Loading daily summary for date:', today);
       
       const { data, error } = await supabase
         .from('daily_nutrition_summary')
@@ -333,6 +334,8 @@ export const useNutrition = () => {
         .eq('user_id', user.id)
         .eq('summary_date', today)
         .maybeSingle();
+
+      console.log('🍎 Daily summary response:', { data, error, queriedDate: today });
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading daily summary:', error);

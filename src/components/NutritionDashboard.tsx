@@ -13,7 +13,8 @@ import {
   Flame,
   Apple,
   Activity,
-  Zap
+  Zap,
+  RefreshCw
 } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import NutritionGoalsSetup from './NutritionGoalsSetup';
@@ -28,6 +29,15 @@ const NutritionDashboard = () => {
   const { nutritionGoals, dailySummary, metabolismReadings, refreshData } = useNutrition();
   const [activeTab, setActiveTab] = useState('overview');
   const [showFoodEntries, setShowFoodEntries] = useState(false);
+
+  // Debug: Log what date the daily summary is for
+  useEffect(() => {
+    console.log('🍎 NutritionDashboard dailySummary:', dailySummary);
+    if (dailySummary) {
+      console.log('🍎 Daily summary date:', dailySummary.summary_date);
+      console.log('🍎 Current local date:', new Date().toLocaleDateString('sv-SE')); // YYYY-MM-DD format
+    }
+  }, [dailySummary]);
 
   useEffect(() => {
     try {
@@ -73,6 +83,27 @@ const NutritionDashboard = () => {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
+      {/* Debug Info & Refresh Button */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {dailySummary ? (
+            <span>Showing data for: <strong>{dailySummary.summary_date}</strong></span>
+          ) : (
+            <span>No nutrition data for today yet</span>
+          )}
+        </div>
+        <button
+          onClick={() => {
+            console.log('🍎 Force refreshing nutrition data...');
+            refreshData();
+          }}
+          className="flex items-center gap-2 px-3 py-1 text-sm rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh Data
+        </button>
+      </div>
+
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="glow-card">
@@ -84,7 +115,8 @@ const NutritionDashboard = () => {
                   {dailySummary?.total_calories || 0}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  of {nutritionGoals?.daily_calories || 0}
+                  of {nutritionGoals?.daily_calories || 0} 
+                  {dailySummary && ` (${dailySummary.summary_date})`}
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-green-500/20 shadow-glow">
@@ -124,7 +156,9 @@ const NutritionDashboard = () => {
                 <p className="text-2xl font-bold text-foreground">
                   {dailySummary?.meals_count || 0}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">today - click to view</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  today {dailySummary && `(${dailySummary.summary_date})`} - click to view
+                </p>
               </div>
               <div className="p-3 rounded-xl bg-blue-500/20 shadow-glow">
                 <Utensils className="h-8 w-8 text-blue-500" />
