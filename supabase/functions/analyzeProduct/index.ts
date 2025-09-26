@@ -27,34 +27,9 @@ serve(async (req) => {
       );
     }
 
-    // Convert image to JPEG if it's in an unsupported format
-    let processedImageBase64 = imageBase64;
-    
-    // Check if image is HEIC or other unsupported format and convert to JPEG
-    try {
-      const imageBuffer = Uint8Array.from(atob(imageBase64), c => c.charCodeAt(0));
-      
-      // Check for HEIC signature or convert all to JPEG for consistency
-      const isHEIC = imageBase64.startsWith('AAAAKGZ0eXBoZWlj') || imageBase64.startsWith('AAAAGGZ0eXBoZWlj');
-      
-      if (isHEIC) {
-        console.log('HEIC format detected, converting to JPEG...');
-        // For now, return an error asking user to convert the image
-        return new Response(
-          JSON.stringify({ 
-            error: 'HEIC format not supported. Please convert to JPG/PNG or take a new photo.',
-            details: 'Image format conversion needed'
-          }),
-          { 
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-    } catch (conversionError) {
-      console.error('Image format check failed:', conversionError);
-      // Continue with original image if format check fails
-    }
+    // Frontend handles HEIC conversion, so we can process the image directly
+    const processedImageBase64 = imageBase64;
+    console.log('Processing image for analysis...');
 
     if (!openAIApiKey) {
       console.error('OpenAI API key not found');
@@ -74,7 +49,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -218,8 +193,17 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API Error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('OpenAI API Error:', response.status, response.statusText, errorText);
+      return new Response(
+        JSON.stringify({ 
+          error: `OpenAI API error: ${response.status} ${response.statusText}`,
+          details: errorText
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const data = await response.json();
