@@ -38,6 +38,8 @@ verify_jwt = false
 
 [functions.analyzeProduct]
 verify_jwt = false
+cpu = "auto"
+memory = "auto"
 
 [functions.checkProductSafety]
 verify_jwt = false
