@@ -95,6 +95,42 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          accessed_at: string
+          id: string
+          ip_address: unknown | null
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       avatar_achievements: {
         Row: {
           achievement_data: Json
@@ -1257,6 +1293,24 @@ export type Database = {
           },
         ]
       }
+      rate_limit_log: {
+        Row: {
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       scheduled_workouts: {
         Row: {
           completed_at: string | null
@@ -2172,6 +2226,14 @@ export type Database = {
         Args: { _user_id: string }
         Returns: number
       }
+      check_rate_limit: {
+        Args: {
+          max_requests: number
+          time_window_seconds: number
+          user_identifier: string
+        }
+        Returns: boolean
+      }
       clean_base64_photo_urls: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2184,9 +2246,17 @@ export type Database = {
         Args: { _days_to_keep?: number }
         Returns: undefined
       }
+      cleanup_rate_limit_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       complete_user_calibration: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      encrypt_sensitive_field: {
+        Args: { field_value: string }
+        Returns: string
       }
       fix_incomplete_profiles: {
         Args: Record<PropertyKey, never>
@@ -2274,6 +2344,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      mask_sensitive_data: {
+        Args: { data: Json }
+        Returns: Json
+      }
       refresh_daily_nutrition_summary_for_user: {
         Args: { _user_id: string }
         Returns: undefined
@@ -2300,6 +2374,10 @@ export type Database = {
       }
       update_user_power_level: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      validate_session_for_sensitive_data: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
