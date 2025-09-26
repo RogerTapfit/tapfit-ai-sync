@@ -13,12 +13,15 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   Award,
-  Loader2
+  Loader2,
+  Filter,
+  History
 } from 'lucide-react';
 import { FoodEntry, AlcoholEntry, useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
 import { getBestThumbnailUrl } from '@/utils/photoUtils';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 
 interface FoodEntryListProps {
   isOpen: boolean;
@@ -32,6 +35,7 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
   const [allFoodEntries, setAllFoodEntries] = useState<FoodEntry[]>([]);
   const [allAlcoholEntries, setAllAlcoholEntries] = useState<AlcoholEntry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+  const [viewMode, setViewMode] = useState<'today' | 'history'>('today');
 
   // Load all entries when modal opens
   useEffect(() => {
@@ -165,15 +169,42 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
     }
   };
 
+  // Get today's date in local timezone
+  const todayDate = getCurrentLocalDate();
+
   // Combine and sort all entries by date (newest first)
-  const combinedEntries = [
+  const allCombinedEntries = [
     ...allFoodEntries.map(entry => ({ ...entry, type: 'food' as const })),
     ...allAlcoholEntries.map(entry => ({ ...entry, type: 'alcohol' as const }))
   ].sort((a, b) => 
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
+  // Filter entries based on view mode
+  const filteredEntries = viewMode === 'today' 
+    ? allCombinedEntries.filter(entry => {
+        const entryDate = new Date(entry.created_at).toLocaleDateString('en-CA'); // YYYY-MM-DD format
+        return entryDate === todayDate;
+      })
+    : allCombinedEntries;
+
+  // Group entries by date for history view
+  const groupedEntries = viewMode === 'history' 
+    ? filteredEntries.reduce((groups, entry) => {
+        const date = new Date(entry.created_at).toLocaleDateString('en-CA');
+        if (!groups[date]) {
+          groups[date] = [];
+        }
+        groups[date].push(entry);
+        return groups;
+      }, {} as Record<string, typeof filteredEntries>)
+    : {};
+
   const totalEntries = allFoodEntries.length + allAlcoholEntries.length;
+  const todayCount = allCombinedEntries.filter(entry => {
+    const entryDate = new Date(entry.created_at).toLocaleDateString('en-CA');
+    return entryDate === todayDate;
+  }).length;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -190,9 +221,31 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
             </Button>
             <Utensils className="h-5 w-5 flex-shrink-0" />
             <span className="whitespace-nowrap">
-              Food & Alcohol History ({totalEntries} entries)
+              {viewMode === 'today' ? `Today's Food Log (${todayCount} entries)` : `Food & Alcohol History (${totalEntries} entries)`}
             </span>
           </DialogTitle>
+          
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-2 mt-2">
+            <Button
+              variant={viewMode === 'today' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('today')}
+              className="flex items-center gap-1"
+            >
+              <Calendar className="h-4 w-4" />
+              Today ({todayCount})
+            </Button>
+            <Button
+              variant={viewMode === 'history' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('history')}
+              className="flex items-center gap-1"
+            >
+              <History className="h-4 w-4" />
+              All History ({totalEntries})
+            </Button>
+          </div>
         </DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">
@@ -203,17 +256,21 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
             </div>
           ) : (
             <div className="space-y-4">
-              {combinedEntries.length === 0 ? (
+              {filteredEntries.length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Utensils className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
-                      No food or alcohol entries yet. Start by adding your first meal!
+                      {viewMode === 'today' 
+                        ? "No entries for today yet. Start by adding your first meal!" 
+                        : "No food or alcohol entries yet. Start by adding your first meal!"
+                      }
                     </p>
                   </CardContent>
                 </Card>
-              ) : (
-              combinedEntries.map((entry) => (
+              ) : viewMode === 'today' ? (
+                // Today view - simple list
+                filteredEntries.map((entry) => (
                 entry.type === 'alcohol' ? (
                   // Alcohol Entry
                   <Card key={`alcohol-${entry.id}`} className="overflow-hidden border-amber-200">
@@ -440,8 +497,237 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                     </CardContent>
                   </Card>
                 )
-              ))
-            )}
+                ))
+              ) : (
+                // History view - grouped by date
+                Object.entries(groupedEntries)
+                  .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+                  .map(([date, entries]) => (
+                    <div key={date} className="space-y-3">
+                      {/* Date Header */}
+                      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b pb-2 z-10">
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          {new Date(date).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                          <Badge variant="secondary" className="ml-2">
+                            {entries.length} entries
+                          </Badge>
+                        </h3>
+                      </div>
+                      
+                      {/* Entries for this date */}
+                      <div className="space-y-3 ml-2">
+                        {entries.map((entry) => (
+                          entry.type === 'alcohol' ? (
+                            // Alcohol Entry
+                            <Card key={`alcohol-${entry.id}`} className="overflow-hidden border-amber-200">
+                              <CardContent className="p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
+                                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <Badge className={getMealTypeColor(entry.drink_type)}>
+                                      🍺 {entry.drink_type.charAt(0).toUpperCase() + entry.drink_type.slice(1)}
+                                    </Badge>
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {formatTime(entry.created_at)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="mb-3">
+                                  <h4 className="font-medium mb-2">Alcohol Details:</h4>
+                                  <div className="text-sm space-y-1">
+                                    <div><span className="font-medium">Type:</span> {entry.drink_type}</div>
+                                    <div><span className="font-medium">Alcohol Content:</span> {entry.alcohol_content}%</div>
+                                    <div><span className="font-medium">Quantity:</span> {entry.quantity} serving{entry.quantity !== 1 ? 's' : ''}</div>
+                                    {entry.logged_time && <div><span className="font-medium">Time:</span> {entry.logged_time}</div>}
+                                  </div>
+                                </div>
+
+                                {entry.notes && (
+                                  <div className="mt-3 p-2 bg-muted rounded text-sm break-words">
+                                    <strong>Notes:</strong> {entry.notes}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ) : (
+                            // Food Entry (same as before but without full date display)
+                            <Card key={`food-${entry.id}`} className={`overflow-hidden ${isIncorrectlyClassifiedAlcohol(entry) ? 'border-red-300 bg-red-50/50' : ''}`}>
+                              <CardContent className="p-0">
+                                {isIncorrectlyClassifiedAlcohol(entry) && (
+                                  <div className="bg-red-100 border-b border-red-200 p-2 text-sm">
+                                    <span className="text-red-700 font-medium">⚠️ This alcohol item was incorrectly saved as food.</span>
+                                    <button 
+                                      onClick={() => handleDelete(entry.id)}
+                                      className="ml-2 text-red-600 hover:text-red-800 underline"
+                                    >
+                                      Delete and re-add correctly
+                                    </button>
+                                  </div>
+                                )}
+                                <div className="flex flex-col sm:flex-row">
+                                  {/* Food Photo */}
+                                  <div className="w-full h-48 sm:w-24 sm:h-24 bg-muted flex-shrink-0 flex items-center justify-center">
+                                    {(() => {
+                                      const photoUrl = getBestThumbnailUrl(entry);
+                                      
+                                      return photoUrl ? (
+                                        <img 
+                                          src={photoUrl} 
+                                          alt="Food"
+                                          className="w-full h-full object-cover"
+                                          onError={async (e) => {
+                                            const img = e.currentTarget as HTMLImageElement;
+                                            const storagePath = (entry as any).photo_storage_path || (entry as any).photo_storage_paths?.[0];
+                                            if (storagePath) {
+                                              const { FoodPhotoUploadService } = await import('@/services/foodPhotoUploadService');
+                                              const signed = await FoodPhotoUploadService.getSignedUrl(storagePath, 60 * 60 * 6);
+                                              if (signed) {
+                                                img.src = signed;
+                                                return;
+                                              }
+                                            }
+                                            img.style.display = 'none';
+                                          }}
+                                        />
+                                      ) : (
+                                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                                      );
+                                    })()}
+                                  </div>
+
+                                  {/* Main Content */}
+                                  <div className="flex-1 p-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
+                                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                        <Badge className={getMealTypeColor(entry.meal_type)}>
+                                          {entry.meal_type.charAt(0).toUpperCase() + entry.meal_type.slice(1)}
+                                        </Badge>
+                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                          <div className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            {formatTime(entry.created_at)}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Action Buttons */}
+                                      <div className="flex items-center gap-1 self-end sm:self-auto">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          onClick={() => handleDelete(entry.id)}
+                                          disabled={deletingId === entry.id}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+
+                                    {/* Food Items */}
+                                    <div className="mb-3">
+                                      <h4 className="font-medium mb-2">Food Items:</h4>
+                                      <div className="space-y-2">
+                                        {entry.food_items.map((item, index) => (
+                                          <div key={index} className="text-sm text-muted-foreground">
+                                            <div className="font-medium text-foreground break-words">{item.name}</div>
+                                            <div className="flex flex-wrap gap-2 mt-1">
+                                              {item.quantity && <span className="text-xs bg-muted px-2 py-1 rounded break-words">{item.quantity}</span>}
+                                              <span className="text-xs bg-muted px-2 py-1 rounded whitespace-nowrap">
+                                                {item.calories} cal, {item.protein}g protein
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Nutritional Summary */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-sm">
+                                      <div className="bg-muted rounded p-2 text-center">
+                                        <div className="font-medium">{entry.total_calories}</div>
+                                        <div className="text-xs text-muted-foreground">Calories</div>
+                                      </div>
+                                      <div className="bg-muted rounded p-2 text-center">
+                                        <div className="font-medium">{entry.total_protein}g</div>
+                                        <div className="text-xs text-muted-foreground">Protein</div>
+                                      </div>
+                                      <div className="bg-muted rounded p-2 text-center">
+                                        <div className="font-medium">{entry.total_carbs}g</div>
+                                        <div className="text-xs text-muted-foreground">Carbs</div>
+                                      </div>
+                                      <div className="bg-muted rounded p-2 text-center">
+                                        <div className="font-medium">{entry.total_fat}g</div>
+                                        <div className="text-xs text-muted-foreground">Fat</div>
+                                      </div>
+                                    </div>
+
+                                    {/* Health Grade Analysis */}
+                                    <div className="mb-3">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Award className="h-4 w-4" />
+                                        <span className="font-medium">Health Grade</span>
+                                        <Badge 
+                                          className={`${getGradeBgColor(getDisplayGrade(entry))} ${getGradeColor(getDisplayGrade(entry))} font-bold`}
+                                        >
+                                          {getDisplayGrade(entry)}
+                                        </Badge>
+                                      </div>
+                                      
+                                      <div className="text-sm space-y-2">
+                                        {(() => {
+                                          const gradeDetails = getGradeDescription(entry);
+                                          return (
+                                            <>
+                                              {gradeDetails.pros.length > 0 && (
+                                                <div>
+                                                  <div className="font-medium text-green-700 dark:text-green-400">✓ Strengths:</div>
+                                                  <ul className="text-muted-foreground ml-2">
+                                                    {gradeDetails.pros.map((pro, index) => (
+                                                      <li key={index} className="break-words">• {pro}</li>
+                                                    ))}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                              {gradeDetails.cons.length > 0 && (
+                                                <div>
+                                                  <div className="font-medium text-orange-700 dark:text-orange-400">⚠ Areas for improvement:</div>
+                                                  <ul className="text-muted-foreground ml-2">
+                                                    {gradeDetails.cons.map((con, index) => (
+                                                      <li key={index} className="break-words">• {con}</li>
+                                                    ))}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                            </>
+                                          );
+                                        })()}
+                                      </div>
+                                    </div>
+
+                                    {entry.notes && (
+                                      <div className="mt-3 p-2 bg-muted rounded text-sm break-words">
+                                        <strong>Notes:</strong> {entry.notes}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  ))
+              )}
             </div>
           )}
         </ScrollArea>
