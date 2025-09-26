@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Camera, Upload, Loader2, X, Zap, Star, AlertTriangle,
-  CheckCircle, Info, Sparkles, Shield, Utensils, Settings
+  CheckCircle, Info, Sparkles, Shield, Utensils, Settings,
+  Beaker, Atom, Droplet, Factory, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
@@ -44,6 +45,54 @@ interface ProductAnalysis {
       processing_level: number;
     };
   };
+  detailed_processing: {
+    nova_score: number;
+    classification: string;
+    processing_methods: string[];
+    why_processed: string;
+    industrial_ingredients?: string[];
+  };
+  chemical_analysis: {
+    food_dyes: Array<{
+      name: string;
+      chemical_name?: string;
+      purpose: string;
+      health_concerns: string[];
+      banned_countries?: string[];
+      safety_rating: string;
+    }>;
+    preservatives: Array<{
+      name: string;
+      chemical_formula?: string;
+      purpose: string;
+      health_concerns: string[];
+      safety_rating: string;
+    }>;
+    flavor_enhancers: Array<{
+      name: string;
+      details: string;
+      concern: string;
+      transparency_issue?: boolean;
+    }>;
+    emulsifiers: Array<{
+      name: string;
+      purpose: string;
+      health_concerns: string[];
+      safety_rating: string;
+    }>;
+    artificial_ingredients: string[];
+    total_additives_count: number;
+  };
+  sugar_analysis: {
+    primary_sweetener: string;
+    sweetener_type: string;
+    chemical_structure?: string;
+    health_impact: string;
+    vs_natural_sugar?: string;
+    metabolic_effects: string[];
+    natural_alternatives: string[];
+    glycemic_impact: string;
+  };
   analysis: {
     pros: string[];
     cons: string[];
@@ -55,6 +104,9 @@ interface ProductAnalysis {
     concerning_additives: string[];
     allergens: string[];
     processing_level: string;
+    chemical_load?: string;
+    oxidative_stress_potential?: string;
+    endocrine_disruption_risk?: string;
   };
   ingredients_analysis?: string;
 }
@@ -76,6 +128,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [analysisResult, setAnalysisResult] = useState<ProductAnalysis | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showFoodLogModal, setShowFoodLogModal] = useState(false);
+  const [expandedChemicalSection, setExpandedChemicalSection] = useState<string | null>(null);
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -212,6 +265,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     setAnalysisResult(null);
     setSelectedImage(null);
     setIsAnalyzing(false);
+    setExpandedChemicalSection(null);
   };
 
   const handleOpenFoodLogModal = () => {
@@ -503,6 +557,434 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                   </div>
                 </div>
 
+                {/* Processing Deep Dive */}
+                {analysisResult.detailed_processing && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-gradient-to-br from-orange-500/20 to-red-500/10 border-2 border-orange-500/40 rounded-xl p-6 shadow-xl"
+                  >
+                    <h4 className="font-bold mb-4 flex items-center gap-2 text-lg text-orange-600">
+                      <Factory className="h-5 w-5 animate-pulse" />
+                      🏭 Processing Level Analysis
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {/* NOVA Score */}
+                      <div className="flex items-center justify-between p-4 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                        <div>
+                          <span className="font-bold text-lg text-orange-600">NOVA Score: {analysisResult.detailed_processing.nova_score}/4</span>
+                          <p className="text-sm text-orange-700">{analysisResult.detailed_processing.classification}</p>
+                        </div>
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
+                          analysisResult.detailed_processing.nova_score >= 4 ? 'bg-red-500/80 text-white' :
+                          analysisResult.detailed_processing.nova_score >= 3 ? 'bg-orange-500/80 text-white' :
+                          analysisResult.detailed_processing.nova_score >= 2 ? 'bg-yellow-500/80 text-white' :
+                          'bg-green-500/80 text-white'
+                        }`}>
+                          {analysisResult.detailed_processing.nova_score}
+                        </div>
+                      </div>
+
+                      {/* Processing Methods */}
+                      <div>
+                        <h5 className="font-semibold text-orange-600 mb-2">🔬 Processing Methods Used:</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {analysisResult.detailed_processing.processing_methods.map((method, index) => (
+                            <Badge key={index} className="bg-orange-500/20 text-orange-700 border-orange-500/50">
+                              {method}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Why Processed */}
+                      <div className="p-3 bg-orange-500/5 rounded-lg border-l-4 border-orange-500">
+                        <p className="text-sm text-foreground font-medium">
+                          <span className="text-orange-600 font-bold">Why it's processed: </span>
+                          {analysisResult.detailed_processing.why_processed}
+                        </p>
+                      </div>
+
+                      {/* Industrial Ingredients */}
+                      {analysisResult.detailed_processing.industrial_ingredients && (
+                        <div>
+                          <h5 className="font-semibold text-orange-600 mb-2">🧪 Industrial Ingredients:</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {analysisResult.detailed_processing.industrial_ingredients.map((ingredient, index) => (
+                              <div key={index} className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md border border-red-500/20">
+                                <Atom className="h-4 w-4 text-red-500" />
+                                <span className="text-sm text-foreground">{ingredient}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Sugar Analysis Deep Dive */}
+                {analysisResult.sugar_analysis && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="bg-gradient-to-br from-pink-500/20 to-purple-500/10 border-2 border-pink-500/40 rounded-xl p-6 shadow-xl"
+                  >
+                    <h4 className="font-bold mb-4 flex items-center gap-2 text-lg text-pink-600">
+                      <Droplet className="h-5 w-5 animate-pulse" />
+                      🍯 Sugar Impact Analysis
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {/* Primary Sweetener */}
+                      <div className="p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-pink-600">Primary Sweetener:</span>
+                          <Badge className={`${
+                            analysisResult.sugar_analysis.sweetener_type.includes('artificial') || 
+                            analysisResult.sugar_analysis.sweetener_type.includes('processed') 
+                              ? 'bg-red-500/20 text-red-700 border-red-500/50'
+                              : 'bg-green-500/20 text-green-700 border-green-500/50'
+                          }`}>
+                            {analysisResult.sugar_analysis.sweetener_type}
+                          </Badge>
+                        </div>
+                        <p className="text-lg font-semibold text-pink-700">{analysisResult.sugar_analysis.primary_sweetener}</p>
+                        {analysisResult.sugar_analysis.chemical_structure && (
+                          <p className="text-xs text-muted-foreground mt-1">🧬 {analysisResult.sugar_analysis.chemical_structure}</p>
+                        )}
+                      </div>
+
+                      {/* Health Impact */}
+                      <div className="p-3 bg-red-500/5 rounded-lg border-l-4 border-red-500">
+                        <p className="text-sm text-foreground">
+                          <span className="text-red-600 font-bold">Health Impact: </span>
+                          {analysisResult.sugar_analysis.health_impact}
+                        </p>
+                        {analysisResult.sugar_analysis.vs_natural_sugar && (
+                          <p className="text-sm text-foreground mt-2">
+                            <span className="text-red-600 font-bold">vs Natural Sugar: </span>
+                            {analysisResult.sugar_analysis.vs_natural_sugar}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Metabolic Effects */}
+                      <div>
+                        <h5 className="font-semibold text-pink-600 mb-2">⚠️ Metabolic Effects:</h5>
+                        <div className="grid grid-cols-1 gap-2">
+                          {analysisResult.sugar_analysis.metabolic_effects.map((effect, index) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-red-500/10 rounded-md border border-red-500/20">
+                              <AlertTriangle className="h-4 w-4 text-red-500" />
+                              <span className="text-sm text-foreground">{effect}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Glycemic Impact */}
+                      <div className="p-3 bg-orange-500/10 rounded-lg">
+                        <span className="font-bold text-orange-600">Glycemic Impact: </span>
+                        <span className="text-foreground">{analysisResult.sugar_analysis.glycemic_impact}</span>
+                      </div>
+
+                      {/* Natural Alternatives */}
+                      <div>
+                        <h5 className="font-semibold text-green-600 mb-2">💚 Natural Alternatives:</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {analysisResult.sugar_analysis.natural_alternatives.map((alt, index) => (
+                            <Badge key={index} className="bg-green-500/20 text-green-700 border-green-500/50">
+                              {alt}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Chemical Analysis Deep Dive */}
+                {analysisResult.chemical_analysis && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="bg-gradient-to-br from-purple-500/20 to-blue-500/10 border-2 border-purple-500/40 rounded-xl p-6 shadow-xl"
+                  >
+                    <h4 className="font-bold mb-4 flex items-center gap-2 text-lg text-purple-600">
+                      <Beaker className="h-5 w-5 animate-pulse" />
+                      🧪 Complete Chemical Breakdown ({analysisResult.chemical_analysis.total_additives_count} additives)
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {/* Food Dyes */}
+                      {analysisResult.chemical_analysis.food_dyes.length > 0 && (
+                        <div className="border border-red-500/30 rounded-lg p-4 bg-red-500/5">
+                          <button
+                            onClick={() => setExpandedChemicalSection(expandedChemicalSection === 'dyes' ? null : 'dyes')}
+                            className="flex items-center justify-between w-full text-left"
+                          >
+                            <h5 className="font-semibold text-red-600 flex items-center gap-2">
+                              🎨 Food Dyes ({analysisResult.chemical_analysis.food_dyes.length})
+                            </h5>
+                            {expandedChemicalSection === 'dyes' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                          {expandedChemicalSection === 'dyes' && (
+                            <div className="mt-3 space-y-3">
+                              {analysisResult.chemical_analysis.food_dyes.map((dye, index) => (
+                                <div key={index} className="p-3 bg-red-500/10 rounded-md border border-red-500/20">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-bold text-red-700">{dye.name}</span>
+                                    <Badge className={`${
+                                      dye.safety_rating === 'high_concern' ? 'bg-red-600/80 text-white' :
+                                      dye.safety_rating === 'moderate_concern' ? 'bg-orange-500/80 text-white' :
+                                      'bg-yellow-500/80 text-white'
+                                    }`}>
+                                      {dye.safety_rating.replace('_', ' ')}
+                                    </Badge>
+                                  </div>
+                                  {dye.chemical_name && (
+                                    <p className="text-xs text-muted-foreground mb-1">🧬 {dye.chemical_name}</p>
+                                  )}
+                                  <p className="text-sm text-foreground mb-2">
+                                    <span className="font-medium">Purpose:</span> {dye.purpose}
+                                  </p>
+                                  <div className="space-y-1">
+                                    <span className="font-medium text-red-600">Health Concerns:</span>
+                                    {dye.health_concerns.map((concern, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-sm">
+                                        <AlertTriangle className="h-3 w-3 text-red-500" />
+                                        <span>{concern}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {dye.banned_countries && (
+                                    <p className="text-xs text-red-600 mt-2">
+                                      <span className="font-medium">Restrictions:</span> {dye.banned_countries.join(', ')}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Preservatives */}
+                      {analysisResult.chemical_analysis.preservatives.length > 0 && (
+                        <div className="border border-orange-500/30 rounded-lg p-4 bg-orange-500/5">
+                          <button
+                            onClick={() => setExpandedChemicalSection(expandedChemicalSection === 'preservatives' ? null : 'preservatives')}
+                            className="flex items-center justify-between w-full text-left"
+                          >
+                            <h5 className="font-semibold text-orange-600 flex items-center gap-2">
+                              🛡️ Preservatives ({analysisResult.chemical_analysis.preservatives.length})
+                            </h5>
+                            {expandedChemicalSection === 'preservatives' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                          {expandedChemicalSection === 'preservatives' && (
+                            <div className="mt-3 space-y-3">
+                              {analysisResult.chemical_analysis.preservatives.map((preservative, index) => (
+                                <div key={index} className="p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-bold text-orange-700">{preservative.name}</span>
+                                    <Badge className={`${
+                                      preservative.safety_rating === 'high_concern' ? 'bg-red-600/80 text-white' :
+                                      preservative.safety_rating === 'moderate_concern' ? 'bg-orange-500/80 text-white' :
+                                      'bg-yellow-500/80 text-white'
+                                    }`}>
+                                      {preservative.safety_rating.replace('_', ' ')}
+                                    </Badge>
+                                  </div>
+                                  {preservative.chemical_formula && (
+                                    <p className="text-xs text-muted-foreground mb-1">⚗️ {preservative.chemical_formula}</p>
+                                  )}
+                                  <p className="text-sm text-foreground mb-2">
+                                    <span className="font-medium">Purpose:</span> {preservative.purpose}
+                                  </p>
+                                  <div className="space-y-1">
+                                    <span className="font-medium text-orange-600">Health Concerns:</span>
+                                    {preservative.health_concerns.map((concern, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-sm">
+                                        <AlertTriangle className="h-3 w-3 text-orange-500" />
+                                        <span>{concern}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Flavor Enhancers */}
+                      {analysisResult.chemical_analysis.flavor_enhancers.length > 0 && (
+                        <div className="border border-yellow-500/30 rounded-lg p-4 bg-yellow-500/5">
+                          <button
+                            onClick={() => setExpandedChemicalSection(expandedChemicalSection === 'flavors' ? null : 'flavors')}
+                            className="flex items-center justify-between w-full text-left"
+                          >
+                            <h5 className="font-semibold text-yellow-600 flex items-center gap-2">
+                              👅 Flavor Enhancers ({analysisResult.chemical_analysis.flavor_enhancers.length})
+                            </h5>
+                            {expandedChemicalSection === 'flavors' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                          {expandedChemicalSection === 'flavors' && (
+                            <div className="mt-3 space-y-3">
+                              {analysisResult.chemical_analysis.flavor_enhancers.map((flavor, index) => (
+                                <div key={index} className="p-3 bg-yellow-500/10 rounded-md border border-yellow-500/20">
+                                  <span className="font-bold text-yellow-700">{flavor.name}</span>
+                                  {flavor.transparency_issue && (
+                                    <Badge className="ml-2 bg-red-500/20 text-red-700 border-red-500/50 text-xs">
+                                      ⚠️ Transparency Issue
+                                    </Badge>
+                                  )}
+                                  <p className="text-sm text-foreground mt-1">{flavor.details}</p>
+                                  <p className="text-sm text-yellow-600 mt-2">
+                                    <span className="font-medium">Concern:</span> {flavor.concern}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Emulsifiers */}
+                      {analysisResult.chemical_analysis.emulsifiers.length > 0 && (
+                        <div className="border border-blue-500/30 rounded-lg p-4 bg-blue-500/5">
+                          <button
+                            onClick={() => setExpandedChemicalSection(expandedChemicalSection === 'emulsifiers' ? null : 'emulsifiers')}
+                            className="flex items-center justify-between w-full text-left"
+                          >
+                            <h5 className="font-semibold text-blue-600 flex items-center gap-2">
+                              🌊 Emulsifiers & Stabilizers ({analysisResult.chemical_analysis.emulsifiers.length})
+                            </h5>
+                            {expandedChemicalSection === 'emulsifiers' ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                          {expandedChemicalSection === 'emulsifiers' && (
+                            <div className="mt-3 space-y-3">
+                              {analysisResult.chemical_analysis.emulsifiers.map((emulsifier, index) => (
+                                <div key={index} className="p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-bold text-blue-700">{emulsifier.name}</span>
+                                    <Badge className={`${
+                                      emulsifier.safety_rating === 'high_concern' ? 'bg-red-600/80 text-white' :
+                                      emulsifier.safety_rating === 'moderate_concern' ? 'bg-orange-500/80 text-white' :
+                                      'bg-yellow-500/80 text-white'
+                                    }`}>
+                                      {emulsifier.safety_rating.replace('_', ' ')}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-foreground mb-2">
+                                    <span className="font-medium">Purpose:</span> {emulsifier.purpose}
+                                  </p>
+                                  <div className="space-y-1">
+                                    <span className="font-medium text-blue-600">Health Concerns:</span>
+                                    {emulsifier.health_concerns.map((concern, i) => (
+                                      <div key={i} className="flex items-center gap-2 text-sm">
+                                        <AlertTriangle className="h-3 w-3 text-blue-500" />
+                                        <span>{concern}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Artificial Ingredients Summary */}
+                      {analysisResult.chemical_analysis.artificial_ingredients.length > 0 && (
+                        <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                          <h5 className="font-semibold text-purple-600 mb-2">🧬 All Artificial Ingredients:</h5>
+                          <div className="flex flex-wrap gap-2">
+                            {analysisResult.chemical_analysis.artificial_ingredients.map((ingredient, index) => (
+                              <Badge key={index} className="bg-purple-500/20 text-purple-700 border-purple-500/50 text-xs">
+                                {ingredient}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Enhanced Safety Information */}
+                {(analysisResult.safety.concerning_additives.length > 0 || 
+                  analysisResult.safety.forever_chemicals || 
+                  analysisResult.safety.chemical_load) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="bg-gradient-to-br from-red-600/20 to-purple-600/20 border-2 border-red-500/50 rounded-xl p-6 shadow-xl"
+                  >
+                    <h4 className="font-bold text-red-600 mb-4 flex items-center gap-2 text-lg">
+                      <Shield className="h-5 w-5 animate-pulse" />
+                      🚨 Advanced Safety Analysis
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {analysisResult.safety.chemical_load && (
+                        <div className="p-3 bg-red-500/10 rounded-lg border-l-4 border-red-500">
+                          <span className="font-bold text-red-600">Chemical Load: </span>
+                          <span className="text-foreground">{analysisResult.safety.chemical_load}</span>
+                        </div>
+                      )}
+                      
+                      {analysisResult.safety.oxidative_stress_potential && (
+                        <div className="p-3 bg-orange-500/10 rounded-lg border-l-4 border-orange-500">
+                          <span className="font-bold text-orange-600">Oxidative Stress Potential: </span>
+                          <span className="text-foreground">{analysisResult.safety.oxidative_stress_potential}</span>
+                        </div>
+                      )}
+                      
+                      {analysisResult.safety.endocrine_disruption_risk && (
+                        <div className="p-3 bg-purple-500/10 rounded-lg border-l-4 border-purple-500">
+                          <span className="font-bold text-purple-600">Endocrine Disruption Risk: </span>
+                          <span className="text-foreground">{analysisResult.safety.endocrine_disruption_risk}</span>
+                        </div>
+                      )}
+                      
+                      {analysisResult.safety.forever_chemicals && (
+                        <div className="p-3 bg-red-600/20 rounded-lg border border-red-600/50">
+                          <div className="flex items-center gap-2 text-red-700 font-bold">
+                            <AlertTriangle className="h-5 w-5" />
+                            ⚠️ May contain forever chemicals (PFAS)
+                          </div>
+                        </div>
+                      )}
+                      
+                      {analysisResult.safety.concerning_additives.length > 0 && (
+                        <div>
+                          <span className="font-bold text-red-600">Concerning additives: </span>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {analysisResult.safety.concerning_additives.map((additive, index) => (
+                              <Badge key={index} className="bg-red-500/20 text-red-700 border-red-500/50">
+                                {additive}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-red-600">Processing level: </span>
+                        <Badge className="bg-red-200 text-red-800 border-red-300 hover:bg-red-100">
+                          {analysisResult.safety.processing_level}
+                        </Badge>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Health Analysis */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Pros */}
@@ -564,35 +1046,8 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                   )}
                 </div>
 
-                {/* Safety & Alternatives */}
-                <div className="space-y-4">
-                  {/* Safety Info */}
-                  {(analysisResult.safety.concerning_additives.length > 0 || analysisResult.safety.forever_chemicals) && (
-                     <div className="bg-gradient-to-br from-purple-600 to-purple-800 border-2 border-purple-500/50 rounded-xl p-4 shadow-lg shadow-purple-500/20">
-                       <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Safety Information
-                      </h4>
-                       <div className="text-sm space-y-2 text-white">
-                         {analysisResult.safety.forever_chemicals && (
-                           <div className="text-yellow-300 font-medium">⚠️ May contain forever chemicals (PFAS)</div>
-                         )}
-                         {analysisResult.safety.concerning_additives.length > 0 && (
-                           <div>
-                             <span className="font-medium">Concerning additives: </span>
-                             {analysisResult.safety.concerning_additives.join(', ')}
-                           </div>
-                         )}
-                         <div>
-                           <span className="font-medium">Processing level: </span>
-                           <Badge className="bg-purple-200 text-purple-800 border-purple-300 hover:bg-purple-100">{analysisResult.safety.processing_level}</Badge>
-                         </div>
-                       </div>
-                    </div>
-                  )}
-
-                  {/* Alternatives */}
-                  {analysisResult.analysis.alternatives.length > 0 && (
+                {/* Alternatives */}
+                {analysisResult.analysis.alternatives.length > 0 && (
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -624,7 +1079,6 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                       </div>
                     </motion.div>
                   )}
-                </div>
 
                 {/* Action Buttons */}
                 <motion.div 

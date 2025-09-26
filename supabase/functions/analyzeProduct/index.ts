@@ -74,18 +74,22 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-5-mini-2025-08-07',
         messages: [
           {
             role: 'system',
-            content: `You are a professional nutritionist and food safety expert. Analyze the product in the image and provide comprehensive health information.
+            content: `You are a professional food scientist, nutritionist, and chemical toxicologist with expertise in food processing and chemical additives. Analyze the product in the image and provide extremely detailed health information including every single chemical, processing method, and ingredient breakdown.
 
 CRITICAL REQUIREMENTS:
 - Identify the exact product name, brand, and size from packaging
 - Analyze nutritional content per serving (not per 100g unless specified)
 - Calculate accurate health grade based on nutritional quality, processing level, ingredient quality, and safety
-- Identify any concerning additives, preservatives, or chemicals
-- Provide specific health recommendations and alternatives
+- Identify EVERY SINGLE additive, preservative, emulsifier, stabilizer, flavor enhancer, and chemical with specific health impacts
+- Analyze processing level using NOVA classification (1-4 scale)
+- Identify specific sugar types (HFCS vs cane sugar vs beet sugar vs artificial sweeteners)
+- List all food dyes with their chemical names and health concerns
+- Provide detailed chemical analysis with molecular-level understanding
+- Include banned/restricted status in different countries
 
 IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
 {
@@ -117,6 +121,62 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
       "processing_level": 25
     }
   },
+  "detailed_processing": {
+    "nova_score": 4,
+    "classification": "Ultra-processed",
+    "processing_methods": ["extrusion", "hydrogenation", "chemical modification", "high heat treatment"],
+    "why_processed": "Contains multiple industrial ingredients not found in home kitchens including artificial flavors, colors, and preservatives",
+    "industrial_ingredients": ["high fructose corn syrup", "natural flavors", "caramel color", "phosphoric acid"]
+  },
+  "chemical_analysis": {
+    "food_dyes": [
+      {
+        "name": "Red 40 (Allura Red AC)",
+        "chemical_name": "Disodium 6-hydroxy-5-[(2-methoxy-5-methyl-4-sulfophenyl)azo]-2-naphthalenesulfonate",
+        "purpose": "artificial red coloring",
+        "health_concerns": ["hyperactivity in children", "potential carcinogen", "allergic reactions"],
+        "banned_countries": ["European Union requires warning label"],
+        "safety_rating": "moderate_concern"
+      }
+    ],
+    "preservatives": [
+      {
+        "name": "Sodium Benzoate",
+        "chemical_formula": "C7H5NaO2",
+        "purpose": "prevents bacterial growth",
+        "health_concerns": ["forms benzene when combined with vitamin C", "potential DNA damage"],
+        "safety_rating": "moderate_concern"
+      }
+    ],
+    "flavor_enhancers": [
+      {
+        "name": "Natural Flavors",
+        "details": "Chemical compounds derived from natural sources but heavily processed",
+        "concern": "undefined chemical composition, potential allergens",
+        "transparency_issue": true
+      }
+    ],
+    "emulsifiers": [
+      {
+        "name": "Polysorbate 80",
+        "purpose": "prevents separation",
+        "health_concerns": ["gut microbiome disruption", "inflammatory bowel disease risk"],
+        "safety_rating": "high_concern"
+      }
+    ],
+    "artificial_ingredients": ["list all synthetic chemicals not found in nature"],
+    "total_additives_count": 12
+  },
+  "sugar_analysis": {
+    "primary_sweetener": "High Fructose Corn Syrup",
+    "sweetener_type": "processed_artificial",
+    "chemical_structure": "mixture of glucose and fructose in liquid form",
+    "health_impact": "rapid blood sugar spike, bypasses satiety signals, linked to metabolic syndrome",
+    "vs_natural_sugar": "more harmful than cane sugar due to processing and fructose ratio",
+    "metabolic_effects": ["insulin resistance", "fatty liver disease risk", "increased appetite"],
+    "natural_alternatives": ["raw honey", "pure maple syrup", "dates", "stevia leaf"],
+    "glycemic_impact": "high - causes rapid glucose spike"
+  },
   "analysis": {
     "pros": ["List positive aspects"],
     "cons": ["List negative aspects"], 
@@ -127,9 +187,12 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
     "forever_chemicals": false,
     "concerning_additives": ["List any concerning additives"],
     "allergens": ["List allergens"],
-    "processing_level": "ultra-processed"
+    "processing_level": "ultra-processed",
+    "chemical_load": "high",
+    "oxidative_stress_potential": "moderate",
+    "endocrine_disruption_risk": "low"
   },
-  "ingredients_analysis": "Brief analysis of ingredient quality"
+  "ingredients_analysis": "Detailed analysis of every ingredient including chemical structure and health impact"
 }`
           },
           {
@@ -148,7 +211,7 @@ IMPORTANT: Return ONLY valid JSON in this exact format, no other text:
             ]
           }
         ],
-        max_tokens: 2000,
+        max_completion_tokens: 2500,
         temperature: 0.3
       }),
     });
