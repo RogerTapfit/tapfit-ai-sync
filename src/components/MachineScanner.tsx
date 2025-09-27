@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, X, CheckCircle } from 'lucide-react';
+import { Camera, X, CheckCircle, Upload } from 'lucide-react';
 import { useMachineScan } from '@/hooks/useMachineScan';
 import { RecognitionResult } from '@/types/machine';
 
@@ -24,12 +24,17 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     bestMatch,
     alternatives,
     isHighConfidence,
+    showUpload,
     startCamera,
     stopCamera,
     reset,
+    processUploadedImage,
+    toggleUploadMode,
     videoRef,
     canvasRef
   } = useMachineScan({ autoStop: autoNavigate });
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (autoNavigate && isHighConfidence && bestMatch) {
@@ -60,6 +65,17 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     onClose();
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      processUploadedImage(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Header */}
@@ -75,15 +91,57 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
         {!isScanning && !error && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Card className="p-6 text-center max-w-sm mx-4">
-              <Camera className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <Camera 
+                className="h-12 w-12 mx-auto mb-4 text-muted-foreground cursor-pointer" 
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  const timer = setTimeout(() => {
+                    toggleUploadMode();
+                  }, 1000);
+                  
+                  const handleTouchEnd = () => {
+                    clearTimeout(timer);
+                    document.removeEventListener('touchend', handleTouchEnd);
+                  };
+                  
+                  document.addEventListener('touchend', handleTouchEnd);
+                }}
+                onDoubleClick={() => {
+                  toggleUploadMode();
+                }}
+              />
               <h3 className="text-lg font-medium mb-2">Point at Machine</h3>
               <p className="text-muted-foreground mb-4">
                 Aim your camera at the front of the gym machine to identify it automatically.
               </p>
-              <Button onClick={handleStart} className="w-full">
+              <Button onClick={handleStart} className="w-full mb-4">
                 <Camera className="h-4 w-4 mr-2" />
                 Start Scanning
               </Button>
+              
+              {/* Hidden Upload Option */}
+              {showUpload && (
+                <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+                  <p className="text-sm text-muted-foreground mb-2">Test Mode</p>
+                  <Button
+                    onClick={handleUploadClick}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Test Image
+                  </Button>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
             </Card>
           </div>
         )}
