@@ -16,6 +16,7 @@ import WorkoutSummary from "./pages/WorkoutSummary";
 import WorkoutPlans from "./pages/WorkoutPlans";
 import WorkoutPlan from "./pages/WorkoutPlan";
 import MachineAccess from "./pages/MachineAccess";
+import MachineWorkout from "./pages/MachineWorkout";
 import WorkoutHub from "./pages/WorkoutHub";
 import BodyScan from "./pages/BodyScan";
 import BodyScanLibrary from "./pages/BodyScanLibrary";
@@ -23,6 +24,7 @@ import BodyScanDetail from "./pages/BodyScanDetail";
 import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
 import AvatarSelection from "./pages/AvatarSelection";
 import FoodScanner from "./pages/FoodScanner";
+import ScanMachine from "./pages/ScanMachine";
 import PuckTest from "./pages/PuckTest";
 import { AuthGuard } from "./components/AuthGuard";
 
@@ -125,6 +127,11 @@ const App = () => {
                 <MachineAccess />
               </AuthGuard>
             } />
+            <Route path="/machine-workout/:workoutId" element={
+              <AuthGuard fallback={<Auth />}>
+                <MachineWorkout />
+              </AuthGuard>
+            } />
             <Route path="/workouts" element={
               <AuthGuard fallback={<Auth />}>
                 <WorkoutHub />
@@ -149,6 +156,11 @@ const App = () => {
             <Route path="/food-scanner" element={
               <AuthGuard fallback={<Auth />}>
                 <FoodScanner />
+              </AuthGuard>
+            } />
+            <Route path="/scan-machine" element={
+              <AuthGuard fallback={<Auth />}>
+                <ScanMachine />
               </AuthGuard>
             } />
             <Route path="/puck-test" element={

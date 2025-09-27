@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 
@@ -165,6 +165,12 @@ const WorkoutList = () => {
       : <Badge variant="outline" className="border-yellow-500 text-yellow-500 bg-transparent hover:shadow-[0_0_10px_rgba(234,179,8,0.5)] transition-shadow duration-300">Pending</Badge>;
   };
 
+  const handleScanMachine = async () => {
+    const { audioManager } = await import('@/utils/audioUtils');
+    await audioManager.playButtonClick();
+    navigate('/scan-machine');
+  };
+
   const handleFinishEarly = async () => {
     // Calculate completed exercises for early finish
     const completedExercises = todaysWorkouts.filter(w => w.completed);
@@ -245,7 +251,17 @@ const WorkoutList = () => {
         </div>
       </div>
 
-      {/* Progress Overview */}
+      {/* Scan Machine Button */}
+      <div className="space-y-4">
+        <Button 
+          onClick={handleScanMachine}
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg transition-all duration-300 hover:shadow-xl"
+          size="lg"
+        >
+          <Camera className="h-5 w-5 mr-2" />
+          Scan Machine
+        </Button>
+      </div>
       <Card className="glow-card p-6 border-l-4 border-l-primary/50">
         <div className="flex items-center justify-between mb-4">
           <div>
