@@ -24,12 +24,12 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     bestMatch,
     alternatives,
     isHighConfidence,
-    showUpload,
+    
     startCamera,
     stopCamera,
     reset,
     processUploadedImage,
-    toggleUploadMode,
+    
     videoRef,
     canvasRef
   } = useMachineScan({ autoStop: autoNavigate });
@@ -93,22 +93,7 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
             <Card className="p-6 text-center max-w-sm mx-4">
               <Camera 
                 className="h-12 w-12 mx-auto mb-4 text-muted-foreground cursor-pointer" 
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  const timer = setTimeout(() => {
-                    toggleUploadMode();
-                  }, 1000);
-                  
-                  const handleTouchEnd = () => {
-                    clearTimeout(timer);
-                    document.removeEventListener('touchend', handleTouchEnd);
-                  };
-                  
-                  document.addEventListener('touchend', handleTouchEnd);
-                }}
-                onDoubleClick={() => {
-                  toggleUploadMode();
-                }}
+                onClick={handleUploadClick}
               />
               <h3 className="text-lg font-medium mb-2">Point at Machine</h3>
               <p className="text-muted-foreground mb-4">
@@ -118,22 +103,6 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                 <Camera className="h-4 w-4 mr-2" />
                 Start Scanning
               </Button>
-              
-              {/* Hidden Upload Option */}
-              {showUpload && (
-                <div className="mt-4 p-4 border rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground mb-2">Test Mode</p>
-                  <Button
-                    onClick={handleUploadClick}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Test Image
-                  </Button>
-                </div>
-              )}
 
               <input
                 ref={fileInputRef}

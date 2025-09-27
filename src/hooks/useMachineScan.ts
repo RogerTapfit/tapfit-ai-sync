@@ -13,7 +13,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const [results, setResults] = useState<RecognitionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
+  
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -136,7 +136,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
           
           // Auto-stop if high confidence match found
           if (autoStop && recognitionResults[0]?.confidence >= confidenceThreshold) {
-            setShowUpload(false);
+            // Auto-stop after successful recognition
           }
         } catch (err) {
           console.error('Image processing error:', err);
@@ -168,14 +168,9 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     setResults([]);
     setError(null);
     setIsProcessing(false);
-    setShowUpload(false);
+    // Auto-stop after successful recognition
   }, []);
 
-  const toggleUploadMode = useCallback(() => {
-    setShowUpload(prev => !prev);
-    setError(null);
-    setResults([]);
-  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -197,14 +192,14 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     bestMatch,
     alternatives,
     isHighConfidence,
-    showUpload,
+    
 
     // Actions
     startCamera,
     stopCamera,
     reset,
     processUploadedImage,
-    toggleUploadMode,
+    
 
     // Refs for components
     videoRef,
