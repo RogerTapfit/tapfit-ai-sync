@@ -104,6 +104,76 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                 Start Scanning
               </Button>
 
+              {/* Processing state for uploaded images */}
+              {isProcessing && (
+                <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-primary">Analyzing machine...</p>
+                </div>
+              )}
+
+              {/* Results for uploaded images */}
+              {bestMatch && isHighConfidence && (
+                <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={bestMatch.imageUrl} 
+                      alt={bestMatch.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{bestMatch.name}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {Math.round(bestMatch.confidence * 100)}% confidence
+                      </p>
+                      {autoNavigate && (
+                        <p className="text-xs text-primary mt-1">
+                          Navigating automatically...
+                        </p>
+                      )}
+                    </div>
+                    {!autoNavigate && (
+                      <Button
+                        onClick={() => handleMachineSelect(bestMatch)}
+                        size="sm"
+                      >
+                        Select
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Alternative results for uploaded images */}
+              {alternatives.length > 0 && !isHighConfidence && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-3">Select Machine:</h4>
+                  <div className="space-y-2">
+                    {alternatives.map((result) => (
+                      <Button
+                        key={result.machineId}
+                        onClick={() => handleMachineSelect(result)}
+                        variant="outline"
+                        className="w-full justify-start h-auto p-3"
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <img 
+                            src={result.imageUrl} 
+                            alt={result.name}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                          <div className="flex-1 text-left">
+                            <div className="font-medium text-sm">{result.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {Math.round(result.confidence * 100)}% match
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <input
                 ref={fileInputRef}
                 type="file"
