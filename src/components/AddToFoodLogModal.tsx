@@ -309,13 +309,50 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         console.log('🍺 Detected Type:', detectedAlcoholType);
         console.log('🍺 ABV:', estimatedABV + '%', productAnalysis.alcohol_analysis?.alcohol_content_percentage ? '(from machine vision)' : '(estimated)');
         
+        // Handle photo upload for alcohol entries
+        setUploadStatus('uploading');
+        let photoData = {};
+        
+        if (selectedImage) {
+          console.log('Uploading photo for alcohol entry...');
+          try {
+            const uploadResult = await FoodPhotoUploadService.uploadFoodPhoto(
+              selectedImage,
+              'alcohol',
+              `${productAnalysis.product.name}_${Date.now()}`
+            );
+            
+            console.log('Alcohol photo upload result:', uploadResult);
+            
+            if (uploadResult.success && uploadResult.photoUrl) {
+              photoData = {
+                photo_url: uploadResult.photoUrl,
+                photo_storage_path: uploadResult.storagePath,
+                thumbnail_url: uploadResult.thumbnailUrl,
+              };
+              
+              console.log('Alcohol photo data prepared:', photoData);
+              toast.success('Photo uploaded successfully!');
+            } else {
+              console.error('Alcohol photo upload failed:', uploadResult);
+              toast.error('Failed to upload photo - continuing without photo');
+            }
+          } catch (photoError) {
+            console.error('Alcohol photo upload error:', photoError);
+            toast.error('Photo upload failed - continuing without photo');
+          }
+        }
+
+        setUploadStatus('saving');
+        
         const alcoholEntry: Omit<AlcoholEntry, 'id' | 'created_at'> = {
           drink_type: alcoholType || detectedAlcoholType,
           alcohol_content: estimatedABV,
           quantity: portionSize,
           logged_date: getCurrentLocalDate(),
           logged_time: new Date().toTimeString().split(' ')[0],
-          notes: notes || undefined
+          notes: notes || undefined,
+          ...photoData
         };
 
         console.log('🍺 Alcohol entry to save:', alcoholEntry);

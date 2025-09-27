@@ -325,6 +325,21 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                         </div>
                       </div>
 
+                      {/* Display alcohol entry photo */}
+                      {getBestThumbnailUrl(entry) && (
+                        <div className="mb-3">
+                          <img 
+                            src={getBestThumbnailUrl(entry)} 
+                            alt={`${entry.drink_type} photo`}
+                            className="w-20 h-20 object-cover rounded-lg border shadow-sm"
+                            onError={(e) => {
+                              console.warn('Failed to load alcohol photo:', getBestThumbnailUrl(entry));
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+
                       {entry.notes && (
                         <div className="mt-3 p-2 bg-muted rounded text-sm break-words">
                           <strong>Notes:</strong> {entry.notes}
@@ -572,6 +587,21 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                                     {entry.logged_time && <div><span className="font-medium">Time:</span> {entry.logged_time}</div>}
                                   </div>
                                 </div>
+
+                                {/* Display alcohol entry photo */}
+                                {getBestThumbnailUrl(entry) && (
+                                  <div className="mb-3">
+                                    <img 
+                                      src={getBestThumbnailUrl(entry)} 
+                                      alt={`${entry.drink_type} photo`}
+                                      className="w-20 h-20 object-cover rounded-lg border shadow-sm"
+                                      onError={(e) => {
+                                        console.warn('Failed to load alcohol photo:', getBestThumbnailUrl(entry));
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                )}
 
                                 {entry.notes && (
                                   <div className="mt-3 p-2 bg-muted rounded text-sm break-words">

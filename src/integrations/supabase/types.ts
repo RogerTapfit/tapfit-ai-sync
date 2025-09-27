@@ -65,7 +65,10 @@ export type Database = {
           logged_date: string
           logged_time: string | null
           notes: string | null
+          photo_storage_path: string | null
+          photo_url: string | null
           quantity: number
+          thumbnail_url: string | null
           updated_at: string
           user_id: string
         }
@@ -77,7 +80,10 @@ export type Database = {
           logged_date?: string
           logged_time?: string | null
           notes?: string | null
+          photo_storage_path?: string | null
+          photo_url?: string | null
           quantity?: number
+          thumbnail_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -89,7 +95,10 @@ export type Database = {
           logged_date?: string
           logged_time?: string | null
           notes?: string | null
+          photo_storage_path?: string | null
+          photo_url?: string | null
           quantity?: number
+          thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -76,6 +76,9 @@ export interface AlcoholEntry {
   logged_time?: string;
   notes?: string;
   created_at: string;
+  photo_url?: string;
+  thumbnail_url?: string;
+  photo_storage_path?: string;
 }
 
 // Type transformation functions
@@ -140,7 +143,10 @@ const transformDatabaseToAlcoholEntry = (data: any): AlcoholEntry => ({
   logged_date: data.logged_date,
   logged_time: data.logged_time,
   notes: data.notes,
-  created_at: data.created_at
+  created_at: data.created_at,
+  photo_url: data.photo_url,
+  thumbnail_url: data.thumbnail_url,
+  photo_storage_path: data.photo_storage_path
 });
 
 export const useNutrition = () => {
