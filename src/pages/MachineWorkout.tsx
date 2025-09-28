@@ -35,7 +35,7 @@ export default function MachineWorkout() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { logExercise, currentWorkoutLog } = useWorkoutLogger();
+  const { logExercise, currentWorkoutLog, startWorkout } = useWorkoutLogger();
   
   const machine = workoutId ? MachineRegistryService.getMachineByWorkoutId(workoutId) : null;
   
@@ -66,6 +66,22 @@ export default function MachineWorkout() {
       initializeSets();
     }
   }, [machine, recommendation, recommendationLoading]);
+
+  // Ensure we have an active workout session
+  useEffect(() => {
+    const ensureWorkoutSession = async () => {
+      if (machine && !currentWorkoutLog) {
+        console.log('No active workout session, starting one for machine workout');
+        await startWorkout(
+          `${machine.muscleGroup} Workout`,
+          machine.muscleGroup,
+          8 // Default total exercises for a muscle group workout
+        );
+      }
+    };
+
+    ensureWorkoutSession();
+  }, [machine, currentWorkoutLog, startWorkout]);
 
   // Rest timer effect
   useEffect(() => {

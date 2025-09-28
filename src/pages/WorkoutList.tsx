@@ -63,9 +63,27 @@ const WorkoutList = () => {
 
     console.log("Exercise logs from DB:", exerciseLogs);
     
+    // Helper function to normalize strings for matching
+    const normalizeString = (str: string): string => {
+      return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    };
+
     setTodaysWorkouts(workouts => {
       const updatedWorkouts = workouts.map(workout => {
-        const exerciseLog = exerciseLogs?.find(log => log.exercise_name === workout.name);
+        // Try exact match first, then normalized match
+        let exerciseLog = exerciseLogs?.find(log => log.exercise_name === workout.name);
+        
+        if (!exerciseLog) {
+          // Try normalized matching
+          const normalizedWorkoutName = normalizeString(workout.name);
+          exerciseLog = exerciseLogs?.find(log => {
+            const normalizedLogName = normalizeString(log.exercise_name);
+            return normalizedLogName === normalizedWorkoutName ||
+                   normalizedLogName.includes(normalizedWorkoutName) ||
+                   normalizedWorkoutName.includes(normalizedLogName);
+          });
+        }
+        
         const isCompleted = !!exerciseLog;
         
         return {
@@ -100,6 +118,55 @@ const WorkoutList = () => {
     
     return () => {
       mounted = false;
+    };
+  }, [loadCompletedExercises, refreshProgress]);
+
+  // Refresh when returning from workout detail
+  useEffect(() => {
+    if (location.state?.fromWorkoutDetail) {
+      console.log('Returned from workout detail, refreshing data...');
+      loadCompletedExercises();
+      refreshProgress();
+      // Clear the flag
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, loadCompletedExercises, refreshProgress, navigate]);
+
+  // Set up realtime subscription for exercise logs
+  useEffect(() => {
+    let channel: any = null;
+    
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      console.log('Setting up realtime subscription for exercise_logs');
+      channel = supabase
+        .channel('exercise_logs_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'exercise_logs',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('New exercise log detected via realtime:', payload);
+            loadCompletedExercises();
+            refreshProgress();
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtimeSubscription();
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [loadCompletedExercises, refreshProgress]);
 
