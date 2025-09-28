@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RecognitionResult } from '@/types/machine';
 import { MachineRecognitionService } from '@/services/machineRecognitionService';
+import { processImageFile } from '@/utils/heicConverter';
 
 interface UseMachineScanOptions {
   autoStop?: boolean;
@@ -140,6 +141,9 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     setIsProcessing(true);
     
     try {
+      // Convert HEIC files to JPG if needed
+      const processedFile = await processImageFile(file);
+      console.debug('File processed for HEIC conversion:', processedFile.type);
       let canvas = canvasRef.current;
       let context: CanvasRenderingContext2D | null = null;
       
@@ -196,7 +200,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       reader.onload = (e) => {
         img.src = e.target?.result as string;
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(processedFile);
     } catch (err) {
       console.error('Upload processing error:', err);
       setError('Upload failed');
