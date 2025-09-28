@@ -21,8 +21,8 @@ export const AIPhotoScanner: React.FC<AIPhotoScannerProps> = ({ onAiFoodItemsFou
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
-        const base64Data = base64.split(',')[1];
-        resolve(base64Data);
+        // Return the full data URL for proper handling
+        resolve(base64);
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
@@ -34,20 +34,20 @@ export const AIPhotoScanner: React.FC<AIPhotoScannerProps> = ({ onAiFoodItemsFou
     try {
       const base64 = await convertToBase64(file);
       
-      const { data, error } = await supabase.functions.invoke('ai-food-photo-analyzer', {
+      const { data, error } = await supabase.functions.invoke('analyzeFood', {
         body: { 
-          image: base64,
+          imageBase64: base64,
           mealType: 'snack' // default meal type for quick scan
         }
       });
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        onAiFoodItemsFound?.(data);
-        toast.success(`Found ${data.length} food item${data.length > 1 ? 's' : ''}!`);
+      if (data?.food_items?.length > 0) {
+        onAiFoodItemsFound?.(data.food_items);
+        toast.success(`Found ${data.food_items.length} food item${data.food_items.length > 1 ? 's' : ''}!`);
       } else {
-        toast.error('No food items detected in the photo');
+        toast.error('No food items detected. Please try taking a clearer photo with better lighting.');
       }
     } catch (error) {
       console.error('Error analyzing photo:', error);

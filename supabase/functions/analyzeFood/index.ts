@@ -51,33 +51,77 @@ serve(async (req) => {
       _user_agent: userAgent
     });
 
-    // Handle multiple photos with security validation
+    // Normalize and handle multiple photos with security validation
     let photos = [];
+    let skippedPhotos = 0;
+    
     try {
       // Try to parse as multiple photos JSON
-      photos = JSON.parse(imageBase64);
+      const parsedPhotos = JSON.parse(imageBase64);
       // Enhanced security: Validate photo array
-      if (!Array.isArray(photos) || photos.length > 10) { // Max 10 photos for security
+      if (!Array.isArray(parsedPhotos) || parsedPhotos.length > 10) { // Max 10 photos for security
         throw new Error('Invalid photo array or too many photos');
       }
-      // Validate each photo
-      photos = photos.slice(0, 5).filter(photo => 
-        photo && typeof photo.base64 === 'string' && photo.base64.startsWith('data:image/')
-      );
+      // Normalize and validate each photo
+      photos = parsedPhotos.slice(0, 5).map(photo => {
+        if (!photo || typeof photo.base64 !== 'string') {
+          skippedPhotos++;
+          return null;
+        }
+        
+        // Extract base64 data and mime type
+        let base64Data = photo.base64;
+        let mimeType = 'image/jpeg';
+        
+        if (base64Data.startsWith('data:')) {
+          const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            mimeType = matches[1];
+            base64Data = matches[2];
+          }
+        }
+        
+        return {
+          base64: base64Data,
+          type: photo.type || 'main_dish',
+          mimeType
+        };
+      }).filter(Boolean);
     } catch {
-      // Single photo fallback with validation
-      if (typeof imageBase64 === 'string' && imageBase64.startsWith('data:image/')) {
-        photos = [{ base64: imageBase64, type: 'main_dish' }];
+      // Single photo fallback with normalization
+      if (typeof imageBase64 === 'string') {
+        let base64Data = imageBase64;
+        let mimeType = 'image/jpeg';
+        
+        if (base64Data.startsWith('data:')) {
+          const matches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            mimeType = matches[1];
+            base64Data = matches[2];
+          }
+        }
+        
+        photos = [{ base64: base64Data, type: 'main_dish', mimeType }];
       } else {
         throw new Error('Invalid image data format');
       }
     }
+    
+    console.log(`Processed ${photos.length} photos, skipped ${skippedPhotos} invalid photos`);
 
     // Enhanced security: Check total data size
-    const totalDataSize = photos.reduce((size, photo) => size + photo.base64.length, 0);
+    const totalDataSize = photos.reduce((size, photo) => size + (photo?.base64?.length || 0), 0);
     if (totalDataSize > 50 * 1024 * 1024) { // 50MB total limit
       console.error('Total image data too large:', totalDataSize);
       return new Response(JSON.stringify({ error: 'Images too large (max 50MB total)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (photos.length === 0) {
+      console.error('No valid photos to analyze');
+      return new Response(JSON.stringify({ error: 'No valid photos provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -168,7 +212,7 @@ Enhanced Analysis Guidelines:
               ...photos.map((photo: any) => ({
                 type: 'image_url', 
                 image_url: { 
-                  url: `data:image/jpeg;base64,${photo.base64}`,
+                  url: `data:${photo.mimeType || 'image/jpeg'};base64,${photo.base64}`,
                   detail: 'high'
                 }
               }))

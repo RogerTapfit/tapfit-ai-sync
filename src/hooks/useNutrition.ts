@@ -460,8 +460,31 @@ export const useNutrition = () => {
   const analyzeFoodImage = async (imageBase64: string, mealType: string) => {
     setLoading(true);
     try {
+      // Normalize image payload to ensure proper data URL format
+      let normalizedPayload = imageBase64;
+      
+      try {
+        // If it's a JSON array, normalize each photo
+        const photos = JSON.parse(imageBase64);
+        if (Array.isArray(photos)) {
+          normalizedPayload = JSON.stringify(
+            photos.map(photo => ({
+              ...photo,
+              base64: photo.base64.startsWith('data:') 
+                ? photo.base64 
+                : `data:image/jpeg;base64,${photo.base64}`
+            }))
+          );
+        }
+      } catch {
+        // Single base64 string - add data URL prefix if missing
+        if (typeof imageBase64 === 'string' && !imageBase64.startsWith('data:')) {
+          normalizedPayload = `data:image/jpeg;base64,${imageBase64}`;
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('analyzeFood', {
-        body: { imageBase64, mealType }
+        body: { imageBase64: normalizedPayload, mealType }
       });
 
       if (error) throw error;

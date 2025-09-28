@@ -174,8 +174,8 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
-        const base64Data = base64.split(',')[1];
-        resolve(base64Data);
+        // Return the full data URL for proper handling
+        resolve(base64);
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
@@ -204,6 +204,12 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         JSON.stringify(photoData), 
         mealType
       );
+      
+      // Check if no food items were detected
+      if (!result.food_items || result.food_items.length === 0) {
+        toast.error('No food items detected. Please try taking a clearer photo with better lighting.');
+        return;
+      }
       
       setAnalysisResult(result);
       setEditingItems(result.food_items || []);
