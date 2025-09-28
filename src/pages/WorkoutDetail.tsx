@@ -61,6 +61,11 @@ const WorkoutDetail = () => {
   const [autoFlowActive, setAutoFlowActive] = useState(false);
   const [setIndexAuto, setSetIndexAuto] = useState(1); // 1..sets.length
   const [reps, setReps] = useState(0); // 0..10
+  const [isStartingWorkout, setIsStartingWorkout] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({
+    modeChanges: [] as { mode: Mode; timestamp: number; source: string }[],
+    buttonClicks: 0
+  });
 
   // Smart Puck BLE
   const [puckDevice, setPuckDevice] = useState<ConnectedDevice | null>(null);
@@ -406,23 +411,23 @@ const WorkoutDetail = () => {
         await audioManager.playRestComplete();
       });
 
-      if (autoFlowActive) {
-        if (setIndexAuto < sets.length) {
-          // Advance to next set
-          setMode('inset');
-          setSetIndexAuto(prev => prev + 1);
-          setReps(0);
+        if (autoFlowActive) {
+          if (setIndexAuto < sets.length) {
+            // Advance to next set
+            setModeWithLogging('inset', 'auto_next_set');
+            setSetIndexAuto(prev => prev + 1);
+            setReps(0);
+          } else {
+            // Finalize workout after last rest
+            (async () => {
+              const { audioManager } = await import('@/utils/audioUtils');
+              await audioManager.playWorkoutComplete();
+              setModeWithLogging('done', 'auto_workout_complete');
+              setAutoFlowActive(false);
+              await completeWorkout();
+            })();
+          }
         } else {
-          // Finalize workout after last rest
-          (async () => {
-            const { audioManager } = await import('@/utils/audioUtils');
-            await audioManager.playWorkoutComplete();
-            setMode('done');
-            setAutoFlowActive(false);
-            await completeWorkout();
-          })();
-        }
-      } else {
         toast.success("Rest time complete! Ready for next set");
       }
     }
@@ -543,26 +548,92 @@ const WorkoutDetail = () => {
     }
   };
 
-  const startWorkout = async () => {
-    setAutoFlowActive(true);
-    setMode('inset');
-    setSetIndexAuto(1);
-    setReps(0);
-    connectPuck(); // fire-and-forget BLE connection
-    const { audioManager } = await import('@/utils/audioUtils');
-    await audioManager.playButtonClick();
+  // Enhanced mode management with logging
+  const setModeWithLogging = (newMode: Mode, source: string) => {
+    console.log(`Mode change: ${mode} -> ${newMode} (${source})`);
+    setMode(newMode);
+    setDebugInfo(prev => ({
+      ...prev,
+      modeChanges: [...prev.modeChanges.slice(-4), { 
+        mode: newMode, 
+        timestamp: Date.now(), 
+        source 
+      }]
+    }));
   };
 
-  // Auto-connect from deep links (?autoConnect=puck)
+  // Reset workout state
+  const resetWorkoutState = () => {
+    console.log('Resetting workout state');
+    setModeWithLogging('idle', 'manual_reset');
+    setAutoFlowActive(false);
+    setSetIndexAuto(1);
+    setReps(0);
+    setIsStartingWorkout(false);
+    setIsResting(false);
+    setRestTime(0);
+  };
+
+  // Enhanced startWorkout with better state management
+  const startWorkout = async () => {
+    console.log('startWorkout called, current mode:', mode);
+    setDebugInfo(prev => ({ ...prev, buttonClicks: prev.buttonClicks + 1 }));
+    
+    if (mode !== 'idle') {
+      console.warn('Cannot start workout, mode is not idle:', mode);
+      toast.error(`Cannot start workout (current state: ${mode})`);
+      return;
+    }
+
+    setIsStartingWorkout(true);
+    
+    try {
+      const { audioManager } = await import('@/utils/audioUtils');
+      await audioManager.playButtonClick();
+      
+      setAutoFlowActive(true);
+      setModeWithLogging('inset', 'start_workout_button');
+      setSetIndexAuto(1);
+      setReps(0);
+      
+      // Fire-and-forget BLE connection
+      connectPuck().catch(err => 
+        console.warn('Puck connection failed during workout start:', err)
+      );
+      
+      toast.success('Workout started! Begin your first set.');
+    } catch (error) {
+      console.error('Error starting workout:', error);
+      toast.error('Failed to start workout');
+      resetWorkoutState();
+    } finally {
+      setIsStartingWorkout(false);
+    }
+  };
+
+  // Auto-connect from deep links (?autoConnect=puck) - improved logic
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get('autoConnect') === 'puck' && mode === 'idle') {
-      startWorkout();
+    const shouldAutoConnect = params.get('autoConnect') === 'puck';
+    
+    if (shouldAutoConnect && mode === 'idle' && workout && !autoFlowActive) {
+      console.log('Auto-triggering workout from URL parameter');
+      // Add a small delay to prevent race conditions with component initialization
+      const timer = setTimeout(() => {
+        if (mode === 'idle') { // Double-check mode hasn't changed
+          startWorkout();
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [location.search, mode]);
+  }, [location.search, mode, workout, autoFlowActive]);
 
   const onRep = async () => {
-    if (mode !== 'inset') return;
+    if (mode !== 'inset') {
+      console.warn('onRep called but mode is not inset:', mode);
+      return;
+    }
     const next = Math.min(reps + 1, MAX_REPS);
     setReps(next);
     // Reflect current reps in the active set row
@@ -572,7 +643,7 @@ const WorkoutDetail = () => {
       await audioManager.playSetComplete();
       // Mark set complete and start rest
       await handleSetComplete(setIndexAuto - 1);
-      setMode('rest');
+      setModeWithLogging('rest', 'auto_set_complete');
     }
   };
 
@@ -930,13 +1001,83 @@ const WorkoutDetail = () => {
         </div>
       </Card>
 
+      {/* Developer Mode Debug Panel */}
+      {isDeveloperMode && (
+        <Card className="glow-card p-4 bg-yellow-50/50 border-yellow-200">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-yellow-800">🔧 Debug Info</h4>
+              <Button size="sm" variant="outline" onClick={resetWorkoutState}>
+                Reset State
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <strong>Current Mode:</strong> {mode}
+              </div>
+              <div>
+                <strong>Auto Flow:</strong> {autoFlowActive ? 'Yes' : 'No'}
+              </div>
+              <div>
+                <strong>Button Clicks:</strong> {debugInfo.buttonClicks}
+              </div>
+              <div>
+                <strong>Set Index:</strong> {setIndexAuto}
+              </div>
+            </div>
+            <div>
+              <strong>Recent Mode Changes:</strong>
+              <div className="text-xs space-y-1 mt-1">
+                {debugInfo.modeChanges.slice(-3).map((change, i) => (
+                  <div key={i} className="text-yellow-700">
+                    {new Date(change.timestamp).toLocaleTimeString()}: {change.mode} ({change.source})
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Sets */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">{workout.isCardio ? "Workout Blocks" : "Sets"}</h3>
-          <Button id="start-workout" onClick={startWorkout} disabled={mode !== 'idle'}>
-            Start Workout
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Enhanced Start Workout Button with Visual Feedback */}
+            <Button 
+              id="start-workout" 
+              onClick={startWorkout} 
+              disabled={mode !== 'idle' || isStartingWorkout}
+              className={`min-w-[140px] ${
+                mode !== 'idle' ? 'opacity-50' : ''
+              } ${
+                isStartingWorkout ? 'animate-pulse' : ''
+              }`}
+            >
+              {isStartingWorkout ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Starting...
+                </>
+              ) : mode === 'idle' ? (
+                'Start Workout'
+              ) : (
+                `Workout ${mode === 'inset' ? 'Active' : mode === 'rest' ? 'Resting' : 'Done'}`
+              )}
+            </Button>
+            
+            {/* Status indicator */}
+            {mode !== 'idle' && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-secondary text-xs">
+                <div className={`w-2 h-2 rounded-full ${
+                  mode === 'inset' ? 'bg-green-500 animate-pulse' : 
+                  mode === 'rest' ? 'bg-yellow-500' : 'bg-blue-500'
+                }`} />
+                {mode === 'inset' ? 'In Set' : mode === 'rest' ? 'Resting' : 'Done'}
+              </div>
+            )}
+          </div>
         </div>
         {sets.map((set, index) => (
           <Card 
