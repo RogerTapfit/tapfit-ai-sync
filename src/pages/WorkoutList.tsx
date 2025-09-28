@@ -36,7 +36,7 @@ const WorkoutList = () => {
 
   // Initialize dynamic workout plan based on scheduled workouts or muscle group
   const initializeWorkoutPlan = useCallback(async () => {
-    console.log("Initializing dynamic workout plan...");
+    console.log("🔄 Initializing dynamic workout plan...");
     
     // Check for scheduled workout first
     const { data: { user } } = await supabase.auth.getUser();
@@ -64,18 +64,44 @@ const WorkoutList = () => {
 
     if (scheduledWorkouts && scheduledWorkouts.length > 0) {
       // Use scheduled workout
-      console.log("Found scheduled workout:", scheduledWorkouts[0]);
+      console.log("📅 Found scheduled workout:", scheduledWorkouts[0]);
       muscleGroup = scheduledWorkouts[0].target_muscle_group;
-      setCurrentMuscleGroup(muscleGroup);
+      console.log("🎯 Scheduled target muscle group:", muscleGroup);
       
       workoutPlan = scheduledWorkouts[0].workout_exercises
         ?.sort((a: any, b: any) => a.exercise_order - b.exercise_order)
-        .map((exercise: any, index: number) => ({
-          id: (index + 1).toString(),
-          name: exercise.machine_name,
-          muscleGroup: muscleGroup,
-          completed: false
-        })) || [];
+        .map((exercise: any, index: number) => {
+          // Look up the actual machine to get its real muscle group
+          const machine = MachineRegistryService.getMachineByName(exercise.machine_name);
+          const actualMuscleGroup = machine?.muscleGroup || 'unknown';
+          
+          console.log(`🔍 Exercise: ${exercise.machine_name} | Scheduled as: ${muscleGroup} | Actual: ${actualMuscleGroup}`);
+          
+          // Data validation warning
+          if (machine && actualMuscleGroup !== muscleGroup) {
+            console.warn(`⚠️  MISMATCH: ${exercise.machine_name} is ${actualMuscleGroup} but scheduled as ${muscleGroup}`);
+          }
+          
+          return {
+            id: (index + 1).toString(),
+            name: exercise.machine_name,
+            muscleGroup: actualMuscleGroup, // Use actual machine muscle group
+            completed: false
+          };
+        }) || [];
+        
+      // Update currentMuscleGroup based on most common muscle group in the plan
+      const muscleGroups = workoutPlan.map(w => w.muscleGroup);
+      const muscleGroupCounts = muscleGroups.reduce((acc, mg) => {
+        acc[mg] = (acc[mg] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const mostCommonMuscleGroup = Object.entries(muscleGroupCounts)
+        .sort(([,a], [,b]) => b - a)[0]?.[0] || muscleGroup;
+      
+      console.log("📊 Muscle group distribution:", muscleGroupCounts);
+      console.log("🏆 Most common muscle group:", mostCommonMuscleGroup);
+      setCurrentMuscleGroup(mostCommonMuscleGroup);
     } else {
       // Fallback: check location state for scanned machine muscle group
       if (location.state?.scannedMachine) {
@@ -528,17 +554,60 @@ const WorkoutList = () => {
         <div className="flex items-center gap-3">
           <Dumbbell className="h-5 w-5 text-primary" />
           <div>
-            <p className="font-semibold text-primary">{currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Day Workout</p>
-            <p className="text-sm text-foreground/70">Goal: {currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Development</p>
+            {(() => {
+              // Determine the actual muscle groups being worked
+              const actualMuscleGroups = [...new Set(todaysWorkouts.map(w => w.muscleGroup).filter(mg => mg !== 'unknown'))];
+              const displayMuscleGroup = actualMuscleGroups.length === 1 
+                ? actualMuscleGroups[0] 
+                : actualMuscleGroups.length > 1 
+                  ? 'Mixed'
+                  : currentMuscleGroup;
+              
+              return (
+                <>
+                  <p className="font-semibold text-primary">
+                    {displayMuscleGroup.charAt(0).toUpperCase() + displayMuscleGroup.slice(1)} Day Workout
+                  </p>
+                  <p className="text-sm text-foreground/70">
+                    Goal: {displayMuscleGroup.charAt(0).toUpperCase() + displayMuscleGroup.slice(1)} Development
+                    {actualMuscleGroups.length > 1 && (
+                      <span className="text-xs"> ({actualMuscleGroups.join(', ')})</span>
+                    )}
+                  </p>
+                </>
+              );
+            })()}
           </div>
+          {todaysWorkouts.some(w => w.muscleGroup === 'unknown') && (
+            <div title="Data inconsistency detected">
+              <AlertTriangle className="h-4 w-4 text-yellow-500 ml-auto" />
+            </div>
+          )}
         </div>
       </Card>
 
       {/* Workout List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white">
-          Today's {currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Exercises
-        </h3>
+        {(() => {
+          // Determine the actual muscle groups being worked
+          const actualMuscleGroups = [...new Set(todaysWorkouts.map(w => w.muscleGroup).filter(mg => mg !== 'unknown'))];
+          const displayMuscleGroup = actualMuscleGroups.length === 1 
+            ? actualMuscleGroups[0] 
+            : actualMuscleGroups.length > 1 
+              ? 'Mixed'
+              : currentMuscleGroup;
+          
+          return (
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              Today's {displayMuscleGroup.charAt(0).toUpperCase() + displayMuscleGroup.slice(1)} Exercises
+              {todaysWorkouts.some(w => w.muscleGroup === 'unknown') && (
+                <div title="Some exercises have unknown muscle groups">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                </div>
+              )}
+            </h3>
+          );
+        })()}
         
         {todaysWorkouts.map((workout, index) => (
           <Card 
