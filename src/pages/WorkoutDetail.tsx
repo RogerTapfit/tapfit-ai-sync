@@ -384,7 +384,7 @@ const WorkoutDetail = () => {
     if (workout) {
       initializeSets();
     }
-  }, [workoutId]);
+  }, [workout, workoutId]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -433,7 +433,8 @@ const WorkoutDetail = () => {
     if (!workout) return;
     
     // Extract numeric weight from the workout weight string
-    const extractWeight = (weightStr: string): number => {
+    const extractWeight = (weightStr: string | undefined): number => {
+      if (!weightStr || typeof weightStr !== 'string') return 0;
       const match = weightStr.match(/(\d+)/);
       return match ? parseInt(match[1]) : 0;
     };
