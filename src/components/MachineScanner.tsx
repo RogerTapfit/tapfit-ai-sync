@@ -114,7 +114,7 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
               )}
 
               {/* Results for uploaded images */}
-              {bestMatch && isHighConfidence && (
+              {bestMatch && bestMatch.machineId !== 'UNKNOWN' && isHighConfidence && (
                 <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <div className="flex items-center gap-3">
                     <img 
@@ -150,33 +150,86 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                 </div>
               )}
 
+              {/* Not recognized message */}
+              {bestMatch && bestMatch.machineId === 'UNKNOWN' && (
+                <div className="mt-4 p-4 bg-secondary/20 border border-secondary/40 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-16 bg-secondary/30 rounded-lg flex items-center justify-center">
+                      <Camera className="h-8 w-8 text-secondary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">Machine Not Recognized</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {bestMatch.reasoning}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Try taking another photo or select manually from the list below.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Alternative results for uploaded images */}
               {alternatives.length > 0 && !isHighConfidence && (
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-3">Select Machine:</h4>
+                  <h4 className="text-sm font-medium mb-3">
+                    {bestMatch?.machineId === 'UNKNOWN' ? 'Browse All Machines:' : 'Or Select Machine:'}
+                  </h4>
                   <div className="space-y-2">
-                    {alternatives.map((result) => (
-                      <Button
-                        key={result.machineId}
-                        onClick={() => handleMachineSelect(result)}
-                        variant="outline"
-                        className="w-full justify-start h-auto p-3"
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <img 
-                            src={result.imageUrl} 
-                            alt={result.name}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                          <div className="flex-1 text-left">
-                            <div className="font-medium text-sm">{result.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {Math.round(result.confidence * 100)}% match
+                    {bestMatch?.machineId === 'UNKNOWN' ? (
+                      // Show all machines when not recognized
+                      <>
+                        {['MCH-CHEST-PRESS', 'MCH-SHOULDER-PRESS', 'MCH-INCLINE-CHEST-PRESS', 'MCH-PEC-DECK'].map(id => {
+                          const machine = alternatives.find(a => a.machineId === id);
+                          if (!machine) return null;
+                          return (
+                            <Button
+                              key={machine.machineId}
+                              onClick={() => handleMachineSelect(machine)}
+                              variant="outline"
+                              className="w-full justify-start h-auto p-3"
+                            >
+                              <div className="flex items-center gap-3 w-full">
+                                <img 
+                                  src={machine.imageUrl} 
+                                  alt={machine.name}
+                                  className="w-12 h-12 object-cover rounded"
+                                />
+                                <div className="flex-1 text-left">
+                                  <div className="font-medium text-sm">{machine.name}</div>
+                                  <div className="text-xs text-muted-foreground">Strength Training</div>
+                                </div>
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      // Show alternative matches
+                      alternatives.filter(a => a.machineId !== 'UNKNOWN').map((result) => (
+                        <Button
+                          key={result.machineId}
+                          onClick={() => handleMachineSelect(result)}
+                          variant="outline"
+                          className="w-full justify-start h-auto p-3"
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <img 
+                              src={result.imageUrl} 
+                              alt={result.name}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <div className="flex-1 text-left">
+                              <div className="font-medium text-sm">{result.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {Math.round(result.confidence * 100)}% match
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Button>
-                    ))}
+                        </Button>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -244,7 +297,7 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
               )}
 
               {/* Results */}
-              {bestMatch && (
+              {bestMatch && bestMatch.machineId !== 'UNKNOWN' && (
                 <div className="absolute bottom-20 left-4 right-4">
                   <Card className="p-4 bg-black/80 border-primary">
                     <div className="flex items-center justify-between mb-2">
@@ -279,27 +332,65 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                 </div>
               )}
 
-              {/* Low Confidence Alternatives */}
+              {/* Not recognized overlay */}
+              {bestMatch && bestMatch.machineId === 'UNKNOWN' && (
+                <div className="absolute bottom-20 left-4 right-4">
+                  <Card className="p-4 bg-black/80 border-secondary">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Camera className="h-5 w-5 text-white" />
+                      <h4 className="text-white font-medium">Machine Not Recognized</h4>
+                    </div>
+                    <p className="text-white/80 text-xs mb-3">
+                      {bestMatch.reasoning}
+                    </p>
+                    <p className="text-white/60 text-xs">
+                      Try repositioning the camera or select manually from the options below.
+                    </p>
+                  </Card>
+                </div>
+              )}
+
+              {/* Low Confidence Alternatives or Browse Options */}
               {!isHighConfidence && alternatives.length > 0 && (
                 <div className="absolute bottom-4 left-4 right-4">
                   <div className="text-white text-sm mb-2">
-                    Not sure? Pick the right machine:
+                    {bestMatch?.machineId === 'UNKNOWN' ? 'Browse machines:' : 'Not sure? Pick the right machine:'}
                   </div>
                   <div className="space-y-2">
-                    {alternatives.slice(0, 3).map((result) => (
-                      <Button
-                        key={result.machineId}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMachineSelect(result)}
-                        className="w-full justify-between bg-black/50 border-white/20 text-white hover:bg-white/10"
-                      >
-                        <span>{result.name}</span>
-                        <Badge variant="secondary" className="ml-2">
-                          {Math.round(result.confidence * 100)}%
-                        </Badge>
-                      </Button>
-                    ))}
+                    {bestMatch?.machineId === 'UNKNOWN' ? (
+                      // Show popular machines when not recognized
+                      ['MCH-SHOULDER-PRESS', 'MCH-CHEST-PRESS', 'MCH-TREADMILL'].map(id => {
+                        const result = alternatives.find(a => a.machineId === id);
+                        if (!result) return null;
+                        return (
+                          <Button
+                            key={result.machineId}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleMachineSelect(result)}
+                            className="w-full justify-start bg-black/50 border-white/20 text-white hover:bg-white/10"
+                          >
+                            <span>{result.name}</span>
+                          </Button>
+                        );
+                      })
+                    ) : (
+                      // Show confidence-based alternatives
+                      alternatives.filter(a => a.machineId !== 'UNKNOWN').slice(0, 3).map((result) => (
+                        <Button
+                          key={result.machineId}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMachineSelect(result)}
+                          className="w-full justify-between bg-black/50 border-white/20 text-white hover:bg-white/10"
+                        >
+                          <span>{result.name}</span>
+                          <Badge variant="secondary" className="ml-2">
+                            {Math.round(result.confidence * 100)}%
+                          </Badge>
+                        </Button>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

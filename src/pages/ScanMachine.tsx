@@ -8,6 +8,12 @@ export const ScanMachine: React.FC = () => {
   const navigate = useNavigate();
 
   const handleMachineSelected = async (machineId: string, confidence: number) => {
+    // Don't navigate if machine is not recognized
+    if (machineId === 'UNKNOWN') {
+      toast.error('Machine not recognized. Please try again or select manually.');
+      return;
+    }
+
     const machine = MachineRegistryService.getMachineById(machineId);
     const workoutId = MachineRegistryService.getWorkoutIdByMachineId(machineId);
 
@@ -17,14 +23,9 @@ export const ScanMachine: React.FC = () => {
       return;
     }
 
-    // Check if machine is already in today's workout plan
-    // For now, we'll just navigate to the machine detail
-    // In production, this would check against the actual workout plan
-
     toast.success(`${machine.name} identified! (${Math.round(confidence * 100)}% confidence)`);
 
     // Navigate to machine workout detail
-    // Using the workoutId from the machine registry
     navigate(`/machine-workout/${workoutId}`, { 
       state: { 
         fromScan: true, 

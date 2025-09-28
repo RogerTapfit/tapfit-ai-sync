@@ -20,7 +20,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const processingRef = useRef<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { autoStop = true, confidenceThreshold = 0.75 } = options;
+  const { autoStop = true, confidenceThreshold = 0.85 } = options;
 
   const startCamera = useCallback(async () => {
     try {

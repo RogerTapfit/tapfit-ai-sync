@@ -8,6 +8,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Interface for machine catalog items
+interface MachineInfo {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  synonyms?: string[];
+}
+
 // Machine catalog for AI context
 const MACHINE_CATALOG = [
   {
@@ -79,22 +88,45 @@ serve(async (req) => {
   }
 
   try {
-    const { imageData, imageFormat = 'jpeg' } = await req.json();
+    const { imageData, imageFormat, machineCatalog } = await req.json();
     
     if (!imageData) {
-      throw new Error('No image data provided');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'No image data provided' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    // Use provided machine catalog or fall back to default
+    const MACHINE_CATALOG = machineCatalog || [
+      { id: 'MCH-CHEST-PRESS', name: 'Chest Press Machine', type: 'Chest Press', description: 'Horizontal pressing motion with handles at chest level and slightly reclined seat' },
+      { id: 'MCH-PEC-DECK', name: 'Pec Deck (Butterfly) Machine', type: 'Pec Deck', description: 'Arm pads that swing together in front of the torso for chest isolation' },
+      { id: 'MCH-INCLINE-CHEST-PRESS', name: 'Incline Chest Press Machine', type: 'Incline Press', description: 'Angled pressing motion with significant upward angle and inclined seat back (30-45 degrees)' },
+      { id: 'MCH-LAT-PULLDOWN', name: 'Lat Pulldown Machine', type: 'Lat Pulldown', description: 'Overhead bar pulled down to chest level while seated' },
+      { id: 'MCH-SEATED-ROW', name: 'Seated Row Machine', type: 'Seated Row', description: 'Horizontal pulling motion while seated with chest pad support' },
+      { id: 'MCH-LEG-PRESS', name: 'Leg Press Machine', type: 'Leg Press', description: 'Angled leg pressing platform with back support for lower body' },
+      { id: 'MCH-LEG-EXTENSION', name: 'Leg Extension Machine', type: 'Leg Extension', description: 'Seated position with leg pad that extends upward for quadriceps isolation' },
+      { id: 'MCH-SHOULDER-PRESS', name: 'Shoulder Press Machine', type: 'Shoulder Press', description: 'Vertical/overhead pressing path with handles above shoulder level and upright seat back' },
+      { id: 'MCH-TREADMILL', name: 'Treadmill', type: 'Cardio', description: 'Moving belt for walking/running with handrails and control panel' },
+      { id: 'MCH-ELLIPTICAL', name: 'Elliptical Machine', type: 'Cardio', description: 'Standing position with moving foot pedals and arm handles' },
+      { id: 'MCH-STATIONARY-BIKE', name: 'Stationary Bike', type: 'Cardio', description: 'Seated cycling position with pedals and handlebars' },
+      { id: 'MCH-ROWING-MACHINE', name: 'Rowing Machine', type: 'Cardio', description: 'Seated with sliding seat and pulling handle' },
+      { id: 'MCH-STAIR-CLIMBER', name: 'Stair Climber', type: 'Cardio', description: 'Standing position with stepping pedals that move up and down' }
+    ];
+
+    // Build the machine list for the prompt
+    const machineListText = MACHINE_CATALOG.map((machine: MachineInfo) => 
+      `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
+    ).join('\n');
+
+    console.log(`Analyzing machine image with ${MACHINE_CATALOG.length} machines in catalog...`);
 
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
     }
-
-    console.log('Analyzing machine image with OpenAI...');
-
-    // Create detailed prompt for machine recognition
-    const machineListText = MACHINE_CATALOG.map(machine => 
-      `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
-    ).join('\n');
 
     const prompt = `You are an expert at identifying gym workout machines from photos.
 Analyze the image and identify which specific machine it shows from this exact list:
@@ -105,6 +137,7 @@ CRITICAL DISTINCTIONS:
 - Shoulder Press vs Chest Press: Shoulder press has a vertical/overhead pressing path with handles above shoulder level and an upright (~90°) seat back. Chest press has a horizontal pressing path with handles at chest level and a slightly reclined seat.
 - Incline Chest Press vs Chest Press: Incline has a clear 30–45° seat back and an upward-forward pressing angle; regular chest press is more horizontal with a flatter seat.
 - Pec Deck: Arm pads swing together in front of the torso; not a pressing motion with a bar/handles.
+- Treadmill vs Other Cardio: Treadmill has a moving belt surface and handrails. Elliptical has foot pedals and arm handles. Stationary bike has a seat and pedals.
 
 OUTPUT RULES (must follow exactly):
 - Return ONLY a valid JSON object (no markdown, no code fences, no extra text).
@@ -192,7 +225,7 @@ OUTPUT RULES (must follow exactly):
     // Find the matching machine from our catalog
     let machineMatch = null;
     if (analysisResult.machineId) {
-      machineMatch = MACHINE_CATALOG.find(machine => machine.id === analysisResult.machineId);
+      machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === analysisResult.machineId);
     }
 
     const result = {
