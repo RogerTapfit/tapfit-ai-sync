@@ -17,8 +17,7 @@ import {
   Timer,
   Zap
 } from 'lucide-react';
-import { AvatarDisplay } from './AvatarDisplay';
-import { useAvatar } from '@/hooks/useAvatar';
+import { useAvatar } from '@/lib/avatarState';
 
 interface LiveWorkoutSessionProps {
   autoConnect?: boolean;
@@ -26,7 +25,7 @@ interface LiveWorkoutSessionProps {
 
 export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConnect = false }) => {
   const navigate = useNavigate();
-  const { avatarData } = useAvatar();
+  const { avatar } = useAvatar();
   const {
     isConnected,
     isConnecting,
@@ -260,15 +259,21 @@ export const LiveWorkoutSession: React.FC<LiveWorkoutSessionProps> = ({ autoConn
               <div className="space-y-6">
                 {/* Motivational Avatar */}
                 <div className="flex justify-center mb-6">
-                  {avatarData && (
+                  {avatar && (
                     <div className="relative">
-                      <AvatarDisplay 
-                        avatarData={avatarData} 
-                        size="medium" 
-                        showAnimation={true}
-                        emotion={lastActivityTime && (Date.now() - lastActivityTime.getTime()) < 5000 ? 'excited' : 'focused'}
-                        pose={lastActivityTime && (Date.now() - lastActivityTime.getTime()) < 5000 ? 'workout' : 'idle'}
-                      />
+                      <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-primary/30 bg-gradient-to-br from-primary/10 to-secondary/10">
+                        <img 
+                          src={avatar.image_url} 
+                          alt={avatar.name || "Your coach"} 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                        {lastActivityTime && (Date.now() - lastActivityTime.getTime()) < 5000 && (
+                          <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse flex items-center justify-center text-xs">
+                            ⚡
+                          </div>
+                        )}
+                      </div>
                       <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white rounded-lg px-3 py-1 text-xs font-bold shadow-lg border-2 border-primary">
                         {repCount === 0 ? "Let's go!" : 
                          repCount < 10 ? "Great start!" :

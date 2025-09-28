@@ -21,14 +21,13 @@ import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
 import { AnimatedCoinCounter } from "@/components/AnimatedCoinCounter";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
-import { AvatarDisplay } from "@/components/AvatarDisplay";
-import { useAvatar } from "@/hooks/useAvatar";
+import { useAvatar } from "@/lib/avatarState";
 
 const WorkoutSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { awardCoins } = useTapCoins();
-  const { avatarData } = useAvatar();
+  const { avatar } = useAvatar();
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -103,15 +102,19 @@ const WorkoutSummary = () => {
     <div className="min-h-screen bg-background p-4 space-y-6">
       {/* Header with Celebrating Avatar */}
       <div className="text-center space-y-4">
-        {avatarData && (
+        {avatar && (
           <div className="flex justify-center mb-4">
-            <AvatarDisplay 
-              avatarData={avatarData} 
-              size="large" 
-              showAnimation={true}
-              emotion="celebrating"
-              pose="victory"
-            />
+            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20 bg-gradient-to-br from-primary/10 to-secondary/10">
+              <img 
+                src={avatar.image_url} 
+                alt={avatar.name || "Your coach"} 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              <div className="absolute bottom-1 right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                🏆
+              </div>
+            </div>
           </div>
         )}
         <h1 className="text-3xl font-bold">Workout Complete!</h1>

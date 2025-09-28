@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AvatarDisplay } from './AvatarDisplay';
-import { useAvatar } from '@/hooks/useAvatar';
+import { useAvatar } from '@/lib/avatarState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ const ChallengesAchievements = () => {
     loading,
     joinChallenge
   } = useChallenges();
-  const { avatarData } = useAvatar();
+  const { avatar } = useAvatar();
   
   const [challengeFilter, setChallengeFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('reward');
@@ -97,7 +96,15 @@ const ChallengesAchievements = () => {
               Challenges & Achievements
             </div>
             <div className="flex items-center gap-4">
-              {avatarData && <AvatarDisplay avatarData={avatarData} size="small" />}
+              {avatar && (
+                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/30">
+                  <img 
+                    src={avatar.mini_image_url || avatar.image_url} 
+                    alt={avatar.name || "Your coach"} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <div className="flex items-center gap-2 text-primary">
                 <Coins className="h-5 w-5" />
                 <span className="font-bold">{totalCoinsEarned} Tap Coins Earned</span>
