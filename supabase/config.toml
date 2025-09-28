@@ -33,16 +33,26 @@ additional_redirect_urls = ["https://127.0.0.1:3000"]
 jwt_expiry = 3600
 enable_signup = true
 
+# Enhanced security for edge functions
 [functions.analyzeFood]
-verify_jwt = false
-
-[functions.analyzeProduct]
 verify_jwt = false
 cpu = "auto"
 memory = "auto"
 
+[functions.analyzeProduct]
+verify_jwt = false
+cpu = "auto" 
+memory = "auto"
+
 [functions.checkProductSafety]
 verify_jwt = false
+cpu = "auto"
+memory = "auto"
 
 [functions.generateRecipes]
 verify_jwt = false
+cpu = "auto"
+memory = "auto"
+
+[functions.realtime-voice-chat]
+verify_jwt = true

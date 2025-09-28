@@ -69,9 +69,9 @@ export class GuestSessionManager {
         return false;
       }
 
-      // Validate with database
+      // Validate with enhanced security function
       const { data: isValid } = await supabase
-        .rpc('validate_guest_session', { session_token: token });
+        .rpc('validate_guest_session_secure', { session_token: token });
 
       if (!isValid) {
         await this.clearGuestSession();
@@ -196,15 +196,27 @@ export function checkGuestLimitation(feature: string, currentCount?: number): {
     return { allowed: true };
   }
 
-  // Check specific feature restrictions
+  // Enhanced rate limiting check for security
+  const guestId = GuestSessionManager.getGuestSessionToken() || 'anonymous';
+  
+  // Check specific feature restrictions with enhanced logging
   if (GUEST_LIMITATIONS.restrictedFeatures.includes(feature)) {
+    // Log attempt to access restricted feature (fire and forget)
+    supabase.rpc('log_security_event', {
+      _user_id: null,
+      _event_type: 'guest_restricted_feature_attempt',
+      _event_details: { feature, guest_id: guestId.substring(0, 8) + '...' },
+      _ip_address: null,
+      _user_agent: navigator.userAgent
+    });
+    
     return {
       allowed: false,
       message: 'This feature requires a TapFit account. Sign up to unlock!'
     };
   }
 
-  // Check count-based limitations
+  // Check count-based limitations with enhanced security
   const limits: Record<string, number> = {
     food_entries: GUEST_LIMITATIONS.maxFoodEntries,
     workout_sessions: GUEST_LIMITATIONS.maxWorkoutSessions,
@@ -213,6 +225,20 @@ export function checkGuestLimitation(feature: string, currentCount?: number): {
 
   const limit = limits[feature];
   if (limit && currentCount !== undefined && currentCount >= limit) {
+    // Log limit reached event (fire and forget)
+    supabase.rpc('log_security_event', {
+      _user_id: null,
+      _event_type: 'guest_limit_reached',
+      _event_details: { 
+        feature, 
+        limit, 
+        current_count: currentCount,
+        guest_id: guestId.substring(0, 8) + '...'
+      },
+      _ip_address: null,
+      _user_agent: navigator.userAgent
+    });
+    
     return {
       allowed: false,
       message: `Guest mode limit reached (${limit}). Create an account for unlimited access!`

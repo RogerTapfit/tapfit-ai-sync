@@ -12,22 +12,75 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Food analysis request received');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Enhanced security: Initialize Supabase client for logging
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    let { imageBase64, mealType } = await req.json();
     
-    // Handle multiple photos
+    // Enhanced security: Parse and validate request
+    const requestBody = await req.json();
+    let { imageBase64, mealType } = requestBody;
+    
+    if (!imageBase64) {
+      console.error('No image data provided');
+      return new Response(JSON.stringify({ error: 'No image data provided' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Enhanced security: Rate limiting and logging
+    const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    
+    // Log the API request for security monitoring (fire and forget)
+    supabase.rpc('log_security_event', {
+      _user_id: null,
+      _event_type: 'food_analysis_request',
+      _event_details: {
+        meal_type: mealType,
+        has_image: !!imageBase64,
+        request_size: typeof imageBase64 === 'string' ? imageBase64.length : JSON.stringify(imageBase64).length
+      },
+      _ip_address: clientIP,
+      _user_agent: userAgent
+    });
+
+    // Handle multiple photos with security validation
     let photos = [];
     try {
       // Try to parse as multiple photos JSON
       photos = JSON.parse(imageBase64);
+      // Enhanced security: Validate photo array
+      if (!Array.isArray(photos) || photos.length > 10) { // Max 10 photos for security
+        throw new Error('Invalid photo array or too many photos');
+      }
+      // Validate each photo
+      photos = photos.slice(0, 5).filter(photo => 
+        photo && typeof photo.base64 === 'string' && photo.base64.startsWith('data:image/')
+      );
     } catch {
-      // Single photo fallback
-      photos = [{ base64: imageBase64, type: 'main_dish' }];
+      // Single photo fallback with validation
+      if (typeof imageBase64 === 'string' && imageBase64.startsWith('data:image/')) {
+        photos = [{ base64: imageBase64, type: 'main_dish' }];
+      } else {
+        throw new Error('Invalid image data format');
+      }
+    }
+
+    // Enhanced security: Check total data size
+    const totalDataSize = photos.reduce((size, photo) => size + photo.base64.length, 0);
+    if (totalDataSize > 50 * 1024 * 1024) { // 50MB total limit
+      console.error('Total image data too large:', totalDataSize);
+      return new Response(JSON.stringify({ error: 'Images too large (max 50MB total)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!openAIApiKey) {

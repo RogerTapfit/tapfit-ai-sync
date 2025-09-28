@@ -2622,6 +2622,15 @@ export type Database = {
         Args: { field_value: string }
         Returns: string
       }
+      enhanced_rate_limit_check: {
+        Args: {
+          max_requests: number
+          operation_type?: string
+          time_window_seconds: number
+          user_identifier: string
+        }
+        Returns: boolean
+      }
       fix_incomplete_profiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2755,6 +2764,10 @@ export type Database = {
         Returns: boolean
       }
       validate_guest_session: {
+        Args: { session_token: string }
+        Returns: boolean
+      }
+      validate_guest_session_secure: {
         Args: { session_token: string }
         Returns: boolean
       }
