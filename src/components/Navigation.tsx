@@ -140,9 +140,6 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
               Account
             </div>
             <div className="space-y-3">
-              <div className="text-sm font-medium truncate">
-                {isGuest ? "Guest User" : user?.email}
-              </div>
               {isGuest ? (
                 <Button
                   variant="glow"
@@ -157,18 +154,23 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
                   Sign In
                 </Button>
               ) : (
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  onClick={async () => {
-                    await onSignOut();
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full justify-start touch-target"
-                >
-                  <LogOut className="h-3 w-3 mr-2" />
-                  Sign Out
-                </Button>
+                <>
+                  <div className="text-sm font-medium truncate">
+                    {user?.email}
+                  </div>
+                  <Button
+                    variant="outline" 
+                    size="sm"
+                    onClick={async () => {
+                      await onSignOut();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full justify-start touch-target"
+                  >
+                    <LogOut className="h-3 w-3 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
               )}
             </div>
           </div>
