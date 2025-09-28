@@ -145,12 +145,23 @@ const WorkoutList = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Use proper local date boundaries to filter only today's exercises
+    const { getCurrentLocalDate } = await import('@/utils/dateUtils');
+    const today = getCurrentLocalDate();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.getFullYear() + '-' + 
+      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
+      String(tomorrow.getDate()).padStart(2, '0');
+
+    console.log(`Filtering exercises for today: ${today} to ${tomorrowStr}`);
+
     const { data: exerciseLogs, error } = await supabase
       .from('exercise_logs')
       .select('exercise_name, sets_completed, reps_completed, weight_used, completed_at')
       .eq('user_id', user.id)
-      .gte('completed_at', new Date().toISOString().split('T')[0])
-      .lt('completed_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+      .gte('completed_at', `${today}T00:00:00`)
+      .lt('completed_at', `${tomorrowStr}T00:00:00`);
 
     if (error) {
       console.error('Error fetching exercise logs:', error);
