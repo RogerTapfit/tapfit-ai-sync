@@ -101,8 +101,8 @@ export class MachineRecognitionService {
         ctx.putImageData(imageData, 0, 0);
       }
 
-      // Convert to base64 (remove data:image/jpeg;base64, prefix)
-      const base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      // Convert to base64 with higher quality for better recognition
+      const base64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
       resolve(base64);
     });
   }

@@ -1006,6 +1006,36 @@ export type Database = {
         }
         Relationships: []
       }
+      machine_recognition_feedback: {
+        Row: {
+          ai_confidence: number
+          corrected_machine_id: string
+          created_at: string
+          detected_machine_id: string
+          id: string
+          image_thumbnail: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ai_confidence: number
+          corrected_machine_id: string
+          created_at?: string
+          detected_machine_id: string
+          id?: string
+          image_thumbnail?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ai_confidence?: number
+          corrected_machine_id?: string
+          created_at?: string
+          detected_machine_id?: string
+          id?: string
+          image_thumbnail?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       machines: {
         Row: {
           brand: string | null
