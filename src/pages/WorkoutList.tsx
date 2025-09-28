@@ -46,7 +46,7 @@ const WorkoutList = () => {
   // Real-time muscle group analysis based on all exercises
   const muscleGroupAnalysis = useMuscleGroupAnalysis(todaysWorkouts, completedExtraExercises);
 
-  // Initialize dynamic workout plan based on scheduled workouts or muscle group
+  // Initialize dynamic workout plan - run once on mount only
   const initializeWorkoutPlan = useCallback(async () => {
     console.log("🔄 Initializing dynamic workout plan...");
     
@@ -71,13 +71,12 @@ const WorkoutList = () => {
       .eq('user_id', user.id)
       .eq('scheduled_date', today);
 
-    let muscleGroup = currentMuscleGroup;
     let workoutPlan: WorkoutMachine[] = [];
 
     if (scheduledWorkouts && scheduledWorkouts.length > 0) {
       // Use scheduled workout
       console.log("📅 Found scheduled workout:", scheduledWorkouts[0]);
-      muscleGroup = scheduledWorkouts[0].target_muscle_group;
+      const muscleGroup = scheduledWorkouts[0].target_muscle_group;
       console.log("🎯 Scheduled target muscle group:", muscleGroup);
       
       workoutPlan = scheduledWorkouts[0].workout_exercises
@@ -89,11 +88,6 @@ const WorkoutList = () => {
           
           console.log(`🔍 Exercise: ${exercise.machine_name} | Scheduled as: ${muscleGroup} | Actual: ${actualMuscleGroup}`);
           
-          // Data validation warning
-          if (machine && actualMuscleGroup !== muscleGroup) {
-            console.warn(`⚠️  MISMATCH: ${exercise.machine_name} is ${actualMuscleGroup} but scheduled as ${muscleGroup}`);
-          }
-          
           return {
             id: (index + 1).toString(),
             name: exercise.machine_name,
@@ -102,7 +96,7 @@ const WorkoutList = () => {
           };
         }) || [];
         
-      // Update currentMuscleGroup based on most common muscle group in the plan
+      // Update muscle group based on actual exercises
       const muscleGroups = workoutPlan.map(w => w.muscleGroup);
       const muscleGroupCounts = muscleGroups.reduce((acc, mg) => {
         acc[mg] = (acc[mg] || 0) + 1;
@@ -116,6 +110,7 @@ const WorkoutList = () => {
       setCurrentMuscleGroup(mostCommonMuscleGroup);
     } else {
       // Fallback: check location state for scanned machine muscle group
+      let muscleGroup = currentMuscleGroup;
       if (location.state?.scannedMachine) {
         const scannedMachine = MachineRegistryService.getMachineByName(location.state.scannedMachine);
         if (scannedMachine) {
@@ -140,7 +135,7 @@ const WorkoutList = () => {
 
     console.log("Generated workout plan:", workoutPlan);
     setTodaysWorkouts(workoutPlan);
-  }, [currentMuscleGroup, location.state]);
+  }, []); // Empty dependency array - only run once
 
   // Load completed exercises and merge with plan
   const loadCompletedExercises = useCallback(async () => {
@@ -257,7 +252,7 @@ const WorkoutList = () => {
   useEffect(() => { loadCompletedExercisesRef.current = loadCompletedExercises; }, [loadCompletedExercises]);
   useEffect(() => { refreshProgressRef.current = refreshProgress; }, [refreshProgress]);
 
-  // Initial load with loading protection
+  // Initial load - run once only
   useEffect(() => {
     let mounted = true;
     
@@ -273,7 +268,7 @@ const WorkoutList = () => {
     return () => {
       mounted = false;
     };
-  }, [initializeWorkoutPlan, refreshProgress]);
+  }, []); // Empty dependency - run once on mount
 
   // Load completed exercises after plan is initialized
   useEffect(() => {
@@ -485,10 +480,11 @@ const WorkoutList = () => {
     });
   };
 
+  // Stable progress calculation - prevent flickering
   const completedCount = todaysWorkouts.filter(w => w.completed).length;
-  const totalExercises = todaysWorkouts.length + completedExtraExercises.length;
+  const totalExercises = Math.max(1, todaysWorkouts.length) + completedExtraExercises.length; // Ensure minimum 1 to prevent division issues
   const totalCompleted = completedCount + completedExtraExercises.length;
-  const progressPercentage = totalExercises > 0 ? (totalCompleted / totalExercises) * 100 : 0;
+  const progressPercentage = totalCompleted >= totalExercises ? 100 : Math.round((totalCompleted / totalExercises) * 100);
   
   // Dynamic progress bar gradient color based on percentage
   const getProgressGradient = (percentage: number) => {
