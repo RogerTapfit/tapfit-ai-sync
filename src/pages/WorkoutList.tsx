@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ const WorkoutList = () => {
     const workoutName = workout.name.toLowerCase();
     return workout.muscleGroup === 'cardio' || cardioKeywords.some(keyword => workoutName.includes(keyword));
   };
+
 
   // Real-time muscle group analysis based on all exercises
   const muscleGroupAnalysis = useMuscleGroupAnalysis(todaysWorkouts, completedExtraExercises);
@@ -250,6 +251,12 @@ const WorkoutList = () => {
     setCompletedExtraExercises(extraExercises);
   }, [todaysWorkouts]);
 
+  // Stable refs for realtime handlers to avoid resubscribes
+  const loadCompletedExercisesRef = useRef(loadCompletedExercises);
+  const refreshProgressRef = useRef(refreshProgress);
+  useEffect(() => { loadCompletedExercisesRef.current = loadCompletedExercises; }, [loadCompletedExercises]);
+  useEffect(() => { refreshProgressRef.current = refreshProgress; }, [refreshProgress]);
+
   // Initial load with loading protection
   useEffect(() => {
     let mounted = true;
@@ -286,13 +293,14 @@ const WorkoutList = () => {
     }
   }, [location.state, loadCompletedExercises, refreshProgress, navigate]);
 
-  // Set up realtime subscription for exercise logs
+  // Set up realtime subscription for exercise logs (stable, subscribe once)
   useEffect(() => {
     let channel: any = null;
+    let mounted = true;
     
-    const setupRealtimeSubscription = async () => {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !mounted) return;
 
       console.log('Setting up realtime subscription for exercise_logs');
       channel = supabase
@@ -307,22 +315,21 @@ const WorkoutList = () => {
           },
           (payload) => {
             console.log('New exercise log detected via realtime:', payload);
-            loadCompletedExercises();
-            refreshProgress();
+            loadCompletedExercisesRef.current?.();
+            refreshProgressRef.current?.();
           }
         )
         .subscribe();
-    };
-
-    setupRealtimeSubscription();
+    })();
 
     return () => {
       console.log('Cleaning up realtime subscription');
+      mounted = false;
       if (channel) {
         supabase.removeChannel(channel);
       }
     };
-  }, [loadCompletedExercises, refreshProgress]);
+  }, []);
 
   // Start workout session once when component mounts (not on every change)
   useEffect(() => {
