@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
+import { useMuscleGroupAnalysis } from "@/hooks/useMuscleGroupAnalysis";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import { supabase } from "@/integrations/supabase/client";
 import { MachineRegistryService } from "@/services/machineRegistryService";
@@ -33,6 +34,9 @@ const WorkoutList = () => {
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([]);
   const [completedExtraExercises, setCompletedExtraExercises] = useState<WorkoutMachine[]>([]);
   const [currentMuscleGroup, setCurrentMuscleGroup] = useState<string>('chest');
+
+  // Real-time muscle group analysis based on all exercises
+  const muscleGroupAnalysis = useMuscleGroupAnalysis(todaysWorkouts, completedExtraExercises);
 
   // Initialize dynamic workout plan based on scheduled workouts or muscle group
   const initializeWorkoutPlan = useCallback(async () => {
@@ -321,19 +325,21 @@ const WorkoutList = () => {
       console.log("Initializing workout, currentWorkoutLog:", currentWorkoutLog);
       if (mounted && !currentWorkoutLog) {
         console.log("No current workout log, starting new workout");
-        await startWorkout(`Daily ${currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Workout`, currentMuscleGroup, todaysWorkouts.length);
+        // Use dynamic muscle group analysis for workout name
+        const workoutName = `Daily ${muscleGroupAnalysis.workoutType}`;
+        await startWorkout(workoutName, muscleGroupAnalysis.predominantGroup, todaysWorkouts.length);
       }
     };
 
-    // Only initialize if we don't have a workout log
-    if (!currentWorkoutLog) {
+    // Only initialize if we don't have a workout log and we have workouts loaded
+    if (!currentWorkoutLog && todaysWorkouts.length > 0) {
       initializeWorkout();
     }
     
     return () => {
       mounted = false;
     };
-  }, []); // Empty dependency array - run only once
+  }, [startWorkout, currentWorkoutLog, todaysWorkouts.length, muscleGroupAnalysis.workoutType, muscleGroupAnalysis.predominantGroup]); // Updated dependencies
 
   const handleWorkoutClick = (workoutId: string) => {
     const machine = todaysWorkouts.find(w => w.id === workoutId);
@@ -568,29 +574,16 @@ const WorkoutList = () => {
         <div className="flex items-center gap-3">
           <Dumbbell className="h-5 w-5 text-primary" />
           <div>
-            {(() => {
-              // Determine the actual muscle groups being worked
-              const actualMuscleGroups = [...new Set(todaysWorkouts.map(w => w.muscleGroup).filter(mg => mg !== 'unknown'))];
-              const displayMuscleGroup = actualMuscleGroups.length === 1 
-                ? actualMuscleGroups[0] 
-                : actualMuscleGroups.length > 1 
-                  ? 'Mixed'
-                  : currentMuscleGroup;
-              
-              return (
-                <>
-                  <p className="font-semibold text-primary">
-                    {displayMuscleGroup.charAt(0).toUpperCase() + displayMuscleGroup.slice(1)} Day Workout
-                  </p>
-                  <p className="text-sm text-foreground/70">
-                    Goal: {displayMuscleGroup.charAt(0).toUpperCase() + displayMuscleGroup.slice(1)} Development
-                    {actualMuscleGroups.length > 1 && (
-                      <span className="text-xs"> ({actualMuscleGroups.join(', ')})</span>
-                    )}
-                  </p>
-                </>
-              );
-            })()}
+            <p className="font-semibold text-primary">
+              {muscleGroupAnalysis.workoutType}
+            </p>
+            <p className="text-sm text-foreground/70">
+              {muscleGroupAnalysis.subtitle ? (
+                <>Goal: {muscleGroupAnalysis.subtitle}</>
+              ) : (
+                <>Goal: {muscleGroupAnalysis.predominantGroup.charAt(0).toUpperCase() + muscleGroupAnalysis.predominantGroup.slice(1)} Development</>
+              )}
+            </p>
           </div>
           {todaysWorkouts.some(w => w.muscleGroup === 'unknown') && (
             <div title="Data inconsistency detected">
@@ -602,26 +595,14 @@ const WorkoutList = () => {
 
       {/* Workout List */}
       <div className="space-y-4">
-        {(() => {
-          // Determine the actual muscle groups being worked
-          const actualMuscleGroups = [...new Set(todaysWorkouts.map(w => w.muscleGroup).filter(mg => mg !== 'unknown'))];
-          const displayMuscleGroup = actualMuscleGroups.length === 1 
-            ? actualMuscleGroups[0] 
-            : actualMuscleGroups.length > 1 
-              ? 'Mixed'
-              : currentMuscleGroup;
-          
-          return (
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              Today's {displayMuscleGroup.charAt(0).toUpperCase() + displayMuscleGroup.slice(1)} Exercises
-              {todaysWorkouts.some(w => w.muscleGroup === 'unknown') && (
-                <div title="Some exercises have unknown muscle groups">
-                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                </div>
-              )}
-            </h3>
-          );
-        })()}
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          Today's {muscleGroupAnalysis.workoutType}
+          {todaysWorkouts.some(w => w.muscleGroup === 'unknown') && (
+            <div title="Some exercises have unknown muscle groups">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            </div>
+          )}
+        </h3>
         
         {todaysWorkouts.map((workout, index) => (
           <Card 
