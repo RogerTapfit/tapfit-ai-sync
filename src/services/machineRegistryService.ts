@@ -71,7 +71,7 @@ export const MACHINE_CATALOG: Machine[] = [
     id: 'MCH-LEG-EXTENSION',
     name: 'Leg Extension Machine',
     type: 'Leg Extension',
-    synonyms: ['leg extension', 'quad extension', 'knee extension'],
+    synonyms: ['leg extension', 'quad extension', 'knee extension', 'leg lift machine', 'leg lifts', 'leg lift'],
     imageUrl: '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png',
     workoutId: 'leg-extension',
     muscleGroup: 'legs'

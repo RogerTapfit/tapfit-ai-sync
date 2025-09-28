@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smart
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import { supabase } from "@/integrations/supabase/client";
+import { MachineRegistryService } from "@/services/machineRegistryService";
 
 interface WorkoutMachine {
   id: string;
@@ -29,23 +30,84 @@ const WorkoutList = () => {
   const location = useLocation();
   const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, todaysProgress, currentWorkoutLog, refreshProgress } = useWorkoutLogger();
   
-  // Today's chest workout machines
-  const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([
-    { id: "1", name: "Chest Press Machine", muscleGroup: "Chest", completed: false },
-    { id: "2", name: "Pec Deck (Butterfly) Machine", muscleGroup: "Chest", completed: false },
-    { id: "3", name: "Incline Chest Press Machine", muscleGroup: "Chest", completed: false },
-    { id: "4", name: "Decline Chest Press Machine", muscleGroup: "Chest", completed: false },
-    { id: "5", name: "Cable Crossover Machine", muscleGroup: "Chest", completed: false },
-    { id: "6", name: "Smith Machine (Flat Bench Press setup)", muscleGroup: "Chest", completed: false },
-    { id: "7", name: "Seated Dip Machine (Chest-focused variant)", muscleGroup: "Chest", completed: false },
-    { id: "8", name: "Assisted Chest Dips Machine", muscleGroup: "Chest", completed: false }
-  ]);
+  const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([]);
+  const [completedExtraExercises, setCompletedExtraExercises] = useState<WorkoutMachine[]>([]);
+  const [currentMuscleGroup, setCurrentMuscleGroup] = useState<string>('chest');
 
-  // Load completed exercises with details from database
+  // Initialize dynamic workout plan based on scheduled workouts or muscle group
+  const initializeWorkoutPlan = useCallback(async () => {
+    console.log("Initializing dynamic workout plan...");
+    
+    // Check for scheduled workout first
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Try to get scheduled workout for today
+    const today = new Date().toISOString().split('T')[0];
+    const { data: scheduledWorkouts } = await supabase
+      .from('scheduled_workouts')
+      .select(`
+        *,
+        workout_exercises (
+          machine_name,
+          sets,
+          reps,
+          weight,
+          exercise_order
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('scheduled_date', today);
+
+    let muscleGroup = currentMuscleGroup;
+    let workoutPlan: WorkoutMachine[] = [];
+
+    if (scheduledWorkouts && scheduledWorkouts.length > 0) {
+      // Use scheduled workout
+      console.log("Found scheduled workout:", scheduledWorkouts[0]);
+      muscleGroup = scheduledWorkouts[0].target_muscle_group;
+      setCurrentMuscleGroup(muscleGroup);
+      
+      workoutPlan = scheduledWorkouts[0].workout_exercises
+        ?.sort((a: any, b: any) => a.exercise_order - b.exercise_order)
+        .map((exercise: any, index: number) => ({
+          id: (index + 1).toString(),
+          name: exercise.machine_name,
+          muscleGroup: muscleGroup,
+          completed: false
+        })) || [];
+    } else {
+      // Fallback: check location state for scanned machine muscle group
+      if (location.state?.scannedMachine) {
+        const scannedMachine = MachineRegistryService.getMachineByName(location.state.scannedMachine);
+        if (scannedMachine) {
+          muscleGroup = scannedMachine.muscleGroup;
+          setCurrentMuscleGroup(muscleGroup);
+          console.log("Using muscle group from scanned machine:", muscleGroup);
+        }
+      }
+
+      // Generate plan from MachineRegistryService for the muscle group
+      const machinesForMuscleGroup = MachineRegistryService.getAllMachines()
+        .filter(machine => machine.muscleGroup === muscleGroup)
+        .slice(0, 8); // Limit to 8 exercises
+
+      workoutPlan = machinesForMuscleGroup.map((machine, index) => ({
+        id: (index + 1).toString(),
+        name: machine.name,
+        muscleGroup: machine.muscleGroup,
+        completed: false
+      }));
+    }
+
+    console.log("Generated workout plan:", workoutPlan);
+    setTodaysWorkouts(workoutPlan);
+  }, [currentMuscleGroup, location.state]);
+
+  // Load completed exercises and merge with plan
   const loadCompletedExercises = useCallback(async () => {
     console.log("Loading completed exercises...");
     
-    // Get the supabase client to fetch detailed exercise logs
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -62,33 +124,50 @@ const WorkoutList = () => {
     }
 
     console.log("Exercise logs from DB:", exerciseLogs);
+    console.log("Current workout plan:", todaysWorkouts);
+    console.log("Muscle group:", currentMuscleGroup);
     
-    // Helper function to normalize strings for matching
-    const normalizeString = (str: string): string => {
-      return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Helper function to find matching machine
+    const findMatchingMachine = (exerciseName: string) => {
+      // Try direct name match first
+      let machine = MachineRegistryService.getMachineByName(exerciseName);
+      if (machine) return machine;
+
+      // Try variations
+      const variations = [
+        exerciseName.replace(' Machine', ''),
+        exerciseName.replace('Machine', ''),
+        exerciseName + ' Machine'
+      ];
+      
+      for (const variation of variations) {
+        machine = MachineRegistryService.getMachineByName(variation);
+        if (machine) return machine;
+      }
+      
+      return null;
     };
 
+    // Update existing plan workouts with completion status
     setTodaysWorkouts(workouts => {
-      const updatedWorkouts = workouts.map(workout => {
-        // Try exact match first, then normalized match
-        let exerciseLog = exerciseLogs?.find(log => log.exercise_name === workout.name);
-        
-        if (!exerciseLog) {
+      return workouts.map(workout => {
+        const exerciseLog = exerciseLogs?.find(log => {
+          // Try exact match first
+          if (log.exercise_name === workout.name) return true;
+          
           // Try normalized matching
-          const normalizedWorkoutName = normalizeString(workout.name);
-          exerciseLog = exerciseLogs?.find(log => {
-            const normalizedLogName = normalizeString(log.exercise_name);
-            return normalizedLogName === normalizedWorkoutName ||
-                   normalizedLogName.includes(normalizedWorkoutName) ||
-                   normalizedWorkoutName.includes(normalizedLogName);
-          });
-        }
-        
-        const isCompleted = !!exerciseLog;
+          const normalizeString = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normalizedWorkout = normalizeString(workout.name);
+          const normalizedLog = normalizeString(log.exercise_name);
+          
+          return normalizedLog === normalizedWorkout ||
+                 normalizedLog.includes(normalizedWorkout) ||
+                 normalizedWorkout.includes(normalizedLog);
+        });
         
         return {
           ...workout,
-          completed: isCompleted,
+          completed: !!exerciseLog,
           workoutDetails: exerciseLog ? {
             sets: exerciseLog.sets_completed,
             reps: exerciseLog.reps_completed,
@@ -98,10 +177,41 @@ const WorkoutList = () => {
           } : undefined
         };
       });
-      console.log("Updated workouts with details:", updatedWorkouts);
-      return updatedWorkouts;
     });
-  }, []);
+
+    // Find completed exercises not in the plan
+    const extraExercises: WorkoutMachine[] = [];
+    const plannedExerciseNames = todaysWorkouts.map(w => w.name.toLowerCase());
+    
+    exerciseLogs?.forEach((log, index) => {
+      const machine = findMatchingMachine(log.exercise_name);
+      const isInPlan = plannedExerciseNames.some(name => {
+        const normalizeString = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return normalizeString(name) === normalizeString(log.exercise_name) ||
+               name.includes(log.exercise_name.toLowerCase()) ||
+               log.exercise_name.toLowerCase().includes(name);
+      });
+
+      if (!isInPlan) {
+        extraExercises.push({
+          id: `extra-${index}`,
+          name: log.exercise_name,
+          muscleGroup: machine?.muscleGroup || 'other',
+          completed: true,
+          workoutDetails: {
+            sets: log.sets_completed,
+            reps: log.reps_completed,
+            weight: log.weight_used,
+            completedAt: log.completed_at,
+            totalWeightLifted: log.weight_used ? log.weight_used * log.reps_completed : undefined
+          }
+        });
+      }
+    });
+
+    console.log("Extra completed exercises:", extraExercises);
+    setCompletedExtraExercises(extraExercises);
+  }, [todaysWorkouts]);
 
   // Initial load with loading protection
   useEffect(() => {
@@ -109,7 +219,7 @@ const WorkoutList = () => {
     
     const initialize = async () => {
       if (mounted) {
-        await loadCompletedExercises();
+        await initializeWorkoutPlan();
         await refreshProgress();
       }
     };
@@ -119,7 +229,14 @@ const WorkoutList = () => {
     return () => {
       mounted = false;
     };
-  }, [loadCompletedExercises, refreshProgress]);
+  }, [initializeWorkoutPlan, refreshProgress]);
+
+  // Load completed exercises after plan is initialized
+  useEffect(() => {
+    if (todaysWorkouts.length > 0) {
+      loadCompletedExercises();
+    }
+  }, [todaysWorkouts.length, loadCompletedExercises]);
 
   // Refresh when returning from workout detail
   useEffect(() => {
@@ -178,7 +295,7 @@ const WorkoutList = () => {
       console.log("Initializing workout, currentWorkoutLog:", currentWorkoutLog);
       if (mounted && !currentWorkoutLog) {
         console.log("No current workout log, starting new workout");
-        await startWorkout("Daily Chest Workout", "Chest", todaysWorkouts.length);
+        await startWorkout(`Daily ${currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Workout`, currentMuscleGroup, todaysWorkouts.length);
       }
     };
 
@@ -302,7 +419,9 @@ const WorkoutList = () => {
   };
 
   const completedCount = todaysWorkouts.filter(w => w.completed).length;
-  const progressPercentage = todaysWorkouts.length > 0 ? (completedCount / todaysWorkouts.length) * 100 : 0;
+  const totalExercises = todaysWorkouts.length + completedExtraExercises.length;
+  const totalCompleted = completedCount + completedExtraExercises.length;
+  const progressPercentage = totalExercises > 0 ? (totalCompleted / totalExercises) * 100 : 0;
   
   // Dynamic progress bar gradient color based on percentage
   const getProgressGradient = (percentage: number) => {
@@ -370,7 +489,7 @@ const WorkoutList = () => {
           <div>
             <h3 className="text-lg font-semibold text-primary">Workout Progress</h3>
             <p className="text-sm text-foreground/70">
-              {completedCount} of {todaysWorkouts.length} exercises completed
+              {totalCompleted} of {totalExercises} exercises completed
             </p>
           </div>
           <div className="text-right">
@@ -407,10 +526,10 @@ const WorkoutList = () => {
       {/* Plan Info */}
       <Card className="glow-card p-4 border-l-4 border-l-accent/50 bg-gradient-to-r from-accent/5 to-transparent">
         <div className="flex items-center gap-3">
-          <Dumbbell className="h-5 w-5 text-red-500" />
+          <Dumbbell className="h-5 w-5 text-primary" />
           <div>
-            <p className="font-semibold text-red-500">Chest Day Workout</p>
-            <p className="text-sm text-foreground/70">Goal: Chest Development</p>
+            <p className="font-semibold text-primary">{currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Day Workout</p>
+            <p className="text-sm text-foreground/70">Goal: {currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Development</p>
           </div>
         </div>
       </Card>
@@ -418,7 +537,7 @@ const WorkoutList = () => {
       {/* Workout List */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">
-          Today's Chest Exercises
+          Today's {currentMuscleGroup.charAt(0).toUpperCase() + currentMuscleGroup.slice(1)} Exercises
         </h3>
         
         {todaysWorkouts.map((workout, index) => (
@@ -482,6 +601,61 @@ const WorkoutList = () => {
         ))}
       </div>
 
+      {/* Completed Extra Exercises (Not in Plan) */}
+      {completedExtraExercises.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            Completed Today (Not in Plan)
+          </h3>
+          
+          {completedExtraExercises.map((workout, index) => (
+            <Card 
+              key={workout.id} 
+              className="glow-card p-4 border-l-2 border-l-green-500/60 bg-gradient-to-r from-green-500/5 to-transparent"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{workout.name}</h4>
+                    <div className="space-y-1">
+                      <p className="text-sm text-foreground/70 flex items-center gap-1">
+                        <Activity className="h-3 w-3 text-secondary" />
+                        Target: {workout.muscleGroup}
+                      </p>
+                      {workout.workoutDetails && (
+                        <div className="text-xs text-green-600 space-y-1">
+                          <p className="flex items-center gap-2">
+                            <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
+                            {workout.workoutDetails.weight && (
+                              <span>@ {workout.workoutDetails.weight} lbs</span>
+                            )}
+                          </p>
+                          {workout.workoutDetails.totalWeightLifted && (
+                            <p className="font-medium">
+                              Total Weight: {workout.workoutDetails.totalWeightLifted} lbs
+                            </p>
+                          )}
+                          <p className="text-foreground/50">
+                            Completed: {new Date(workout.workoutDetails.completedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default" className="bg-green-500">Completed</Badge>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button 
@@ -527,7 +701,7 @@ const WorkoutList = () => {
             className="h-12"
             disabled
           >
-            {`${completedCount}/${todaysWorkouts.length} Complete`}
+            {`${completedCount}/${totalExercises} Complete`}
           </Button>
         )}
       </div>
@@ -552,7 +726,7 @@ const WorkoutList = () => {
                   Are you sure?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  You've completed {completedCount} out of {todaysWorkouts.length} exercises. 
+                  You've completed {totalCompleted} out of {totalExercises} exercises. 
                   Finishing early will end your workout session and take you to the summary page.
                   You'll still earn Tap Coins for the exercises you've completed!
                 </AlertDialogDescription>

@@ -213,6 +213,7 @@ export default function MachineWorkout() {
   // Map scanned machine names to workout list names
   const mapMachineNameToWorkoutName = (machineName: string): string => {
     const nameMapping: { [key: string]: string } = {
+      // Chest machines
       'Chest Press Machine': 'Chest Press Machine',
       'Pec Deck': 'Pec Deck (Butterfly) Machine',
       'Butterfly Machine': 'Pec Deck (Butterfly) Machine',
@@ -223,7 +224,21 @@ export default function MachineWorkout() {
       'Cable Crossover': 'Cable Crossover Machine',
       'Smith Machine': 'Smith Machine (Flat Bench Press setup)',
       'Dip Machine': 'Seated Dip Machine (Chest-focused variant)',
-      'Assisted Dips': 'Assisted Chest Dips Machine'
+      'Assisted Dips': 'Assisted Chest Dips Machine',
+      // Legs machines
+      'Leg Extension Machine': 'Leg Extension Machine',
+      'Leg Extension': 'Leg Extension Machine',
+      'Leg Lift Machine': 'Leg Extension Machine',
+      'Leg Press Machine': 'Leg Press Machine',
+      'Leg Press': 'Leg Press Machine',
+      // Back machines
+      'Lat Pulldown Machine': 'Lat Pulldown Machine',
+      'Lat Pulldown': 'Lat Pulldown Machine',
+      'Seated Row Machine': 'Seated Row Machine',
+      'Seated Row': 'Seated Row Machine',
+      // Shoulders machines
+      'Shoulder Press Machine': 'Shoulder Press Machine',
+      'Shoulder Press': 'Shoulder Press Machine'
     };
     
     // Try exact match first
