@@ -5,13 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RealTimeRepCounter } from '@/components/RealTimeRepCounter';
 import { MachineRegistryService } from '@/services/machineRegistryService';
-import { ArrowLeft, Info, Settings } from 'lucide-react';
+import { useWeightRecommendation } from '@/hooks/useWeightRecommendation';
+import { ArrowLeft, Info, Settings, Dumbbell } from 'lucide-react';
 
 export default function MachineWorkout() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   
   const machine = workoutId ? MachineRegistryService.getMachineByWorkoutId(workoutId) : null;
+  
+  // Get personalized weight recommendations
+  const { 
+    recommendation, 
+    loading: recommendationLoading, 
+    getConfidenceColor, 
+    getConfidenceDescription 
+  } = useWeightRecommendation({
+    exerciseName: machine?.type || 'chest_press',
+    machineName: machine?.name || '',
+    muscleGroup: machine?.muscleGroup || 'chest'
+  });
 
   if (!machine) {
     return (
@@ -29,12 +42,16 @@ export default function MachineWorkout() {
   }
 
   const handleWorkoutComplete = () => {
+    const sets = recommendation?.sets || 3;
+    const reps = recommendation?.reps || 12;
+    
     navigate('/workout-summary', { 
       state: { 
         machineId: machine.id, 
         machineName: machine.name,
-        completedSets: 3, // Default sets
-        totalReps: 3 * 12 // Default total reps
+        completedSets: sets,
+        totalReps: sets * reps,
+        recommendedWeight: recommendation?.recommended_weight
       }
     });
   };
@@ -56,6 +73,21 @@ export default function MachineWorkout() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Machine Info */}
         <div className="lg:col-span-1 space-y-4">
+          {/* Machine Image */}
+          <Card>
+            <CardContent className="p-4">
+              {machine.imageUrl && (
+                <div className="w-full h-48 bg-muted rounded-lg overflow-hidden">
+                  <img 
+                    src={machine.imageUrl} 
+                    alt={machine.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -71,17 +103,49 @@ export default function MachineWorkout() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Target Sets:</span>
-                  <span className="text-sm">3</span>
+                  <span className="text-sm">{recommendation?.sets || 3}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Reps per Set:</span>
-                  <span className="text-sm">12</span>
+                  <span className="text-sm">{recommendation?.reps || 12}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Rest Time:</span>
-                  <span className="text-sm">60s</span>
+                  <span className="text-sm">{recommendation?.rest_seconds || 60}s</span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Weight Recommendation */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Dumbbell className="h-5 w-5" />
+                Recommended Weight
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {recommendationLoading ? (
+                <div className="text-center text-muted-foreground">
+                  Calculating...
+                </div>
+              ) : (
+                <>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">
+                      {recommendation?.recommended_weight || 80} lbs
+                    </div>
+                    <div className={`text-sm ${getConfidenceColor(recommendation?.confidence || 'learning')}`}>
+                      {getConfidenceDescription(recommendation?.confidence || 'learning')}
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground text-center">
+                    Based on your profile and experience level
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -103,8 +167,8 @@ export default function MachineWorkout() {
         {/* Rep Counter */}
         <div className="lg:col-span-2">
           <RealTimeRepCounter
-            targetReps={12}
-            targetSets={3}
+            targetReps={recommendation?.reps || 12}
+            targetSets={recommendation?.sets || 3}
             onWorkoutComplete={handleWorkoutComplete}
           />
         </div>
