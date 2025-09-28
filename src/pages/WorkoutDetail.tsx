@@ -18,18 +18,20 @@ import {
   Heart,
   Smartphone
 } from "lucide-react";
+import { CardioPrescriptionService } from '@/services/cardioPrescriptionService';
+import { CardioMachineType, CardioGoal, HeartRateZone, CardioUserProfile } from '@/types/cardio';
+import { supabase } from '@/integrations/supabase/client';
 import { useWorkoutPlan } from "@/hooks/useWorkoutPlan";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import { blePuckUtil, type ConnectedDevice } from "@/services/blePuckUtil";
 import { MobileActionBar } from "@/components/MobileActionBar";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { CardioWorkoutSession } from "@/components/CardioWorkoutSession";
-import { CardioMachineType, CardioGoal, HeartRateZone } from "@/types/cardio";
 interface WorkoutSet {
   id: number;
   reps: number;
@@ -186,32 +188,144 @@ const WorkoutDetail = () => {
     }
   };
 
+  const [workout, setWorkout] = useState<any>(null);
+
   // Use machine data from navigation state if available, fallback to static data
   const machineData = location.state?.machineData;
-  const workout = machineData ? generateWorkoutFromMachine(machineData) : workoutData[workoutId || "1"];
+
+  // Load workout data
+  useEffect(() => {
+    const loadWorkout = async () => {
+      if (machineData) {
+        setLoading(true);
+        try {
+          const generatedWorkout = await generateWorkoutFromMachine(machineData);
+          setWorkout(generatedWorkout);
+        } catch (error) {
+          console.error('Error loading workout:', error);
+          // Fallback to basic workout
+          setWorkout({
+            name: machineData.name,
+            sets: 1,
+            reps: 30,
+            weight: "Moderate intensity",
+            restTime: 0,
+            image: machineData.imageUrl,
+            primaryMuscle: "Cardiovascular System",
+            secondaryMuscles: "Full body endurance",
+            notes: "Duration-based cardio workout",
+            target: "Zone 2",
+            isCardio: true
+          });
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setWorkout(workoutData[workoutId || "1"]);
+      }
+    };
+
+    loadWorkout();
+  }, [machineData, workoutId]);
 
   // Generate workout parameters based on machine type
-  function generateWorkoutFromMachine(machine: any) {
+  async function generateWorkoutFromMachine(machine: any) {
     const isCardio = machine.muscleGroup === 'cardio';
     
     if (isCardio) {
-      return {
-        name: machine.name,
-        sets: 1, // Duration-based for cardio
-        reps: 20, // 20 minutes
-        weight: "N/A",
-        restTime: 0,
-        image: machine.imageUrl || "/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png",
-        primaryMuscle: "Cardiovascular System",
-        secondaryMuscles: "Full body endurance",
-        notes: "Duration-based cardio workout",
-        isCardio: true,
-        machineType: machine.name.toLowerCase().includes('treadmill') ? 'treadmill' :
-                    machine.name.toLowerCase().includes('bike') ? 'bike' :
-                    machine.name.toLowerCase().includes('stair') ? 'stair_stepper' :
-                    machine.name.toLowerCase().includes('elliptical') ? 'elliptical' :
-                    machine.name.toLowerCase().includes('row') ? 'rower' : 'treadmill'
-      };
+      try {
+        // Get user profile for personalized prescription
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('No user found');
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('weight_kg, height_cm, age, gender, hr_rest, hr_max, experience_level')
+          .eq('id', user.id)
+          .single();
+
+        if (!profile) throw new Error('Profile not found');
+
+        // Create user profile for cardio prescription
+        const userProfile: CardioUserProfile = {
+          weight_kg: profile.weight_kg || 70,
+          age: profile.age || 30,
+          sex: profile.gender === 'female' ? 'female' : 'male',
+          HR_rest: profile.hr_rest || 60,
+          HR_max: profile.hr_max || (208 - (0.7 * (profile.age || 30)))
+        };
+
+        // Determine fitness level for prescription
+        const fitnessLevel = profile.experience_level === 'advanced' ? 'advanced' : 
+                            profile.experience_level === 'intermediate' ? 'intermediate' : 'beginner';
+
+        // Determine machine type
+        const machineType: CardioMachineType = 
+          machine.name.toLowerCase().includes('treadmill') ? 'treadmill' :
+          machine.name.toLowerCase().includes('bike') ? 'bike' :
+          machine.name.toLowerCase().includes('stair') ? 'stair_stepper' :
+          machine.name.toLowerCase().includes('elliptical') ? 'elliptical' :
+          machine.name.toLowerCase().includes('row') ? 'rower' : 'treadmill';
+
+        // Get quick prescription based on fitness level
+        const quickPrescription = CardioPrescriptionService.getQuickPrescription(
+          machineType, 
+          fitnessLevel,
+          30 // 30 minute default duration
+        );
+
+        // Generate full prescription
+        const prescription = CardioPrescriptionService.generatePrescription(
+          machineType,
+          quickPrescription.goal,
+          quickPrescription.targetLoad,
+          quickPrescription.targetZone,
+          userProfile,
+          30 // 30 minutes
+        );
+
+        // Calculate target HR range from the main workout blocks
+        const workoutBlocks = prescription.blocks.filter(b => b.block_type === 'work');
+        const avgHrrMin = workoutBlocks.reduce((sum, b) => sum + b.target_hrr_min, 0) / workoutBlocks.length;
+        const avgHrrMax = workoutBlocks.reduce((sum, b) => sum + b.target_hrr_max, 0) / workoutBlocks.length;
+
+        // Format prescription for UI
+        const machineSettingsText = formatMachineSettings(machineType, prescription.initial_settings);
+        const targetZoneText = formatTargetZone(quickPrescription.targetZone, { min: avgHrrMin, max: avgHrrMax });
+
+        return {
+          name: machine.name,
+          sets: 1, // We'll show this as "Blocks" in the UI
+          reps: prescription.total_duration, // Duration in minutes
+          weight: machineSettingsText, // Machine settings (speed, incline, etc.)
+          restTime: 0, // No rest between cardio blocks
+          image: machine.imageUrl || "/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png",
+          primaryMuscle: "Cardiovascular System",
+          secondaryMuscles: `${prescription.estimated_calories} calories • ${quickPrescription.goal.toUpperCase()} training`,
+          notes: `${prescription.blocks.length} workout phases: ${prescription.blocks.map(b => `${b.block_type} (${b.duration_min}min)`).join(', ')}`,
+          target: targetZoneText,
+          isCardio: true,
+          machineType,
+          prescription // Store full prescription for detailed display
+        };
+      } catch (error) {
+        console.error('Error generating cardio prescription:', error);
+        // Fallback to basic cardio workout
+        return {
+          name: machine.name,
+          sets: 1,
+          reps: 30, // 30 minutes
+          weight: "Moderate intensity",
+          restTime: 0,
+          image: machine.imageUrl || "/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png",
+          primaryMuscle: "Cardiovascular System",
+          secondaryMuscles: "Full body endurance workout",
+          notes: "Duration-based cardio workout",
+          target: "Zone 2 (60-70% effort)",
+          isCardio: true,
+          machineType: machine.name.toLowerCase().includes('treadmill') ? 'treadmill' : 'bike'
+        };
+      }
     } else {
       // Strength training defaults
       return {
@@ -224,9 +338,46 @@ const WorkoutDetail = () => {
         primaryMuscle: `${machine.muscleGroup.charAt(0).toUpperCase() + machine.muscleGroup.slice(1)} muscles`,
         secondaryMuscles: "Supporting stabilizer muscles",
         notes: `Standard strength training for ${machine.muscleGroup}`,
+        target: machine.muscleGroup.charAt(0).toUpperCase() + machine.muscleGroup.slice(1),
         isCardio: false
       };
     }
+  }
+
+  // Helper functions for formatting cardio data
+  function formatMachineSettings(machineType: CardioMachineType, settings: any): string {
+    switch (machineType) {
+      case 'treadmill':
+        return `${settings.speed_kmh || 5.5} km/h, ${settings.incline_pct || 2}% incline`;
+      case 'bike':
+        return `${settings.watts || 100}W, Level ${settings.resistance_level || 5}`;
+      case 'elliptical':
+        return `Level ${settings.resistance_level || 8}`;
+      case 'stair_stepper':
+        return `${settings.steps_per_min || 80} steps/min, Level ${settings.level || 6}`;
+      case 'rower':
+        return `${settings.stroke_rate || 24} strokes/min, Level ${settings.resistance || 5}`;
+      default:
+        return "Moderate intensity";
+    }
+  }
+
+  function formatTargetZone(zone: HeartRateZone, hrrRange?: { min: number; max: number }): string {
+    const zoneNames = {
+      'Z1': 'Recovery Zone',
+      'Z2': 'Aerobic Base', 
+      'Z3': 'Aerobic Threshold',
+      'Z4': 'Anaerobic Threshold',
+      'Z5': 'Neuromuscular Power',
+      'Z2-Z3': 'Endurance Zone',
+      'Z3-Z4': 'Tempo Zone'
+    };
+    
+    const zoneName = zoneNames[zone] || zone;
+    if (hrrRange) {
+      return `${zoneName} (${Math.round(hrrRange.min)}-${Math.round(hrrRange.max)}% effort)`;
+    }
+    return zoneName;
   }
 
   useEffect(() => {
@@ -551,8 +702,19 @@ const WorkoutDetail = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center p-8">
+          <LoadingSpinner />
+          <span className="ml-2">Generating personalized cardio workout...</span>
+        </div>
+      )}
+
+      {/* Content - only show when not loading and workout is available */}
+      {!loading && workout && (
+        <>
+          {/* Header */}
+          <div className="flex items-center gap-4">
         <Button
           variant="outline"
           size="icon"
@@ -729,30 +891,30 @@ const WorkoutDetail = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{workout.sets}</div>
-            <div className="text-sm text-muted-foreground">Sets</div>
+            <div className="text-2xl font-bold text-primary">{workout.isCardio ? workout.sets : workout.sets}</div>
+            <div className="text-sm text-muted-foreground">{workout.isCardio ? "Blocks" : "Sets"}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-primary">{workout.reps}</div>
-            <div className="text-sm text-muted-foreground">Reps</div>
+            <div className="text-sm text-muted-foreground">{workout.isCardio ? "Minutes" : "Reps"}</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{formatTime(workout.restTime)}</div>
-            <div className="text-sm text-muted-foreground">Rest</div>
+            <div className="text-2xl font-bold text-primary">{workout.isCardio ? "N/A" : formatTime(workout.restTime)}</div>
+            <div className="text-sm text-muted-foreground">{workout.isCardio ? "Continuous" : "Rest"}</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">Chest</div>
+            <div className="text-2xl font-bold text-primary">{workout.target || (workout.isCardio ? "Cardio" : "Chest")}</div>
             <div className="text-sm text-muted-foreground">Target</div>
           </div>
         </div>
         
         <div className="bg-background/50 p-3 rounded-lg space-y-2">
           <p className="text-sm">
-            <strong>Starting Weight:</strong> {workout.weight}
+            <strong>{workout.isCardio ? "Machine Settings:" : "Starting Weight:"}</strong> {workout.weight}
           </p>
           {workout.notes && (
             <p className="text-sm">
-              <strong>Training Notes:</strong> {workout.notes}
+              <strong>{workout.isCardio ? "Workout Structure:" : "Training Notes:"}</strong> {workout.notes}
             </p>
           )}
         </div>
@@ -933,6 +1095,8 @@ const WorkoutDetail = () => {
         onStart={startWorkout}
         onRep={onRep}
       />
+      </>
+      )}
     </div>
   );
 };
