@@ -127,6 +127,11 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                       <p className="text-xs text-muted-foreground">
                         {Math.round(bestMatch.confidence * 100)}% confidence
                       </p>
+                      {bestMatch.reasoning && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          "{bestMatch.reasoning}"
+                        </p>
+                      )}
                       {autoNavigate && (
                         <p className="text-xs text-primary mt-1">
                           Navigating automatically...
@@ -248,6 +253,11 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                         <CheckCircle className="h-5 w-5 text-green-400" />
                       )}
                     </div>
+                    {bestMatch.reasoning && (
+                      <p className="text-white/80 text-xs mb-2 italic">
+                        "{bestMatch.reasoning}"
+                      </p>
+                    )}
                     <div className="flex items-center justify-between">
                       <Badge 
                         variant={isHighConfidence ? "default" : "secondary"}

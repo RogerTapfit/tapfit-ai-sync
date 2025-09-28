@@ -26,4 +26,5 @@ export interface RecognitionResult {
   name: string;
   confidence: number;
   imageUrl: string;
+  reasoning?: string;
 }
