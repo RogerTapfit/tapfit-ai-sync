@@ -646,16 +646,6 @@ const WorkoutDetail = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (loading || !workout) {
-    return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <div className="text-center">
-          <Activity className="h-8 w-8 mx-auto mb-4 animate-spin text-primary" />
-          <p>Loading workout...</p>
-        </div>
-      </div>
-    );
-  }
 
   const completedSets = sets.filter(s => s.completed).length;
   const totalSets = sets.length;
