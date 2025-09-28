@@ -201,7 +201,7 @@ const WorkoutDetail = () => {
         reps: 20, // 20 minutes
         weight: "N/A",
         restTime: 0,
-        image: machine.imageUrl || "/lovable-uploads/c38c89e5-0aa7-45e8-954a-109f4e471db7.png",
+        image: machine.imageUrl || "/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png",
         primaryMuscle: "Cardiovascular System",
         secondaryMuscles: "Full body endurance",
         notes: "Duration-based cardio workout",
