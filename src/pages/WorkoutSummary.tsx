@@ -15,7 +15,8 @@ import {
   Share2,
   Coins,
   Dumbbell,
-  Zap
+  Zap,
+  Weight
 } from "lucide-react";
 import { useTapCoins } from "@/hooks/useTapCoins";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ const WorkoutSummary = () => {
     duration: 0,
     sets: 0,
     totalReps: 0,
+    totalWeightLifted: 0,
     notes: "",
     allWorkoutsCompleted: false // Track if all daily workouts are done
   };
@@ -122,7 +124,7 @@ const WorkoutSummary = () => {
       </div>
 
       {/* Workout Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="metric-card animate-fade-in">
           <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
           <p className="text-2xl">
@@ -161,6 +163,14 @@ const WorkoutSummary = () => {
             <AnimatedNumber finalValue={workoutData.sets} duration={3300} />
           </p>
           <p className="text-sm text-muted-foreground">Sets Completed</p>
+        </Card>
+
+        <Card className="metric-card animate-fade-in">
+          <Weight className="h-8 w-8 text-primary mx-auto mb-2" />
+          <p className="text-2xl">
+            <AnimatedNumber finalValue={workoutData.totalWeightLifted || 0} duration={3600} suffix=" lbs" />
+          </p>
+          <p className="text-sm text-muted-foreground">Total Weight Lifted</p>
         </Card>
       </div>
 

@@ -46,6 +46,7 @@ export default function MachineWorkout() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [workoutStarted, setWorkoutStarted] = useState(false);
+  const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   
   // Get personalized weight recommendations
   const { 
@@ -110,6 +111,7 @@ export default function MachineWorkout() {
 
   const handleStartWorkout = async () => {
     setWorkoutStarted(true);
+    setWorkoutStartTime(new Date());
     const { audioManager } = await import('@/utils/audioUtils');
     await audioManager.playButtonClick();
     toast.success('Workout started! Complete each set when ready.');
@@ -197,14 +199,29 @@ export default function MachineWorkout() {
     const completedSets = sets.filter(s => s.completed).length;
     const totalReps = sets.reduce((sum, set) => sum + (set.actualReps || 0), 0);
     
+    // Calculate total weight lifted
+    const totalWeightLifted = sets
+      .filter(set => set.completed)
+      .reduce((sum, set) => sum + ((set.actualWeight || 0) * (set.actualReps || 0)), 0);
+    
+    // Calculate workout duration in minutes
+    const duration = workoutStartTime 
+      ? Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60))
+      : 0;
+    
     toast.success('Exercise completed!');
     navigate('/workout-summary', { 
       state: { 
-        machineId: machine?.id, 
-        machineName: machine?.name,
-        completedSets: completedSets,
-        totalReps: totalReps,
-        recommendedWeight: sets[0]?.actualWeight || recommendation?.recommended_weight
+        workoutData: {
+          name: machine?.name || 'Machine Workout',
+          exercises: 1,
+          duration: duration,
+          sets: completedSets,
+          totalReps: totalReps,
+          totalWeightLifted: totalWeightLifted,
+          notes: notes,
+          allWorkoutsCompleted: false
+        }
       }
     });
   };
