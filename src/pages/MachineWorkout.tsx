@@ -77,11 +77,11 @@ export default function MachineWorkout() {
           <Card>
             <CardContent className="p-4">
               {machine.imageUrl && (
-                <div className="w-full h-48 bg-muted rounded-lg overflow-hidden">
+                <div className="w-full h-64 bg-muted rounded-lg overflow-hidden">
                   <img 
                     src={machine.imageUrl} 
                     alt={machine.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               )}
