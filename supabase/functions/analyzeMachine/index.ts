@@ -149,7 +149,7 @@ serve(async (req) => {
     try {
       const onlineResult = await analyzeWithOnlineModel(imageData, imageFormat);
       
-      if (onlineResult && onlineResult.confidence > 0.7) {
+      if (onlineResult && onlineResult.confidence >= 0.6) {
         console.log(`Online identification successful: ${onlineResult.machineName} (${onlineResult.confidence})`);
         finalResult = {
           machineId: 'ONLINE-' + onlineResult.machineName.replace(/[^\w\s]/g, '').replace(/\s+/g, '-').toUpperCase(),
@@ -235,7 +235,7 @@ Return ONLY a JSON object with this exact format:
   "reasoning": "Detailed identification explanation including brand, muscle targets, exercise motion, and key visual features"
 }`;
 
-  const models = ['gpt-5-2025-08-07', 'o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
+  const models = ['gpt-4o', 'o4-mini-2025-04-16'];
   
   for (const model of models) {
     try {
@@ -244,6 +244,10 @@ Return ONLY a JSON object with this exact format:
       const requestBody: any = {
         model,
         messages: [
+          {
+            role: 'system',
+            content: 'Return ONLY a strict JSON object with keys: machineName, confidence, reasoning. No markdown, no code fences.'
+          },
           {
             role: 'user',
             content: [
@@ -261,11 +265,12 @@ Return ONLY a JSON object with this exact format:
       };
 
       // Use max_completion_tokens for newer models, max_tokens for legacy
-      if (['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'o4-mini-2025-04-16'].includes(model)) {
+      if (model === 'o4-mini-2025-04-16') {
         requestBody.max_completion_tokens = 1000;
       } else {
         requestBody.max_tokens = 1000;
         requestBody.temperature = 0.1;
+        requestBody.response_format = { type: 'json_object' };
       }
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
