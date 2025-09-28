@@ -34,8 +34,6 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     canvasRef
   } = useMachineScan({ autoStop: autoNavigate });
 
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (autoNavigate && isHighConfidence && bestMatch) {
       // Auto-navigate after a short delay for UX feedback
@@ -65,18 +63,43 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     onClose();
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      processUploadedImage(file);
-      // Clear the input so selecting the same image again retriggers
-      if (event.target) event.target.value = "";
+  const handleUploadClick = (useCamera = false) => {
+    // Mobile Safari requires special handling for file inputs
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = false;
+    
+    // For mobile camera access, use capture attribute
+    if (useCamera) {
+      input.capture = 'environment';
     }
+    
+    // Style the input to be invisible but accessible
+    input.style.position = 'fixed';
+    input.style.top = '-1000px';
+    input.style.left = '-1000px';
+    input.style.opacity = '0';
+    input.style.pointerEvents = 'none';
+    
+    // Add to DOM temporarily for mobile compatibility
+    document.body.appendChild(input);
+    
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        processUploadedImage(file);
+      }
+      // Clean up
+      document.body.removeChild(input);
+    };
+    
+    // Trigger click - this must happen synchronously from user gesture
+    input.click();
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleCameraClick = () => handleUploadClick(true);
+  const handleGalleryClick = () => handleUploadClick(false);
 
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col">
@@ -93,18 +116,26 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
         {!isScanning && !error && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Card className="p-6 text-center max-w-sm mx-4">
-              <Camera 
-                className="h-12 w-12 mx-auto mb-4 text-muted-foreground cursor-pointer" 
-                onClick={handleUploadClick}
-              />
-              <h3 className="text-lg font-medium mb-2">Point at Machine</h3>
-              <p className="text-muted-foreground mb-4">
-                Aim your camera at the front of the gym machine to identify it automatically.
-              </p>
-              <Button onClick={handleStart} className="w-full mb-4">
-                <Camera className="h-4 w-4 mr-2" />
-                Start Scanning
-              </Button>
+              <div className="mb-4 space-y-4">
+                <Button onClick={handleCameraClick} className="w-full">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
+                </Button>
+                <Button onClick={handleGalleryClick} variant="outline" className="w-full">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Photo
+                </Button>
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-medium mb-2">Point at Machine</h3>
+                <p className="text-muted-foreground mb-4">
+                  Take a photo or start scanning to identify gym machines automatically.
+                </p>
+                <Button onClick={handleStart} variant="outline" className="w-full">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Start Live Scanning
+                </Button>
+              </div>
 
               {/* Processing state for uploaded images */}
               {isProcessing && (
@@ -234,14 +265,6 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                 </div>
               )}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              
               {/* Hidden canvas for image processing */}
               <canvas ref={canvasRef} className="hidden" />
             </Card>
