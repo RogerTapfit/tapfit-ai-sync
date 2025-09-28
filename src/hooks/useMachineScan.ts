@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RecognitionResult } from '@/types/machine';
 import { MachineRecognitionService } from '@/services/machineRecognitionService';
-import { processImageFile } from '@/utils/heicConverter';
+import { processImageFile, isHEICFile } from '@/utils/heicConverter';
 
 interface UseMachineScanOptions {
   autoStop?: boolean;
@@ -140,10 +140,18 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     setError(null);
     setIsProcessing(true);
     
+    let objectUrl: string | null = null;
+    
     try {
-      // Convert HEIC files to JPG if needed
+      // Convert HEIC files to JPG if needed with enhanced error handling
       const processedFile = await processImageFile(file);
-      console.debug('File processed for HEIC conversion:', processedFile.type);
+      console.debug('File processed for HEIC conversion:', {
+        originalType: file.type,
+        processedType: processedFile.type,
+        originalSize: file.size,
+        processedSize: processedFile.size
+      });
+      
       let canvas = canvasRef.current;
       let context: CanvasRenderingContext2D | null = null;
       
@@ -159,52 +167,125 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         throw new Error('Could not get canvas context');
       }
       
+      // Use createObjectURL instead of data URL for better memory management
+      objectUrl = URL.createObjectURL(processedFile);
+      console.debug('Created object URL for processed file');
+      
       // Create image element and load the file
       const img = new Image();
-      img.onload = async () => {
-        // Set canvas size to image size
-        canvas.width = img.width;
-        canvas.height = img.height;
+      
+      // Enhanced error handling for image loading
+      img.onerror = (event) => {
+        console.error('Image loading failed:', {
+          event,
+          src: img.src,
+          fileType: processedFile.type,
+          fileSize: processedFile.size,
+          fileName: processedFile.name
+        });
         
-        // Draw image to canvas
-        context.drawImage(img, 0, 0);
+        // Try fallback with original file if HEIC conversion was attempted
+        if (file !== processedFile && !isHEICFile(file)) {
+          console.warn('Attempting fallback with original file');
+          const fallbackUrl = URL.createObjectURL(file);
+          img.src = fallbackUrl;
+          return;
+        }
         
-        // Get image data for processing
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        setError('Failed to load image. Please try a different image format or ensure the image is not corrupted.');
+        setIsProcessing(false);
         
-        try {
-          // Run recognition
-          const recognitionResults = await MachineRecognitionService.recognizeFromFrame(imageData);
-          setResults(recognitionResults);
-          console.debug('Image processing complete', recognitionResults);
-          
-          // Auto-stop if high confidence match found
-          if (autoStop && recognitionResults[0]?.confidence >= confidenceThreshold) {
-            // Auto-stop after successful recognition
-          }
-        } catch (err) {
-          console.error('Image processing error:', err);
-          setError('Recognition failed');
-        } finally {
-          setIsProcessing(false);
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
         }
       };
       
-      img.onerror = () => {
-        setError('Failed to load image');
-        setIsProcessing(false);
+      img.onload = async () => {
+        console.debug('Image loaded successfully:', {
+          width: img.width,
+          height: img.height,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight
+        });
+        
+        try {
+          // Validate image dimensions
+          if (img.width === 0 || img.height === 0) {
+            throw new Error('Invalid image dimensions');
+          }
+          
+          // Set canvas size to image size (with reasonable limits)
+          const maxDimension = 2048; // Prevent memory issues
+          let canvasWidth = img.width;
+          let canvasHeight = img.height;
+          
+          if (img.width > maxDimension || img.height > maxDimension) {
+            const ratio = Math.min(maxDimension / img.width, maxDimension / img.height);
+            canvasWidth = Math.floor(img.width * ratio);
+            canvasHeight = Math.floor(img.height * ratio);
+            console.debug('Resizing canvas for processing:', { canvasWidth, canvasHeight });
+          }
+          
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+          
+          // Draw image to canvas
+          context.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+          
+          // Get image data for processing
+          const imageData = context.getImageData(0, 0, canvasWidth, canvasHeight);
+          
+          // Run recognition
+          const recognitionResults = await MachineRecognitionService.recognizeFromFrame(imageData);
+          setResults(recognitionResults);
+          console.debug('Image processing complete', {
+            resultsCount: recognitionResults.length,
+            bestMatch: recognitionResults[0]?.machineId,
+            confidence: recognitionResults[0]?.confidence
+          });
+          
+          // Auto-stop if high confidence match found
+          if (autoStop && recognitionResults[0]?.confidence >= confidenceThreshold) {
+            console.debug('High confidence match found, auto-stopping');
+          }
+        } catch (err) {
+          console.error('Image recognition error:', err);
+          setError('Recognition failed. Please try again with a clearer image.');
+        } finally {
+          setIsProcessing(false);
+          
+          // Clean up object URL
+          if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrl = null;
+          }
+        }
       };
       
-      // Convert file to data URL and load
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(processedFile);
-    } catch (err) {
+      // Set the image source to trigger loading
+      img.src = objectUrl;
+      
+    } catch (err: any) {
       console.error('Upload processing error:', err);
-      setError('Upload failed');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Upload failed';
+      if (err.message?.includes('HEIC')) {
+        errorMessage = 'Failed to convert HEIC image. Please save the photo as JPG or try a different image.';
+      } else if (err.message?.includes('optimize')) {
+        errorMessage = 'Failed to process image. Please try a smaller image or different format.';
+      } else if (err.message?.includes('convert')) {
+        errorMessage = 'Image format not supported. Please use JPG, PNG, or WEBP.';
+      }
+      
+      setError(errorMessage);
       setIsProcessing(false);
+      
+      // Clean up object URL on error
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
     }
   }, [autoStop, confidenceThreshold]);
 
