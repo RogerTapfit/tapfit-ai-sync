@@ -432,27 +432,43 @@ const WorkoutDetail = () => {
   const initializeSets = () => {
     if (!workout) return;
     
-    // Extract numeric weight from the workout weight string
-    const extractWeight = (weightStr: string | undefined): number => {
-      if (!weightStr || typeof weightStr !== 'string') return 0;
-      const match = weightStr.match(/(\d+)/);
-      return match ? parseInt(match[1]) : 0;
-    };
-    
-    const defaultWeight = extractWeight(workout.weight);
-    
-    const newSets: WorkoutSet[] = [];
-    for (let i = 0; i < workout.sets; i++) {
-      newSets.push({
-        id: i + 1,
-        reps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
-        weight: 0,
-        completed: false,
-        actualReps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
-        actualWeight: defaultWeight
-      });
+    if (workout.isCardio) {
+      // For cardio workouts, create duration-based "sets" (actually workout blocks)
+      const newSets: WorkoutSet[] = [];
+      for (let i = 0; i < workout.sets; i++) {
+        newSets.push({
+          id: i + 1,
+          reps: workout.reps, // Duration in minutes
+          weight: 0, // Not used for cardio
+          completed: false,
+          actualReps: workout.reps, // Duration completed
+          actualWeight: 0 // Not used for cardio
+        });
+      }
+      setSets(newSets);
+    } else {
+      // Extract numeric weight from the workout weight string for strength training
+      const extractWeight = (weightStr: string | undefined): number => {
+        if (!weightStr || typeof weightStr !== 'string') return 0;
+        const match = weightStr.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      };
+      
+      const defaultWeight = extractWeight(workout.weight);
+      
+      const newSets: WorkoutSet[] = [];
+      for (let i = 0; i < workout.sets; i++) {
+        newSets.push({
+          id: i + 1,
+          reps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
+          weight: 0,
+          completed: false,
+          actualReps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
+          actualWeight: defaultWeight
+        });
+      }
+      setSets(newSets);
     }
-    setSets(newSets);
   };
 
   // Automated Start Workout flow
@@ -731,7 +747,10 @@ const WorkoutDetail = () => {
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{workout.name}</h1>
           <p className="text-muted-foreground">
-            Chest Workout • {workout.sets} sets × {workout.reps} reps
+            {workout.isCardio 
+              ? `Cardio Workout • ${workout.reps} minutes • ${workout.target}`
+              : `Chest Workout • ${workout.sets} sets × ${workout.reps} reps`
+            }
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -914,7 +933,7 @@ const WorkoutDetail = () => {
       {/* Sets */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Sets</h3>
+          <h3 className="text-lg font-semibold">{workout.isCardio ? "Workout Blocks" : "Sets"}</h3>
           <Button id="start-workout" onClick={startWorkout} disabled={mode !== 'idle'}>
             Start Workout
           </Button>
@@ -956,30 +975,56 @@ const WorkoutDetail = () => {
               
               {/* Inputs and button - responsive layout */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                {/* Input fields */}
+                 {/* Input fields - conditional for cardio vs strength */}
                 <div className="flex gap-4 flex-1">
-                  <div className="flex items-center gap-2 flex-1">
-                    <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <Input
-                      type="number"
-                      value={set.actualReps}
-                      onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                      className="w-full h-10"
-                      disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
-                    />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">reps</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-1">
-                    <Weight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <Input
-                      type="number"
-                      value={set.actualWeight}
-                      onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
-                      className="w-full h-10"
-                      disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
-                    />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">lbs</span>
-                  </div>
+                  {workout.isCardio ? (
+                    // Cardio inputs: Duration and Intensity
+                    <>
+                      <div className="flex items-center gap-2 flex-1">
+                        <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          type="number"
+                          value={set.actualReps}
+                          onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
+                          className="w-full h-10"
+                          disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">minutes</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <Activity className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div className="w-full h-10 px-3 py-2 bg-secondary rounded-md text-sm">
+                          {workout.weight}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    // Strength training inputs: Reps and Weight
+                    <>
+                      <div className="flex items-center gap-2 flex-1">
+                        <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          type="number"
+                          value={set.actualReps}
+                          onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
+                          className="w-full h-10"
+                          disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">reps</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <Weight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          type="number"
+                          value={set.actualWeight}
+                          onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
+                          className="w-full h-10"
+                          disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
+                        />
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">lbs</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 {/* Complete button */}
