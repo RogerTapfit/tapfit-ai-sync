@@ -25,16 +25,37 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const startCamera = useCallback(async () => {
     try {
       setError(null);
+      
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported on this device');
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 }
+          width: { ideal: 1280, min: 640 }, // Reduced for better mobile compatibility
+          height: { ideal: 720, min: 480 }
         }
       });
 
       if (videoRef.current) {
+        // Mobile Safari specific setup
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.playsInline = true;
+        videoRef.current.muted = true;
+        videoRef.current.autoplay = true;
+        
+        // Wait for video to be ready before starting
+        await new Promise((resolve, reject) => {
+          const video = videoRef.current!;
+          video.onloadedmetadata = () => resolve(void 0);
+          video.onerror = reject;
+          
+          // Fallback timeout
+          setTimeout(() => resolve(void 0), 3000);
+        });
+        
         await videoRef.current.play();
       }
 
@@ -42,9 +63,17 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       setIsScanning(true);
 
       // Start frame processing with better timing
-      intervalRef.current = setInterval(processFrame, 1500); // Process every 1.5 seconds for better accuracy
-    } catch (err) {
-      setError('Camera access denied or not available');
+      intervalRef.current = setInterval(processFrame, 1500);
+    } catch (err: any) {
+      const errorMessage = err.name === 'NotAllowedError' 
+        ? 'Camera permission denied. Please allow camera access and try again.'
+        : err.name === 'NotFoundError'
+        ? 'No camera found on this device.'
+        : err.name === 'NotReadableError'
+        ? 'Camera is being used by another application.'
+        : 'Camera access failed. Please try again.';
+      
+      setError(errorMessage);
       console.error('Camera error:', err);
     }
   }, []);

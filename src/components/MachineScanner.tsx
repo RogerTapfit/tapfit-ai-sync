@@ -293,6 +293,9 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
               className="w-full h-full object-cover"
               playsInline
               muted
+              autoPlay
+              controls={false}
+              webkit-playsinline="true"
             />
             <canvas
               ref={canvasRef}
