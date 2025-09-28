@@ -105,6 +105,10 @@ export class MachineRegistryService {
     return MACHINE_CATALOG;
   }
 
+  static getMachineByWorkoutId(workoutId: string): Machine | undefined {
+    return MACHINE_CATALOG.find(machine => machine.workoutId === workoutId);
+  }
+
   static searchMachines(query: string): Machine[] {
     const normalizedQuery = query.toLowerCase().trim();
     if (!normalizedQuery) return MACHINE_CATALOG;

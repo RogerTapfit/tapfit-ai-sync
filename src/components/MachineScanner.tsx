@@ -69,6 +69,8 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       processUploadedImage(file);
+      // Clear the input so selecting the same image again retriggers
+      if (event.target) event.target.value = "";
     }
   };
 
@@ -181,6 +183,9 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                 onChange={handleFileUpload}
                 className="hidden"
               />
+              
+              {/* Hidden canvas for image processing */}
+              <canvas ref={canvasRef} className="hidden" />
             </Card>
           </div>
         )}

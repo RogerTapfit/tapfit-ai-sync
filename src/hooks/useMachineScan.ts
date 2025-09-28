@@ -106,15 +106,25 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   }, [autoStop, confidenceThreshold, stopCamera]);
 
   const processUploadedImage = useCallback(async (file: File) => {
+    console.debug('Starting image upload processing');
     setError(null);
     setIsProcessing(true);
     
     try {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+      let canvas = canvasRef.current;
+      let context: CanvasRenderingContext2D | null = null;
       
-      const context = canvas.getContext('2d');
-      if (!context) return;
+      // If no canvas available, create an offscreen canvas
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        context = canvas.getContext('2d');
+      } else {
+        context = canvas.getContext('2d');
+      }
+      
+      if (!context) {
+        throw new Error('Could not get canvas context');
+      }
       
       // Create image element and load the file
       const img = new Image();
@@ -133,6 +143,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
           // Run recognition
           const recognitionResults = await MachineRecognitionService.recognizeFromFrame(imageData);
           setResults(recognitionResults);
+          console.debug('Image processing complete', recognitionResults);
           
           // Auto-stop if high confidence match found
           if (autoStop && recognitionResults[0]?.confidence >= confidenceThreshold) {
