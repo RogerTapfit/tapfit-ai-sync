@@ -184,7 +184,41 @@ const WorkoutDetail = () => {
     }
   };
 
-  const workout = workoutData[workoutId || "1"];
+  // Use machine data from navigation state if available, fallback to static data
+  const machineData = location.state?.machineData;
+  const workout = machineData ? generateWorkoutFromMachine(machineData) : workoutData[workoutId || "1"];
+
+  // Generate workout parameters based on machine type
+  function generateWorkoutFromMachine(machine: any) {
+    const isCardio = machine.muscleGroup === 'cardio';
+    
+    if (isCardio) {
+      return {
+        name: machine.name,
+        sets: 1, // Duration-based for cardio
+        reps: 20, // 20 minutes
+        weight: "N/A",
+        restTime: 0,
+        image: "/lovable-uploads/c38c89e5-0aa7-45e8-954a-109f4e471db7.png", // Generic cardio image
+        primaryMuscle: "Cardiovascular System",
+        secondaryMuscles: "Full body endurance",
+        notes: "Duration-based cardio workout"
+      };
+    } else {
+      // Strength training defaults
+      return {
+        name: machine.name,
+        sets: 3,
+        reps: 10,
+        weight: "60 lbs",
+        restTime: 90,
+        image: "/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png", // Generic strength image
+        primaryMuscle: `${machine.muscleGroup.charAt(0).toUpperCase() + machine.muscleGroup.slice(1)} muscles`,
+        secondaryMuscles: "Supporting stabilizer muscles",
+        notes: `Standard strength training for ${machine.muscleGroup}`
+      };
+    }
+  }
 
   useEffect(() => {
     if (workout) {

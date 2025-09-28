@@ -336,7 +336,21 @@ const WorkoutList = () => {
   }, []); // Empty dependency array - run only once
 
   const handleWorkoutClick = (workoutId: string) => {
-    navigate(`/workout/${workoutId}`);
+    const machine = todaysWorkouts.find(w => w.id === workoutId);
+    if (machine) {
+      // Pass machine data via navigation state
+      navigate(`/workout/${workoutId}`, {
+        state: {
+          machineData: {
+            name: machine.name,
+            muscleGroup: machine.muscleGroup,
+            id: machine.id
+          }
+        }
+      });
+    } else {
+      navigate(`/workout/${workoutId}`);
+    }
   };
 
   const toggleWorkoutComplete = async (workoutId: string, e: React.MouseEvent) => {
