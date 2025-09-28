@@ -405,6 +405,98 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_blocks: {
+        Row: {
+          actual_duration: number | null
+          actual_hr_avg: number | null
+          block_order: number
+          block_type: string
+          created_at: string
+          duration_min: number
+          id: string
+          machine_settings: Json
+          session_id: string
+          target_hrr_max: number
+          target_hrr_min: number
+        }
+        Insert: {
+          actual_duration?: number | null
+          actual_hr_avg?: number | null
+          block_order: number
+          block_type: string
+          created_at?: string
+          duration_min: number
+          id?: string
+          machine_settings?: Json
+          session_id: string
+          target_hrr_max: number
+          target_hrr_min: number
+        }
+        Update: {
+          actual_duration?: number | null
+          actual_hr_avg?: number | null
+          block_order?: number
+          block_type?: string
+          created_at?: string
+          duration_min?: number
+          id?: string
+          machine_settings?: Json
+          session_id?: string
+          target_hrr_max?: number
+          target_hrr_min?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardio_blocks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cardio_sessions: {
+        Row: {
+          actual_duration: number | null
+          completed_at: string | null
+          created_at: string
+          goal: string
+          id: string
+          machine_type: string
+          planned_duration: number
+          status: string
+          target_load: number
+          target_zone: string
+          user_id: string
+        }
+        Insert: {
+          actual_duration?: number | null
+          completed_at?: string | null
+          created_at?: string
+          goal: string
+          id?: string
+          machine_type: string
+          planned_duration?: number
+          status?: string
+          target_load?: number
+          target_zone: string
+          user_id: string
+        }
+        Update: {
+          actual_duration?: number | null
+          completed_at?: string | null
+          created_at?: string
+          goal?: string
+          id?: string
+          machine_type?: string
+          planned_duration?: number
+          status?: string
+          target_load?: number
+          target_zone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           bonus_coin_reward: number | null
@@ -970,6 +1062,47 @@ export type Database = {
         }
         Relationships: []
       }
+      heart_rate_data: {
+        Row: {
+          created_at: string
+          heart_rate_bpm: number
+          hrr_percent: number | null
+          id: string
+          machine_settings: Json | null
+          session_id: string
+          target_hrr_percent: number | null
+          timestamp_offset: number
+        }
+        Insert: {
+          created_at?: string
+          heart_rate_bpm: number
+          hrr_percent?: number | null
+          id?: string
+          machine_settings?: Json | null
+          session_id: string
+          target_hrr_percent?: number | null
+          timestamp_offset: number
+        }
+        Update: {
+          created_at?: string
+          heart_rate_bpm?: number
+          hrr_percent?: number | null
+          id?: string
+          machine_settings?: Json | null
+          session_id?: string
+          target_hrr_percent?: number | null
+          timestamp_offset?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "heart_rate_data_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loot_boxes: {
         Row: {
           created_at: string
@@ -1003,6 +1136,42 @@ export type Database = {
           possible_rewards?: Json
           rarity_tier?: string
           tap_token_cost?: number
+        }
+        Relationships: []
+      }
+      machine_calibrations: {
+        Row: {
+          accuracy_score: number
+          calibration_constant: number
+          created_at: string
+          gym_id: string | null
+          id: string
+          last_updated: string
+          machine_id: string
+          machine_type: string
+          session_count: number
+        }
+        Insert: {
+          accuracy_score?: number
+          calibration_constant?: number
+          created_at?: string
+          gym_id?: string | null
+          id?: string
+          last_updated?: string
+          machine_id: string
+          machine_type: string
+          session_count?: number
+        }
+        Update: {
+          accuracy_score?: number
+          calibration_constant?: number
+          created_at?: string
+          gym_id?: string | null
+          id?: string
+          last_updated?: string
+          machine_id?: string
+          machine_type?: string
+          session_count?: number
         }
         Relationships: []
       }
@@ -1276,11 +1445,14 @@ export type Database = {
           diet_type: string | null
           email: string | null
           experience_level: string | null
+          ftp_watts: number | null
           full_name: string | null
           gender: string | null
           gym_id: string | null
           health_conditions: string[] | null
           height_cm: number | null
+          hr_max: number | null
+          hr_rest: number | null
           id: string
           onboarding_completed: boolean | null
           preferred_equipment_type: string | null
@@ -1292,6 +1464,7 @@ export type Database = {
           target_daily_calories: number | null
           target_fat_grams: number | null
           target_protein_grams: number | null
+          vo2max_velocity: number | null
           weight_kg: number | null
         }
         Insert: {
@@ -1305,11 +1478,14 @@ export type Database = {
           diet_type?: string | null
           email?: string | null
           experience_level?: string | null
+          ftp_watts?: number | null
           full_name?: string | null
           gender?: string | null
           gym_id?: string | null
           health_conditions?: string[] | null
           height_cm?: number | null
+          hr_max?: number | null
+          hr_rest?: number | null
           id: string
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
@@ -1321,6 +1497,7 @@ export type Database = {
           target_daily_calories?: number | null
           target_fat_grams?: number | null
           target_protein_grams?: number | null
+          vo2max_velocity?: number | null
           weight_kg?: number | null
         }
         Update: {
@@ -1334,11 +1511,14 @@ export type Database = {
           diet_type?: string | null
           email?: string | null
           experience_level?: string | null
+          ftp_watts?: number | null
           full_name?: string | null
           gender?: string | null
           gym_id?: string | null
           health_conditions?: string[] | null
           height_cm?: number | null
+          hr_max?: number | null
+          hr_rest?: number | null
           id?: string
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
@@ -1350,6 +1530,7 @@ export type Database = {
           target_daily_calories?: number | null
           target_fat_grams?: number | null
           target_protein_grams?: number | null
+          vo2max_velocity?: number | null
           weight_kg?: number | null
         }
         Relationships: [
@@ -1456,6 +1637,86 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      session_recordings: {
+        Row: {
+          avg_level: number | null
+          avg_speed: number | null
+          cadence_avg: number | null
+          calories_burned: number
+          created_at: string
+          distance: number | null
+          duration_min: number
+          elevation_gain: number | null
+          hr_avg: number
+          hr_max: number
+          id: string
+          rpe: number
+          session_id: string
+          trimp_score: number
+          user_id: string
+          watts_avg: number | null
+          z1_minutes: number
+          z2_minutes: number
+          z3_minutes: number
+          z4_minutes: number
+          z5_minutes: number
+        }
+        Insert: {
+          avg_level?: number | null
+          avg_speed?: number | null
+          cadence_avg?: number | null
+          calories_burned?: number
+          created_at?: string
+          distance?: number | null
+          duration_min: number
+          elevation_gain?: number | null
+          hr_avg: number
+          hr_max: number
+          id?: string
+          rpe: number
+          session_id: string
+          trimp_score?: number
+          user_id: string
+          watts_avg?: number | null
+          z1_minutes?: number
+          z2_minutes?: number
+          z3_minutes?: number
+          z4_minutes?: number
+          z5_minutes?: number
+        }
+        Update: {
+          avg_level?: number | null
+          avg_speed?: number | null
+          cadence_avg?: number | null
+          calories_burned?: number
+          created_at?: string
+          distance?: number | null
+          duration_min?: number
+          elevation_gain?: number | null
+          hr_avg?: number
+          hr_max?: number
+          id?: string
+          rpe?: number
+          session_id?: string
+          trimp_score?: number
+          user_id?: string
+          watts_avg?: number | null
+          z1_minutes?: number
+          z2_minutes?: number
+          z3_minutes?: number
+          z4_minutes?: number
+          z5_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_recordings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cardio_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       smart_pin_data: {
         Row: {

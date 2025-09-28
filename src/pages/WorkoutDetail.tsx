@@ -28,6 +28,8 @@ import { blePuckUtil, type ConnectedDevice } from "@/services/blePuckUtil";
 import { MobileActionBar } from "@/components/MobileActionBar";
 import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
+import { CardioWorkoutSession } from "@/components/CardioWorkoutSession";
+import { CardioMachineType, CardioGoal, HeartRateZone } from "@/types/cardio";
 interface WorkoutSet {
   id: number;
   reps: number;
@@ -199,10 +201,16 @@ const WorkoutDetail = () => {
         reps: 20, // 20 minutes
         weight: "N/A",
         restTime: 0,
-        image: "/lovable-uploads/c38c89e5-0aa7-45e8-954a-109f4e471db7.png", // Generic cardio image
+        image: machine.imageUrl || "/lovable-uploads/c38c89e5-0aa7-45e8-954a-109f4e471db7.png",
         primaryMuscle: "Cardiovascular System",
         secondaryMuscles: "Full body endurance",
-        notes: "Duration-based cardio workout"
+        notes: "Duration-based cardio workout",
+        isCardio: true,
+        machineType: machine.name.toLowerCase().includes('treadmill') ? 'treadmill' :
+                    machine.name.toLowerCase().includes('bike') ? 'bike' :
+                    machine.name.toLowerCase().includes('stair') ? 'stair_stepper' :
+                    machine.name.toLowerCase().includes('elliptical') ? 'elliptical' :
+                    machine.name.toLowerCase().includes('row') ? 'rower' : 'treadmill'
       };
     } else {
       // Strength training defaults
@@ -212,10 +220,11 @@ const WorkoutDetail = () => {
         reps: 10,
         weight: "60 lbs",
         restTime: 90,
-        image: "/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png", // Generic strength image
+        image: machine.imageUrl || "/lovable-uploads/441054b5-1d0c-492c-8f79-e4a3eb26c822.png",
         primaryMuscle: `${machine.muscleGroup.charAt(0).toUpperCase() + machine.muscleGroup.slice(1)} muscles`,
         secondaryMuscles: "Supporting stabilizer muscles",
-        notes: `Standard strength training for ${machine.muscleGroup}`
+        notes: `Standard strength training for ${machine.muscleGroup}`,
+        isCardio: false
       };
     }
   }
