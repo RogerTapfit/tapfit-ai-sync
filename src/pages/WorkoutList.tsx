@@ -11,6 +11,7 @@ import { useMuscleGroupAnalysis } from "@/hooks/useMuscleGroupAnalysis";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import { supabase } from "@/integrations/supabase/client";
 import { MachineRegistryService } from "@/services/machineRegistryService";
+import { toast } from "sonner";
 
 interface WorkoutMachine {
   id: string;
@@ -29,7 +30,7 @@ interface WorkoutMachine {
 const WorkoutList = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, todaysProgress, currentWorkoutLog, refreshProgress } = useWorkoutLogger();
+  const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, calculateActualWorkoutTotals, todaysProgress, currentWorkoutLog, refreshProgress } = useWorkoutLogger();
   
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([]);
   const [completedExtraExercises, setCompletedExtraExercises] = useState<WorkoutMachine[]>([]);
@@ -456,13 +457,20 @@ const WorkoutList = () => {
   const handleFinishEarly = async () => {
     // Calculate completed exercises for early finish
     const completedExercises = todaysWorkouts.filter(w => w.completed);
-    const estimatedDuration = Math.max(completedExercises.length * 5, 10); // At least 10 minutes
+    
+    if (completedExercises.length === 0) {
+      toast.error("Complete at least one exercise to finish your workout.");
+      return;
+    }
+
+    // Get actual workout totals from database
+    const totals = await calculateActualWorkoutTotals(currentWorkoutLog?.id);
     
     if (currentWorkoutLog) {
       await completeWorkout(
         currentWorkoutLog.id, 
-        estimatedDuration,
-        `Finished early - completed ${completedExercises.length} out of ${todaysWorkouts.length} exercises`
+        totals.actualDuration || Math.max(completedExercises.length * 5, 10),
+        `Finished early - completed ${totals.actualExercises} out of ${todaysWorkouts.length} exercises`
       );
     }
     
@@ -470,11 +478,13 @@ const WorkoutList = () => {
       state: {
         workoutData: {
           name: "Early Workout Session",
-          exercises: completedExercises.length,
-          duration: estimatedDuration,
-          sets: completedExercises.length * 3, // Estimated sets for completed exercises
-          totalReps: completedExercises.length * 30, // Estimated total reps for completed exercises
-          notes: `Finished early - completed ${completedExercises.length} out of ${todaysWorkouts.length} exercises`
+          exercises: totals.actualExercises,
+          duration: totals.actualDuration || Math.max(completedExercises.length * 5, 10),
+          sets: totals.actualSets,
+          totalReps: totals.actualReps,
+          totalWeightLifted: totals.actualWeightLifted,
+          notes: `Finished early - completed ${totals.actualExercises} out of ${todaysWorkouts.length} exercises`,
+          allWorkoutsCompleted: false
         }
       }
     });
@@ -766,10 +776,16 @@ const WorkoutList = () => {
           <Button 
             className="h-12"
             onClick={async () => {
+              // Check if all workout exercises are completed
+              const allCompleted = todaysWorkouts.every(workout => workout.completed);
+              
+              // Get actual workout totals from database
+              const totals = await calculateActualWorkoutTotals(currentWorkoutLog?.id);
+              
               if (currentWorkoutLog) {
                 await completeWorkout(
                   currentWorkoutLog.id,
-                  45, // Estimated duration
+                  totals.actualDuration || 45,
                   "Completed full workout session"
                 );
               }
@@ -777,11 +793,13 @@ const WorkoutList = () => {
                 state: {
                   workoutData: {
                     name: "Daily Workout Session",
-                    exercises: todaysWorkouts.length,
-                    duration: 45, // Estimated duration
-                    sets: todaysWorkouts.length * 4, // Estimated sets
-                    totalReps: todaysWorkouts.length * 40, // Estimated total reps
-                    notes: ""
+                    exercises: totals.actualExercises,
+                    duration: totals.actualDuration || 45,
+                    sets: totals.actualSets,
+                    totalReps: totals.actualReps,
+                    totalWeightLifted: totals.actualWeightLifted,
+                    notes: "",
+                    allWorkoutsCompleted: allCompleted
                   }
                 }
               })

@@ -367,6 +367,99 @@ export const useWorkoutLogger = () => {
     }
   };
 
+  // Calculate actual workout totals from logged exercises
+  const calculateActualWorkoutTotals = async (workoutLogId?: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return {
+        actualExercises: 0,
+        actualSets: 0,
+        actualReps: 0,
+        actualWeightLifted: 0,
+        actualDuration: 0
+      };
+    }
+
+    console.log("Calculating actual workout totals for:", workoutLogId || "today");
+
+    // Query exercise logs for today or specific workout
+    let query = supabase
+      .from('exercise_logs')
+      .select('sets_completed, reps_completed, weight_used, completed_at')
+      .eq('user_id', user.id);
+
+    if (workoutLogId) {
+      query = query.eq('workout_log_id', workoutLogId);
+    } else {
+      // Get today's exercises
+      query = query
+        .gte('completed_at', new Date().toISOString().split('T')[0])
+        .lt('completed_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    }
+
+    const { data: exercises, error } = await query;
+
+    if (error) {
+      console.error('Error fetching exercise totals:', error);
+      return {
+        actualExercises: 0,
+        actualSets: 0,
+        actualReps: 0,
+        actualWeightLifted: 0,
+        actualDuration: 0
+      };
+    }
+
+    if (!exercises || exercises.length === 0) {
+      console.log("No exercises found for totals calculation");
+      return {
+        actualExercises: 0,
+        actualSets: 0,
+        actualReps: 0,
+        actualWeightLifted: 0,
+        actualDuration: 0
+      };
+    }
+
+    // Calculate totals
+    const actualExercises = exercises.length;
+    const actualSets = exercises.reduce((total, ex) => total + (ex.sets_completed || 0), 0);
+    const actualReps = exercises.reduce((total, ex) => total + (ex.reps_completed || 0), 0);
+    const actualWeightLifted = exercises.reduce((total, ex) => {
+      const weight = ex.weight_used || 0;
+      const reps = ex.reps_completed || 0;
+      return total + (weight * reps); // Total weight = weight per rep × number of reps
+    }, 0);
+
+    // Calculate duration from first to last exercise
+    let actualDuration = 0;
+    if (exercises.length > 1) {
+      const sortedTimes = exercises
+        .map(ex => new Date(ex.completed_at).getTime())
+        .sort((a, b) => a - b);
+      const durationMs = sortedTimes[sortedTimes.length - 1] - sortedTimes[0];
+      actualDuration = Math.round(durationMs / (1000 * 60)); // Convert to minutes
+    } else if (exercises.length === 1) {
+      actualDuration = 15; // Default for single exercise
+    }
+
+    console.log("Calculated totals:", {
+      actualExercises,
+      actualSets,
+      actualReps,
+      actualWeightLifted,
+      actualDuration
+    });
+
+    return {
+      actualExercises,
+      actualSets,
+      actualReps,
+      actualWeightLifted,
+      actualDuration
+    };
+  };
+
   // Get today's completed exercises by name (for checking if an exercise is completed)
   const getTodaysCompletedExercises = async (): Promise<string[]> => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -428,6 +521,7 @@ export const useWorkoutLogger = () => {
     logExercise,
     completeWorkout,
     getTodaysCompletedExercises,
+    calculateActualWorkoutTotals,
     refreshProgress: fetchTodaysProgress
   };
 };
