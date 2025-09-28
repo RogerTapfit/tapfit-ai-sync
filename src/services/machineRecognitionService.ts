@@ -114,7 +114,9 @@ export class MachineRecognitionService {
       'MCH-ELLIPTICAL': 'Standing position with moving foot pedals and arm handles, elliptical motion',
       'MCH-STATIONARY-BIKE': 'Seated cycling position with pedals and handlebars',
       'MCH-ROWING-MACHINE': 'Seated with sliding seat and pulling handle, mimics rowing motion',
-      'MCH-STAIR-CLIMBER': 'Standing position with stepping pedals that move up and down'
+      'MCH-STAIR-CLIMBER': 'Standing position with stepping pedals that move up and down',
+      'MCH-BENCH-PRESS': 'Free barbell on J-hooks with adjustable bench; no rails, guide rods, or weight stack',
+      'MCH-SMITH-MACHINE': 'Barbell fixed on vertical rails with safety stops and guided linear path'
     };
     
     return descriptions[machine.id] || `${machine.type} machine for ${machine.muscleGroup} training`;

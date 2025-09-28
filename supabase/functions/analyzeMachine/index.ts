@@ -114,7 +114,9 @@ serve(async (req) => {
       { id: 'MCH-ELLIPTICAL', name: 'Elliptical Machine', type: 'Cardio', description: 'Standing position with moving foot pedals and arm handles' },
       { id: 'MCH-STATIONARY-BIKE', name: 'Stationary Bike', type: 'Cardio', description: 'Seated cycling position with pedals and handlebars' },
       { id: 'MCH-ROWING-MACHINE', name: 'Rowing Machine', type: 'Cardio', description: 'Seated with sliding seat and pulling handle' },
-      { id: 'MCH-STAIR-CLIMBER', name: 'Stair Climber', type: 'Cardio', description: 'Standing position with stepping pedals that move up and down' }
+      { id: 'MCH-STAIR-CLIMBER', name: 'Stair Climber', type: 'Cardio', description: 'Standing position with stepping pedals that move up and down' },
+      { id: 'MCH-BENCH-PRESS', name: 'Bench Press (Barbell Station)', type: 'Bench Press', description: 'Free barbell on J-hooks with adjustable bench; no rails, guide rods, or weight stack' },
+      { id: 'MCH-SMITH-MACHINE', name: 'Smith Machine', type: 'Smith Machine', description: 'Barbell fixed on vertical rails with safety stops and guided linear path' }
     ];
 
     // Build the machine list for the prompt
@@ -138,6 +140,10 @@ CRITICAL DISTINCTIONS:
 - Incline Chest Press vs Chest Press: Incline has a clear 30–45° seat back and an upward-forward pressing angle; regular chest press is more horizontal with a flatter seat.
 - Pec Deck: Arm pads swing together in front of the torso; not a pressing motion with a bar/handles.
 - Treadmill vs Other Cardio: Treadmill has a moving belt surface and handrails. Elliptical has foot pedals and arm handles. Stationary bike has a seat and pedals.
+- Bench Press vs Smith Machine vs Chest Press Machine: 
+  * Bench Press = Free barbell on J-hooks, no rails/guide rods, adjustable bench
+  * Smith Machine = Barbell fixed on vertical rails with safety stops, guided linear path
+  * Chest Press Machine = Handles/arms with weight stack, not a free barbell
 
 OUTPUT RULES (must follow exactly):
 - Return ONLY a valid JSON object (no markdown, no code fences, no extra text).

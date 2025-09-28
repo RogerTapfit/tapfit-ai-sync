@@ -77,6 +77,26 @@ export const MACHINE_CATALOG: Machine[] = [
     muscleGroup: 'legs'
   },
   
+  // Free Weight Stations
+  {
+    id: 'MCH-BENCH-PRESS',
+    name: 'Bench Press (Barbell Station)',
+    type: 'Bench Press',
+    synonyms: ['bench press', 'flat bench press', 'barbell bench', 'olympic bench', 'bench with rack', 'bench station'],
+    imageUrl: '/lovable-uploads/ac6dd467-37ab-4e6a-9ecc-d7e6ecb97913.png',
+    workoutId: 'bench-press',
+    muscleGroup: 'chest'
+  },
+  {
+    id: 'MCH-SMITH-MACHINE',
+    name: 'Smith Machine',
+    type: 'Smith Machine',
+    synonyms: ['smith machine', 'guided bar', 'smith rack', 'linear bearings', 'guided barbell'],
+    imageUrl: '/lovable-uploads/55d72a0c-1e5a-4d6f-abfa-edfe80701063.png',
+    workoutId: 'smith-machine',
+    muscleGroup: 'chest'
+  },
+  
   // Cardio Machines
   {
     id: 'MCH-TREADMILL',
