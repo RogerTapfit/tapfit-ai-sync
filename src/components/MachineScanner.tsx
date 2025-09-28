@@ -7,7 +7,7 @@ import { useMachineScan } from '@/hooks/useMachineScan';
 import { RecognitionResult } from '@/types/machine';
 
 interface MachineScannerProps {
-  onMachineSelected: (machineId: string, confidence: number) => void;
+  onMachineSelected: (machineId: string, confidence: number, imageUrl?: string) => void;
   onClose: () => void;
   autoNavigate?: boolean;
 }
@@ -40,7 +40,7 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     if (autoNavigate && isHighConfidence && bestMatch) {
       // Auto-navigate after a short delay for UX feedback
       const timeout = setTimeout(() => {
-        onMachineSelected(bestMatch.machineId, bestMatch.confidence);
+        onMachineSelected(bestMatch.machineId, bestMatch.confidence, bestMatch.imageUrl);
       }, 800);
       return () => clearTimeout(timeout);
     }
@@ -57,7 +57,7 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
 
   const handleMachineSelect = (result: RecognitionResult) => {
     stopCamera();
-    onMachineSelected(result.machineId, result.confidence);
+    onMachineSelected(result.machineId, result.confidence, result.imageUrl);
   };
 
   const handleClose = () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { ArrowLeft, Info, Settings, Dumbbell } from 'lucide-react';
 export default function MachineWorkout() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const machine = workoutId ? MachineRegistryService.getMachineByWorkoutId(workoutId) : null;
   
@@ -76,10 +77,13 @@ export default function MachineWorkout() {
           {/* Machine Image */}
           <Card>
             <CardContent className="p-4">
-              {machine.imageUrl && (
+              {(location.state?.aiSelectedImageUrl || machine.imageUrl) && (
                 <div className="w-full h-64 bg-muted rounded-lg overflow-hidden">
                   <img 
-                    src={machine.imageUrl} 
+                    src={location.state?.fromScan && location.state?.aiSelectedImageUrl 
+                      ? location.state.aiSelectedImageUrl 
+                      : machine.imageUrl
+                    } 
                     alt={machine.name}
                     className="w-full h-full object-contain"
                   />

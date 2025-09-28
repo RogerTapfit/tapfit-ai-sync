@@ -83,7 +83,7 @@ export const MACHINE_CATALOG: Machine[] = [
     name: 'Treadmill',
     type: 'Cardio',
     synonyms: ['treadmill', 'running machine', 'walking machine'],
-    imageUrl: '/lovable-uploads/55d72a0c-1e5a-4d6f-abfa-edfe80701063.png',
+    imageUrl: '/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png',
     workoutId: 'treadmill-cardio',
     muscleGroup: 'cardio'
   },

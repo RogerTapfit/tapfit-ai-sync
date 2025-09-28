@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 export const ScanMachine: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleMachineSelected = async (machineId: string, confidence: number) => {
+  const handleMachineSelected = async (machineId: string, confidence: number, aiSelectedImageUrl?: string) => {
     // Don't navigate if machine is not recognized
     if (machineId === 'UNKNOWN') {
       toast.error('Machine not recognized. Please try again or select manually.');
@@ -31,7 +31,8 @@ export const ScanMachine: React.FC = () => {
         fromScan: true, 
         confidence,
         machineId: machine.id,
-        machineName: machine.name
+        machineName: machine.name,
+        aiSelectedImageUrl: aiSelectedImageUrl || machine.imageUrl
       }
     });
   };
