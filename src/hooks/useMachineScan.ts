@@ -137,10 +137,14 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
 
   const processUploadedImage = useCallback(async (file: File) => {
     console.debug('Starting image upload processing');
+    // Ensure we're not in camera mode when uploading
+    stopCamera();
+
     setError(null);
     setIsProcessing(true);
     
     let objectUrl: string | null = null;
+    let triedDataUrlFallback = false;
     
     try {
       // Convert HEIC files to JPG if needed with enhanced error handling
@@ -167,13 +171,29 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         throw new Error('Could not get canvas context');
       }
       
-      // Use createObjectURL instead of data URL for better memory management
-      objectUrl = URL.createObjectURL(processedFile);
-      console.debug('Created object URL for processed file');
-      
       // Create image element and load the file
       const img = new Image();
+      img.decoding = 'async';
       
+      const loadFromObjectUrl = (f: File) => {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = URL.createObjectURL(f);
+        img.src = objectUrl;
+      };
+
+      const loadFromDataUrl = (f: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          img.src = (e.target?.result as string) || '';
+        };
+        reader.onerror = (e) => {
+          console.error('Data URL reader error:', e);
+          setError('Failed to read image file.');
+          setIsProcessing(false);
+        };
+        reader.readAsDataURL(f);
+      };
+
       // Enhanced error handling for image loading
       img.onerror = (event) => {
         console.error('Image loading failed:', {
@@ -183,12 +203,11 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
           fileSize: processedFile.size,
           fileName: processedFile.name
         });
-        
-        // Try fallback with original file if HEIC conversion was attempted
-        if (file !== processedFile && !isHEICFile(file)) {
-          console.warn('Attempting fallback with original file');
-          const fallbackUrl = URL.createObjectURL(file);
-          img.src = fallbackUrl;
+
+        if (!triedDataUrlFallback) {
+          triedDataUrlFallback = true;
+          console.warn('Falling back to Data URL for image load');
+          loadFromDataUrl(processedFile);
           return;
         }
         
@@ -263,8 +282,8 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         }
       };
       
-      // Set the image source to trigger loading
-      img.src = objectUrl;
+      // Kick off image load via object URL first
+      loadFromObjectUrl(processedFile);
       
     } catch (err: any) {
       console.error('Upload processing error:', err);
@@ -287,7 +306,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         URL.revokeObjectURL(objectUrl);
       }
     }
-  }, [autoStop, confidenceThreshold]);
+  }, [autoStop, confidenceThreshold, stopCamera]);
 
   const reset = useCallback(() => {
     setResults([]);

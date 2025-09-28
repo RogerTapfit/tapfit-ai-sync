@@ -64,6 +64,9 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
   };
 
   const handleUploadClick = (useCamera = false) => {
+    // Ensure camera is stopped when choosing upload to avoid confusion
+    stopCamera();
+
     // Mobile Safari requires special handling for file inputs
     const input = document.createElement('input');
     input.type = 'file';
