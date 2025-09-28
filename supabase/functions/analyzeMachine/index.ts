@@ -119,18 +119,74 @@ serve(async (req) => {
       { id: 'MCH-SMITH-MACHINE', name: 'Smith Machine', type: 'Smith Machine', description: 'Barbell fixed on vertical rails with safety stops. Bar moves only up and down in guided linear path.' }
     ];
 
-    // Build the machine list for the prompt
-    const machineListText = MACHINE_CATALOG.map((machine: MachineInfo) => 
-      `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
-    ).join('\n');
-
-    console.log(`Analyzing machine image with ${MACHINE_CATALOG.length} machines in catalog...`);
-
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    // Two-pass analysis for confused machines
+    const confusedMachines = ['MCH-CHEST-PRESS', 'MCH-PEC-DECK', 'MCH-INCLINE-CHEST-PRESS', 'MCH-SHOULDER-PRESS'];
+    let firstPassResult = await analyzeWithModel(imageData, imageFormat, MACHINE_CATALOG);
+    let features = null;
+    
+    // If first pass identifies a commonly confused machine, do feature validation
+    if (firstPassResult && confusedMachines.includes(firstPassResult.machineId)) {
+      console.log('Running second-pass feature analysis for:', firstPassResult.machineId);
+      features = await analyzeFeatures(imageData, imageFormat);
+      
+      // Apply guardrails
+      if (features) {
+        const validatedResult = applyFeatureGuardrails(firstPassResult, features);
+        if (validatedResult) {
+          firstPassResult = validatedResult;
+        }
+      }
     }
 
-    const prompt = `You are an expert at identifying gym workout machines from photos. Study the image carefully and identify which specific machine it shows from this exact list:
+    // Find the matching machine from our catalog
+    let machineMatch = null;
+    if (firstPassResult && firstPassResult.machineId) {
+      machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === firstPassResult.machineId);
+    }
+
+    const result = {
+      success: true,
+      analysis: {
+        machineId: firstPassResult?.machineId || null,
+        machineName: machineMatch?.name || 'Unknown Machine',
+        confidence: firstPassResult?.confidence || 0,
+        reasoning: firstPassResult?.reasoning || 'Analysis completed',
+        imageUrl: machineMatch ? `/lovable-uploads/${firstPassResult.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null,
+        features: features || null
+      }
+    };
+
+    console.log('Machine analysis result:', result);
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error in analyzeMachine function:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+    
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: errorMessage,
+      analysis: null
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
+
+// Helper function for AI model analysis with proper model handling
+async function analyzeWithModel(imageData: string, imageFormat: string, machineCatalog: any[]) {
+  const machineListText = machineCatalog.map((machine: MachineInfo) => 
+    `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
+  ).join('\n');
+
+  console.log(`Analyzing machine image with ${machineCatalog.length} machines in catalog...`);
+
+  const prompt = `You are an expert at identifying gym workout machines from photos. Study the image carefully and identify which specific machine it shows from this exact list:
 
 ${machineListText}
 
@@ -158,24 +214,24 @@ MOST COMMON MISTAKES TO AVOID:
 
 CONFIDENCE GUIDELINES:
 - 0.9-1.0: Very clear visual features match exactly one machine type
-- 0.7-0.8: Good match but some ambiguity in angle or lighting
-- 0.5-0.6: Partial match but significant uncertainty
-- Below 0.5: Too unclear, set machineId to null
+- 0.8-0.89: Good match with minor ambiguity 
+- 0.7-0.79: Reasonable match but some uncertainty
+- 0.6-0.69: Partial match with significant uncertainty
+- Below 0.6: Too unclear, set machineId to null
 
 OUTPUT RULES (must follow exactly):
 - Return ONLY a valid JSON object (no markdown, no code fences, no extra text).
 - Keys: "machineId" (string|null, must be one of the IDs provided), "confidence" (number 0..1), "reasoning" (string).
-- If confidence < 0.7 or genuinely unsure, set "machineId" to null and explain why in "reasoning".
+- If confidence < 0.6 or genuinely unsure, set "machineId" to null and explain why in "reasoning".
 - In reasoning, explicitly state what visual features led to your identification.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
+  // Try newer model first, fallback to gpt-4o
+  const models = ['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
+  
+  for (const model of models) {
+    try {
+      const requestBody: any = {
+        model,
         messages: [
           {
             role: 'system',
@@ -197,90 +253,172 @@ OUTPUT RULES (must follow exactly):
               }
             ]
           }
+        ]
+      };
+
+      // Handle API parameter differences
+      if (['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07'].includes(model)) {
+        requestBody.max_completion_tokens = 500;
+        // Don't include temperature for newer models
+      } else {
+        requestBody.max_tokens = 500;
+        requestBody.temperature = 0.1;
+      }
+
+      console.log(`Trying model: ${model}`);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error(`${model} API error:`, response.status, errorData);
+        continue; // Try next model
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content ?? '';
+      console.log(`${model} Response:`, aiResponse);
+
+      // Parse response
+      const cleaned = extractJson(aiResponse);
+      const analysisResult = JSON.parse(cleaned);
+      
+      // Normalize confidence
+      if (typeof analysisResult.confidence === 'string') {
+        analysisResult.confidence = parseFloat(analysisResult.confidence) || 0;
+      }
+      
+      return analysisResult;
+      
+    } catch (error) {
+      console.error(`Error with ${model}:`, error);
+      continue; // Try next model
+    }
+  }
+  
+  throw new Error('All AI models failed');
+}
+
+// Feature analysis for machine disambiguation 
+async function analyzeFeatures(imageData: string, imageFormat: string) {
+  const featurePrompt = `Analyze this gym machine image and identify these specific visual features. Answer with YES/NO only:
+
+1. hasHandles: Are there handles, grips, or bars that a person grasps with their hands?
+2. hasArmPads: Are there arm pads, elbow rests, or cushioned surfaces where arms rest against?
+3. motion: What is the primary motion direction? Answer: "horizontal", "vertical", "upward-forward", "swing-inward", or "unknown"
+4. seatBack: What angle is the seat back? Answer: "upright" (85-90°), "slightly-reclined" (70-80°), "inclined" (30-45°), or "unknown"
+5. hasOverheadCable: Is there a cable system above the user's head?
+
+Return ONLY a valid JSON object with these exact keys: hasHandles, hasArmPads, motion, seatBack, hasOverheadCable`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o', // Use stable model for feature analysis
+        messages: [
+          {
+            role: 'system',
+            content: 'You ONLY respond with a single valid JSON object. Do not include markdown, code fences, or any extra text.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: featurePrompt
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/${imageFormat};base64,${imageData}`,
+                  detail: 'high'
+                }
+              }
+            ]
+          }
         ],
-        max_tokens: 500,
-        temperature: 0.1
+        max_tokens: 200,
+        temperature: 0
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('OpenAI API error:', response.status, errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+    if (response.ok) {
+      const data = await response.json();
+      const featuresResponse = data.choices?.[0]?.message?.content ?? '';
+      const cleaned = extractJson(featuresResponse);
+      return JSON.parse(cleaned);
     }
-
-    const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content ?? '';
-    console.log('AI Response raw:', aiResponse);
-
-    // Robustly extract JSON from potential markdown/code fences
-    function extractJson(input: string) {
-      if (!input) return '';
-      const fence = input.match(/```(?:json)?\s*([\s\S]*?)```/i);
-      if (fence) return fence[1].trim();
-      const first = input.indexOf('{');
-      const last = input.lastIndexOf('}');
-      if (first !== -1 && last !== -1 && last > first) return input.slice(first, last + 1).trim();
-      return input.trim();
-    }
-
-    const cleaned = extractJson(aiResponse);
-
-    // Parse the JSON response
-    let analysisResult: any;
-    try {
-      analysisResult = JSON.parse(cleaned);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON. Cleaned content:', cleaned);
-      throw new Error('AI response format error');
-    }
-
-    // Normalize types
-    if (analysisResult && typeof analysisResult.confidence === 'string') {
-      const parsed = parseFloat(analysisResult.confidence);
-      analysisResult.confidence = isNaN(parsed) ? 0 : parsed;
-    }
-
-    // Validate the response structure
-    if (!analysisResult || typeof analysisResult.confidence !== 'number') {
-      throw new Error('Invalid AI response structure');
-    }
-
-    // Find the matching machine from our catalog
-    let machineMatch = null;
-    if (analysisResult.machineId) {
-      machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === analysisResult.machineId);
-    }
-
-    const result = {
-      success: true,
-      analysis: {
-        machineId: analysisResult.machineId,
-        machineName: machineMatch?.name || 'Unknown Machine',
-        confidence: Math.max(0, Math.min(1, analysisResult.confidence)),
-        reasoning: analysisResult.reasoning || 'AI analysis completed',
-        imageUrl: machineMatch ? `/lovable-uploads/${analysisResult.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null
-      }
-    };
-
-    console.log('Machine analysis result:', result);
-
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
   } catch (error) {
-    console.error('Error in analyzeMachine function:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
-    
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: errorMessage,
-      analysis: null
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Feature analysis error:', error);
   }
-});
+  
+  return null;
+}
+
+// Apply guardrails based on features
+function applyFeatureGuardrails(initialResult: any, features: any) {
+  if (!features || !initialResult) return initialResult;
+  
+  console.log('Applying feature guardrails:', features);
+  
+  // Rule: Pec Deck must have arm pads and NO handles
+  if (initialResult.machineId === 'MCH-PEC-DECK') {
+    if (features.hasHandles === true || features.hasArmPads === false) {
+      console.log('Pec Deck guardrail failed: hasHandles or missing armPads');
+      return { 
+        ...initialResult, 
+        confidence: Math.max(0.3, initialResult.confidence - 0.4),
+        reasoning: `${initialResult.reasoning} [Confidence lowered: Expected arm pads without handles for Pec Deck]`
+      };
+    }
+  }
+  
+  // Rule: Chest Press must have handles and horizontal motion
+  if (initialResult.machineId === 'MCH-CHEST-PRESS') {
+    if (features.hasHandles === false || (features.motion !== 'horizontal' && features.motion !== 'unknown')) {
+      console.log('Chest Press guardrail failed: no handles or wrong motion');
+      return { 
+        ...initialResult, 
+        confidence: Math.max(0.3, initialResult.confidence - 0.3),
+        reasoning: `${initialResult.reasoning} [Confidence lowered: Expected handles with horizontal motion for Chest Press]`
+      };
+    }
+  }
+  
+  // Rule: Shoulder Press must have handles and vertical motion with upright seat
+  if (initialResult.machineId === 'MCH-SHOULDER-PRESS') {
+    if (features.hasHandles === false || (features.motion !== 'vertical' && features.motion !== 'unknown')) {
+      console.log('Shoulder Press guardrail failed: no handles or wrong motion');
+      return { 
+        ...initialResult, 
+        confidence: Math.max(0.3, initialResult.confidence - 0.3),
+        reasoning: `${initialResult.reasoning} [Confidence lowered: Expected handles with vertical motion for Shoulder Press]`
+      };
+    }
+  }
+  
+  return initialResult;
+}
+
+// JSON extraction helper
+function extractJson(input: string) {
+  if (!input) return '';
+  const fence = input.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) return fence[1].trim();
+  const first = input.indexOf('{');
+  const last = input.lastIndexOf('}');
+  if (first !== -1 && last !== -1 && last > first) return input.slice(first, last + 1).trim();
+  return input.trim();
+}

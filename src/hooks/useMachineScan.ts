@@ -20,7 +20,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const processingRef = useRef<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { autoStop = true, confidenceThreshold = 0.75 } = options;
+  const { autoStop = true, confidenceThreshold = 0.85 } = options;
 
   const startCamera = useCallback(async () => {
     try {
@@ -28,8 +28,8 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 }
         }
       });
 
@@ -41,8 +41,8 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       setStream(mediaStream);
       setIsScanning(true);
 
-      // Start frame processing
-      intervalRef.current = setInterval(processFrame, 1000); // Process every second
+      // Start frame processing with better timing
+      intervalRef.current = setInterval(processFrame, 1500); // Process every 1.5 seconds for better accuracy
     } catch (err) {
       setError('Camera access denied or not available');
       console.error('Camera error:', err);

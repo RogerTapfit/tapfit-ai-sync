@@ -3,7 +3,7 @@ import { MachineRegistryService } from './machineRegistryService';
 import { supabase } from '@/integrations/supabase/client';
 
 export class MachineRecognitionService {
-  private static readonly CONFIDENCE_THRESHOLD = 0.75; // Lowered for more conservative matching
+  private static readonly CONFIDENCE_THRESHOLD = 0.85; // Raised for stricter matching  
   private static readonly MIN_ALTERNATIVES = 3;
 
   /**
@@ -44,8 +44,18 @@ export class MachineRecognitionService {
 
       const analysis = data.analysis;
       
-      // If AI identified a machine, return it with high confidence
-      if (analysis.machineId && analysis.confidence >= 0.7) {
+      // Validate features if present (from two-pass analysis)
+      if (analysis.features && analysis.machineId) {
+        const isValidated = this.validateMachineFeatures(analysis.machineId, analysis.features);
+        if (!isValidated) {
+          console.warn('Machine features validation failed:', analysis.machineId, analysis.features);
+          // Lower confidence significantly if features don't match
+          analysis.confidence = Math.max(0.3, analysis.confidence - 0.4);
+        }
+      }
+
+      // If AI identified a machine with sufficient confidence, return it
+      if (analysis.machineId && analysis.confidence >= 0.6) {
         const machine = MachineRegistryService.getMachineById(analysis.machineId);
         if (machine) {
           const mainResult: RecognitionResult = {
@@ -201,6 +211,35 @@ export class MachineRecognitionService {
       imageUrl: machine.imageUrl,
       reasoning: `Browse ${machine.type} machine`
     }));
+  }
+
+  /**
+   * Validate machine features from AI analysis
+   */
+  private static validateMachineFeatures(machineId: string, features: any): boolean {
+    if (!features) return true; // No features to validate
+    
+    const rules: Record<string, any> = {
+      'MCH-PEC-DECK': { hasHandles: false, hasArmPads: true, motion: 'swing-inward' },
+      'MCH-CHEST-PRESS': { hasHandles: true, motion: 'horizontal' },
+      'MCH-SHOULDER-PRESS': { hasHandles: true, motion: 'vertical', seatBack: 'upright' },
+      'MCH-INCLINE-CHEST-PRESS': { hasHandles: true, motion: 'upward-forward', seatBack: 'inclined' },
+      'MCH-LAT-PULLDOWN': { hasOverheadCable: true }
+    };
+    
+    const expectedFeatures = rules[machineId];
+    if (!expectedFeatures) return true; // No specific rules for this machine
+    
+    // Check each expected feature
+    for (const [key, expectedValue] of Object.entries(expectedFeatures)) {
+      const actualValue = features[key];
+      if (actualValue !== undefined && actualValue !== expectedValue && actualValue !== 'unknown') {
+        console.log(`Feature validation failed for ${machineId}: ${key} expected ${expectedValue}, got ${actualValue}`);
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   /**
