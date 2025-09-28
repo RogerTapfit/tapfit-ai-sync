@@ -3,7 +3,7 @@ import { MachineRegistryService } from './machineRegistryService';
 import { supabase } from '@/integrations/supabase/client';
 
 export class MachineRecognitionService {
-  private static readonly CONFIDENCE_THRESHOLD = 0.85; // Raised for better accuracy
+  private static readonly CONFIDENCE_THRESHOLD = 0.75; // Lowered for more conservative matching
   private static readonly MIN_ALTERNATIVES = 3;
 
   /**
@@ -45,7 +45,7 @@ export class MachineRecognitionService {
       const analysis = data.analysis;
       
       // If AI identified a machine, return it with high confidence
-      if (analysis.machineId && analysis.confidence >= 0.6) {
+      if (analysis.machineId && analysis.confidence >= 0.7) {
         const machine = MachineRegistryService.getMachineById(analysis.machineId);
         if (machine) {
           const mainResult: RecognitionResult = {

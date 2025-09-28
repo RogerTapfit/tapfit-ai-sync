@@ -102,21 +102,21 @@ serve(async (req) => {
 
     // Use provided machine catalog or fall back to default
     const MACHINE_CATALOG = machineCatalog || [
-      { id: 'MCH-CHEST-PRESS', name: 'Chest Press Machine', type: 'Chest Press', description: 'Horizontal pressing motion with handles at chest level and slightly reclined seat' },
-      { id: 'MCH-PEC-DECK', name: 'Pec Deck (Butterfly) Machine', type: 'Pec Deck', description: 'Arm pads that swing together in front of the torso for chest isolation' },
-      { id: 'MCH-INCLINE-CHEST-PRESS', name: 'Incline Chest Press Machine', type: 'Incline Press', description: 'Angled pressing motion with significant upward angle and inclined seat back (30-45 degrees)' },
-      { id: 'MCH-LAT-PULLDOWN', name: 'Lat Pulldown Machine', type: 'Lat Pulldown', description: 'Overhead bar pulled down to chest level while seated' },
-      { id: 'MCH-SEATED-ROW', name: 'Seated Row Machine', type: 'Seated Row', description: 'Horizontal pulling motion while seated with chest pad support' },
-      { id: 'MCH-LEG-PRESS', name: 'Leg Press Machine', type: 'Leg Press', description: 'Angled leg pressing platform with back support for lower body' },
-      { id: 'MCH-LEG-EXTENSION', name: 'Leg Extension Machine', type: 'Leg Extension', description: 'Seated position with leg pad that extends upward for quadriceps isolation' },
-      { id: 'MCH-SHOULDER-PRESS', name: 'Shoulder Press Machine', type: 'Shoulder Press', description: 'Vertical/overhead pressing path with handles above shoulder level and upright seat back' },
-      { id: 'MCH-TREADMILL', name: 'Treadmill', type: 'Cardio', description: 'Moving belt for walking/running with handrails and control panel' },
-      { id: 'MCH-ELLIPTICAL', name: 'Elliptical Machine', type: 'Cardio', description: 'Standing position with moving foot pedals and arm handles' },
-      { id: 'MCH-STATIONARY-BIKE', name: 'Stationary Bike', type: 'Cardio', description: 'Seated cycling position with pedals and handlebars' },
-      { id: 'MCH-ROWING-MACHINE', name: 'Rowing Machine', type: 'Cardio', description: 'Seated with sliding seat and pulling handle' },
-      { id: 'MCH-STAIR-CLIMBER', name: 'Stair Climber', type: 'Cardio', description: 'Standing position with stepping pedals that move up and down' },
-      { id: 'MCH-BENCH-PRESS', name: 'Bench Press (Barbell Station)', type: 'Bench Press', description: 'Free barbell on J-hooks with adjustable bench; no rails, guide rods, or weight stack' },
-      { id: 'MCH-SMITH-MACHINE', name: 'Smith Machine', type: 'Smith Machine', description: 'Barbell fixed on vertical rails with safety stops and guided linear path' }
+      { id: 'MCH-CHEST-PRESS', name: 'Chest Press Machine', type: 'Chest Press', description: 'Machine with HANDLES/GRIPS that you grasp with your hands for horizontal pressing motion. Has a slightly reclined seat and weight stack. NO arm pads or elbow rests - you grip handles with your hands.' },
+      { id: 'MCH-PEC-DECK', name: 'Pec Deck (Butterfly) Machine', type: 'Pec Deck', description: 'Machine with ARM PADS or ELBOW PADS that you rest your arms/elbows against. Arms swing together in a butterfly motion. NO handles to grip - your arms rest against pads that move inward.' },
+      { id: 'MCH-INCLINE-CHEST-PRESS', name: 'Incline Chest Press Machine', type: 'Incline Press', description: 'Machine with handles for pressing at an upward angle. Seat back is significantly inclined (30-45 degrees). Pressing motion goes up and forward, not horizontal.' },
+      { id: 'MCH-LAT-PULLDOWN', name: 'Lat Pulldown Machine', type: 'Lat Pulldown', description: 'Seated machine with overhead cable system and wide bar that pulls down to chest level. Has knee pads to secure legs.' },
+      { id: 'MCH-SEATED-ROW', name: 'Seated Row Machine', type: 'Seated Row', description: 'Seated machine with horizontal pulling motion. Has chest pad for support and handles/cable system for pulling toward torso.' },
+      { id: 'MCH-LEG-PRESS', name: 'Leg Press Machine', type: 'Leg Press', description: 'Angled machine with large foot platform for leg pressing. User sits with back support and pushes platform with feet.' },
+      { id: 'MCH-LEG-EXTENSION', name: 'Leg Extension Machine', type: 'Leg Extension', description: 'Seated machine with padded lever that extends legs upward for quadriceps isolation. Ankle pad pushes legs up.' },
+      { id: 'MCH-SHOULDER-PRESS', name: 'Shoulder Press Machine', type: 'Shoulder Press', description: 'Machine with handles positioned at or above shoulder level for vertical/overhead pressing. Seat back is upright (near 90 degrees). Motion is straight up, not horizontal.' },
+      { id: 'MCH-TREADMILL', name: 'Treadmill', type: 'Cardio', description: 'Cardio machine with moving belt surface for walking/running. Has handrails and control panel display.' },
+      { id: 'MCH-ELLIPTICAL', name: 'Elliptical Machine', type: 'Cardio', description: 'Standing cardio machine with oval foot pedals that move in elliptical motion. Has moving arm handles.' },
+      { id: 'MCH-STATIONARY-BIKE', name: 'Stationary Bike', type: 'Cardio', description: 'Seated cardio machine with pedals and handlebars. Has adjustable seat and resistance controls.' },
+      { id: 'MCH-ROWING-MACHINE', name: 'Rowing Machine', type: 'Cardio', description: 'Low-profile machine with sliding seat and cable/handle for rowing motion. User sits and pulls handle toward torso.' },
+      { id: 'MCH-STAIR-CLIMBER', name: 'Stair Climber', type: 'Cardio', description: 'Standing cardio machine with independent step pedals that move up and down alternately.' },
+      { id: 'MCH-BENCH-PRESS', name: 'Bench Press (Barbell Station)', type: 'Bench Press', description: 'Free weight station with barbell on J-hooks/rack. Has adjustable bench but NO weight stack, cables, or guided rails.' },
+      { id: 'MCH-SMITH-MACHINE', name: 'Smith Machine', type: 'Smith Machine', description: 'Barbell fixed on vertical rails with safety stops. Bar moves only up and down in guided linear path.' }
     ];
 
     // Build the machine list for the prompt
@@ -130,25 +130,43 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const prompt = `You are an expert at identifying gym workout machines from photos.
-Analyze the image and identify which specific machine it shows from this exact list:
+    const prompt = `You are an expert at identifying gym workout machines from photos. Study the image carefully and identify which specific machine it shows from this exact list:
 
 ${machineListText}
 
-CRITICAL DISTINCTIONS:
-- Shoulder Press vs Chest Press: Shoulder press has a vertical/overhead pressing path with handles above shoulder level and an upright (~90°) seat back. Chest press has a horizontal pressing path with handles at chest level and a slightly reclined seat.
-- Incline Chest Press vs Chest Press: Incline has a clear 30–45° seat back and an upward-forward pressing angle; regular chest press is more horizontal with a flatter seat.
-- Pec Deck: Arm pads swing together in front of the torso; not a pressing motion with a bar/handles.
-- Treadmill vs Other Cardio: Treadmill has a moving belt surface and handrails. Elliptical has foot pedals and arm handles. Stationary bike has a seat and pedals.
-- Bench Press vs Smith Machine vs Chest Press Machine: 
-  * Bench Press = Free barbell on J-hooks, no rails/guide rods, adjustable bench
-  * Smith Machine = Barbell fixed on vertical rails with safety stops, guided linear path
-  * Chest Press Machine = Handles/arms with weight stack, not a free barbell
+CRITICAL VISUAL ANALYSIS STEPS:
+1. FIRST: Look at what the user GRIPS or RESTS against:
+   - HANDLES/GRIPS that you grasp with hands = Pressing machines (Chest Press, Shoulder Press, Incline Press)
+   - ARM PADS/ELBOW PADS that you rest arms against = Pec Deck (Butterfly) Machine
+   - CABLE/BAR systems = Lat Pulldown, Seated Row, Cable machines
+
+2. SECOND: Determine the MOTION DIRECTION:
+   - HORIZONTAL pressing (straight forward) = Chest Press Machine
+   - VERTICAL/OVERHEAD pressing (straight up) = Shoulder Press Machine  
+   - UPWARD-FORWARD pressing (angled up) = Incline Chest Press Machine
+   - SWINGING INWARD motion (arms come together) = Pec Deck Machine
+
+3. THIRD: Check SEAT POSITION:
+   - Nearly upright seat (85-90°) = Shoulder Press
+   - Slightly reclined seat (70-80°) = Chest Press
+   - Significantly inclined seat (30-45°) = Incline Chest Press
+
+MOST COMMON MISTAKES TO AVOID:
+- DO NOT confuse Chest Press (has handles you grip) with Pec Deck (has arm pads you rest against)
+- DO NOT confuse Shoulder Press (vertical motion, upright seat) with Chest Press (horizontal motion, reclined seat)
+- DO NOT confuse machines with weight stacks vs free barbells
+
+CONFIDENCE GUIDELINES:
+- 0.9-1.0: Very clear visual features match exactly one machine type
+- 0.7-0.8: Good match but some ambiguity in angle or lighting
+- 0.5-0.6: Partial match but significant uncertainty
+- Below 0.5: Too unclear, set machineId to null
 
 OUTPUT RULES (must follow exactly):
 - Return ONLY a valid JSON object (no markdown, no code fences, no extra text).
 - Keys: "machineId" (string|null, must be one of the IDs provided), "confidence" (number 0..1), "reasoning" (string).
-- If confidence < 0.6 or unsure, set "machineId" to null and explain why in "reasoning".`;
+- If confidence < 0.7 or genuinely unsure, set "machineId" to null and explain why in "reasoning".
+- In reasoning, explicitly state what visual features led to your identification.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
