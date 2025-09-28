@@ -134,6 +134,12 @@ export default function MachineWorkout() {
   };
 
   const handleSetComplete = async (setIndex: number) => {
+    // Clear any active rest timer if user continues early  
+    if (isResting) {
+      setIsResting(false);
+      setRestTime(0);
+    }
+
     const updatedSets = [...sets];
     updatedSets[setIndex].completed = true;
     setSets(updatedSets);
@@ -379,16 +385,44 @@ export default function MachineWorkout() {
       </div>
 
       <div className="container max-w-4xl mx-auto p-4 space-y-6">
-        {/* Rest Timer Card */}
+        {/* Rest Timer - Non-blocking */}
         {isResting && (
-          <Card className="border-orange-500 bg-orange-500/10">
-            <CardContent className="p-6 text-center">
-              <div className="text-4xl font-bold text-orange-500 mb-2">
-                {formatTime(restTime)}
-              </div>
-              <p className="text-sm text-muted-foreground">Rest time remaining</p>
-            </CardContent>
-          </Card>
+          <div className="fixed top-4 right-4 z-50 w-64">
+            <Card className="bg-background/95 backdrop-blur border-muted">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Suggested Rest</span>
+                </div>
+                <div className="text-2xl font-bold text-primary mb-3">
+                  {formatTime(restTime)}
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm"
+                    variant="outline" 
+                    onClick={() => {
+                      setIsResting(false);
+                      setRestTime(0);
+                    }}
+                    className="flex-1"
+                  >
+                    Continue
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="ghost" 
+                    onClick={() => {
+                      setIsResting(false);
+                      setRestTime(0);
+                    }}
+                  >
+                    Skip
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Exercise Progress */}

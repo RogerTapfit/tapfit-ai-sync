@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -366,6 +366,12 @@ const WorkoutDetail = () => {
   };
 
   const handleSetComplete = async (setIndex: number) => {
+    // Clear any active rest timer if user continues early
+    if (isResting) {
+      setIsResting(false);
+      setRestTime(0);
+    }
+
     const updatedSets = [...sets];
     updatedSets[setIndex].completed = true;
     setSets(updatedSets);
@@ -607,27 +613,44 @@ const WorkoutDetail = () => {
         </div>
       </Card>
 
-      {/* Rest Timer */}
+      {/* Rest Timer - Non-blocking */}
       {isResting && (
-        <Card className="glow-card p-6 text-center border-primary">
-          <Clock className="h-8 w-8 mx-auto mb-4 text-primary" />
-          <h3 className="text-xl font-bold mb-2">Rest Time</h3>
-          <div className="text-3xl font-bold text-primary mb-4">
-            {formatTime(restTime)}
-          </div>
-          <div className="text-sm text-muted-foreground mb-4">
-            {autoFlowActive ? `Next: Set ${Math.min(setIndexAuto + 1, sets.length)}` : ''}
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setIsResting(false);
-              setRestTime(0);
-            }}
-          >
-            Skip Rest
-          </Button>
-        </Card>
+        <div className="fixed top-4 right-4 z-50 w-64">
+          <Card className="bg-background/95 backdrop-blur border-muted">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Suggested Rest</span>
+              </div>
+              <div className="text-2xl font-bold text-primary mb-3">
+                {formatTime(restTime)}
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm"
+                  variant="outline" 
+                  onClick={() => {
+                    setIsResting(false);
+                    setRestTime(0);
+                  }}
+                  className="flex-1"
+                >
+                  Continue
+                </Button>
+                <Button 
+                  size="sm"
+                  variant="ghost" 
+                  onClick={() => {
+                    setIsResting(false);
+                    setRestTime(0);
+                  }}
+                >
+                  Skip
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Machine Image and Muscle Groups */}
@@ -767,9 +790,9 @@ const WorkoutDetail = () => {
                 {!set.completed && (
                   <Button
                     onClick={() => handleSetComplete(index)}
-                      disabled={isResting || autoFlowActive}
-                      className="w-full sm:w-auto sm:min-w-[120px] h-10"
-                    >
+                    disabled={autoFlowActive}
+                    className="w-full sm:w-auto sm:min-w-[120px] h-10"
+                  >
                       Complete Set
                     </Button>
                 )}
