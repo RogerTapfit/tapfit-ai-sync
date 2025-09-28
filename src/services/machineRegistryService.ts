@@ -83,7 +83,7 @@ export const MACHINE_CATALOG: Machine[] = [
     name: 'Bench Press (Barbell Station)',
     type: 'Bench Press',
     synonyms: ['bench press', 'flat bench press', 'barbell bench', 'olympic bench', 'bench with rack', 'bench station'],
-    imageUrl: '/lovable-uploads/ac6dd467-37ab-4e6a-9ecc-d7e6ecb97913.png',
+    imageUrl: '/lovable-uploads/bench-press.png',
     workoutId: 'bench-press',
     muscleGroup: 'chest'
   },
