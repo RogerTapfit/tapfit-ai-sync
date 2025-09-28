@@ -144,14 +144,43 @@ serve(async (req) => {
       machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === firstPassResult.machineId);
     }
 
+    let finalResult = firstPassResult;
+    let finalMachineName = machineMatch?.name || 'Unknown Machine';
+    let finalImageUrl = machineMatch ? `/lovable-uploads/${firstPassResult?.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null;
+
+    // If confidence is low or machine not recognized, try online identification
+    const confidenceThreshold = 0.75;
+    if (!firstPassResult || firstPassResult.confidence < confidenceThreshold || firstPassResult.machineId === 'UNKNOWN') {
+      console.log(`Local catalog confidence too low (${firstPassResult?.confidence || 0}), trying online identification...`);
+      
+      try {
+        const onlineResult = await analyzeWithOnlineModel(imageData, imageFormat);
+        
+        if (onlineResult && onlineResult.confidence > (firstPassResult?.confidence || 0)) {
+          console.log(`Online identification more confident: ${onlineResult.confidence} vs ${firstPassResult?.confidence || 0}`);
+          finalResult = {
+            machineId: 'ONLINE-' + onlineResult.machineName.toUpperCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
+            machineName: onlineResult.machineName,
+            confidence: onlineResult.confidence,
+            reasoning: onlineResult.reasoning
+          };
+          finalMachineName = onlineResult.machineName;
+          finalImageUrl = null; // No local image for online-identified machines
+        }
+      } catch (error) {
+        console.error('Online identification failed:', error);
+        // Fall back to original result
+      }
+    }
+
     const result = {
       success: true,
       analysis: {
-        machineId: firstPassResult?.machineId || null,
-        machineName: machineMatch?.name || 'Unknown Machine',
-        confidence: firstPassResult?.confidence || 0,
-        reasoning: firstPassResult?.reasoning || 'Analysis completed',
-        imageUrl: machineMatch ? `/lovable-uploads/${firstPassResult.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null,
+        machineId: finalResult?.machineId || null,
+        machineName: finalMachineName,
+        confidence: finalResult?.confidence || 0,
+        reasoning: finalResult?.reasoning || 'Analysis completed',
+        imageUrl: finalImageUrl,
         features: features || null
       }
     };
@@ -177,6 +206,105 @@ serve(async (req) => {
     });
   }
 });
+
+// Helper function for online AI model analysis (broader scope)
+async function analyzeWithOnlineModel(imageData: string, imageFormat: string) {
+  console.log('Starting online machine identification...');
+
+  const prompt = `You are an expert at identifying gym workout machines from photos. Study the image carefully and identify the specific gym machine shown.
+
+INSTRUCTIONS:
+1. Look at the machine's key features: handles, bars, seats, cables, weight stacks, etc.
+2. Identify the exercise motion and muscle groups targeted
+3. Provide the specific machine name (e.g., "Oblique Crunch Machine", "Seated Lat Pulldown", "Cable Crossover")
+4. Give a confidence score from 0.0 to 1.0 based on how certain you are
+5. Explain your reasoning based on visual features
+
+Return ONLY a JSON object with this exact format:
+{
+  "machineName": "Exact machine name",
+  "confidence": 0.95,
+  "reasoning": "Detailed explanation of visual features that led to this identification"
+}`;
+
+  const models = ['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
+  
+  for (const model of models) {
+    try {
+      console.log(`Trying online model: ${model}`);
+      
+      const requestBody: any = {
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${imageFormat};base64,${imageData}`,
+                  detail: 'high'
+                }
+              }
+            ]
+          }
+        ]
+      };
+
+      // Use max_completion_tokens for newer models, max_tokens for legacy
+      if (['gpt-5-mini-2025-08-07', 'o4-mini-2025-04-16'].includes(model)) {
+        requestBody.max_completion_tokens = 1000;
+      } else {
+        requestBody.max_tokens = 1000;
+        requestBody.temperature = 0.1;
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        console.error(`Model ${model} failed with status: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Error details: ${errorText}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (!content) {
+        console.error(`No content returned from model ${model}`);
+        continue;
+      }
+
+      console.log(`Raw response from ${model}:`, content);
+      
+      // Parse the JSON response
+      const cleanedContent = extractJson(content);
+      const result = JSON.parse(cleanedContent);
+      
+      if (result.machineName && result.confidence && result.reasoning) {
+        console.log(`Online identification successful with ${model}:`, result);
+        return result;
+      } else {
+        console.error(`Invalid response format from ${model}:`, result);
+        continue;
+      }
+    } catch (error) {
+      console.error(`Error with model ${model}:`, error);
+      continue;
+    }
+  }
+
+  throw new Error('All online models failed to identify the machine');
+}
 
 // Helper function for AI model analysis with proper model handling
 async function analyzeWithModel(imageData: string, imageFormat: string, machineCatalog: any[]) {
