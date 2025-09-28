@@ -35,6 +35,13 @@ const WorkoutList = () => {
   const [completedExtraExercises, setCompletedExtraExercises] = useState<WorkoutMachine[]>([]);
   const [currentMuscleGroup, setCurrentMuscleGroup] = useState<string>('chest');
 
+  // Helper function to determine if a workout is cardio
+  const isCardio = (workout: WorkoutMachine) => {
+    const cardioKeywords = ['treadmill', 'elliptical', 'bike', 'cycling', 'cardio', 'running', 'walking'];
+    const workoutName = workout.name.toLowerCase();
+    return workout.muscleGroup === 'cardio' || cardioKeywords.some(keyword => workoutName.includes(keyword));
+  };
+
   // Real-time muscle group analysis based on all exercises
   const muscleGroupAnalysis = useMuscleGroupAnalysis(todaysWorkouts, completedExtraExercises);
 
@@ -370,14 +377,21 @@ const WorkoutList = () => {
 
     if (!workout.completed) {
       console.log("Marking workout as complete:", workout.name);
+      
+      // Use cardio-aware defaults
+      const cardioWorkout = isCardio(workout);
+      const defaultSets = cardioWorkout ? 1 : 3;
+      const defaultReps = cardioWorkout ? 20 : 30; // 20 minutes for cardio, 30 reps for strength
+      const defaultWeight = cardioWorkout ? undefined : undefined; // No weight for quick complete
+      
       // Log the exercise completion
       const success = await logExercise(
         currentWorkoutLog.id,
         workout.name,
         workout.name, // Use machine name as exercise name
-        3, // Default 3 sets
-        30, // Default 30 reps
-        undefined // No weight specified
+        defaultSets,
+        defaultReps,
+        defaultWeight
       );
 
       if (success) {
@@ -629,12 +643,18 @@ const WorkoutList = () => {
                     {workout.completed && workout.workoutDetails && (
                       <div className="text-xs text-green-600 space-y-1">
                         <p className="flex items-center gap-2">
-                          <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
-                          {workout.workoutDetails.weight && (
-                            <span>@ {workout.workoutDetails.weight} lbs</span>
+                          {isCardio(workout) ? (
+                            <span>Duration: {workout.workoutDetails.reps} min</span>
+                          ) : (
+                            <>
+                              <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
+                              {workout.workoutDetails.weight != null && workout.workoutDetails.weight > 0 && (
+                                <span>@ {workout.workoutDetails.weight} lbs</span>
+                              )}
+                            </>
                           )}
                         </p>
-                        {workout.workoutDetails.totalWeightLifted && (
+                        {!isCardio(workout) && workout.workoutDetails.totalWeightLifted != null && workout.workoutDetails.totalWeightLifted > 0 && (
                           <p className="font-medium">
                             Total Weight: {workout.workoutDetails.totalWeightLifted} lbs
                           </p>
@@ -693,12 +713,18 @@ const WorkoutList = () => {
                       {workout.workoutDetails && (
                         <div className="text-xs text-green-600 space-y-1">
                           <p className="flex items-center gap-2">
-                            <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
-                            {workout.workoutDetails.weight && (
-                              <span>@ {workout.workoutDetails.weight} lbs</span>
+                            {isCardio(workout) ? (
+                              <span>Duration: {workout.workoutDetails.reps} min</span>
+                            ) : (
+                              <>
+                                <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
+                                {workout.workoutDetails.weight != null && workout.workoutDetails.weight > 0 && (
+                                  <span>@ {workout.workoutDetails.weight} lbs</span>
+                                )}
+                              </>
                             )}
                           </p>
-                          {workout.workoutDetails.totalWeightLifted && (
+                          {!isCardio(workout) && workout.workoutDetails.totalWeightLifted != null && workout.workoutDetails.totalWeightLifted > 0 && (
                             <p className="font-medium">
                               Total Weight: {workout.workoutDetails.totalWeightLifted} lbs
                             </p>
