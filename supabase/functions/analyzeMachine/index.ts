@@ -96,22 +96,20 @@ serve(async (req) => {
       `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
     ).join('\n');
 
-    const prompt = `You are an expert at identifying gym workout machines. Analyze the image and identify which specific machine it shows from this exact list:
+    const prompt = `You are an expert at identifying gym workout machines from photos.
+Analyze the image and identify which specific machine it shows from this exact list:
 
 ${machineListText}
 
-IMPORTANT DISTINCTIONS:
-- Chest Press vs Incline Chest Press: Look for the angle of the seat back and pressing angle. Incline has a significant upward angle (30-45 degrees), while regular chest press is more horizontal.
-- Pay close attention to the pressing angle, seat position, and machine structure.
+CRITICAL DISTINCTIONS:
+- Shoulder Press vs Chest Press: Shoulder press has a vertical/overhead pressing path with handles above shoulder level and an upright (~90°) seat back. Chest press has a horizontal pressing path with handles at chest level and a slightly reclined seat.
+- Incline Chest Press vs Chest Press: Incline has a clear 30–45° seat back and an upward-forward pressing angle; regular chest press is more horizontal with a flatter seat.
+- Pec Deck: Arm pads swing together in front of the torso; not a pressing motion with a bar/handles.
 
-Respond with ONLY a JSON object in this exact format:
-{
-  "machineId": "MCH-EXACT-ID-FROM-LIST",
-  "confidence": 0.85,
-  "reasoning": "Clear explanation of why you identified this machine, mentioning key visual features that distinguish it from similar machines"
-}
-
-If you cannot identify the machine with reasonable confidence (below 0.6), set machineId to null and explain why in the reasoning.`;
+OUTPUT RULES (must follow exactly):
+- Return ONLY a valid JSON object (no markdown, no code fences, no extra text).
+- Keys: "machineId" (string|null, must be one of the IDs provided), "confidence" (number 0..1), "reasoning" (string).
+- If confidence < 0.6 or unsure, set "machineId" to null and explain why in "reasoning".`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -122,6 +120,10 @@ If you cannot identify the machine with reasonable confidence (below 0.6), set m
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
+          {
+            role: 'system',
+            content: 'You ONLY respond with a single valid JSON object. Do not include markdown, code fences, or any extra text.'
+          },
           {
             role: 'user',
             content: [
@@ -151,17 +153,35 @@ If you cannot identify the machine with reasonable confidence (below 0.6), set m
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
-    
-    console.log('AI Response:', aiResponse);
+    const aiResponse = data.choices?.[0]?.message?.content ?? '';
+    console.log('AI Response raw:', aiResponse);
+
+    // Robustly extract JSON from potential markdown/code fences
+    function extractJson(input: string) {
+      if (!input) return '';
+      const fence = input.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      if (fence) return fence[1].trim();
+      const first = input.indexOf('{');
+      const last = input.lastIndexOf('}');
+      if (first !== -1 && last !== -1 && last > first) return input.slice(first, last + 1).trim();
+      return input.trim();
+    }
+
+    const cleaned = extractJson(aiResponse);
 
     // Parse the JSON response
-    let analysisResult;
+    let analysisResult: any;
     try {
-      analysisResult = JSON.parse(aiResponse);
+      analysisResult = JSON.parse(cleaned);
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', aiResponse);
+      console.error('Failed to parse AI response as JSON. Cleaned content:', cleaned);
       throw new Error('AI response format error');
+    }
+
+    // Normalize types
+    if (analysisResult && typeof analysisResult.confidence === 'string') {
+      const parsed = parseFloat(analysisResult.confidence);
+      analysisResult.confidence = isNaN(parsed) ? 0 : parsed;
     }
 
     // Validate the response structure
