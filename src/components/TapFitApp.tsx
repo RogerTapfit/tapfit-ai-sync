@@ -154,6 +154,7 @@ const TapFitApp = () => {
         currentPage={currentPage} 
         onPageChange={setCurrentPage}
         user={user}
+        isGuest={isGuest}
         onSignOut={signOut}
       />
       <div className="flex-1 md:ml-0 pt-20 md:pt-0">

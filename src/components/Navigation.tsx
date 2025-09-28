@@ -26,10 +26,11 @@ interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
   user: SupabaseUser | null;
+  isGuest: boolean;
   onSignOut: () => Promise<void>;
 }
 
-const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationProps) => {
+const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: NavigationProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -133,24 +134,36 @@ const Navigation = ({ currentPage, onPageChange, user, onSignOut }: NavigationPr
             })}
           </nav>
 
-          {/* User Info & Logout */}
+          {/* User Info & Auth Action */}
           <div className="pt-6 space-y-3">
             <div className="text-xs text-muted-foreground uppercase tracking-wide">
               Account
             </div>
             <div className="space-y-2">
               <div className="text-sm font-medium truncate">
-                {user?.email}
+                {isGuest ? "Guest User" : user?.email}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onSignOut}
-                className="w-full justify-start"
-              >
-                <LogOut className="h-3 w-3 mr-2" />
-                Sign Out
-              </Button>
+              {isGuest ? (
+                <Button
+                  variant="glow"
+                  size="sm"
+                  onClick={() => navigate('/auth')}
+                  className="w-full justify-start"
+                >
+                  <UserIcon className="h-3 w-3 mr-2" />
+                  Sign In
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onSignOut}
+                  className="w-full justify-start"
+                >
+                  <LogOut className="h-3 w-3 mr-2" />
+                  Sign Out
+                </Button>
+              )}
             </div>
           </div>
 
