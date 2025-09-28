@@ -210,6 +210,7 @@ serve(async (req) => {
 // Helper function for online AI model analysis (broader scope)
 async function analyzeWithOnlineModel(imageData: string, imageFormat: string) {
   console.log('Starting online machine identification...');
+  const mimeType = normalizeImageMime(imageFormat);
 
   const prompt = `You are an expert gym equipment specialist. Analyze this image and identify the specific gym machine shown with the same precision as ChatGPT.
 
@@ -250,7 +251,7 @@ Return ONLY a JSON object with this exact format:
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:${imageFormat};base64,${imageData}`,
+                  url: `data:${mimeType};base64,${imageData}`,
                   detail: 'high'
                 }
               }
@@ -362,6 +363,7 @@ OUTPUT RULES (must follow exactly):
 
   // Try newer model first, fallback to gpt-4o
   const models = ['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
+  const mimeType = normalizeImageMime(imageFormat);
   
   for (const model of models) {
     try {
@@ -382,7 +384,7 @@ OUTPUT RULES (must follow exactly):
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:image/${imageFormat};base64,${imageData}`,
+                  url: `data:${mimeType};base64,${imageData}`,
                   detail: 'high'
                 }
               }
@@ -454,6 +456,7 @@ async function analyzeFeatures(imageData: string, imageFormat: string) {
 Return ONLY a valid JSON object with these exact keys: hasHandles, hasArmPads, motion, seatBack, hasOverheadCable`;
 
   try {
+    const mimeType = normalizeImageMime(imageFormat);
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -477,7 +480,7 @@ Return ONLY a valid JSON object with these exact keys: hasHandles, hasArmPads, m
               {
                 type: 'image_url',
                 image_url: {
-                  url: `data:image/${imageFormat};base64,${imageData}`,
+                  url: `data:${mimeType};base64,${imageData}`,
                   detail: 'high'
                 }
               }
@@ -493,7 +496,15 @@ Return ONLY a valid JSON object with these exact keys: hasHandles, hasArmPads, m
       const data = await response.json();
       const featuresResponse = data.choices?.[0]?.message?.content ?? '';
       const cleaned = extractJson(featuresResponse);
-      return JSON.parse(cleaned);
+      const raw = JSON.parse(cleaned);
+      const toBool = (v: any) => typeof v === 'boolean' ? v : String(v).trim().toLowerCase() === 'yes' || String(v).trim().toLowerCase() === 'true' || String(v).trim() === '1';
+      return {
+        hasHandles: toBool(raw.hasHandles),
+        hasArmPads: toBool(raw.hasArmPads),
+        motion: (raw.motion || 'unknown').toString().toLowerCase(),
+        seatBack: (raw.seatBack || 'unknown').toString().toLowerCase(),
+        hasOverheadCable: toBool(raw.hasOverheadCable)
+      };
     }
   } catch (error) {
     console.error('Feature analysis error:', error);
@@ -507,44 +518,52 @@ function applyFeatureGuardrails(initialResult: any, features: any) {
   if (!features || !initialResult) return initialResult;
   
   console.log('Applying feature guardrails:', features);
-  
-  // Rule: Pec Deck must have arm pads and NO handles
-  if (initialResult.machineId === 'MCH-PEC-DECK') {
-    if (features.hasHandles === true || features.hasArmPads === false) {
-      console.log('Pec Deck guardrail failed: hasHandles or missing armPads');
-      return { 
-        ...initialResult, 
-        confidence: Math.max(0.3, initialResult.confidence - 0.4),
-        reasoning: `${initialResult.reasoning} [Confidence lowered: Expected arm pads without handles for Pec Deck]`
-      };
+
+  const toBool = (v: any) => typeof v === 'boolean' ? v : String(v).trim().toLowerCase() === 'yes' || String(v).trim().toLowerCase() === 'true' || String(v).trim() === '1';
+  const hasHandles = toBool(features.hasHandles);
+  const hasArmPads = toBool(features.hasArmPads);
+  const motion = typeof features.motion === 'string' ? features.motion.toLowerCase() : 'unknown';
+  const seatBack = typeof features.seatBack === 'string' ? features.seatBack.toLowerCase() : 'unknown';
+
+  const result = { ...initialResult };
+
+  // Pec Deck expectations
+  if (result.machineId === 'MCH-PEC-DECK') {
+    if (hasHandles || !hasArmPads || (motion && motion !== 'swing-inward' && motion !== 'unknown')) {
+      console.log('Pec Deck guardrail failed: incompatible features');
+      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.4);
+      result.reasoning = `${result.reasoning} [Confidence lowered: Pec Deck expects arm pads without handles and swing-inward motion]`;
     }
   }
-  
-  // Rule: Chest Press must have handles and horizontal motion
-  if (initialResult.machineId === 'MCH-CHEST-PRESS') {
-    if (features.hasHandles === false || (features.motion !== 'horizontal' && features.motion !== 'unknown')) {
-      console.log('Chest Press guardrail failed: no handles or wrong motion');
-      return { 
-        ...initialResult, 
-        confidence: Math.max(0.3, initialResult.confidence - 0.3),
-        reasoning: `${initialResult.reasoning} [Confidence lowered: Expected handles with horizontal motion for Chest Press]`
-      };
+
+  // Chest Press expectations
+  if (result.machineId === 'MCH-CHEST-PRESS') {
+    if (!hasHandles || (motion && motion !== 'horizontal' && motion !== 'unknown')) {
+      console.log('Chest Press guardrail failed: incompatible features');
+      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.3);
+      result.reasoning = `${result.reasoning} [Confidence lowered: Chest Press expects handles with horizontal motion]`;
     }
   }
-  
-  // Rule: Shoulder Press must have handles and vertical motion with upright seat
-  if (initialResult.machineId === 'MCH-SHOULDER-PRESS') {
-    if (features.hasHandles === false || (features.motion !== 'vertical' && features.motion !== 'unknown')) {
-      console.log('Shoulder Press guardrail failed: no handles or wrong motion');
-      return { 
-        ...initialResult, 
-        confidence: Math.max(0.3, initialResult.confidence - 0.3),
-        reasoning: `${initialResult.reasoning} [Confidence lowered: Expected handles with vertical motion for Shoulder Press]`
-      };
+
+  // Shoulder Press expectations
+  if (result.machineId === 'MCH-SHOULDER-PRESS') {
+    if (!hasHandles || (motion && motion !== 'vertical' && motion !== 'unknown') || (seatBack && seatBack !== 'upright' && seatBack !== 'unknown')) {
+      console.log('Shoulder Press guardrail failed: incompatible features');
+      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.3);
+      result.reasoning = `${result.reasoning} [Confidence lowered: Shoulder Press expects handles, vertical motion, upright seat]`;
     }
   }
-  
-  return initialResult;
+
+  // Incline Chest Press expectations
+  if (result.machineId === 'MCH-INCLINE-CHEST-PRESS') {
+    if (!hasHandles || (motion && motion !== 'upward-forward' && motion !== 'unknown') || (seatBack && seatBack !== 'inclined' && seatBack !== 'unknown')) {
+      console.log('Incline Chest Press guardrail failed: incompatible features');
+      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.3);
+      result.reasoning = `${result.reasoning} [Confidence lowered: Incline Press expects handles, upward-forward motion, inclined seat]`;
+    }
+  }
+
+  return result;
 }
 
 // JSON extraction helper
@@ -556,4 +575,18 @@ function extractJson(input: string) {
   const last = input.lastIndexOf('}');
   if (first !== -1 && last !== -1 && last > first) return input.slice(first, last + 1).trim();
   return input.trim();
+}
+
+// Normalize various input formats (e.g., 'jpeg', 'image/jpeg', 'jpg') to a valid MIME
+function normalizeImageMime(fmt: string | null | undefined) {
+  if (!fmt) return 'image/jpeg';
+  const f = fmt.trim().toLowerCase();
+  if (f.startsWith('image/')) {
+    if (f.includes('heic') || f.includes('heif')) return 'image/jpeg'; // convert unsupported to jpeg
+    return f;
+  }
+  if (f.includes('png')) return 'image/png';
+  if (f.includes('webp')) return 'image/webp';
+  if (f.includes('jpg') || f.includes('jpeg')) return 'image/jpeg';
+  return 'image/jpeg';
 }
