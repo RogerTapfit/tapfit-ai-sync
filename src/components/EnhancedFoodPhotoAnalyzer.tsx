@@ -71,11 +71,26 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
       let file: File;
 
       if (!Capacitor.isNativePlatform()) {
-        // Web fallback
+        // Web fallback - Mobile Safari requires user gesture
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        if (source === 'camera') input.capture = 'environment';
+        input.multiple = false;
+        
+        // For mobile camera access, use capture attribute
+        if (source === 'camera') {
+          input.capture = 'environment';
+        }
+        
+        // Style the input to be invisible but accessible
+        input.style.position = 'fixed';
+        input.style.top = '-1000px';
+        input.style.left = '-1000px';
+        input.style.opacity = '0';
+        input.style.pointerEvents = 'none';
+        
+        // Add to DOM temporarily for mobile compatibility
+        document.body.appendChild(input);
         
         return new Promise<void>((resolve) => {
           input.onchange = async (e) => {
@@ -105,7 +120,10 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
             } else {
               resolve();
             }
+            // Clean up
+            document.body.removeChild(input);
           };
+          // Trigger click - this must happen synchronously from user gesture
           input.click();
         });
       }
