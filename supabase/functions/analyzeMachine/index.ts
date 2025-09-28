@@ -138,39 +138,39 @@ serve(async (req) => {
       }
     }
 
-    // Find the matching machine from our catalog
-    let machineMatch = null;
-    if (firstPassResult && firstPassResult.machineId) {
-      machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === firstPassResult.machineId);
+    // Always try online identification first for better accuracy like ChatGPT
+    let finalResult = null;
+    let finalMachineName = 'Unknown Machine';
+    let finalImageUrl = null;
+
+    // Start with online identification using advanced AI models
+    console.log('Starting with online AI identification for maximum accuracy...');
+    
+    try {
+      const onlineResult = await analyzeWithOnlineModel(imageData, imageFormat);
+      
+      if (onlineResult && onlineResult.confidence > 0.7) {
+        console.log(`Online identification successful: ${onlineResult.machineName} (${onlineResult.confidence})`);
+        finalResult = {
+          machineId: 'ONLINE-' + onlineResult.machineName.replace(/[^\w\s]/g, '').replace(/\s+/g, '-').toUpperCase(),
+          machineName: onlineResult.machineName,
+          confidence: onlineResult.confidence,
+          reasoning: onlineResult.reasoning
+        };
+        finalMachineName = onlineResult.machineName;
+        finalImageUrl = null; // No local image for online-identified machines
+      }
+    } catch (error) {
+      console.error('Online identification failed, falling back to local catalog:', error);
     }
 
-    let finalResult = firstPassResult;
-    let finalMachineName = machineMatch?.name || 'Unknown Machine';
-    let finalImageUrl = machineMatch ? `/lovable-uploads/${firstPassResult?.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null;
-
-    // If confidence is low or machine not recognized, try online identification
-    const confidenceThreshold = 0.75;
-    if (!firstPassResult || firstPassResult.confidence < confidenceThreshold || firstPassResult.machineId === 'UNKNOWN') {
-      console.log(`Local catalog confidence too low (${firstPassResult?.confidence || 0}), trying online identification...`);
-      
-      try {
-        const onlineResult = await analyzeWithOnlineModel(imageData, imageFormat);
-        
-        if (onlineResult && onlineResult.confidence > (firstPassResult?.confidence || 0)) {
-          console.log(`Online identification more confident: ${onlineResult.confidence} vs ${firstPassResult?.confidence || 0}`);
-          finalResult = {
-            machineId: 'ONLINE-' + onlineResult.machineName.toUpperCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
-            machineName: onlineResult.machineName,
-            confidence: onlineResult.confidence,
-            reasoning: onlineResult.reasoning
-          };
-          finalMachineName = onlineResult.machineName;
-          finalImageUrl = null; // No local image for online-identified machines
-        }
-      } catch (error) {
-        console.error('Online identification failed:', error);
-        // Fall back to original result
-      }
+    // Only use local catalog as fallback if online identification failed or had low confidence
+    if (!finalResult && firstPassResult) {
+      console.log('Using local catalog result as fallback');
+      const machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === firstPassResult.machineId);
+      finalResult = firstPassResult;
+      finalMachineName = machineMatch?.name || 'Unknown Machine';
+      finalImageUrl = machineMatch ? `/lovable-uploads/${firstPassResult.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null;
     }
 
     const result = {
@@ -211,23 +211,30 @@ serve(async (req) => {
 async function analyzeWithOnlineModel(imageData: string, imageFormat: string) {
   console.log('Starting online machine identification...');
 
-  const prompt = `You are an expert at identifying gym workout machines from photos. Study the image carefully and identify the specific gym machine shown.
+  const prompt = `You are an expert gym equipment specialist. Analyze this image and identify the specific gym machine shown with the same precision as ChatGPT.
 
-INSTRUCTIONS:
-1. Look at the machine's key features: handles, bars, seats, cables, weight stacks, etc.
-2. Identify the exercise motion and muscle groups targeted
-3. Provide the specific machine name (e.g., "Oblique Crunch Machine", "Seated Lat Pulldown", "Cable Crossover")
-4. Give a confidence score from 0.0 to 1.0 based on how certain you are
-5. Explain your reasoning based on visual features
+IDENTIFICATION REQUIREMENTS:
+- Provide the exact machine name including brand if visible (e.g., "Hoist ROC Abdominal Crunch Machine")
+- Identify the primary muscle groups targeted
+- Describe the exercise motion and how the machine is used
+- Note key visual features (handles, pads, weight stack position, seat design)
+- Be specific about machine type and model when possible
+
+ANALYSIS APPROACH:
+1. Look for brand names/labels on the machine
+2. Examine the seat, handles, and weight stack configuration
+3. Identify the exercise motion pattern (crunch, press, pull, etc.)
+4. Determine the target muscle groups from the design
+5. Provide specific machine name, not just generic terms
 
 Return ONLY a JSON object with this exact format:
 {
-  "machineName": "Exact machine name",
+  "machineName": "Specific machine name with brand/model if visible",
   "confidence": 0.95,
-  "reasoning": "Detailed explanation of visual features that led to this identification"
+  "reasoning": "Detailed identification explanation including brand, muscle targets, exercise motion, and key visual features"
 }`;
 
-  const models = ['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
+  const models = ['gpt-5-2025-08-07', 'o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
   
   for (const model of models) {
     try {
@@ -253,7 +260,7 @@ Return ONLY a JSON object with this exact format:
       };
 
       // Use max_completion_tokens for newer models, max_tokens for legacy
-      if (['gpt-5-mini-2025-08-07', 'o4-mini-2025-04-16'].includes(model)) {
+      if (['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'o4-mini-2025-04-16'].includes(model)) {
         requestBody.max_completion_tokens = 1000;
       } else {
         requestBody.max_tokens = 1000;
