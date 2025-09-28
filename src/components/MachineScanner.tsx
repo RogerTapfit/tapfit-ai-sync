@@ -277,11 +277,22 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
               <div className="text-destructive mb-4">
                 <X className="h-12 w-12 mx-auto" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Camera Error</h3>
+              <h3 className="text-lg font-medium mb-2">{isScanning ? 'Camera Error' : 'Upload Error'}</h3>
               <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={handleStart} variant="outline" className="w-full">
-                Try Again
-              </Button>
+              {isScanning ? (
+                <Button onClick={handleStart} variant="outline" className="w-full">
+                  Try Again
+                </Button>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  <Button onClick={handleGalleryClick} className="w-full">
+                    Upload Again
+                  </Button>
+                  <Button onClick={handleStart} variant="outline" className="w-full">
+                    Start Live Scanning
+                  </Button>
+                </div>
+              )}
             </Card>
           </div>
         )}
