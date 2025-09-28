@@ -194,10 +194,48 @@ export default function MachineWorkout() {
     );
   }
 
+  // Map scanned machine names to workout list names
+  const mapMachineNameToWorkoutName = (machineName: string): string => {
+    const nameMapping: { [key: string]: string } = {
+      'Chest Press Machine': 'Chest Press Machine',
+      'Pec Deck': 'Pec Deck (Butterfly) Machine',
+      'Butterfly Machine': 'Pec Deck (Butterfly) Machine',
+      'Incline Press': 'Incline Chest Press Machine',
+      'Incline Chest Press': 'Incline Chest Press Machine',
+      'Decline Press': 'Decline Chest Press Machine',
+      'Decline Chest Press': 'Decline Chest Press Machine',
+      'Cable Crossover': 'Cable Crossover Machine',
+      'Smith Machine': 'Smith Machine (Flat Bench Press setup)',
+      'Dip Machine': 'Seated Dip Machine (Chest-focused variant)',
+      'Assisted Dips': 'Assisted Chest Dips Machine'
+    };
+    
+    // Try exact match first
+    if (nameMapping[machineName]) {
+      return nameMapping[machineName];
+    }
+    
+    // Try partial match
+    for (const [key, value] of Object.entries(nameMapping)) {
+      if (machineName.toLowerCase().includes(key.toLowerCase()) || 
+          key.toLowerCase().includes(machineName.toLowerCase())) {
+        return value;
+      }
+    }
+    
+    return machineName; // Return original if no mapping found
+  };
+
   const handleWorkoutComplete = async () => {
-    await saveProgress();
+    if (!currentWorkoutLog || !machine) {
+      console.error('Missing workout log or machine data');
+      return;
+    }
+
     const completedSets = sets.filter(s => s.completed).length;
     const totalReps = sets.reduce((sum, set) => sum + (set.actualReps || 0), 0);
+    const avgWeight = sets.length > 0 ? 
+      Math.round(sets.reduce((sum, set) => sum + (set.actualWeight || 0), 0) / sets.length) : 0;
     
     // Calculate total weight lifted
     const totalWeightLifted = sets
@@ -208,22 +246,48 @@ export default function MachineWorkout() {
     const duration = workoutStartTime 
       ? Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60))
       : 0;
+
+    // Map machine name to workout list name for consistency
+    const workoutName = mapMachineNameToWorkoutName(machine.name);
     
-    toast.success('Exercise completed!');
-    navigate('/workout-summary', { 
-      state: { 
-        workoutData: {
-          name: machine?.name || 'Machine Workout',
-          exercises: 1,
-          duration: duration,
-          sets: completedSets,
-          totalReps: totalReps,
-          totalWeightLifted: totalWeightLifted,
-          notes: notes,
-          allWorkoutsCompleted: false
-        }
-      }
+    console.log('Logging final exercise completion:', {
+      workoutLogId: currentWorkoutLog.id,
+      exerciseName: workoutName,
+      machineName: machine.name,
+      sets: completedSets,
+      reps: totalReps,
+      weight: avgWeight
     });
+    
+    // Log the exercise completion with actual workout data
+    const success = await logExercise(
+      currentWorkoutLog.id,
+      workoutName,
+      machine.name,
+      completedSets,
+      totalReps,
+      avgWeight
+    );
+
+    if (success) {
+      toast.success('Exercise completed and saved!');
+      navigate('/workout-summary', { 
+        state: { 
+          workoutData: {
+            name: workoutName,
+            exercises: 1,
+            duration: duration,
+            sets: completedSets,
+            totalReps: totalReps,
+            totalWeightLifted: totalWeightLifted,
+            notes: notes,
+            allWorkoutsCompleted: false
+          }
+        }
+      });
+    } else {
+      toast.error('Failed to save workout progress');
+    }
   };
 
   const handleBackToList = async () => {

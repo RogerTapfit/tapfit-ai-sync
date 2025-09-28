@@ -8,12 +8,20 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WorkoutMachine {
   id: string;
   name: string;
   muscleGroup: string;
   completed: boolean;
+  workoutDetails?: {
+    sets: number;
+    reps: number;
+    weight?: number;
+    completedAt?: string;
+    totalWeightLifted?: number;
+  };
 }
 
 const WorkoutList = () => {
@@ -33,21 +41,49 @@ const WorkoutList = () => {
     { id: "8", name: "Assisted Chest Dips Machine", muscleGroup: "Chest", completed: false }
   ]);
 
-  // Load completed exercises from database (memoized to prevent infinite loops)
+  // Load completed exercises with details from database
   const loadCompletedExercises = useCallback(async () => {
     console.log("Loading completed exercises...");
-    const completedExercises = await getTodaysCompletedExercises();
-    console.log("Completed exercises from DB:", completedExercises);
+    
+    // Get the supabase client to fetch detailed exercise logs
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: exerciseLogs, error } = await supabase
+      .from('exercise_logs')
+      .select('exercise_name, sets_completed, reps_completed, weight_used, completed_at')
+      .eq('user_id', user.id)
+      .gte('completed_at', new Date().toISOString().split('T')[0])
+      .lt('completed_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+    if (error) {
+      console.error('Error fetching exercise logs:', error);
+      return;
+    }
+
+    console.log("Exercise logs from DB:", exerciseLogs);
     
     setTodaysWorkouts(workouts => {
-      const updatedWorkouts = workouts.map(workout => ({
-        ...workout,
-        completed: completedExercises.includes(workout.name)
-      }));
-      console.log("Updated workouts:", updatedWorkouts);
+      const updatedWorkouts = workouts.map(workout => {
+        const exerciseLog = exerciseLogs?.find(log => log.exercise_name === workout.name);
+        const isCompleted = !!exerciseLog;
+        
+        return {
+          ...workout,
+          completed: isCompleted,
+          workoutDetails: exerciseLog ? {
+            sets: exerciseLog.sets_completed,
+            reps: exerciseLog.reps_completed,
+            weight: exerciseLog.weight_used,
+            completedAt: exerciseLog.completed_at,
+            totalWeightLifted: exerciseLog.weight_used ? exerciseLog.weight_used * exerciseLog.reps_completed : undefined
+          } : undefined
+        };
+      });
+      console.log("Updated workouts with details:", updatedWorkouts);
       return updatedWorkouts;
     });
-  }, [getTodaysCompletedExercises]);
+  }, []);
 
   // Initial load with loading protection
   useEffect(() => {
@@ -335,10 +371,30 @@ const WorkoutList = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold">{workout.name}</h4>
-                  <p className="text-sm text-foreground/70 flex items-center gap-1">
-                    <Activity className="h-3 w-3 text-secondary" />
-                    Target: {workout.muscleGroup}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-sm text-foreground/70 flex items-center gap-1">
+                      <Activity className="h-3 w-3 text-secondary" />
+                      Target: {workout.muscleGroup}
+                    </p>
+                    {workout.completed && workout.workoutDetails && (
+                      <div className="text-xs text-green-600 space-y-1">
+                        <p className="flex items-center gap-2">
+                          <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
+                          {workout.workoutDetails.weight && (
+                            <span>@ {workout.workoutDetails.weight} lbs</span>
+                          )}
+                        </p>
+                        {workout.workoutDetails.totalWeightLifted && (
+                          <p className="font-medium">
+                            Total Weight: {workout.workoutDetails.totalWeightLifted} lbs
+                          </p>
+                        )}
+                        <p className="text-foreground/50">
+                          Completed: {new Date(workout.workoutDetails.completedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
