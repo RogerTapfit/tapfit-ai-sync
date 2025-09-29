@@ -360,6 +360,19 @@ const WorkoutHub = () => {
       difficulty: "Intermediate",
       equipment: "Cardio",
       description: "High-intensity cycling with resistance control and heart rate training. Perfect for endurance and interval workouts."
+    },
+    { 
+      id: "24", 
+      name: "Precor Elliptical Trainer", 
+      muscleGroup: "Cardio", 
+      image: "/assets/precor-elliptical-red.png",
+      exerciseType: "Cardio",
+      sets: 1,
+      reps: "20-30 min",
+      restTime: 0,
+      difficulty: "Beginner",
+      equipment: "Cardio",
+      description: "Low-impact cross-training cardio that simulates walking, running, or stair climbing. Use moving handles for upper body activation."
     }
   ];
 

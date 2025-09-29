@@ -109,10 +109,10 @@ export const MACHINE_CATALOG: Machine[] = [
   },
   {
     id: 'MCH-ELLIPTICAL',
-    name: 'Elliptical Machine',
+    name: 'Precor Elliptical Trainer',
     type: 'Cardio',
-    synonyms: ['elliptical', 'cross trainer', 'elliptical trainer'],
-    imageUrl: '/lovable-uploads/9b6efa63-f917-4f9e-8b82-31076b66aff5.png',
+    synonyms: ['elliptical', 'cross trainer', 'elliptical trainer', 'precor', 'precor elliptical', 'cross-trainer'],
+    imageUrl: '/assets/precor-elliptical-red.png',
     workoutId: 'elliptical-cardio',
     muscleGroup: 'cardio'
   },
