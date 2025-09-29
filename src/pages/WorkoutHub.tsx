@@ -373,6 +373,19 @@ const WorkoutHub = () => {
       difficulty: "Beginner",
       equipment: "Cardio",
       description: "Low-impact cross-training cardio that simulates walking, running, or stair climbing. Use moving handles for upper body activation."
+    },
+    { 
+      id: "25", 
+      name: "Precor AMT (Adaptive Motion Trainer)", 
+      muscleGroup: "Cardio", 
+      image: "/assets/precor-amt-red.png",
+      exerciseType: "Cardio",
+      sets: 1,
+      reps: "20-30 min",
+      restTime: 0,
+      difficulty: "Intermediate",
+      equipment: "Cardio",
+      description: "Adaptive stride cardio (0-36 inches) combining stepping, elliptical, and running motions. Full-body workout with adjustable intensity."
     }
   ];
 

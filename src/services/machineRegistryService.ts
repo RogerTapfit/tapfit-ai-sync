@@ -151,6 +151,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/assets/indoor-cycling-bike-red.png',
     workoutId: 'indoor-cycling-cardio',
     muscleGroup: 'cardio'
+  },
+  {
+    id: 'MCH-AMT',
+    name: 'Precor AMT (Adaptive Motion Trainer)',
+    type: 'Cardio',
+    synonyms: ['amt', 'adaptive motion trainer', 'precor amt', 'adaptive trainer', 'motion trainer'],
+    imageUrl: '/assets/precor-amt-red.png',
+    workoutId: 'amt-cardio',
+    muscleGroup: 'cardio'
   }
 ];
 
