@@ -399,6 +399,19 @@ const WorkoutHub = () => {
       difficulty: "Intermediate",
       equipment: "Functional",
       description: "Continuous rope pull training with adjustable resistance. Combines strength and cardio for full-body conditioning and grip endurance."
+    },
+    { 
+      id: "27", 
+      name: "Fixed Barbell Rack", 
+      muscleGroup: "Strength", 
+      image: "/assets/fixed-barbell-rack-red.png",
+      exerciseType: "Strength",
+      sets: 3,
+      reps: "8-12",
+      restTime: 90,
+      difficulty: "Beginner",
+      equipment: "Free Weights",
+      description: "Preloaded fixed barbells for strength training. Includes straight bars and EZ curl bars for all major muscle groups."
     }
   ];
 

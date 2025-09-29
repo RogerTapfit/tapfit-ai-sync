@@ -169,6 +169,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/assets/marpo-rope-trainer-red.png',
     workoutId: 'rope-trainer',
     muscleGroup: 'functional'
+  },
+  {
+    id: 'MCH-FIXED-BARBELL-RACK',
+    name: 'Fixed Barbell Rack',
+    type: 'Free Weights',
+    synonyms: ['fixed barbell', 'barbell rack', 'free weights', 'straight bar', 'ez bar', 'curl bar', 'preloaded barbell'],
+    imageUrl: '/assets/fixed-barbell-rack-red.png',
+    workoutId: 'fixed-barbell-rack',
+    muscleGroup: 'strength'
   }
 ];
 
