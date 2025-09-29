@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useCalendarData, CalendarDay } from '@/hooks/useCalendarData';
 import { CalendarDayDetail } from './CalendarDayDetail';
 import { useCycleTracking } from '@/hooks/useCycleTracking';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -119,7 +120,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
 
   const isToday = (day: CalendarDay | null) => {
     if (!day) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getCurrentLocalDate();
     return day.dateString === today;
   };
 

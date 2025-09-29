@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity } from '@/hooks/useCalendarData';
 import { useCycleTracking } from '@/hooks/useCycleTracking';
+import { getCurrentLocalDate } from '@/utils/dateUtils';
 import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
 import { ConsumedCaloriesBreakdown } from './calendar/ConsumedCaloriesBreakdown';
 import { ExercisesBreakdown } from './calendar/ExercisesBreakdown';
@@ -117,7 +118,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
     }
   };
 
-  const isToday = day.dateString === new Date().toISOString().split('T')[0];
+  const isToday = day.dateString === getCurrentLocalDate();
 
   return (
     <>

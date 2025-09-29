@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getBestThumbnailUrl } from '@/utils/photoUtils';
+import { getLocalDateString } from '@/utils/dateUtils';
 import { useNutrition } from './useNutrition';
 import { useDailyStats } from './useDailyStats';
 import { useWorkoutPlan } from './useWorkoutPlan';
@@ -83,8 +84,8 @@ export const useCalendarData = (userId?: string) => {
       const startDate = new Date(month.getFullYear(), month.getMonth(), 1);
       const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
       
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
+      const startDateStr = getLocalDateString(startDate);
+      const endDateStr = getLocalDateString(endDate);
 
       // Fetch comprehensive data in parallel
       const [workoutLogsResponse, foodEntriesResponse, alcoholEntriesResponse, dailyStepsResponse, tapCoinsResponse] = await Promise.all([
@@ -135,12 +136,12 @@ export const useCalendarData = (userId?: string) => {
       // Generate days for the month
       for (let day = 1; day <= endDate.getDate(); day++) {
         const currentDate = new Date(month.getFullYear(), month.getMonth(), day);
-        const dateString = currentDate.toISOString().split('T')[0];
+        const dateString = getLocalDateString(currentDate);
         
         // Get workouts for this day - only show truly completed workouts
         const dayWorkouts: WorkoutActivity[] = workoutLogs
           .filter(log => {
-            const logDate = new Date(log.started_at).toISOString().split('T')[0];
+            const logDate = getLocalDateString(new Date(log.started_at));
             return logDate === dateString && log.completed_at !== null; // Only completed workouts
           })
           .map(log => ({
@@ -185,7 +186,7 @@ export const useCalendarData = (userId?: string) => {
         
         // Get tap coins for this day
         const dayTapCoins: TapCoinsActivity[] = tapCoinsTransactions
-          .filter(transaction => new Date(transaction.created_at).toISOString().split('T')[0] === dateString)
+          .filter(transaction => getLocalDateString(new Date(transaction.created_at)) === dateString)
           .map(transaction => ({
             id: transaction.id,
             amount: transaction.amount,
@@ -282,7 +283,7 @@ export const useCalendarData = (userId?: string) => {
     const current = new Date(startDate);
     
     for (let i = 0; i < 42; i++) {
-      const dateString = current.toISOString().split('T')[0];
+      const dateString = getLocalDateString(current);
       
       if (current.getMonth() === month) {
         const existingDay = calendarData.get(dateString);
