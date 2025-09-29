@@ -172,6 +172,19 @@ const WorkoutHub = () => {
       description: "Primary back width builder. Essential for V-taper development."
     },
     { 
+      id: "9b", 
+      name: "Hoist Lat Pulldown Machine", 
+      muscleGroup: "Back", 
+      image: "/lovable-uploads/hoist-lat-pulldown-red-black.png",
+      exerciseType: "Compound",
+      sets: 3,
+      reps: "8-12",
+      restTime: 90,
+      difficulty: "Intermediate",
+      equipment: "Plate-Loaded Machine",
+      description: "Premium plate-loaded lat pulldown. Smooth motion with variable resistance for advanced training."
+    },
+    { 
       id: "10", 
       name: "Seated Cable Row", 
       muscleGroup: "Back", 

@@ -50,6 +50,15 @@ export const MACHINE_CATALOG: Machine[] = [
     muscleGroup: 'back'
   },
   {
+    id: 'MCH-LAT-PULLDOWN-HOIST',
+    name: 'Hoist Lat Pulldown Machine',
+    type: 'Lat Pulldown',
+    synonyms: ['hoist lat pulldown', 'hoist pulldown', 'plate loaded lat pulldown', 'hoist lat pull down', 'hoist machine'],
+    imageUrl: '/lovable-uploads/hoist-lat-pulldown-red-black.png',
+    workoutId: 'lat-pulldown-hoist',
+    muscleGroup: 'back'
+  },
+  {
     id: 'MCH-SEATED-ROW',
     name: 'Seated Row Machine',
     type: 'Seated Row',
