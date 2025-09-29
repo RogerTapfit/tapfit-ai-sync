@@ -13,6 +13,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<RecognitionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [errorSource, setErrorSource] = useState<'camera' | 'upload' | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
   
@@ -75,6 +76,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         : 'Camera access failed. Please try again.';
       
       setError(errorMessage);
+      setErrorSource('camera');
       console.error('Camera error:', err);
     }
   }, []);
@@ -129,6 +131,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     } catch (err) {
       console.error('Frame processing error:', err);
       setError('Recognition failed');
+      setErrorSource('camera');
     } finally {
       processingRef.current = false;
       setIsProcessing(false);
@@ -215,8 +218,9 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         }
         
         setError('Failed to load image. Please try a different image format or ensure the image is not corrupted.');
+        setErrorSource('upload');
         setIsProcessing(false);
-        
+
         if (objectUrl) {
           URL.revokeObjectURL(objectUrl);
           objectUrl = null;
@@ -274,6 +278,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         } catch (err) {
           console.error('Image recognition error:', err);
           setError('Recognition failed. Please try again with a clearer image.');
+          setErrorSource('upload');
         } finally {
           setIsProcessing(false);
           
@@ -302,8 +307,9 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       }
       
       setError(errorMessage);
+      setErrorSource('upload');
       setIsProcessing(false);
-      
+
       // Clean up object URL on error
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
@@ -314,6 +320,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const reset = useCallback(() => {
     setResults([]);
     setError(null);
+    setErrorSource(null);
     setIsProcessing(false);
     // Auto-stop after successful recognition
   }, []);
@@ -336,6 +343,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     isProcessing,
     results,
     error,
+    errorSource,
     bestMatch,
     alternatives,
     isHighConfidence,

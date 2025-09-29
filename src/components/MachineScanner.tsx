@@ -21,6 +21,7 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     isScanning,
     isProcessing,
     error,
+    errorSource,
     bestMatch,
     alternatives,
     isHighConfidence,
@@ -280,9 +281,9 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
               <div className="text-destructive mb-4">
                 <X className="h-12 w-12 mx-auto" />
               </div>
-              <h3 className="text-lg font-medium mb-2">{isScanning ? 'Camera Error' : 'Upload Error'}</h3>
+              <h3 className="text-lg font-medium mb-2">{errorSource === 'camera' ? 'Camera Error' : 'Upload Error'}</h3>
               <p className="text-muted-foreground mb-4">{error}</p>
-              {isScanning ? (
+              {errorSource === 'camera' ? (
                 <Button onClick={handleStart} variant="outline" className="w-full">
                   Try Again
                 </Button>
