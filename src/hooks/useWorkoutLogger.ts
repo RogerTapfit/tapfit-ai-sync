@@ -169,6 +169,15 @@ export const useWorkoutLogger = () => {
     
     try {
       console.log("Creating new workout log");
+      
+      // Double check for existing log right before creation to prevent race condition
+      const doubleCheckLog = await getTodaysActiveWorkoutLog();
+      if (doubleCheckLog) {
+        console.log("Found existing log during double check");
+        setLoading(false);
+        return doubleCheckLog;
+      }
+      
       const { data, error } = await supabase
         .from('workout_logs')
         .insert({
@@ -182,7 +191,17 @@ export const useWorkoutLogger = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If insertion fails due to constraint, try to get existing log
+        console.log("Insert failed, checking for existing log:", error);
+        const fallbackLog = await getTodaysActiveWorkoutLog();
+        if (fallbackLog) {
+          console.log("Found existing log after insert failure");
+          setLoading(false);
+          return fallbackLog;
+        }
+        throw error;
+      }
 
       console.log("Created new workout log:", data);
       setCurrentWorkoutLog(data);
@@ -197,6 +216,15 @@ export const useWorkoutLogger = () => {
       return data;
     } catch (error) {
       console.error('Error starting workout:', error);
+      
+      // Final fallback - check for existing log one more time
+      const fallbackLog = await getTodaysActiveWorkoutLog();
+      if (fallbackLog) {
+        console.log("Using fallback existing log");
+        setLoading(false);
+        return fallbackLog;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to start workout session.",

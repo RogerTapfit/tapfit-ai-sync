@@ -137,9 +137,12 @@ export const useCalendarData = (userId?: string) => {
         const currentDate = new Date(month.getFullYear(), month.getMonth(), day);
         const dateString = currentDate.toISOString().split('T')[0];
         
-        // Get workouts for this day
+        // Get workouts for this day - only show truly completed workouts
         const dayWorkouts: WorkoutActivity[] = workoutLogs
-          .filter(log => new Date(log.started_at).toISOString().split('T')[0] === dateString)
+          .filter(log => {
+            const logDate = new Date(log.started_at).toISOString().split('T')[0];
+            return logDate === dateString && log.completed_at !== null; // Only completed workouts
+          })
           .map(log => ({
             id: log.id,
             type: 'completed' as const,
