@@ -223,6 +223,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/outer-thigh-abductor-machine-red-black.png',
     workoutId: 'outer-thigh-abductor',
     muscleGroup: 'glutes'
+  },
+  {
+    id: 'MCH-ABDOMINAL-CRUNCH',
+    name: 'Abdominal Crunch Machine (Hoist)',
+    type: 'Core',
+    synonyms: ['abdominal crunch machine', 'ab crunch machine', 'crunch machine', 'hoist crunch', 'ab machine', 'core machine', 'rectus abdominis machine'],
+    imageUrl: '/lovable-uploads/abdominal-crunch-machine-hoist-red.png',
+    workoutId: 'abdominal-crunch',
+    muscleGroup: 'core'
   }
 ];
 

@@ -477,6 +477,19 @@ const WorkoutHub = () => {
       difficulty: "Beginner",
       equipment: "Machine",
       description: "Strengthen your gluteus medius and outer thigh muscles with controlled hip abduction movements. Essential for hip stability and injury prevention."
+    },
+    { 
+      id: "32", 
+      name: "Abdominal Crunch Machine (Hoist)", 
+      muscleGroup: "Core", 
+      image: "/lovable-uploads/abdominal-crunch-machine-hoist-red.png",
+      exerciseType: "Isolation",
+      sets: 3,
+      reps: "8-15",
+      restTime: 45,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "Target your rectus abdominis and core muscles with controlled crunch movements. Perfect for building abdominal strength and definition."
     }
   ];
 
