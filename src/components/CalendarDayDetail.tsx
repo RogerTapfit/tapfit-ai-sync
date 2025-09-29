@@ -70,11 +70,11 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
   const getWorkoutStatusColor = (type: WorkoutActivity['type']) => {
     switch (type) {
       case 'completed':
-        return 'bg-green-500/10 border-green-500/20 text-green-400';
+        return 'bg-black dark:bg-black border-green-500/30 text-white';
       case 'missed':
-        return 'bg-red-500/10 border-red-500/20 text-red-400';
+        return 'bg-black dark:bg-black border-red-500/30 text-white';
       default:
-        return 'bg-blue-500/10 border-blue-500/20 text-blue-400';
+        return 'bg-black dark:bg-black border-blue-500/30 text-white';
     }
   };
 
@@ -276,10 +276,10 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             {getWorkoutStatusIcon(workout.type)}
-                            <span className="font-semibold">{workout.name}</span>
+                            <span className="font-semibold text-white">{workout.name}</span>
                             <span className="text-lg">{getMuscleGroupEmoji(workout.muscleGroup)}</span>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-4 text-sm text-gray-300">
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               {workout.time || `${workout.duration}min`}
@@ -296,7 +296,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                             )}
                           </div>
                         </div>
-                        <Badge variant="outline" className="capitalize">
+                        <Badge variant="outline" className="capitalize border-white/30 text-white">
                           {workout.type}
                         </Badge>
                       </div>
