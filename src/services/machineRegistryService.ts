@@ -148,7 +148,7 @@ export const MACHINE_CATALOG: Machine[] = [
     name: 'Indoor Cycling Bike',
     type: 'Cardio',
     synonyms: ['indoor cycling bike', 'spin bike', 'indoor bike', 'cycle bike', 'stages bike', 'peloton', 'spinning bike'],
-    imageUrl: '/src/assets/indoor-cycling-bike.png',
+    imageUrl: '/src/assets/indoor-cycling-bike-red.png',
     workoutId: 'indoor-cycling-cardio',
     muscleGroup: 'cardio'
   }

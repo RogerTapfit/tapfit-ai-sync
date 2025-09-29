@@ -352,7 +352,7 @@ const WorkoutHub = () => {
       id: "23", 
       name: "Indoor Cycling Bike", 
       muscleGroup: "Cardio", 
-      image: "/src/assets/indoor-cycling-bike.png",
+      image: "/src/assets/indoor-cycling-bike-red.png",
       exerciseType: "Cardio",
       sets: 1,
       reps: "20-45 min",
