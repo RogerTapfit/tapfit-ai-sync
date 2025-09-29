@@ -144,6 +144,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     stopCamera();
 
     setError(null);
+    setErrorSource('upload');
     setIsProcessing(true);
     
     let objectUrl: string | null = null;
@@ -192,6 +193,7 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
         reader.onerror = (e) => {
           console.error('Data URL reader error:', e);
           setError('Failed to read image file.');
+          setErrorSource('upload');
           setIsProcessing(false);
         };
         reader.readAsDataURL(f);
