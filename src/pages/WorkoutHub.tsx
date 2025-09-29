@@ -501,9 +501,12 @@ const WorkoutHub = () => {
                 <CardHeader className="pb-2">
                   <div className="aspect-[4/3] sm:aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
                     <img 
-                      src={machine.image.startsWith('/lovable-uploads/') 
-                        ? machine.image 
-                        : `https://images.unsplash.com/${machine.image}?auto=format&fit=crop&w=400&q=80`}
+                      src={
+                        machine.image.startsWith('/') ||
+                        machine.image.startsWith('http')
+                          ? machine.image
+                          : `https://images.unsplash.com/${machine.image}?auto=format&fit=crop&w=400&q=80`
+                      }
                       alt={machine.name}
                       className="w-full h-full object-contain rounded-lg bg-background/50"
                       onError={(e) => {
