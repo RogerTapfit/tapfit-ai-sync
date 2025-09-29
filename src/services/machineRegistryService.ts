@@ -214,6 +214,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/inner-thigh-adductor-machine-red-black.png',
     workoutId: 'inner-thigh-adductor',
     muscleGroup: 'legs'
+  },
+  {
+    id: 'MCH-OUTER-THIGH-ABDUCTOR',
+    name: 'Outer Thigh (Hip Abduction) Machine',
+    type: 'Hip Abduction',
+    synonyms: ['hip abduction machine', 'outer thigh machine', 'abductor machine', 'thigh abductor', 'outer leg machine', 'leg abduction', 'hip abductor'],
+    imageUrl: '/lovable-uploads/outer-thigh-abductor-machine-red-black.png',
+    workoutId: 'outer-thigh-abductor',
+    muscleGroup: 'glutes'
   }
 ];
 

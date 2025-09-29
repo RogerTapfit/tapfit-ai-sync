@@ -464,6 +464,19 @@ const WorkoutHub = () => {
       difficulty: "Beginner",
       equipment: "Machine",
       description: "Target your inner thigh muscles with controlled hip adduction movements. Perfect for strengthening adductors and improving leg stability."
+    },
+    { 
+      id: "31", 
+      name: "Outer Thigh (Hip Abduction) Machine", 
+      muscleGroup: "Glutes", 
+      image: "/lovable-uploads/outer-thigh-abductor-machine-red-black.png",
+      exerciseType: "Isolation",
+      sets: 3,
+      reps: "8-12",
+      restTime: 60,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "Strengthen your gluteus medius and outer thigh muscles with controlled hip abduction movements. Essential for hip stability and injury prevention."
     }
   ];
 
