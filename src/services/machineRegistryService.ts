@@ -196,6 +196,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/assets/dumbbells-red-black.png',
     workoutId: 'dumbbells',
     muscleGroup: 'strength'
+  },
+  {
+    id: 'MCH-GLUTE-KICKBACK',
+    name: 'Glute Kickback Machine',
+    type: 'Hip Extension',
+    synonyms: ['glute kickback', 'hip extension machine', 'rear kick machine', 'glute extension', 'kickback machine', 'lying glute extension'],
+    imageUrl: '/lovable-uploads/glute-kickback-machine-red-black.png',
+    workoutId: 'glute-kickback',
+    muscleGroup: 'glutes'
   }
 ];
 

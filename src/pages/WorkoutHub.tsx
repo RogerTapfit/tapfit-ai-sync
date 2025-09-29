@@ -438,10 +438,23 @@ const WorkoutHub = () => {
       difficulty: "Beginner",
       equipment: "Free Weights",
       description: "Versatile handheld weights for unilateral and bilateral training. Perfect for chest, back, shoulders, arms, legs, and core exercises."
+    },
+    { 
+      id: "29", 
+      name: "Glute Kickback Machine", 
+      muscleGroup: "Glutes", 
+      image: "/lovable-uploads/glute-kickback-machine-red-black.png",
+      exerciseType: "Isolation",
+      sets: 3,
+      reps: "12-15",
+      restTime: 60,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "Isolate and strengthen your glutes with controlled hip extension movements. Perfect for glute activation and posterior chain development."
     }
   ];
 
-  const muscleGroups = ["all", "Chest", "Back", "Shoulders", "Arms", "Legs", "Cardio"];
+  const muscleGroups = ["all", "Chest", "Back", "Shoulders", "Arms", "Legs", "Glutes", "Cardio"];
 
   const filteredMachines = useMemo(() => {
     return workoutMachines.filter(machine => {
@@ -459,6 +472,7 @@ const WorkoutHub = () => {
       'Shoulders': '🤝',
       'Arms': '💪',
       'Legs': '🦵',
+      'Glutes': '🍑',
       'Cardio': '❤️'
     };
     return icons[muscleGroup as keyof typeof icons] || '💪';
