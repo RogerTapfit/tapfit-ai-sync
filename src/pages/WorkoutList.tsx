@@ -287,6 +287,13 @@ const WorkoutList = () => {
     };
   }, []); // Empty dependency - run once on mount
 
+  // Re-initialize workout plan when muscle group changes
+  useEffect(() => {
+    if (todaysWorkouts.length > 0) { // Only reinitialize if we have initial workouts
+      initializeWorkoutPlan();
+    }
+  }, [currentMuscleGroup, initializeWorkoutPlan]);
+
   // Load completed exercises after plan is initialized
   useEffect(() => {
     if (todaysWorkouts.length > 0) {
