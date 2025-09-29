@@ -17,6 +17,23 @@ interface MachineInfo {
   synonyms?: string[];
 }
 
+// Interface for user profile and session parameters
+interface UserProfile {
+  age?: number;
+  sex?: 'male' | 'female';
+  weight_kg?: number;
+  HR_rest?: number;
+  HR_max?: number;
+  FTP_w?: number;
+  vVO2max?: number;
+}
+
+interface SessionRequest {
+  session_goal?: 'endurance' | 'calories' | 'intervals' | 'recovery';
+  target_load?: number; // TRIMP points
+  target_zone?: string; // HR zone band (e.g., Z2–Z3)
+}
+
 // Machine catalog for AI context
 const MACHINE_CATALOG = [
   {
@@ -78,6 +95,36 @@ const MACHINE_CATALOG = [
     name: "Cable Crossover Machine",
     type: "Cable System",
     description: "Dual cable system with adjustable pulleys for various exercises"
+  },
+  {
+    id: "MCH-TREADMILL",
+    name: "Treadmill",
+    type: "Cardio",
+    description: "Cardio machine with moving belt surface for walking/running"
+  },
+  {
+    id: "MCH-STATIONARY-BIKE",
+    name: "Indoor Cycling Bike",
+    type: "Cardio",
+    description: "Seated cardio machine with pedals, handlebars, and flywheel for cycling"
+  },
+  {
+    id: "MCH-ELLIPTICAL",
+    name: "Elliptical Machine",
+    type: "Cardio",
+    description: "Standing cardio machine with oval foot pedals and moving arm handles"
+  },
+  {
+    id: "MCH-ROWING-MACHINE",
+    name: "Rowing Machine",
+    type: "Cardio",
+    description: "Low-profile machine with sliding seat and cable/handle for rowing motion"
+  },
+  {
+    id: "MCH-STAIR-CLIMBER",
+    name: "Stair Climber",
+    type: "Cardio",
+    description: "Standing cardio machine with independent step pedals"
   }
 ];
 
@@ -88,7 +135,14 @@ serve(async (req) => {
   }
 
   try {
-    const { imageData, imageFormat, machineCatalog } = await req.json();
+    const { 
+      imageData, 
+      imageFormat, 
+      machineCatalog, 
+      userProfile, 
+      sessionRequest,
+      optional_text 
+    } = await req.json();
     
     if (!imageData) {
       return new Response(JSON.stringify({ 
@@ -101,93 +155,26 @@ serve(async (req) => {
     }
 
     // Use provided machine catalog or fall back to default
-    const MACHINE_CATALOG = machineCatalog || [
-      { id: 'MCH-CHEST-PRESS', name: 'Chest Press Machine', type: 'Chest Press', description: 'Machine with HANDLES/GRIPS that you grasp with your hands for horizontal pressing motion. Has a slightly reclined seat and weight stack. NO arm pads or elbow rests - you grip handles with your hands.' },
-      { id: 'MCH-PEC-DECK', name: 'Pec Deck (Butterfly) Machine', type: 'Pec Deck', description: 'Machine with ARM PADS or ELBOW PADS that you rest your arms/elbows against. Arms swing together in a butterfly motion. NO handles to grip - your arms rest against pads that move inward.' },
-      { id: 'MCH-INCLINE-CHEST-PRESS', name: 'Incline Chest Press Machine', type: 'Incline Press', description: 'Machine with handles for pressing at an upward angle. Seat back is significantly inclined (30-45 degrees). Pressing motion goes up and forward, not horizontal.' },
-      { id: 'MCH-LAT-PULLDOWN', name: 'Lat Pulldown Machine', type: 'Lat Pulldown', description: 'Seated machine with overhead cable system and wide bar that pulls down to chest level. Has knee pads to secure legs.' },
-      { id: 'MCH-SEATED-ROW', name: 'Seated Row Machine', type: 'Seated Row', description: 'Seated machine with horizontal pulling motion. Has chest pad for support and handles/cable system for pulling toward torso.' },
-      { id: 'MCH-LEG-PRESS', name: 'Leg Press Machine', type: 'Leg Press', description: 'Angled machine with large foot platform for leg pressing. User sits with back support and pushes platform with feet.' },
-      { id: 'MCH-LEG-EXTENSION', name: 'Leg Extension Machine', type: 'Leg Extension', description: 'Seated machine with padded lever that extends legs upward for quadriceps isolation. Ankle pad pushes legs up.' },
-      { id: 'MCH-SHOULDER-PRESS', name: 'Shoulder Press Machine', type: 'Shoulder Press', description: 'Machine with handles positioned at or above shoulder level for vertical/overhead pressing. Seat back is upright (near 90 degrees). Motion is straight up, not horizontal.' },
-      { id: 'MCH-TREADMILL', name: 'Treadmill', type: 'Cardio', description: 'Cardio machine with moving belt surface for walking/running. Has handrails and control panel display.' },
-      { id: 'MCH-ELLIPTICAL', name: 'Elliptical Machine', type: 'Cardio', description: 'Standing cardio machine with oval foot pedals that move in elliptical motion. Has moving arm handles.' },
-      { id: 'MCH-STATIONARY-BIKE', name: 'Stationary Bike', type: 'Cardio', description: 'Seated cardio machine with pedals and handlebars. Has adjustable seat and resistance controls.' },
-      { id: 'MCH-ROWING-MACHINE', name: 'Rowing Machine', type: 'Cardio', description: 'Low-profile machine with sliding seat and cable/handle for rowing motion. User sits and pulls handle toward torso.' },
-      { id: 'MCH-STAIR-CLIMBER', name: 'Stair Climber', type: 'Cardio', description: 'Standing cardio machine with independent step pedals that move up and down alternately.' },
-      { id: 'MCH-BENCH-PRESS', name: 'Bench Press (Barbell Station)', type: 'Bench Press', description: 'Free weight station with barbell on J-hooks/rack. Has adjustable bench but NO weight stack, cables, or guided rails.' },
-      { id: 'MCH-SMITH-MACHINE', name: 'Smith Machine', type: 'Smith Machine', description: 'Barbell fixed on vertical rails with safety stops. Bar moves only up and down in guided linear path.' }
-    ];
+    const catalog = machineCatalog || MACHINE_CATALOG;
 
-    // Two-pass analysis for confused machines
-    const confusedMachines = ['MCH-CHEST-PRESS', 'MCH-PEC-DECK', 'MCH-INCLINE-CHEST-PRESS', 'MCH-SHOULDER-PRESS'];
-    let firstPassResult = await analyzeWithModel(imageData, imageFormat, MACHINE_CATALOG);
-    let features = null;
-    
-    // If first pass identifies a commonly confused machine, do feature validation
-    if (firstPassResult && confusedMachines.includes(firstPassResult.machineId)) {
-      console.log('Running second-pass feature analysis for:', firstPassResult.machineId);
-      features = await analyzeFeatures(imageData, imageFormat);
-      
-      // Apply guardrails
-      if (features) {
-        const validatedResult = applyFeatureGuardrails(firstPassResult, features);
-        if (validatedResult) {
-          firstPassResult = validatedResult;
-        }
-      }
-    }
+    console.log(`Analyzing machine image with ${catalog.length} machines in catalog...`);
 
-    // Always try online identification first for better accuracy like ChatGPT
-    let finalResult = null;
-    let finalMachineName = 'Unknown Machine';
-    let finalImageUrl = null;
-
-    // Start with online identification using advanced AI models
-    console.log('Starting with online AI identification for maximum accuracy...');
-    
-    try {
-      const onlineResult = await analyzeWithOnlineModel(imageData, imageFormat);
-      
-      if (onlineResult && onlineResult.confidence >= 0.6) {
-        console.log(`Online identification successful: ${onlineResult.machineName} (${onlineResult.confidence})`);
-        finalResult = {
-          machineId: 'ONLINE-' + onlineResult.machineName.replace(/[^\w\s]/g, '').replace(/\s+/g, '-').toUpperCase(),
-          machineName: onlineResult.machineName,
-          confidence: onlineResult.confidence,
-          reasoning: onlineResult.reasoning
-        };
-        finalMachineName = onlineResult.machineName;
-        finalImageUrl = null; // No local image for online-identified machines
-      }
-    } catch (error) {
-      console.error('Online identification failed, falling back to local catalog:', error);
-    }
-
-    // Only use local catalog as fallback if online identification failed or had low confidence
-    if (!finalResult && firstPassResult) {
-      console.log('Using local catalog result as fallback');
-      const machineMatch = MACHINE_CATALOG.find((machine: MachineInfo) => machine.id === firstPassResult.machineId);
-      finalResult = firstPassResult;
-      finalMachineName = machineMatch?.name || 'Unknown Machine';
-      finalImageUrl = machineMatch ? `/lovable-uploads/${firstPassResult.machineId.toLowerCase().replace(/mch-|-/g, '')}.png` : null;
-    }
-
-    const result = {
-      success: true,
-      analysis: {
-        machineId: finalResult?.machineId || null,
-        machineName: finalMachineName,
-        confidence: finalResult?.confidence || 0,
-        reasoning: finalResult?.reasoning || 'Analysis completed',
-        imageUrl: finalImageUrl,
-        features: features || null
-      }
-    };
+    // Use the comprehensive TapFit system for both recognition and workout prescription
+    const result = await analyzeWithTapFitSystem(
+      imageData, 
+      imageFormat, 
+      catalog,
+      optional_text,
+      userProfile,
+      sessionRequest
+    );
 
     console.log('Machine analysis result:', result);
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({
+      success: true,
+      analysis: result
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -207,47 +194,241 @@ serve(async (req) => {
   }
 });
 
-// Helper function for online AI model analysis (broader scope)
-async function analyzeWithOnlineModel(imageData: string, imageFormat: string) {
-  console.log('Starting online machine identification...');
+// Comprehensive TapFit analysis system
+async function analyzeWithTapFitSystem(
+  imageData: string,
+  imageFormat: string,
+  machineCatalog: any[],
+  optional_text?: string,
+  userProfile?: UserProfile,
+  sessionRequest?: SessionRequest
+) {
   const mimeType = normalizeImageMime(imageFormat);
-
-  const prompt = `You are an expert gym equipment specialist. Analyze this image and identify the specific gym machine shown with the same precision as ChatGPT.
-
-IDENTIFICATION REQUIREMENTS:
-- Provide the exact machine name including brand if visible (e.g., "Hoist ROC Abdominal Crunch Machine")
-- Identify the primary muscle groups targeted
-- Describe the exercise motion and how the machine is used
-- Note key visual features (handles, pads, weight stack position, seat design)
-- Be specific about machine type and model when possible
-
-ANALYSIS APPROACH:
-1. Look for brand names/labels on the machine
-2. Examine the seat, handles, and weight stack configuration
-3. Identify the exercise motion pattern (crunch, press, pull, etc.)
-4. Determine the target muscle groups from the design
-5. Provide specific machine name, not just generic terms
-
-Return ONLY a JSON object with this exact format:
-{
-  "machineName": "Specific machine name with brand/model if visible",
-  "confidence": 0.95,
-  "reasoning": "Detailed identification explanation including brand, muscle targets, exercise motion, and key visual features"
-}`;
-
-  const models = ['gpt-4o', 'o4-mini-2025-04-16'];
   
-  for (const model of models) {
-    try {
-      console.log(`Trying online model: ${model}`);
-      
-      const requestBody: any = {
-        model,
+  // Prepare machine catalog for AI
+  const machineListText = machineCatalog.map((machine: MachineInfo) => 
+    `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
+  ).join('\n');
+
+  const systemPrompt = `[SYSTEM ROLE]
+You are TapFit's intelligent workout engine.  
+You have TWO jobs:
+1. Recognize gym machines from photos or video (using OCR + geometry).  
+2. Prescribe structured cardio or strength workouts using recognized machines.  
+
+Always output valid JSON in the schema below. Never return free-form prose.
+
+[INPUTS]
+- images[]: 1–3 user photos of the same machine
+- optional_text: user hint (e.g., "Stages bike at Crunch")
+- user_profile: {age, sex, weight_kg, HR_rest, HR_max, FTP_w (optional), vVO2max (optional)}
+- session_goal: endurance | calories | intervals | recovery
+- target_load: TRIMP points
+- target_zone: HR zone band (e.g., Z2–Z3)
+
+[MACHINE RECOGNITION PIPELINE]
+1) OCR + LOGO DETECTION  
+   - Extract text. Prioritize known brands: ["Life Fitness","Hammer Strength","Precor","Technogym","Matrix","Cybex","Nautilus","Star Trac","StairMaster","Woodway","Assault","Concept2","Stages","Keiser","Schwinn"].  
+   - Ignore gym names like "Crunch" (not a brand).  
+
+2) GEOMETRY / SHAPE LOGIC  
+   - Indoor Cycling Bike: pedals, crank, flywheel, resistance knob, handlebars.  
+   - Treadmill: deck + belt + rails. Curved slat = curved treadmill.  
+   - Stair Stepper: pedals/footplates + upright frame.  
+   - Elliptical: foot rails + upright arms + big drive housing.  
+   - Rower: rail + sliding seat + flywheel housing + handle.  
+   - Strength: weight stack + selector pin + seat/backpad + levers.  
+
+3) TAXONOMY  
+   - First decide cardio vs strength.  
+   - Then assign subcategory (e.g., "indoor_cycling_bike", "pec_fly").  
+   - Fill canonical \`ui_mapping\` ID from this list:
+${machineListText}
+
+4) CONFIDENCE SCORING  
+   - Base 0.50.  
+   - +0.20 if OCR matches known brand + geometry.  
+   - +0.15 if ≥3 geometry cues align.  
+   - −0.20 if conflicting cues.  
+   - Clamp 0–1.  
+
+5) OUTPUT RULES  
+   - If confidence ≥0.55 AND ui_mapping recognized → recognized=true.  
+   - Else recognized=false, and provide 1–2 alternatives.  
+
+[WORKOUT PRESCRIPTION PIPELINE]
+1) CORE METRICS  
+- HRR% = (HR_live - HR_rest) / (HR_max - HR_rest)  
+- Zones: Z1=50–60% … Z5=90–100%  
+- TRIMP = Σ zone_weight*minutes (weights 1–5)  
+- Calories/min = METs*3.5*weight/200  
+- RIS = HRR%*100 or (NP/FTP)*100 if power  
+
+2) MACHINE MODELS  
+- Treadmill: ACSM equations for VO2 → METs.  
+- Bike: if watts available → METs ≈ (watts/weight)/0.071. Else → virtual watts = k_machine*level*cadence.  
+- Stepper: METs ≈ 0.1*steps/min + 3 or base table.  
+- Elliptical/Rower: use HR calibration.  
+- Adaptive calibration: refit k_machine after each session.  
+
+3) PRESCRIPTION  
+- Endurance: steady Z2–Z3 until TRIMP met.  
+- Calories: steady until calorie goal met.  
+- Intervals: warmup 5min → repeats (e.g. 6×2min Z4 + 2min Z2) → cooldown.  
+- Recovery: 20–30min Z1–Z2.  
+
+4) ADAPTIVE CONTROL  
+Every 30–60s:  
+- If HRR% < target-0.03: increase difficulty (+0.2 km/h or +10 W or +2 steps/min).  
+- If HRR% > target+0.03: decrease difficulty.  
+
+5) PROGRESSION  
+- Weekly TRIMP +10% for 3 weeks, deload week 4.  
+- If yesterday TRIMP >1.4× weekly avg, today = 30min Z1–Z2 only.  
+- Treadmill: add incline if RPE ≤6.  
+- Bike: set FTP = 0.95×20min best; prescribe by %FTP.  
+- Stepper: +2 steps/min when HR < target for ≥10min.  
+
+[OUTPUT JSON SCHEMA]
+{
+  "recognized": true|false,
+  "confidence_0_1": 0.00,
+  "ui_mapping": "indoor_cycling_bike | treadmill | stair_stepper | pec_fly | chest_press | ...",
+  "machine_type": "cardio|strength",
+  "subcategory": "string",
+  "brand_guess": "string|null",
+  "model_guess": "string|null",
+  "key_evidence": {
+    "ocr_tokens": ["..."],
+    "geometry": ["..."],
+    "context": ["..."]
+  },
+  "session_plan": {
+    "goal": "endurance",
+    "duration_min": 0,
+    "blocks": [
+      {"phase":"warmup","time_min":5,"zone":"Z1"},
+      {"phase":"main","time_min":20,"zone":"Z2"},
+      {"phase":"cooldown","time_min":5,"zone":"Z1"}
+    ],
+    "target_load": 0,
+    "adaptive_rules": ["keep HRR within ±3%"],
+    "progression_note": "Increase incline +0.5% next week if RPE ≤6"
+  },
+  "alternatives": []
+}
+
+[CONTRACT]
+- Always include recognized + confidence + ui_mapping.  
+- If recognized=false, still return alternatives.  
+- Never return free text, only JSON.`;
+
+  const userPrompt = `Analyze this gym machine image and provide both machine recognition and workout prescription.
+
+${optional_text ? `User hint: "${optional_text}"` : ''}
+${userProfile ? `User profile: ${JSON.stringify(userProfile)}` : ''}
+${sessionRequest ? `Session request: ${JSON.stringify(sessionRequest)}` : ''}
+
+Return ONLY the JSON object specified in the schema above.`;
+
+  try {
+    const requestBody = {
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: userPrompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${imageData}`,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.1,
+      response_format: { type: 'json_object' }
+    };
+
+    console.log('Trying online model: gpt-4o');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No content returned from model');
+    }
+
+    console.log('Raw response from gpt-4o:', content);
+    
+    // Parse the JSON response
+    const result = JSON.parse(content);
+    
+    // Map to our expected format for backward compatibility
+    return {
+      machineId: result.ui_mapping || result.machine_id || 'UNKNOWN',
+      machineName: result.subcategory || result.machine_name || 'Unknown Machine',
+      confidence: result.confidence_0_1 || result.confidence || 0,
+      reasoning: result.key_evidence ? 
+        `${result.key_evidence.ocr_tokens?.join(', ') || ''} ${result.key_evidence.geometry?.join(', ') || ''}`.trim() :
+        'Analysis completed',
+      imageUrl: null,
+      features: result.key_evidence || null,
+      session_plan: result.session_plan || null,
+      alternatives: result.alternatives || []
+    };
+  } catch (error) {
+    console.error('TapFit system analysis failed:', error);
+    
+    // Fallback to basic recognition
+    return await fallbackBasicRecognition(imageData, imageFormat, machineCatalog);
+  }
+}
+
+// Fallback basic recognition function
+async function fallbackBasicRecognition(imageData: string, imageFormat: string, machineCatalog: any[]) {
+  const mimeType = normalizeImageMime(imageFormat);
+  const machineListText = machineCatalog.map((machine: MachineInfo) => 
+    `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
+  ).join('\n');
+
+  const prompt = `You are an expert at identifying gym machines. Study this image and identify which machine it shows from this list:
+
+${machineListText}
+
+Return ONLY a JSON object with: {"machineId": "ID_from_list", "confidence": 0.0-1.0, "reasoning": "explanation"}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
         messages: [
-          {
-            role: 'system',
-            content: 'Return ONLY a strict JSON object with keys: machineName, confidence, reasoning. No markdown, no code fences.'
-          },
           {
             role: 'user',
             content: [
@@ -261,337 +442,68 @@ Return ONLY a JSON object with this exact format:
               }
             ]
           }
-        ]
-      };
-
-      // Use max_completion_tokens for newer models, max_tokens for legacy
-      if (model === 'o4-mini-2025-04-16') {
-        requestBody.max_completion_tokens = 1000;
-      } else {
-        requestBody.max_tokens = 1000;
-        requestBody.temperature = 0.1;
-        requestBody.response_format = { type: 'json_object' };
-      }
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        console.error(`Model ${model} failed with status: ${response.status}`);
-        const errorText = await response.text();
-        console.error(`Error details: ${errorText}`);
-        continue;
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
-      
-      if (!content) {
-        console.error(`No content returned from model ${model}`);
-        continue;
-      }
-
-      console.log(`Raw response from ${model}:`, content);
-      
-      // Parse the JSON response
-      const cleanedContent = extractJson(content);
-      const result = JSON.parse(cleanedContent);
-      
-      if (result.machineName && result.confidence && result.reasoning) {
-        console.log(`Online identification successful with ${model}:`, result);
-        return result;
-      } else {
-        console.error(`Invalid response format from ${model}:`, result);
-        continue;
-      }
-    } catch (error) {
-      console.error(`Error with model ${model}:`, error);
-      continue;
-    }
-  }
-
-  throw new Error('All online models failed to identify the machine');
-}
-
-// Helper function for AI model analysis with proper model handling
-async function analyzeWithModel(imageData: string, imageFormat: string, machineCatalog: any[]) {
-  const machineListText = machineCatalog.map((machine: MachineInfo) => 
-    `- ${machine.name} (ID: ${machine.id}): ${machine.description}`
-  ).join('\n');
-
-  console.log(`Analyzing machine image with ${machineCatalog.length} machines in catalog...`);
-
-  const prompt = `You are an expert at identifying gym workout machines from photos. Study the image carefully and identify which specific machine it shows from this exact list:
-
-${machineListText}
-
-CRITICAL VISUAL ANALYSIS STEPS:
-1. FIRST: Look at what the user GRIPS or RESTS against:
-   - HANDLES/GRIPS that you grasp with hands = Pressing machines (Chest Press, Shoulder Press, Incline Press)
-   - ARM PADS/ELBOW PADS that you rest arms against = Pec Deck (Butterfly) Machine
-   - CABLE/BAR systems = Lat Pulldown, Seated Row, Cable machines
-
-2. SECOND: Determine the MOTION DIRECTION:
-   - HORIZONTAL pressing (straight forward) = Chest Press Machine
-   - VERTICAL/OVERHEAD pressing (straight up) = Shoulder Press Machine  
-   - UPWARD-FORWARD pressing (angled up) = Incline Chest Press Machine
-   - SWINGING INWARD motion (arms come together) = Pec Deck Machine
-
-3. THIRD: Check SEAT POSITION:
-   - Nearly upright seat (85-90°) = Shoulder Press
-   - Slightly reclined seat (70-80°) = Chest Press
-   - Significantly inclined seat (30-45°) = Incline Chest Press
-
-MOST COMMON MISTAKES TO AVOID:
-- DO NOT confuse Chest Press (has handles you grip) with Pec Deck (has arm pads you rest against)
-- DO NOT confuse Shoulder Press (vertical motion, upright seat) with Chest Press (horizontal motion, reclined seat)
-- DO NOT confuse machines with weight stacks vs free barbells
-
-CONFIDENCE GUIDELINES:
-- 0.9-1.0: Very clear visual features match exactly one machine type
-- 0.8-0.89: Good match with minor ambiguity 
-- 0.7-0.79: Reasonable match but some uncertainty
-- 0.6-0.69: Partial match with significant uncertainty
-- Below 0.6: Too unclear, set machineId to null
-
-OUTPUT RULES (must follow exactly):
-- Return ONLY a valid JSON object (no markdown, no code fences, no extra text).
-- Keys: "machineId" (string|null, must be one of the IDs provided), "confidence" (number 0..1), "reasoning" (string).
-- If confidence < 0.6 or genuinely unsure, set "machineId" to null and explain why in "reasoning".
-- In reasoning, explicitly state what visual features led to your identification.`;
-
-  // Try newer model first, fallback to gpt-4o
-  const models = ['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07', 'gpt-4o'];
-  const mimeType = normalizeImageMime(imageFormat);
-  
-  for (const model of models) {
-    try {
-      const requestBody: any = {
-        model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You ONLY respond with a single valid JSON object. Do not include markdown, code fences, or any extra text.'
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${imageData}`,
-                  detail: 'high'
-                }
-              }
-            ]
-          }
-        ]
-      };
-
-      // Handle API parameter differences
-      if (['o4-mini-2025-04-16', 'gpt-5-mini-2025-08-07'].includes(model)) {
-        requestBody.max_completion_tokens = 500;
-        // Don't include temperature for newer models
-      } else {
-        requestBody.max_tokens = 500;
-        requestBody.temperature = 0.1;
-      }
-
-      console.log(`Trying model: ${model}`);
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error(`${model} API error:`, response.status, errorData);
-        continue; // Try next model
-      }
-
-      const data = await response.json();
-      const aiResponse = data.choices?.[0]?.message?.content ?? '';
-      console.log(`${model} Response:`, aiResponse);
-
-      // Parse response
-      const cleaned = extractJson(aiResponse);
-      const analysisResult = JSON.parse(cleaned);
-      
-      // Normalize confidence
-      if (typeof analysisResult.confidence === 'string') {
-        analysisResult.confidence = parseFloat(analysisResult.confidence) || 0;
-      }
-      
-      return analysisResult;
-      
-    } catch (error) {
-      console.error(`Error with ${model}:`, error);
-      continue; // Try next model
-    }
-  }
-  
-  throw new Error('All AI models failed');
-}
-
-// Feature analysis for machine disambiguation 
-async function analyzeFeatures(imageData: string, imageFormat: string) {
-  const featurePrompt = `Analyze this gym machine image and identify these specific visual features. Answer with YES/NO only:
-
-1. hasHandles: Are there handles, grips, or bars that a person grasps with their hands?
-2. hasArmPads: Are there arm pads, elbow rests, or cushioned surfaces where arms rest against?
-3. motion: What is the primary motion direction? Answer: "horizontal", "vertical", "upward-forward", "swing-inward", or "unknown"
-4. seatBack: What angle is the seat back? Answer: "upright" (85-90°), "slightly-reclined" (70-80°), "inclined" (30-45°), or "unknown"
-5. hasOverheadCable: Is there a cable system above the user's head?
-
-Return ONLY a valid JSON object with these exact keys: hasHandles, hasArmPads, motion, seatBack, hasOverheadCable`;
-
-  try {
-    const mimeType = normalizeImageMime(imageFormat);
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o', // Use stable model for feature analysis
-        messages: [
-          {
-            role: 'system',
-            content: 'You ONLY respond with a single valid JSON object. Do not include markdown, code fences, or any extra text.'
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: featurePrompt
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:${mimeType};base64,${imageData}`,
-                  detail: 'high'
-                }
-              }
-            ]
-          }
         ],
-        max_tokens: 200,
-        temperature: 0
+        max_tokens: 500,
+        temperature: 0.1
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
-      const featuresResponse = data.choices?.[0]?.message?.content ?? '';
-      const cleaned = extractJson(featuresResponse);
-      const raw = JSON.parse(cleaned);
-      const toBool = (v: any) => typeof v === 'boolean' ? v : String(v).trim().toLowerCase() === 'yes' || String(v).trim().toLowerCase() === 'true' || String(v).trim() === '1';
-      return {
-        hasHandles: toBool(raw.hasHandles),
-        hasArmPads: toBool(raw.hasArmPads),
-        motion: (raw.motion || 'unknown').toString().toLowerCase(),
-        seatBack: (raw.seatBack || 'unknown').toString().toLowerCase(),
-        hasOverheadCable: toBool(raw.hasOverheadCable)
-      };
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        const result = JSON.parse(extractJson(content));
+        return {
+          machineId: result.machineId || 'UNKNOWN',
+          machineName: result.machineId ? machineCatalog.find(m => m.id === result.machineId)?.name || 'Unknown' : 'Unknown',
+          confidence: result.confidence || 0,
+          reasoning: result.reasoning || 'Fallback analysis',
+          imageUrl: null,
+          features: null
+        };
+      }
     }
   } catch (error) {
-    console.error('Feature analysis error:', error);
+    console.error('Fallback analysis failed:', error);
+  }
+
+  return {
+    machineId: 'UNKNOWN',
+    machineName: 'Unknown Machine',
+    confidence: 0,
+    reasoning: 'Analysis failed - could not identify machine',
+    imageUrl: null,
+    features: null
+  };
+}
+
+// Helper function to normalize image MIME type
+function normalizeImageMime(format: string): string {
+  const formatLower = format?.toLowerCase() || 'jpeg';
+  
+  if (formatLower.includes('jpeg') || formatLower.includes('jpg')) {
+    return 'image/jpeg';
+  } else if (formatLower.includes('png')) {
+    return 'image/png';
+  } else if (formatLower.includes('webp')) {
+    return 'image/webp';
+  } else {
+    return 'image/jpeg'; // Default fallback
+  }
+}
+
+// Helper function to extract JSON from potentially malformed responses
+function extractJson(text: string): string {
+  // Remove markdown code fences if present
+  let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+  
+  // Find the first { and last } to extract JSON object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return cleaned.substring(firstBrace, lastBrace + 1);
   }
   
-  return null;
-}
-
-// Apply guardrails based on features
-function applyFeatureGuardrails(initialResult: any, features: any) {
-  if (!features || !initialResult) return initialResult;
-  
-  console.log('Applying feature guardrails:', features);
-
-  const toBool = (v: any) => typeof v === 'boolean' ? v : String(v).trim().toLowerCase() === 'yes' || String(v).trim().toLowerCase() === 'true' || String(v).trim() === '1';
-  const hasHandles = toBool(features.hasHandles);
-  const hasArmPads = toBool(features.hasArmPads);
-  const motion = typeof features.motion === 'string' ? features.motion.toLowerCase() : 'unknown';
-  const seatBack = typeof features.seatBack === 'string' ? features.seatBack.toLowerCase() : 'unknown';
-
-  const result = { ...initialResult };
-
-  // Pec Deck expectations
-  if (result.machineId === 'MCH-PEC-DECK') {
-    if (hasHandles || !hasArmPads || (motion && motion !== 'swing-inward' && motion !== 'unknown')) {
-      console.log('Pec Deck guardrail failed: incompatible features');
-      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.4);
-      result.reasoning = `${result.reasoning} [Confidence lowered: Pec Deck expects arm pads without handles and swing-inward motion]`;
-    }
-  }
-
-  // Chest Press expectations
-  if (result.machineId === 'MCH-CHEST-PRESS') {
-    if (!hasHandles || (motion && motion !== 'horizontal' && motion !== 'unknown')) {
-      console.log('Chest Press guardrail failed: incompatible features');
-      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.3);
-      result.reasoning = `${result.reasoning} [Confidence lowered: Chest Press expects handles with horizontal motion]`;
-    }
-  }
-
-  // Shoulder Press expectations
-  if (result.machineId === 'MCH-SHOULDER-PRESS') {
-    if (!hasHandles || (motion && motion !== 'vertical' && motion !== 'unknown') || (seatBack && seatBack !== 'upright' && seatBack !== 'unknown')) {
-      console.log('Shoulder Press guardrail failed: incompatible features');
-      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.3);
-      result.reasoning = `${result.reasoning} [Confidence lowered: Shoulder Press expects handles, vertical motion, upright seat]`;
-    }
-  }
-
-  // Incline Chest Press expectations
-  if (result.machineId === 'MCH-INCLINE-CHEST-PRESS') {
-    if (!hasHandles || (motion && motion !== 'upward-forward' && motion !== 'unknown') || (seatBack && seatBack !== 'inclined' && seatBack !== 'unknown')) {
-      console.log('Incline Chest Press guardrail failed: incompatible features');
-      result.confidence = Math.max(0.3, (result.confidence || 0) - 0.3);
-      result.reasoning = `${result.reasoning} [Confidence lowered: Incline Press expects handles, upward-forward motion, inclined seat]`;
-    }
-  }
-
-  return result;
-}
-
-// JSON extraction helper
-function extractJson(input: string) {
-  if (!input) return '';
-  const fence = input.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fence) return fence[1].trim();
-  const first = input.indexOf('{');
-  const last = input.lastIndexOf('}');
-  if (first !== -1 && last !== -1 && last > first) return input.slice(first, last + 1).trim();
-  return input.trim();
-}
-
-// Normalize various input formats (e.g., 'jpeg', 'image/jpeg', 'jpg') to a valid MIME
-function normalizeImageMime(fmt: string | null | undefined) {
-  if (!fmt) return 'image/jpeg';
-  const f = fmt.trim().toLowerCase();
-  if (f.startsWith('image/')) {
-    if (f.includes('heic') || f.includes('heif')) return 'image/jpeg'; // convert unsupported to jpeg
-    return f;
-  }
-  if (f.includes('png')) return 'image/png';
-  if (f.includes('webp')) return 'image/webp';
-  if (f.includes('jpg') || f.includes('jpeg')) return 'image/jpeg';
-  return 'image/jpeg';
+  return cleaned;
 }

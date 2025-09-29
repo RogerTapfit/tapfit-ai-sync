@@ -7,9 +7,14 @@ export class MachineRecognitionService {
   private static readonly MIN_ALTERNATIVES = 3;
 
   /**
-   * AI-powered machine recognition using OpenAI vision
+   * AI-powered machine recognition using OpenAI vision with optional workout prescription
    */
-  static async recognizeFromFrame(imageData: ImageData | HTMLCanvasElement): Promise<RecognitionResult[]> {
+  static async recognizeFromFrame(
+    imageData: ImageData | HTMLCanvasElement,
+    userProfile?: any,
+    sessionRequest?: any,
+    optionalText?: string
+  ): Promise<RecognitionResult[]> {
     try {
       // Convert image data to base64
       const base64Image = await this.convertToBase64(imageData);
