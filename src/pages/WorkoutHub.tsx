@@ -347,6 +347,19 @@ const WorkoutHub = () => {
       difficulty: "Advanced",
       equipment: "Cardio",
       description: "High-intensity leg cardio for lower body conditioning and fat burning."
+    },
+    { 
+      id: "23", 
+      name: "Indoor Cycling Bike", 
+      muscleGroup: "Cardio", 
+      image: "/src/assets/indoor-cycling-bike.png",
+      exerciseType: "Cardio",
+      sets: 1,
+      reps: "20-45 min",
+      restTime: 0,
+      difficulty: "Intermediate",
+      equipment: "Cardio",
+      description: "High-intensity cycling with resistance control and heart rate training. Perfect for endurance and interval workouts."
     }
   ];
 
@@ -383,7 +396,21 @@ const WorkoutHub = () => {
   };
 
   const handleStartWorkout = (machineId: string) => {
-    navigate(`/workout/${machineId}`);
+    const machine = workoutMachines.find(m => m.id === machineId);
+    if (machine?.muscleGroup === "Cardio") {
+      // For cardio machines, navigate to cardio workout with machine data
+      navigate('/cardio-workout', { 
+        state: { 
+          machineData: { 
+            name: machine.name,
+            type: machine.exerciseType,
+            image: machine.image
+          } 
+        } 
+      });
+    } else {
+      navigate(`/workout/${machineId}`);
+    }
   };
 
   const handleStartFullWorkout = () => {

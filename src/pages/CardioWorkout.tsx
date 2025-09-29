@@ -33,7 +33,7 @@ const CardioWorkout = () => {
   const getMachineType = (machineName: string): CardioMachineType => {
     const name = machineName.toLowerCase();
     if (name.includes('treadmill')) return 'treadmill';
-    if (name.includes('bike') || name.includes('cycle')) return 'bike';
+    if (name.includes('bike') || name.includes('cycle') || name.includes('cycling')) return 'bike';
     if (name.includes('stair') || name.includes('stepper')) return 'stair_stepper';
     if (name.includes('elliptical')) return 'elliptical';
     if (name.includes('row')) return 'rower';

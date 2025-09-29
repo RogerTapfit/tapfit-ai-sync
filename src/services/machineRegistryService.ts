@@ -142,6 +142,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png',
     workoutId: 'stairs-cardio',
     muscleGroup: 'cardio'
+  },
+  {
+    id: 'MCH-INDOOR-CYCLING-BIKE',
+    name: 'Indoor Cycling Bike',
+    type: 'Cardio',
+    synonyms: ['indoor cycling bike', 'spin bike', 'indoor bike', 'cycle bike', 'stages bike', 'peloton', 'spinning bike'],
+    imageUrl: '/src/assets/indoor-cycling-bike.png',
+    workoutId: 'indoor-cycling-cardio',
+    muscleGroup: 'cardio'
   }
 ];
 
