@@ -127,11 +127,22 @@ const WorkoutList = () => {
       }
 
       // Generate plan from MachineRegistryService for the muscle group
-      const machinesForMuscleGroup = MachineRegistryService.getAllMachines()
-        .filter(machine => machine.muscleGroup === muscleGroup)
-        .slice(0, 8); // Limit to 8 exercises
+      let machinesForMuscleGroup = MachineRegistryService.getAllMachines()
+        .filter(machine => machine.muscleGroup === muscleGroup);
 
-      workoutPlan = machinesForMuscleGroup.map((machine, index) => ({
+      // Always prioritize Lat Pulldown Machine when viewing Back workouts
+      if (muscleGroup === 'back') {
+        const latIds = ['MCH-LAT-PULLDOWN'];
+        const isLat = (m: any) => latIds.includes(m.id) || m.name.toLowerCase().includes('lat pulldown');
+        const latMachine = machinesForMuscleGroup.find(isLat);
+        if (latMachine) {
+          machinesForMuscleGroup = [latMachine, ...machinesForMuscleGroup.filter(m => m.id !== latMachine.id)];
+        }
+      }
+
+      machinesForMuscleGroup = machinesForMuscleGroup.slice(0, 8); // Limit to 8 exercises
+
+      workoutPlan = machinesForMuscleGroup.map((machine) => ({
         id: machine.id, // Use machine ID instead of index for consistency
         name: machine.name,
         muscleGroup: machine.muscleGroup,
