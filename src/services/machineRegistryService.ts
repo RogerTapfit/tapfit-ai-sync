@@ -205,6 +205,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/glute-kickback-machine-red-black.png',
     workoutId: 'glute-kickback',
     muscleGroup: 'glutes'
+  },
+  {
+    id: 'MCH-INNER-THIGH-ADDUCTOR',
+    name: 'Inner Thigh (Adductor) Machine',
+    type: 'Hip Adduction',
+    synonyms: ['adductor machine', 'inner thigh machine', 'hip adduction machine', 'thigh adductor', 'inner leg machine', 'leg adduction'],
+    imageUrl: '/lovable-uploads/inner-thigh-adductor-machine-red-black.png',
+    workoutId: 'inner-thigh-adductor',
+    muscleGroup: 'legs'
   }
 ];
 

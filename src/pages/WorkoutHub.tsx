@@ -451,6 +451,19 @@ const WorkoutHub = () => {
       difficulty: "Beginner",
       equipment: "Machine",
       description: "Isolate and strengthen your glutes with controlled hip extension movements. Perfect for glute activation and posterior chain development."
+    },
+    { 
+      id: "30", 
+      name: "Inner Thigh (Adductor) Machine", 
+      muscleGroup: "Legs", 
+      image: "/lovable-uploads/inner-thigh-adductor-machine-red-black.png",
+      exerciseType: "Isolation",
+      sets: 3,
+      reps: "10-15",
+      restTime: 45,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "Target your inner thigh muscles with controlled hip adduction movements. Perfect for strengthening adductors and improving leg stability."
     }
   ];
 
