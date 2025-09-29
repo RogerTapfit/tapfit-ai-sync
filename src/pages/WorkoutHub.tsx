@@ -506,11 +506,6 @@ const WorkoutHub = () => {
     navigate('/workout-list');
   };
 
-  // Featured: make Lat Pulldown easy to find on this page
-  const latPulldown = useMemo(() =>
-    workoutMachines.find(m => m.name === 'Lat Pulldown Machine'),
-  [workoutMachines]);
-
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
       {/* Header */}
@@ -550,42 +545,6 @@ const WorkoutHub = () => {
           </p>
         </CardContent>
       </Card>
-
-      {/* Featured: Lat Pulldown Machine */}
-      {latPulldown && (
-        <Card className="glow-card border-primary/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Dumbbell className="h-5 w-5 text-primary" />
-              Featured: Lat Pulldown Machine
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col md:flex-row items-center gap-4">
-            <div className="w-full md:w-1/3">
-              <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg overflow-hidden flex items-center justify-center">
-                <img
-                  src={latPulldown.image}
-                  alt="Lat Pulldown Machine"
-                  className="w-full h-full object-contain bg-background/50"
-                />
-              </div>
-            </div>
-            <div className="flex-1 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Back width builder. Tap to start a quick lat pulldown workout.
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={() => handleStartWorkout(latPulldown.id)} className="glow-button">
-                  Start Exercise
-                </Button>
-                <Button variant="outline" onClick={() => setSelectedMuscleGroup('Back')}>
-                  View Back Workouts
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Search and Filter */}
       <Card className="glow-card p-4">
