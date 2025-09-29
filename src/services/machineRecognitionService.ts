@@ -127,11 +127,15 @@ export class MachineRecognitionService {
       'MCH-LEG-EXTENSION': 'Seated position with leg pad that lifts up, targets quadriceps',
       'MCH-TREADMILL': 'Moving belt for walking/running, with handrails and control panel',
       'MCH-ELLIPTICAL': 'Standing position with moving foot pedals and arm handles, elliptical motion',
-      'MCH-STATIONARY-BIKE': 'Seated cycling position with pedals and handlebars',
+      'MCH-INDOOR-CYCLING-BIKE': 'Seated cycling position with pedals, handlebars, and flywheel',
+      'MCH-AMT': 'Standing adaptive motion trainer with variable stride length and upper body engagement',
+      'MCH-ROPE-TRAINER': 'Vertical rope climbing machine with continuous rope and adjustable resistance settings',
       'MCH-ROWING-MACHINE': 'Seated with sliding seat and pulling handle, mimics rowing motion',
       'MCH-STAIR-CLIMBER': 'Standing position with stepping pedals that move up and down',
       'MCH-BENCH-PRESS': 'Free barbell on J-hooks with adjustable bench; no rails, guide rods, or weight stack',
-      'MCH-SMITH-MACHINE': 'Barbell fixed on vertical rails with safety stops and guided linear path'
+      'MCH-SMITH-MACHINE': 'Barbell fixed on vertical rails with safety stops and guided linear path',
+      'MCH-FIXED-BARBELL-RACK': 'A-frame rack storing preloaded straight and EZ curl barbells of various weights (20-100+ lbs)',
+      'MCH-DUMBBELLS': 'Handheld weights for unilateral and bilateral training, available in various weights (5-100+ lbs)'
     };
     
     return descriptions[machine.id] || `${machine.type} machine for ${machine.muscleGroup} training`;

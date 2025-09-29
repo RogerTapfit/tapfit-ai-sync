@@ -103,16 +103,28 @@ const MACHINE_CATALOG = [
     description: "Cardio machine with moving belt surface for walking/running"
   },
   {
-    id: "MCH-STATIONARY-BIKE",
+    id: "MCH-INDOOR-CYCLING-BIKE",
     name: "Indoor Cycling Bike",
     type: "Cardio",
-    description: "Seated cardio machine with pedals, handlebars, and flywheel for cycling"
+    description: "Seated cardio machine with pedals, handlebars, and flywheel for cycling workouts"
   },
   {
     id: "MCH-ELLIPTICAL",
-    name: "Elliptical Machine",
+    name: "Precor Elliptical Trainer",
     type: "Cardio",
-    description: "Standing cardio machine with oval foot pedals and moving arm handles"
+    description: "Standing cardio machine with oval foot pedals and moving arm handles for low-impact cardio"
+  },
+  {
+    id: "MCH-AMT",
+    name: "Precor AMT (Adaptive Motion Trainer)",
+    type: "Cardio",
+    description: "Standing adaptive cardio machine with variable stride length and upper body motion"
+  },
+  {
+    id: "MCH-ROPE-TRAINER",
+    name: "Marpo Rope Trainer",
+    type: "Cardio",
+    description: "Vertical rope climbing machine with continuous rope and adjustable resistance"
   },
   {
     id: "MCH-ROWING-MACHINE",
@@ -125,6 +137,18 @@ const MACHINE_CATALOG = [
     name: "Stair Climber",
     type: "Cardio",
     description: "Standing cardio machine with independent step pedals"
+  },
+  {
+    id: "MCH-FIXED-BARBELL-RACK",
+    name: "Fixed Barbell Rack",
+    type: "Free Weights",
+    description: "A-frame rack storing preloaded straight and EZ curl barbells of various weights"
+  },
+  {
+    id: "MCH-DUMBBELLS",
+    name: "Dumbbells",
+    type: "Free Weights",
+    description: "Handheld weights for unilateral and bilateral training across all muscle groups"
   }
 ];
 

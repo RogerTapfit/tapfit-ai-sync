@@ -216,30 +216,28 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                     {bestMatch?.machineId === 'UNKNOWN' ? (
                       // Show all machines when not recognized
                       <>
-                        {['MCH-CHEST-PRESS', 'MCH-SHOULDER-PRESS', 'MCH-INCLINE-CHEST-PRESS', 'MCH-PEC-DECK'].map(id => {
-                          const machine = alternatives.find(a => a.machineId === id);
-                          if (!machine) return null;
-                          return (
-                            <Button
-                              key={machine.machineId}
-                              onClick={() => handleMachineSelect(machine)}
-                              variant="outline"
-                              className="w-full justify-start h-auto p-3"
-                            >
-                              <div className="flex items-center gap-3 w-full">
-                                <img 
-                                  src={machine.imageUrl} 
-                                  alt={machine.name}
-                                  className="w-12 h-12 object-cover rounded"
-                                />
-                                <div className="flex-1 text-left">
-                                  <div className="font-medium text-sm">{machine.name}</div>
-                                  <div className="text-xs text-muted-foreground">Strength Training</div>
+                        {alternatives.slice(0, 8).map(machine => (
+                          <Button
+                            key={machine.machineId}
+                            onClick={() => handleMachineSelect(machine)}
+                            variant="outline"
+                            className="w-full justify-start h-auto p-3"
+                          >
+                            <div className="flex items-center gap-3 w-full">
+                              <img 
+                                src={machine.imageUrl} 
+                                alt={machine.name}
+                                className="w-12 h-12 object-cover rounded"
+                              />
+                              <div className="flex-1 text-left">
+                                <div className="font-medium text-sm">{machine.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {machine.reasoning || 'Browse machine'}
                                 </div>
                               </div>
-                            </Button>
-                          );
-                        })}
+                            </div>
+                          </Button>
+                        ))}
                       </>
                     ) : (
                       // Show alternative matches
@@ -401,21 +399,17 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
                   <div className="space-y-2">
                     {bestMatch?.machineId === 'UNKNOWN' ? (
                       // Show popular machines when not recognized
-                      ['MCH-SHOULDER-PRESS', 'MCH-CHEST-PRESS', 'MCH-TREADMILL'].map(id => {
-                        const result = alternatives.find(a => a.machineId === id);
-                        if (!result) return null;
-                        return (
-                          <Button
-                            key={result.machineId}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMachineSelect(result)}
-                            className="w-full justify-start bg-black/50 border-white/20 text-white hover:bg-white/10"
-                          >
-                            <span>{result.name}</span>
-                          </Button>
-                        );
-                      })
+                      alternatives.slice(0, 4).map(result => (
+                        <Button
+                          key={result.machineId}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMachineSelect(result)}
+                          className="w-full justify-start bg-black/50 border-white/20 text-white hover:bg-white/10"
+                        >
+                          <span>{result.name}</span>
+                        </Button>
+                      ))
                     ) : (
                       // Show confidence-based alternatives
                       alternatives.filter(a => a.machineId !== 'UNKNOWN').slice(0, 3).map((result) => (
