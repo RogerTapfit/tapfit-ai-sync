@@ -160,6 +160,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/assets/precor-amt-red.png',
     workoutId: 'amt-cardio',
     muscleGroup: 'cardio'
+  },
+  {
+    id: 'MCH-ROPE-TRAINER',
+    name: 'Marpo Rope Trainer',
+    type: 'Functional',
+    synonyms: ['rope trainer', 'marpo', 'rope climb', 'rope pull', 'vmx', 'vlt', 'rope machine'],
+    imageUrl: '/assets/marpo-rope-trainer-red.png',
+    workoutId: 'rope-trainer',
+    muscleGroup: 'functional'
   }
 ];
 

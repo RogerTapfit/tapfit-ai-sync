@@ -386,6 +386,19 @@ const WorkoutHub = () => {
       difficulty: "Intermediate",
       equipment: "Cardio",
       description: "Adaptive stride cardio (0-36 inches) combining stepping, elliptical, and running motions. Full-body workout with adjustable intensity."
+    },
+    { 
+      id: "26", 
+      name: "Marpo Rope Trainer", 
+      muscleGroup: "Functional", 
+      image: "/assets/marpo-rope-trainer-red.png",
+      exerciseType: "Functional",
+      sets: 1,
+      reps: "10-15 min",
+      restTime: 0,
+      difficulty: "Intermediate",
+      equipment: "Functional",
+      description: "Continuous rope pull training with adjustable resistance. Combines strength and cardio for full-body conditioning and grip endurance."
     }
   ];
 
