@@ -178,6 +178,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/assets/fixed-barbell-rack-red.png',
     workoutId: 'fixed-barbell-rack',
     muscleGroup: 'strength'
+  },
+  {
+    id: 'MCH-DUMBBELLS',
+    name: 'Dumbbells',
+    type: 'Free Weights',
+    synonyms: ['dumbbells', 'dumbbell', 'free weights', 'hand weights', 'rubber dumbbells', 'hex dumbbells', 'adjustable dumbbells'],
+    imageUrl: '/assets/dumbbells-red-black.png',
+    workoutId: 'dumbbells',
+    muscleGroup: 'strength'
   }
 ];
 

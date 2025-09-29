@@ -412,6 +412,19 @@ const WorkoutHub = () => {
       difficulty: "Beginner",
       equipment: "Free Weights",
       description: "Preloaded fixed barbells for strength training. Includes straight bars and EZ curl bars for all major muscle groups."
+    },
+    { 
+      id: "28", 
+      name: "Dumbbells", 
+      muscleGroup: "Strength", 
+      image: "/assets/dumbbells-red-black.png",
+      exerciseType: "Strength",
+      sets: 3,
+      reps: "10-15",
+      restTime: 60,
+      difficulty: "Beginner",
+      equipment: "Free Weights",
+      description: "Versatile handheld weights for unilateral and bilateral training. Perfect for chest, back, shoulders, arms, legs, and core exercises."
     }
   ];
 
