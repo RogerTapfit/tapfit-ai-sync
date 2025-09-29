@@ -44,8 +44,8 @@ export const MACHINE_CATALOG: Machine[] = [
     id: 'MCH-LAT-PULLDOWN',
     name: 'Lat Pulldown Machine',
     type: 'Lat Pulldown',
-    synonyms: ['lat pulldown', 'lat pull down', 'pulldown', 'wide grip pulldown'],
-    imageUrl: '/lovable-uploads/f42105be-a95d-44b0-8d72-a77b6cbffee1.png',
+    synonyms: ['lat pulldown', 'lat pull down', 'pulldown', 'wide grip pulldown', 'close grip pulldown', 'reverse grip pulldown'],
+    imageUrl: '/assets/lat-pulldown-machine-red.png',
     workoutId: 'lat-pulldown',
     muscleGroup: 'back'
   },

@@ -121,7 +121,7 @@ export class MachineRecognitionService {
       'MCH-INCLINE-CHEST-PRESS': 'Angled pressing motion with significant upward angle, seat back at 30-45° incline',
       'MCH-SHOULDER-PRESS': 'Vertical/overhead pressing motion with handles above shoulder level, upright seat back (~90°)',
       'MCH-PEC-DECK': 'Arm pads that swing together in front of torso, no bar/handles, seated position',
-      'MCH-LAT-PULLDOWN': 'Overhead bar pulled down to chest, cable system with lat bar',
+      'MCH-LAT-PULLDOWN': 'Overhead bar pulled down to chest or behind neck, cable system with various grip options (wide, close, reverse), seated position with thigh pads for stability, targets latissimus dorsi and back muscles',
       'MCH-SEATED-ROW': 'Horizontal pulling motion, seated with chest pad, cable handles',
       'MCH-LEG-PRESS': 'Angled leg pressing platform, seated with back support',
       'MCH-LEG-EXTENSION': 'Seated position with leg pad that lifts up, targets quadriceps',

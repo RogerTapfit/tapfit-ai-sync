@@ -44,9 +44,9 @@ const MACHINE_CATALOG = [
   },
   {
     id: "MCH-LAT-PULLDOWN",
-    name: "Lat Pulldown Machine",
+    name: "Lat Pulldown Machine", 
     type: "Back Pull",
-    description: "Seated pull-down machine with overhead bar, targets latissimus dorsi"
+    description: "Seated machine with overhead bar and thigh pads for stability. Features vertical pulling motion with various grip options (wide, close, reverse). Targets latissimus dorsi, biceps, forearms, rear delts, traps, and rhomboids. Cable system with adjustable weight stack."
   },
   {
     id: "MCH-LEG-PRESS",
