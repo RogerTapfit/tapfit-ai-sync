@@ -240,6 +240,18 @@ export const useCalendarData = (userId?: string) => {
     generateCalendarData(currentMonth);
   }, [userId, currentMonth]);
 
+  // Listen for workout completion events to refresh calendar data
+  useEffect(() => {
+    const handleWorkoutCompleted = () => {
+      generateCalendarData(currentMonth);
+    };
+
+    window.addEventListener('workoutCompleted', handleWorkoutCompleted);
+    return () => {
+      window.removeEventListener('workoutCompleted', handleWorkoutCompleted);
+    };
+  }, [currentMonth]);
+
   // Navigation functions
   const goToPreviousMonth = () => {
     setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));

@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, MessageCircle, Phone, ChevronDown } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, MessageCircle, Phone, ChevronDown, Calendar } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useMuscleGroupAnalysis } from "@/hooks/useMuscleGroupAnalysis";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
 import FitnessChatbot from "@/components/FitnessChatbot";
 import VoiceInterface from "@/components/VoiceInterface";
+import { DailyWorkoutSection } from "@/components/DailyWorkoutSection";
 import { supabase } from "@/integrations/supabase/client";
 import { MachineRegistryService } from "@/services/machineRegistryService";
 import { toast } from "sonner";
@@ -161,23 +162,24 @@ const WorkoutList = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Use proper local date boundaries to filter only today's exercises
-    const { getCurrentLocalDate } = await import('@/utils/dateUtils');
-    const today = getCurrentLocalDate();
-    const tomorrow = new Date();
+    // Use proper local date boundaries - strict midnight cutoff for clean daily separation
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.getFullYear() + '-' + 
-      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + 
-      String(tomorrow.getDate()).padStart(2, '0');
+    
+    const todayStr = today.toISOString();
+    const tomorrowStr = tomorrow.toISOString();
 
-    console.log(`Filtering exercises for today: ${today} to ${tomorrowStr}`);
+    console.log(`Filtering exercises for today (strict): ${todayStr} to ${tomorrowStr}`);
 
     const { data: exerciseLogs, error } = await supabase
       .from('exercise_logs')
       .select('exercise_name, sets_completed, reps_completed, weight_used, completed_at')
       .eq('user_id', user.id)
-      .gte('completed_at', `${today}T00:00:00`)
-      .lt('completed_at', `${tomorrowStr}T00:00:00`);
+      .gte('completed_at', todayStr)
+      .lt('completed_at', tomorrowStr)
+      .order('completed_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching exercise logs:', error);
@@ -240,11 +242,14 @@ const WorkoutList = () => {
       });
     });
 
-    // Find completed exercises not in the plan
+    // Find completed exercises not in the plan and group them properly
     const extraExercises: WorkoutMachine[] = [];
     const plannedExerciseNames = todaysWorkouts.map(w => w.name.toLowerCase());
     
-    exerciseLogs?.forEach((log, index) => {
+    // Group exercises by unique name to avoid duplicates
+    const uniqueExercises = new Map<string, typeof exerciseLogs[0]>();
+    
+    exerciseLogs?.forEach((log) => {
       const machine = findMatchingMachine(log.exercise_name);
       const isInPlan = plannedExerciseNames.some(name => {
         const normalizeString = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -254,23 +259,35 @@ const WorkoutList = () => {
       });
 
       if (!isInPlan) {
-        extraExercises.push({
-          id: `extra-${index}`,
-          name: log.exercise_name,
-          muscleGroup: machine?.muscleGroup || 'other',
-          completed: true,
-          workoutDetails: {
-            sets: log.sets_completed,
-            reps: log.reps_completed,
-            weight: log.weight_used,
-            completedAt: log.completed_at,
-            totalWeightLifted: log.weight_used ? log.weight_used * log.reps_completed : undefined
-          }
-        });
+        const normalizedName = log.exercise_name.toLowerCase();
+        // Keep the most recent entry for each exercise
+        if (!uniqueExercises.has(normalizedName) || 
+            new Date(log.completed_at) > new Date(uniqueExercises.get(normalizedName)!.completed_at)) {
+          uniqueExercises.set(normalizedName, log);
+        }
       }
     });
 
-    console.log("Extra completed exercises:", extraExercises);
+    // Convert unique exercises to workout machines
+    let extraIndex = 0;
+    uniqueExercises.forEach((log) => {
+      const machine = findMatchingMachine(log.exercise_name);
+      extraExercises.push({
+        id: `extra-${extraIndex++}`,
+        name: log.exercise_name,
+        muscleGroup: machine?.muscleGroup || 'other',
+        completed: true,
+        workoutDetails: {
+          sets: log.sets_completed,
+          reps: log.reps_completed,
+          weight: log.weight_used,
+          completedAt: log.completed_at,
+          totalWeightLifted: log.weight_used ? log.weight_used * log.reps_completed : undefined
+        }
+      });
+    });
+
+    console.log("Extra completed exercises (deduplicated):", extraExercises);
     setCompletedExtraExercises(extraExercises);
   }, [todaysWorkouts]);
 
@@ -438,6 +455,9 @@ const WorkoutList = () => {
         const { audioManager } = await import('@/utils/audioUtils');
         await audioManager.playSetComplete();
         
+        // Trigger calendar data refresh for immediate UI update
+        const { useCalendarData } = await import('@/hooks/useCalendarData');
+        
         // Check for progress milestones
         const newCompletedCount = todaysWorkouts.filter(w => w.completed || w.id === workoutId).length;
         const newProgress = (newCompletedCount / todaysWorkouts.length) * 100;
@@ -449,6 +469,11 @@ const WorkoutList = () => {
         } else if (newProgress === 100) {
           setTimeout(async () => {
             await audioManager.playWorkoutComplete();
+            // Complete the workout log when all exercises are done
+            if (currentWorkoutLog) {
+              const totals = await calculateActualWorkoutTotals(currentWorkoutLog.id);
+              await completeWorkout(currentWorkoutLog.id, totals.actualDuration);
+            }
           }, 500);
         }
         
@@ -670,142 +695,25 @@ const WorkoutList = () => {
         </div>
       </Card>
 
-      {/* Workout List */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          Today's {muscleGroupAnalysis.workoutType}
-          {todaysWorkouts.some(w => w.muscleGroup === 'unknown') && (
-            <div title="Some exercises have unknown muscle groups">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            </div>
-          )}
-        </h3>
-        
-        {todaysWorkouts.map((workout, index) => (
-          <Card 
-            key={workout.id} 
-            className={`glow-card p-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all duration-300 border-l-2 ${
-              workout.completed 
-                ? 'border-l-green-500/60 bg-gradient-to-r from-green-500/5 to-transparent' 
-                : 'border-l-secondary/40 hover:border-l-primary/60'
-            }`}
-            onClick={() => handleWorkoutClick(workout.id)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div onClick={(e) => toggleWorkoutComplete(workout.id, e)} className="cursor-pointer">
-                  {getStatusIcon(workout.completed)}
-                </div>
-                <div>
-                  <h4 className="font-semibold">{workout.name}</h4>
-                  <div className="space-y-1">
-                    <p className="text-sm text-foreground/70 flex items-center gap-1">
-                      <Activity className="h-3 w-3 text-secondary" />
-                      Target: {workout.muscleGroup}
-                    </p>
-                    {workout.completed && workout.workoutDetails && (
-                      <div className="text-xs text-green-600 space-y-1">
-                        <p className="flex items-center gap-2">
-                          {isCardio(workout) ? (
-                            <span>Duration: {workout.workoutDetails.reps} min</span>
-                          ) : (
-                            <>
-                              <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
-                              {workout.workoutDetails.weight != null && workout.workoutDetails.weight > 0 && (
-                                <span>@ {workout.workoutDetails.weight} lbs</span>
-                              )}
-                            </>
-                          )}
-                        </p>
-                        {!isCardio(workout) && workout.workoutDetails.totalWeightLifted != null && workout.workoutDetails.totalWeightLifted > 0 && (
-                          <p className="font-medium">
-                            Total Weight: {workout.workoutDetails.totalWeightLifted} lbs
-                          </p>
-                        )}
-                        <p className="text-foreground/50">
-                          Completed: {new Date(workout.workoutDetails.completedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(workout.completed)}
-                <NFCMachinePopup machineId={workout.name.toLowerCase().replace(/\s+/g, '-')} machineName={workout.name}>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-6 w-12 text-xs bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 text-blue-600"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Smartphone className="h-3 w-3" />
-                  </Button>
-                </NFCMachinePopup>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {/* Today's Scheduled Workouts */}
+      <DailyWorkoutSection
+        title="Today's Scheduled Workouts"
+        workouts={todaysWorkouts}
+        onWorkoutClick={handleWorkoutClick}
+        onToggleComplete={toggleWorkoutComplete}
+        showTime={true}
+      />
 
-      {/* Completed Extra Exercises (Not in Plan) */}
+      {/* Extra Completed Exercises */}
       {completedExtraExercises.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Completed Today (Not in Plan)
-          </h3>
-          
-          {completedExtraExercises.map((workout, index) => (
-            <Card 
-              key={workout.id} 
-              className="glow-card p-4 border-l-2 border-l-green-500/60 bg-gradient-to-r from-green-500/5 to-transparent"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">{workout.name}</h4>
-                    <div className="space-y-1">
-                      <p className="text-sm text-foreground/70 flex items-center gap-1">
-                        <Activity className="h-3 w-3 text-secondary" />
-                        Target: {workout.muscleGroup}
-                      </p>
-                      {workout.workoutDetails && (
-                        <div className="text-xs text-green-600 space-y-1">
-                          <p className="flex items-center gap-2">
-                            {isCardio(workout) ? (
-                              <span>Duration: {workout.workoutDetails.reps} min</span>
-                            ) : (
-                              <>
-                                <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
-                                {workout.workoutDetails.weight != null && workout.workoutDetails.weight > 0 && (
-                                  <span>@ {workout.workoutDetails.weight} lbs</span>
-                                )}
-                              </>
-                            )}
-                          </p>
-                          {!isCardio(workout) && workout.workoutDetails.totalWeightLifted != null && workout.workoutDetails.totalWeightLifted > 0 && (
-                            <p className="font-medium">
-                              Total Weight: {workout.workoutDetails.totalWeightLifted} lbs
-                            </p>
-                          )}
-                          <p className="text-foreground/50">
-                            Completed: {new Date(workout.workoutDetails.completedAt || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className="bg-green-500">Completed</Badge>
-                </div>
-              </div>
-            </Card>
-          ))}
+        <div className="mt-8">
+          <DailyWorkoutSection
+            title="Completed Today (Not in Plan)"
+            workouts={completedExtraExercises}
+            onWorkoutClick={() => {}} // No navigation for completed exercises
+            onToggleComplete={() => {}} // No toggle for already completed
+            showTime={true}
+          />
         </div>
       )}
 

@@ -350,6 +350,13 @@ export const useWorkoutLogger = () => {
       setCurrentWorkoutLog(null);
       clearWorkoutLogId();
 
+      // Refresh calendar data for immediate UI update
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('workoutCompleted', { 
+          detail: { workoutLogId, duration, notes } 
+        }));
+      }
+
       toast({
         title: "Workout Completed! 🎉",
         description: "Great job finishing your workout session!",
