@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, MessageCircle, Phone } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, MessageCircle, Phone, ChevronDown } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useMuscleGroupAnalysis } from "@/hooks/useMuscleGroupAnalysis";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
@@ -131,7 +132,7 @@ const WorkoutList = () => {
         .slice(0, 8); // Limit to 8 exercises
 
       workoutPlan = machinesForMuscleGroup.map((machine, index) => ({
-        id: (index + 1).toString(),
+        id: machine.id, // Use machine ID instead of index for consistency
         name: machine.name,
         muscleGroup: machine.muscleGroup,
         completed: false
@@ -140,7 +141,7 @@ const WorkoutList = () => {
 
     console.log("Generated workout plan:", workoutPlan);
     setTodaysWorkouts(workoutPlan);
-  }, []); // Empty dependency array - only run once
+  }, [currentMuscleGroup]); // Re-run when muscle group changes
 
   // Load completed exercises and merge with plan
   const loadCompletedExercises = useCallback(async () => {
@@ -561,8 +562,24 @@ const WorkoutList = () => {
         </div>
       </div>
 
-      {/* Scan Machine Button */}
+      {/* Muscle Group Selector and Scan Machine Button */}
       <div className="space-y-4">
+        <div className="flex gap-3">
+          <Select value={currentMuscleGroup} onValueChange={setCurrentMuscleGroup}>
+            <SelectTrigger className="flex-1 border-primary/30 hover:border-primary/60">
+              <SelectValue placeholder="Select muscle group" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chest">Chest</SelectItem>
+              <SelectItem value="back">Back</SelectItem>
+              <SelectItem value="shoulders">Shoulders</SelectItem>
+              <SelectItem value="legs">Legs</SelectItem>
+              <SelectItem value="arms">Arms</SelectItem>
+              <SelectItem value="cardio">Cardio</SelectItem>
+              <SelectItem value="core">Core</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button 
           onClick={handleScanMachine}
           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg transition-all duration-300 hover:shadow-xl"
