@@ -204,6 +204,9 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
           fileName: processedFile.name
         });
 
+        // Make sure we are not in scanning mode for UI messaging
+        stopCamera();
+
         if (!triedDataUrlFallback) {
           triedDataUrlFallback = true;
           console.warn('Falling back to Data URL for image load');
