@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Timer, Target, Smartphone } from 'lucide-react';
+import { ArrowLeft, Timer, Target, Smartphone, TrendingUp } from 'lucide-react';
 import { WorkoutExercise } from '@/hooks/useWorkoutPlan';
 import { SmartPuckWorkoutRunner } from './SmartPuckWorkoutRunner';
 import { NFCMachinePopup } from './NFCMachinePopup';
 import { getMachineImageUrl } from '@/utils/machineImageUtils';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useNavigate } from 'react-router-dom';
+import { useMachineHistory } from '@/hooks/useMachineHistory';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 interface MachineDetailViewProps {
   exercise: WorkoutExercise;
@@ -32,6 +44,11 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   onExerciseComplete,
   autoConnect = false
 }) => {
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [historyPromptShown, setHistoryPromptShown] = useState(false);
+  
+  const { history, loading: historyLoading } = useMachineHistory(exercise.machine);
+  
   const [sets, setSets] = useState<SetData[]>(() => {
     // Use calculated weight if available, otherwise fallback to exercise weight or reasonable default
     const defaultWeight = (exercise as any).calculated_weight || exercise.weight || 20;
@@ -51,6 +68,42 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   // Workout logging
   const { currentWorkoutLog, startWorkout, logExercise, completeWorkout } = useWorkoutLogger();
   const navigate = useNavigate();
+
+  // Show history prompt when component loads if there's previous data
+  useEffect(() => {
+    if (!historyLoading && history && !historyPromptShown && history.lastWeight > 0) {
+      setShowHistoryDialog(true);
+      setHistoryPromptShown(true);
+    }
+  }, [historyLoading, history, historyPromptShown]);
+
+  const handleUsePreviousWeight = () => {
+    if (history) {
+      const newSets = sets.map(set => ({
+        ...set,
+        weight: history.lastWeight,
+        targetReps: history.lastReps,
+        actualReps: history.lastReps
+      }));
+      setSets(newSets);
+      
+      const date = new Date(history.lastWorkoutDate);
+      const formattedDate = date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      });
+      
+      toast.success(`Weight set to ${history.lastWeight} lbs from ${formattedDate}`, {
+        icon: <TrendingUp className="h-4 w-4" />
+      });
+    }
+    setShowHistoryDialog(false);
+  };
+
+  const handleSkipPreviousWeight = () => {
+    setShowHistoryDialog(false);
+  };
 
   const completedSets = sets.filter(set => set.completed).length;
   const progressPercentage = (completedSets / sets.length) * 100;
@@ -142,7 +195,55 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   const machineImageUrl = getMachineImageUrl(exercise.machine);
 
   return (
-    <div className="space-y-6">
+    <>
+      <AlertDialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Previous Workout Found
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3 pt-2">
+              <div>
+                Last time you used <span className="font-semibold text-foreground">{exercise.machine}</span>, you lifted:
+              </div>
+              <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Weight</span>
+                  <span className="text-2xl font-bold text-primary">{history?.lastWeight} lbs</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Sets × Reps</span>
+                  <span className="font-semibold text-foreground">{history?.lastSets} × {history?.lastReps}</span>
+                </div>
+                {history?.lastWorkoutDate && (
+                  <div className="text-xs text-muted-foreground pt-2 border-t border-border/50">
+                    {new Date(history.lastWorkoutDate).toLocaleDateString('en-US', { 
+                      weekday: 'short',
+                      month: 'short', 
+                      day: 'numeric',
+                      year: new Date(history.lastWorkoutDate).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="text-sm">
+                Would you like to start with this weight today?
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipPreviousWeight}>
+              Start Fresh
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleUsePreviousWeight}>
+              Use Previous Weight
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -228,7 +329,8 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
         <SmartPuckWorkoutRunner autoConnect={autoConnect} onDone={handleCompleteExercise} onStart={handleStart} />
       </div>
 
-    </div>
+      </div>
+    </>
   );
 };
 
