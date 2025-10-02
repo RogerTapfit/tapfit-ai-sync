@@ -250,6 +250,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/seated-dip-machine-red.png',
     workoutId: 'seated-dip',
     muscleGroup: 'arms'
+  },
+  {
+    id: 'MCH-TRICEPS-PUSHDOWN',
+    name: 'Triceps Pushdown (Cable)',
+    type: 'Isolation Push',
+    synonyms: ['triceps pushdown', 'cable pushdown', 'tricep pushdown', 'rope pushdown', 'triceps extension', 'overhead cable extension', 'cable tricep extension'],
+    imageUrl: '/lovable-uploads/triceps-pushdown-machine-red.png',
+    workoutId: 'triceps-pushdown',
+    muscleGroup: 'arms'
   }
 ];
 

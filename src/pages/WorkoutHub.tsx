@@ -280,6 +280,19 @@ const WorkoutHub = () => {
       description: "The Seated Dip Machine mimics bodyweight dips with controlled resistance. Targets triceps, chest, and front shoulders while maintaining stability. Users press down on handles while seated, extending arms fully against adjustable weight. Ideal for both beginners and advanced lifters seeking safe triceps development."
     },
     { 
+      id: "14d", 
+      name: "Triceps Pushdown (Cable)", 
+      muscleGroup: "Arms", 
+      image: "/lovable-uploads/triceps-pushdown-machine-red.png",
+      exerciseType: "Isolation",
+      sets: 3,
+      reps: "10-12",
+      restTime: 60,
+      difficulty: "Beginner",
+      equipment: "Cable Machine",
+      description: "The Triceps Pushdown Machine isolates and strengthens the triceps through controlled, vertical pressing movements. Using a cable pulley system with rope or bar attachments, it provides constant resistance to fully engage all three triceps heads. Ideal for building arm definition and pressing strength with progressive overload."
+    },
+    { 
       id: "15", 
       name: "Tricep Dip Machine", 
       muscleGroup: "Arms", 

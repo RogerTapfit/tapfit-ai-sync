@@ -22,6 +22,7 @@ export const getMachineImageUrl = (machineName: string): string => {
   if (name.includes('lateral') && name.includes('raise')) return '/lovable-uploads/28009a8a-51b5-4196-bd00-c1ad68b67bc0.png';
   
   // Arm Machines
+  if (name.includes('tricep') && name.includes('pushdown')) return '/lovable-uploads/triceps-pushdown-machine-red.png';
   if (name.includes('seated') && name.includes('dip')) return '/lovable-uploads/seated-dip-machine-red.png';
   if (name.includes('hoist') && name.includes('bicep')) return '/lovable-uploads/hoist-biceps-curl-machine-red.png';
   if (name.includes('bicep') && name.includes('curl') && !name.includes('preacher')) return '/lovable-uploads/461c8b1b-3cee-4b38-b257-23671d035d6d.png';
