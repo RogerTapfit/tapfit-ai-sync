@@ -74,9 +74,9 @@ export const DailyWorkoutSection: React.FC<DailyWorkoutSectionProps> = ({
         {workouts.map((workout) => (
           <Card 
             key={workout.id}
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md bg-card/50 backdrop-blur-sm ${
               workout.completed 
-                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/10' 
+                ? 'border-green-500/30 bg-green-950/20' 
                 : 'border-border hover:border-primary/50'
             }`}
             onClick={() => onWorkoutClick(workout.id)}
@@ -87,8 +87,8 @@ export const DailyWorkoutSection: React.FC<DailyWorkoutSectionProps> = ({
                   onClick={(e) => onToggleComplete(workout.id, e)}
                   className={`p-1 rounded-full transition-colors ${
                     workout.completed 
-                      ? 'text-green-600 bg-green-100 dark:bg-green-900/30' 
-                      : 'text-gray-400 hover:text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30'
+                      ? 'text-green-400 bg-green-950/40' 
+                      : 'text-muted-foreground hover:text-green-400 hover:bg-green-950/40'
                   }`}
                 >
                   <CheckCircle className="h-5 w-5" />
@@ -130,7 +130,7 @@ export const DailyWorkoutSection: React.FC<DailyWorkoutSectionProps> = ({
                 )}
                 
                 {workout.completed && (
-                  <Badge variant="default" className="bg-green-600">
+                  <Badge variant="default" className="bg-green-600 hover:bg-green-600">
                     Completed
                   </Badge>
                 )}
