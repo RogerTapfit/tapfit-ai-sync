@@ -605,7 +605,7 @@ const WorkoutHub = () => {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="border-primary/30 hover:border-primary/60 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
