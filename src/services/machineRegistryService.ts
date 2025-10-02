@@ -241,6 +241,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/hoist-biceps-curl-machine-red.png',
     workoutId: 'biceps-curl',
     muscleGroup: 'arms'
+  },
+  {
+    id: 'MCH-SEATED-DIP',
+    name: 'Seated Dip Machine',
+    type: 'Compound Push',
+    synonyms: ['seated dip', 'dip machine', 'assisted dip', 'tricep dip machine', 'chest dip machine'],
+    imageUrl: '/lovable-uploads/seated-dip-machine-red.png',
+    workoutId: 'seated-dip',
+    muscleGroup: 'arms'
   }
 ];
 

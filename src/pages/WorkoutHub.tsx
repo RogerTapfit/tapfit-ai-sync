@@ -267,6 +267,19 @@ const WorkoutHub = () => {
       description: "The Hoist Roc-It Biceps Curl Machine isolates the biceps with locked upper arms against a support pad. The slight rocking motion naturally adjusts posture during the curl, increasing range of motion while reducing shoulder strain. Targets biceps brachii, brachialis, and brachioradialis."
     },
     { 
+      id: "14c", 
+      name: "Seated Dip Machine", 
+      muscleGroup: "Arms", 
+      image: "/lovable-uploads/seated-dip-machine-red.png",
+      exerciseType: "Compound",
+      sets: 3,
+      reps: "10-12",
+      restTime: 75,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "The Seated Dip Machine mimics bodyweight dips with controlled resistance. Targets triceps, chest, and front shoulders while maintaining stability. Users press down on handles while seated, extending arms fully against adjustable weight. Ideal for both beginners and advanced lifters seeking safe triceps development."
+    },
+    { 
       id: "15", 
       name: "Tricep Dip Machine", 
       muscleGroup: "Arms", 
