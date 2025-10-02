@@ -232,6 +232,15 @@ export const MACHINE_CATALOG: Machine[] = [
     imageUrl: '/lovable-uploads/abdominal-crunch-machine-hoist-red.png',
     workoutId: 'abdominal-crunch',
     muscleGroup: 'core'
+  },
+  {
+    id: 'MCH-BICEPS-CURL',
+    name: 'Seated Biceps Curl Machine (Hoist Roc-It)',
+    type: 'Arm Curl',
+    synonyms: ['biceps curl machine', 'bicep curl', 'arm curl machine', 'seated biceps curl', 'hoist biceps', 'roc-it biceps'],
+    imageUrl: '/lovable-uploads/hoist-biceps-curl-machine-red.png',
+    workoutId: 'biceps-curl',
+    muscleGroup: 'arms'
   }
 ];
 

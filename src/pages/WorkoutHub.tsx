@@ -254,6 +254,19 @@ const WorkoutHub = () => {
       description: "Isolated bicep development with controlled movement path."
     },
     { 
+      id: "14b", 
+      name: "Seated Biceps Curl Machine (Hoist Roc-It)", 
+      muscleGroup: "Arms", 
+      image: "/lovable-uploads/hoist-biceps-curl-machine-red.png",
+      exerciseType: "Isolation",
+      sets: 3,
+      reps: "10-12",
+      restTime: 60,
+      difficulty: "Beginner",
+      equipment: "Machine",
+      description: "The Hoist Roc-It Biceps Curl Machine isolates the biceps with locked upper arms against a support pad. The slight rocking motion naturally adjusts posture during the curl, increasing range of motion while reducing shoulder strain. Targets biceps brachii, brachialis, and brachioradialis."
+    },
+    { 
       id: "15", 
       name: "Tricep Dip Machine", 
       muscleGroup: "Arms", 
