@@ -216,3 +216,5 @@ export const AvatarGallery: React.FC = () => {
     </div>
   );
 };
+
+export default AvatarGallery;

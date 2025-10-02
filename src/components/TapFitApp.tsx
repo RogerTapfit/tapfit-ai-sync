@@ -16,7 +16,7 @@ const SensorWorkout = lazy(() => import("../pages/SensorWorkout"));
 const PuckTest = lazy(() => import("../pages/PuckTest"));
 const HealthDataExport = lazy(() => import("./HealthDataExport").then(module => ({ default: module.HealthDataExport })));
 const WorkoutPlanDashboard = lazy(() => import("./WorkoutPlanDashboard"));
-const AvatarGallery = lazy(() => import("./AvatarGallery").then(module => ({ default: module.AvatarGallery })));
+const AvatarGallery = lazy(() => import("./AvatarGallery"));
 const NutritionDashboard = lazy(() => import("./NutritionDashboard"));
 const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
 
