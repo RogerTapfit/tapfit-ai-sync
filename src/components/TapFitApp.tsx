@@ -16,7 +16,7 @@ const SensorWorkout = lazy(() => import("../pages/SensorWorkout"));
 const PuckTest = lazy(() => import("../pages/PuckTest"));
 const HealthDataExport = lazy(() => import("./HealthDataExport").then(module => ({ default: module.HealthDataExport })));
 const WorkoutPlanDashboard = lazy(() => import("./WorkoutPlanDashboard"));
-const AvatarBuilder = lazy(() => import("./AvatarBuilder").then(module => ({ default: module.AvatarBuilder })));
+const AvatarGallery = lazy(() => import("./AvatarGallery").then(module => ({ default: module.AvatarGallery })));
 const NutritionDashboard = lazy(() => import("./NutritionDashboard"));
 const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
 
@@ -133,8 +133,19 @@ const TapFitApp = () => {
         case 'subscription':
           return <SubscriptionPlans />;
         case 'avatar':
-          console.log('Rendering AvatarBuilder component');
-          return <AvatarBuilder onClose={() => setCurrentPage('dashboard')} />;
+          console.log('Rendering AvatarGallery component');
+          return (
+            <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-4">
+              <div className="max-w-6xl mx-auto">
+                <div className="mb-6">
+                  <Button variant="outline" onClick={() => setCurrentPage('dashboard')}>
+                    Back to Dashboard
+                  </Button>
+                </div>
+                <AvatarGallery />
+              </div>
+            </div>
+          );
         default:
           console.log('Rendering default dashboard');
           return <TapFitDashboard onPageChange={setCurrentPage} />;
