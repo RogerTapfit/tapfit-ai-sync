@@ -55,4 +55,4 @@ cpu = "auto"
 memory = "auto"
 
 [functions.realtime-voice-chat]
-verify_jwt = true
+verify_jwt = false
