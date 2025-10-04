@@ -89,33 +89,65 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
 
   // Handle voice mode toggle
   const toggleVoiceMode = async () => {
-    if (!voiceMode) {
-      // Entering voice mode
-      try {
-        await connectVoice(avatarName);
-        await startRecording();
-        setVoiceMode(true);
-        toast({
-          title: "Voice Mode Active",
-          description: `Now talking with ${avatarName}. Speak naturally!`,
-        });
-      } catch (error) {
-        console.error('Failed to start voice mode:', error);
-        toast({
-          title: "Voice Mode Failed",
-          description: "Please check microphone permissions and try again.",
-          variant: "destructive"
-        });
-      }
-    } else {
-      // Exiting voice mode
+    if (voiceMode) {
+      // Turning off voice mode
       stopRecording();
       disconnectVoice();
       setVoiceMode(false);
       toast({
-        title: "Voice Mode Ended",
-        description: "Switched back to text chat.",
+        title: "Voice Mode Off",
+        description: "Switched back to text mode",
       });
+    } else {
+      // Turning on voice mode
+      try {
+        setIsLoading(true);
+        toast({
+          title: "Connecting...",
+          description: "Setting up voice chat with your AI coach",
+        });
+
+        // Wait for WebSocket connection to fully establish
+        console.log("Connecting to voice chat...");
+        await connectVoice(avatarName);
+        console.log("Voice connection established, starting microphone...");
+
+        // Only start recording after connection is established
+        await startRecording();
+        console.log("Microphone started successfully");
+
+        setVoiceMode(true);
+        toast({
+          title: "Voice Mode Active!",
+          description: "Start speaking to chat with your AI coach",
+        });
+      } catch (error) {
+        console.error("Failed to activate voice mode:", error);
+        
+        // Determine specific error message
+        let errorMessage = "Could not connect to voice chat";
+        if (error instanceof Error) {
+          if (error.message.includes('timeout')) {
+            errorMessage = "Connection timeout. Please check your internet connection.";
+          } else if (error.message.includes('Microphone') || error.message.includes('getUserMedia')) {
+            errorMessage = "Microphone permission denied. Please allow microphone access.";
+          } else if (error.message.includes('WebSocket')) {
+            errorMessage = "Failed to connect. Please try again.";
+          }
+        }
+
+        toast({
+          title: "Voice Mode Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        // Clean up on error
+        disconnectVoice();
+        setVoiceMode(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 

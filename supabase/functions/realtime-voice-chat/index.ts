@@ -11,19 +11,22 @@ serve(async (req) => {
   const upgradeHeader = headers.get("upgrade") || "";
 
   if (upgradeHeader.toLowerCase() !== "websocket") {
+    console.error("Non-WebSocket request received");
     return new Response("Expected WebSocket connection", { status: 400 });
   }
 
-  // Get OpenAI API key
+  // Verify OpenAI API key is configured
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIApiKey) {
-    return new Response("OpenAI API key not configured", { status: 500 });
+    console.error("OPENAI_API_KEY not configured in environment");
+    return new Response("Server configuration error: Missing API key", { status: 500 });
   }
+  console.log("OpenAI API key verified");
 
   // Get avatar name from URL query parameter
   const url = new URL(req.url);
   const avatarName = url.searchParams.get('avatarName') || 'Tappy';
-  console.log("Avatar name:", avatarName);
+  console.log("Connecting client with avatar name:", avatarName);
 
   const { socket, response } = Deno.upgradeWebSocket(req);
   

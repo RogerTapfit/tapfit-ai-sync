@@ -36,107 +36,126 @@ export const useRealtimeChat = () => {
     return avatarName ? `${url}?avatarName=${encodeURIComponent(avatarName)}` : url;
   };
 
-  const connect = useCallback(async (avatarName?: string) => {
-    try {
-      console.log("Connecting to voice chat...");
-      
-      // Initialize audio context
-      if (!audioContextRef.current) {
-        audioContextRef.current = new AudioContext({ sampleRate: 24000 });
-      }
-
-      // Connect WebSocket
-      const wsUrl = getWebSocketURL(avatarName);
-      console.log("Connecting to:", wsUrl, "with avatar:", avatarName);
-      
-      wsRef.current = new WebSocket(wsUrl);
-
-      wsRef.current.onopen = () => {
-        console.log("WebSocket connected successfully!");
-        setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
-      };
-
-      wsRef.current.onmessage = async (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("Received message:", data.type);
-
-          switch (data.type) {
-            case 'response.audio.delta':
-              // Play audio chunk
-              if (data.delta && audioContextRef.current) {
-                const binaryString = atob(data.delta);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                  bytes[i] = binaryString.charCodeAt(i);
-                }
-                await playAudioData(audioContextRef.current, bytes);
-              }
-              break;
-
-            case 'response.audio.done':
-              setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-              break;
-
-            case 'response.audio_transcript.delta':
-              if (data.delta) {
-                currentTranscriptRef.current += data.delta;
-              }
-              break;
-
-            case 'response.audio_transcript.done':
-              if (currentTranscriptRef.current.trim()) {
-                const newMessage: Message = {
-                  id: Date.now().toString(),
-                  type: 'assistant',
-                  content: currentTranscriptRef.current.trim(),
-                  timestamp: new Date()
-                };
-                setMessages(prev => [...prev, newMessage]);
-                currentTranscriptRef.current = '';
-              }
-              break;
-
-            case 'input_audio_buffer.speech_started':
-              console.log("User started speaking");
-              break;
-
-            case 'input_audio_buffer.speech_stopped':
-              console.log("User stopped speaking");
-              break;
-
-            case 'response.created':
-              setVoiceState(prev => ({ ...prev, isAISpeaking: true }));
-              break;
-
-            case 'error':
-              console.error("WebSocket error:", data.message);
-              setVoiceState(prev => ({ ...prev, error: data.message }));
-              break;
-          }
-        } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
+  const connect = useCallback(async (avatarName?: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        console.log("Connecting to voice chat...");
+        
+        // Initialize audio context
+        if (!audioContextRef.current) {
+          audioContextRef.current = new AudioContext({ sampleRate: 24000 });
         }
-      };
 
-      wsRef.current.onerror = (error) => {
-        console.error("WebSocket connection error:", error);
-        setVoiceState(prev => ({ 
-          ...prev, 
-          error: 'Failed to connect to voice chat. Please try again.', 
-          isConnected: false 
-        }));
-      };
+        // Connect WebSocket
+        const wsUrl = getWebSocketURL(avatarName);
+        console.log("Connecting to:", wsUrl, "with avatar:", avatarName);
+        
+        // Set up connection timeout
+        const timeout = setTimeout(() => {
+          console.error("Connection timeout");
+          setVoiceState(prev => ({ 
+            ...prev, 
+            error: 'Connection timeout. Please check your internet connection.', 
+            isConnected: false 
+          }));
+          reject(new Error('Connection timeout'));
+        }, 10000);
 
-      wsRef.current.onclose = () => {
-        console.log("WebSocket closed");
-        setVoiceState(prev => ({ ...prev, isConnected: false, isRecording: false }));
-      };
+        wsRef.current = new WebSocket(wsUrl);
 
-    } catch (error) {
-      console.error("Error connecting:", error);
-      setVoiceState(prev => ({ ...prev, error: 'Failed to connect' }));
-    }
+        wsRef.current.onopen = () => {
+          clearTimeout(timeout);
+          console.log("WebSocket connected successfully!");
+          setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
+          resolve();
+        };
+
+        wsRef.current.onmessage = async (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Received message:", data.type);
+
+            switch (data.type) {
+              case 'response.audio.delta':
+                // Play audio chunk
+                if (data.delta && audioContextRef.current) {
+                  const binaryString = atob(data.delta);
+                  const bytes = new Uint8Array(binaryString.length);
+                  for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                  }
+                  await playAudioData(audioContextRef.current, bytes);
+                }
+                break;
+
+              case 'response.audio.done':
+                setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+                break;
+
+              case 'response.audio_transcript.delta':
+                if (data.delta) {
+                  currentTranscriptRef.current += data.delta;
+                }
+                break;
+
+              case 'response.audio_transcript.done':
+                if (currentTranscriptRef.current.trim()) {
+                  const newMessage: Message = {
+                    id: Date.now().toString(),
+                    type: 'assistant',
+                    content: currentTranscriptRef.current.trim(),
+                    timestamp: new Date()
+                  };
+                  setMessages(prev => [...prev, newMessage]);
+                  currentTranscriptRef.current = '';
+                }
+                break;
+
+              case 'input_audio_buffer.speech_started':
+                console.log("User started speaking");
+                break;
+
+              case 'input_audio_buffer.speech_stopped':
+                console.log("User stopped speaking");
+                break;
+
+              case 'response.created':
+                setVoiceState(prev => ({ ...prev, isAISpeaking: true }));
+                break;
+
+              case 'error':
+                console.error("WebSocket error:", data.message);
+                setVoiceState(prev => ({ ...prev, error: data.message }));
+                break;
+            }
+          } catch (error) {
+            console.error("Error parsing WebSocket message:", error);
+          }
+        };
+
+        wsRef.current.onerror = (error) => {
+          clearTimeout(timeout);
+          console.error("WebSocket connection error:", error);
+          setVoiceState(prev => ({ 
+            ...prev, 
+            error: 'Failed to connect to voice chat. Please try again.', 
+            isConnected: false 
+          }));
+          reject(new Error('WebSocket connection failed'));
+        };
+
+        wsRef.current.onclose = () => {
+          clearTimeout(timeout);
+          console.log("WebSocket closed");
+          setVoiceState(prev => ({ ...prev, isConnected: false, isRecording: false }));
+        };
+
+      } catch (error) {
+        console.error("Error connecting:", error);
+        setVoiceState(prev => ({ ...prev, error: 'Failed to connect' }));
+        reject(error);
+      }
+    });
   }, []);
 
   const startRecording = useCallback(async () => {
