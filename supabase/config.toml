@@ -56,3 +56,8 @@ memory = "auto"
 
 [functions.realtime-voice-chat]
 verify_jwt = false
+
+[functions.generateRecipesFromChat]
+verify_jwt = true
+cpu = "auto"
+memory = "auto"

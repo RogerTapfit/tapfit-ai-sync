@@ -39,7 +39,7 @@ interface RecipeRecommendation {
     fiber: number;
   };
   image?: string;
-  calculatedNutrition?: RecipeNutrition; // Store detailed USDA calculation
+  calculatedNutrition?: RecipeNutrition;
 }
 
 interface IngredientPhoto {
@@ -53,6 +53,7 @@ interface FoodRecipeBuilderProps {
 }
 
 export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateChange }) => {
+  const [mode, setMode] = useState<'photo' | 'chat'>('photo');
   const [photos, setPhotos] = useState<IngredientPhoto[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
@@ -61,14 +62,16 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
   const [adjustedServings, setAdjustedServings] = useState<number>(1);
   const [calculatedNutrition, setCalculatedNutrition] = useState<RecipeNutrition | null>(null);
   const [showNutritionDetails, setShowNutritionDetails] = useState(false);
+  
+  // Chat mode states
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   const generateId = () => crypto.randomUUID();
 
   const handlePhotoCapture = async (source: 'camera' | 'gallery') => {
     try {
-      let photoData: string;
-      let file: File;
-
       if (!Capacitor.isNativePlatform()) {
         // Web fallback
         const input = document.createElement('input');
@@ -148,7 +151,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
     setAnalyzing(true);
     try {
-      // Convert all photos to base64
       const photoData = await Promise.all(
         photos.map(async (photo) => ({
           base64: await convertToBase64(photo.file),
@@ -156,44 +158,28 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
         }))
       );
 
-      console.log('Recipe analysis starting...');
-      
-      // Call the generateRecipes edge function
       const { data: result, error } = await supabase.functions.invoke('generateRecipes', {
         body: { photos: photoData }
       });
 
-      if (error) {
-        console.error('Recipe generation error:', error);
-        throw new Error(error.message || 'Failed to generate recipes');
-      }
-
-      if (!result) {
-        throw new Error('No recipe data received from AI analysis');
-      }
+      if (error) throw new Error(error.message || 'Failed to generate recipes');
+      if (!result) throw new Error('No recipe data received from AI analysis');
 
       setDetectedIngredients(result.ingredients || []);
       
-      // Process recipes and calculate accurate nutrition for each
       const processedRecipes = (result.recipes || []).map((recipe: RecipeRecommendation) => {
-        console.log('Calculating nutrition for recipe:', recipe.name);
-        
         try {
-          // Extract ingredient amounts and names for nutrition calculation  
           const ingredientList = recipe.ingredients.map(ing => `${ing.amount} ${ing.name}`);
           const calculatedNutrition = calculateRecipeNutrition(
             recipe.name,
-            1, // Always normalize to 1 serving
+            1,
             ingredientList,
             recipe.instructions.join('\n')
           );
           
-          console.log('Calculated nutrition for', recipe.name, ':', calculatedNutrition.totals_per_serving);
-          
-          // Replace hardcoded nutrition with accurate USDA-calculated values
           return {
             ...recipe,
-            servings: 1, // Normalize to 1 serving
+            servings: 1,
             nutrition: {
               calories: Math.round(calculatedNutrition.totals_per_serving.calories_kcal),
               protein: Math.round(calculatedNutrition.totals_per_serving.protein_g * 10) / 10,
@@ -201,35 +187,83 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
               fat: Math.round(calculatedNutrition.totals_per_serving.fat_g * 10) / 10,
               fiber: Math.round(calculatedNutrition.totals_per_serving.fiber_g * 10) / 10
             },
-            calculatedNutrition // Store for detailed breakdown
+            calculatedNutrition
           };
         } catch (error) {
-          console.error('Failed to calculate nutrition for recipe:', recipe.name, error);
-          // Return recipe with reasonable fallback nutrition if calculation fails
           return {
             ...recipe,
             servings: 1,
-            nutrition: {
-              calories: 450, // Reasonable single-serving fallback
-              protein: 25,
-              carbs: 40, 
-              fat: 18,
-              fiber: 6
-            }
+            nutrition: { calories: 450, protein: 25, carbs: 40, fat: 18, fiber: 6 }
           };
         }
       });
       
       setRecommendations(processedRecipes);
       onStateChange?.('ingredient_analysis', { recipeCount: processedRecipes.length });
-      
-      toast.success(`Found ${result.ingredients?.length || 0} ingredients and ${processedRecipes.length} recipes with accurate nutrition!`);
+      toast.success(`Found ${result.ingredients?.length || 0} ingredients and ${processedRecipes.length} recipes!`);
       
     } catch (error) {
       console.error('Error analyzing ingredients:', error);
       toast.error('Failed to analyze ingredients. Please try again.');
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMessage = { role: 'user' as const, content: chatInput.trim() };
+    const newMessages = [...chatMessages, userMessage];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const { data: result, error } = await supabase.functions.invoke('generateRecipesFromChat', {
+        body: { 
+          messages: newMessages,
+          context: { dietaryRestrictions: null, preferredCuisine: null }
+        }
+      });
+
+      if (error) throw error;
+
+      const aiMessage = { role: 'assistant' as const, content: result.reply };
+      setChatMessages([...newMessages, aiMessage]);
+
+      if (result.recipes && result.recipes.length > 0) {
+        const processedRecipes = result.recipes.map((recipe: RecipeRecommendation) => {
+          try {
+            const ingredientList = recipe.ingredients.map(ing => `${ing.amount} ${ing.name}`);
+            const calculatedNutrition = calculateRecipeNutrition(
+              recipe.name, 1, ingredientList, recipe.instructions.join('\n')
+            );
+            
+            return {
+              ...recipe,
+              servings: 1,
+              nutrition: {
+                calories: Math.round(calculatedNutrition.totals_per_serving.calories_kcal),
+                protein: Math.round(calculatedNutrition.totals_per_serving.protein_g * 10) / 10,
+                carbs: Math.round(calculatedNutrition.totals_per_serving.carbs_g * 10) / 10,
+                fat: Math.round(calculatedNutrition.totals_per_serving.fat_g * 10) / 10,
+                fiber: Math.round(calculatedNutrition.totals_per_serving.fiber_g * 10) / 10
+              },
+              calculatedNutrition
+            };
+          } catch {
+            return { ...recipe, servings: 1 };
+          }
+        });
+        
+        setRecommendations(prev => [...prev, ...processedRecipes]);
+        toast.success(`Generated ${processedRecipes.length} recipe${processedRecipes.length > 1 ? 's' : ''}!`);
+      }
+    } catch (error) {
+      toast.error('Failed to get response. Please try again.');
+    } finally {
+      setIsChatLoading(false);
     }
   };
 
@@ -258,40 +292,28 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     if (score >= 60) return 'C+';
     if (score >= 55) return 'C';
     if (score >= 50) return 'C-';
-    if (score >= 45) return 'D+';
-    if (score >= 40) return 'D';
     return 'F';
   };
 
-  // Utility functions for ingredient amount parsing and scaling
   const parseAmount = (amountStr: string): { value: number; unit: string; original: string } => {
-    // Handle common fractions
-    const fractionMap: { [key: string]: number } = {
+    const fractionMap: { [key: string]: number} = {
       '1/4': 0.25, '1/3': 0.33, '1/2': 0.5, '2/3': 0.67, '3/4': 0.75,
       '¼': 0.25, '⅓': 0.33, '½': 0.5, '⅔': 0.67, '¾': 0.75
     };
 
-    // Handle "to taste", "pinch", etc.
     const nonScalable = ['to taste', 'pinch', 'dash', 'handful', 'splash'];
     if (nonScalable.some(term => amountStr.toLowerCase().includes(term))) {
       return { value: 0, unit: amountStr, original: amountStr };
     }
 
-    // Extract number (including fractions and decimals)
     const match = amountStr.match(/^(\d+(?:\.\d+)?|\d*\s*[¼½¾⅓⅔]|\d+\/\d+)\s*(.*)$/);
-    if (!match) {
-      return { value: 0, unit: amountStr, original: amountStr };
-    }
+    if (!match) return { value: 0, unit: amountStr, original: amountStr };
 
     let valueStr = match[1].trim();
     const unit = match[2].trim();
 
-    // Handle fractions
-    if (fractionMap[valueStr]) {
-      return { value: fractionMap[valueStr], unit, original: amountStr };
-    }
+    if (fractionMap[valueStr]) return { value: fractionMap[valueStr], unit, original: amountStr };
 
-    // Handle mixed numbers (e.g., "1 1/2")
     const mixedMatch = valueStr.match(/^(\d+)\s+(\d+\/\d+)$/);
     if (mixedMatch) {
       const whole = parseFloat(mixedMatch[1]);
@@ -299,7 +321,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
       return { value: whole + (num / den), unit, original: amountStr };
     }
 
-    // Handle regular fractions (e.g., "3/4")
     if (valueStr.includes('/')) {
       const [num, den] = valueStr.split('/').map(Number);
       return { value: num / den, unit, original: amountStr };
@@ -310,12 +331,9 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
   const scaleAmount = (amountStr: string, multiplier: number): string => {
     const parsed = parseAmount(amountStr);
-    
-    if (parsed.value === 0) return parsed.original; // Non-scalable items
-    
+    if (parsed.value === 0) return parsed.original;
     const scaledValue = parsed.value * multiplier;
     
-    // Format the scaled value nicely
     if (scaledValue < 0.125) return `pinch ${parsed.unit}`.trim();
     if (scaledValue === 0.25) return `¼ ${parsed.unit}`.trim();
     if (scaledValue === 0.33) return `⅓ ${parsed.unit}`.trim();
@@ -323,7 +341,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     if (scaledValue === 0.67) return `⅔ ${parsed.unit}`.trim();
     if (scaledValue === 0.75) return `¾ ${parsed.unit}`.trim();
     
-    // For other values, round appropriately
     if (scaledValue < 1) {
       return `${scaledValue.toFixed(2).replace(/\.?0+$/, '')} ${parsed.unit}`.trim();
     } else if (scaledValue % 1 === 0) {
@@ -339,110 +356,124 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     <div className="space-y-8">
       <Card className="glow-card border-gradient">
         <CardHeader className="text-center pb-4">
+          <div className="flex justify-center gap-2 mb-4">
+            <Button variant={mode === 'photo' ? 'default' : 'outline'} onClick={() => setMode('photo')}>
+              <Camera className="h-4 w-4 mr-2" />
+              Photo Mode
+            </Button>
+            <Button variant={mode === 'chat' ? 'default' : 'outline'} onClick={() => setMode('chat')}>
+              <ChefHat className="h-4 w-4 mr-2" />
+              Chat Mode
+            </Button>
+          </div>
+          
           <CardTitle className="flex items-center justify-center gap-3 text-2xl">
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            >
+            <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
               <ChefHat className="h-8 w-8 text-primary" />
             </motion.div>
             Smart Recipe Builder
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            >
+            <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
               <Sparkles className="h-6 w-6 text-yellow-500" />
             </motion.div>
           </CardTitle>
           <p className="text-muted-foreground">
-            Snap photos of your ingredients and discover healthy recipes you can make
+            {mode === 'photo' 
+              ? 'Snap photos of your ingredients and discover healthy recipes'
+              : 'Chat with our AI chef to discover perfect recipes for your needs'
+            }
           </p>
         </CardHeader>
+        
         <CardContent className="space-y-6">
-          {/* Photo Capture Section */}
-          <div className="space-y-4">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
-              Capture Your Ingredients
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handlePhotoCapture('camera')}
-                className="flex items-center gap-2 glow-hover h-12 sm:h-auto touch-manipulation"
-              >
-                <Camera className="h-4 w-4" />
-                <span className="text-sm sm:text-base">Take Photo</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handlePhotoCapture('gallery')}
-                className="flex items-center gap-2 glow-hover h-12 sm:h-auto touch-manipulation"
-              >
-                <Upload className="h-4 w-4" />
-                <span className="text-sm sm:text-base">Upload Photo</span>
+          {mode === 'photo' ? (
+            <div className="space-y-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                Capture Your Ingredients
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={() => handlePhotoCapture('camera')} className="flex items-center gap-2 h-12">
+                  <Camera className="h-4 w-4" />
+                  Take Photo
+                </Button>
+                <Button variant="outline" onClick={() => handlePhotoCapture('gallery')} className="flex items-center gap-2 h-12">
+                  <Upload className="h-4 w-4" />
+                  Upload Photo
+                </Button>
+              </div>
+
+              <AnimatePresence>
+                {photos.length > 0 && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {photos.map((photo) => (
+                      <motion.div key={photo.id} initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="relative group">
+                        <img src={photo.dataUrl} alt="Ingredient" className="w-full h-full aspect-square object-cover rounded-lg border" />
+                        <Button variant="outline" size="sm" onClick={() => removePhoto(photo.id)} 
+                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 bg-destructive">
+                          <Plus className="h-3 w-3 rotate-45" />
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Button onClick={analyzeIngredientsAndGetRecipes} disabled={photos.length === 0 || analyzing} 
+                      className="w-full glow-button" size="lg">
+                {analyzing ? (
+                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Analyzing Ingredients...</>
+                ) : (
+                  <><Sparkles className="h-5 w-5 mr-2" />Find Recipe Magic ✨</>
+                )}
               </Button>
             </div>
-
-            {/* Photo Grid */}
-            <AnimatePresence>
-              {photos.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"
-                  >
-                  {photos.map((photo) => (
-                    <motion.div
-                      key={photo.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      className="relative group"
-                    >
-                      <div className="aspect-square rounded-lg overflow-hidden border border-border/50 hover:border-primary/50 transition-colors">
-                        <img
-                          src={photo.dataUrl}
-                          alt="Ingredient"
-                          className="w-full h-full object-cover"
-                        />
+          ) : (
+            <div className="space-y-4">
+              <div className="max-h-96 overflow-y-auto space-y-3 border rounded-lg p-4 bg-muted/20">
+                {chatMessages.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ChefHat className="h-12 w-12 mx-auto mb-3 text-primary opacity-50" />
+                    <p className="text-muted-foreground mb-4">Hi! I'm your personal chef assistant. Tell me what you'd like to cook!</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {["Quick dinner ideas", "Healthy breakfast recipes", "Vegetarian options", "High protein meals"].map((q) => (
+                        <Button key={q} size="sm" variant="outline" onClick={() => setChatInput(q)} className="text-xs">{q}</Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  chatMessages.map((msg, idx) => (
+                    <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
+                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card border'}`}>
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removePhoto(photo.id)}
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive hover:bg-destructive/90"
-                      >
-                        <Plus className="h-3 w-3 rotate-45" />
-                      </Button>
                     </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  ))
+                )}
+                {isChatLoading && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Chef is thinking...</span>
+                  </div>
+                )}
+              </div>
 
-          {/* Analyze Button */}
-            <Button
-              onClick={analyzeIngredientsAndGetRecipes}
-              disabled={photos.length === 0 || analyzing}
-              className="w-full glow-button touch-manipulation"
-              size="lg"
-            >
-            {analyzing ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Analyzing Ingredients & Finding Recipes...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-5 w-5 mr-2" />
-                Find Recipe Magic ✨
-              </>
-            )}
-          </Button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleChatSend()}
+                  placeholder="Describe what you'd like to cook..."
+                  disabled={isChatLoading}
+                  className="flex-1 px-4 py-2 rounded-lg border bg-background"
+                />
+                <Button onClick={handleChatSend} disabled={!chatInput.trim() || isChatLoading} size="lg" className="glow-button">
+                  {isChatLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -515,8 +546,7 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   <Card className="glow-card hover:glow-card-hover transition-all duration-300 cursor-pointer group"
                         onClick={() => {
                           setSelectedRecipe(recipe);
-                          setAdjustedServings(1); // Always start with 1 serving
-                          // Set calculated nutrition for detailed view
+                          setAdjustedServings(1);
                           if (recipe.calculatedNutrition) {
                             setCalculatedNutrition(recipe.calculatedNutrition);
                           }
@@ -540,7 +570,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {/* Tags */}
                       <div className="flex flex-wrap gap-2">
                         <Badge className={getDifficultyColor(recipe.difficulty)}>
                           {recipe.difficulty}
@@ -552,7 +581,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                         ))}
                       </div>
 
-                      {/* Quick Stats */}
                       <div className="grid grid-cols-3 gap-4 text-center">
                         <div>
                           <div className="flex items-center justify-center gap-1">
@@ -577,7 +605,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                          </div>
                       </div>
 
-                      {/* Ingredient Match */}
                       <div>
                         <div className="flex items-center justify-between text-sm mb-2">
                           <span className="text-muted-foreground">Ingredient Match:</span>
@@ -598,11 +625,9 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                       <Button 
                         variant="outline" 
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent card click
+                          e.stopPropagation();
                           setSelectedRecipe(recipe);
-                          setAdjustedServings(1); // Always start with 1 serving
-                          
-                          // Set calculated nutrition for detailed view
+                          setAdjustedServings(1);
                           if (recipe.calculatedNutrition) {
                             setCalculatedNutrition(recipe.calculatedNutrition);
                           }
@@ -621,7 +646,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
         )}
       </AnimatePresence>
 
-      {/* Recipe Detail Modal would go here */}
       {selectedRecipe && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
@@ -656,7 +680,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Recipe Overview */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 mb-1">
@@ -707,7 +730,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   </div>
                 </div>
 
-                {/* Tags */}
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
@@ -725,7 +747,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   </div>
                 </div>
 
-                {/* Ingredients */}
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <Leaf className="h-4 w-4 text-green-500" />
@@ -746,7 +767,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   </div>
                 </div>
 
-                {/* Instructions */}
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <ChefHat className="h-4 w-4 text-primary" />
@@ -764,7 +784,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   </div>
                 </div>
 
-                {/* Nutrition Info */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-semibold flex items-center gap-2">
@@ -827,7 +846,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                         </div>
                       </div>
                       
-                      {/* Nutrition Details */}
                       <AnimatePresence>
                         {showNutritionDetails && (
                           <motion.div
@@ -836,7 +854,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                             exit={{ opacity: 0, height: 0 }}
                             className="mt-4 space-y-4"
                           >
-                            {/* Confidence and USDA Credit */}
                             <div className="p-3 bg-muted/20 rounded-lg">
                               <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                                 <span>Confidence: {Math.round(calculatedNutrition.confidence * 100)}%</span>
@@ -847,7 +864,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                               </p>
                             </div>
                             
-                            {/* Ingredient Breakdown */}
                             <div>
                               <h4 className="font-semibold text-sm mb-2">Ingredient Breakdown</h4>
                               <div className="space-y-2">
@@ -866,7 +882,6 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                               </div>
                             </div>
                             
-                            {/* Assumptions */}
                             {calculatedNutrition.assumptions.length > 0 && (
                               <div>
                                 <h4 className="font-semibold text-sm mb-2">Assumptions Made</h4>
