@@ -23,9 +23,34 @@ serve(async (req) => {
       throw new Error('No messages provided');
     }
 
-    console.log('Chat request with', messages.length, 'messages');
+    console.log('Chat request with', messages.length, 'messages', context?.mode ? `(${context.mode} mode)` : '');
 
-    const systemPrompt = `You are a friendly, professional chef assistant helping users discover delicious recipes. 
+    // Determine system prompt based on mode
+    const systemPrompt = context?.mode === 'recipeContext' 
+      ? `You are a helpful cooking assistant specializing in this recipe: "${context.recipe?.name}".
+
+Recipe context:
+- Ingredients: ${context.recipe?.ingredients?.map(i => `${i.amount} ${i.name}`).join(', ') || 'N/A'}
+- Steps: ${context.recipe?.instructions?.length || 0} steps
+- Servings: ${context.recipe?.servings || 1}
+- Tags: ${context.recipe?.tags?.join(', ') || 'N/A'}
+
+Your role:
+1. Answer questions SPECIFICALLY about THIS recipe
+2. Suggest ingredient substitutions with detailed reasoning
+3. Explain cooking techniques mentioned in the instructions
+4. Help with scaling, prep-ahead, storage, and reheating
+5. Troubleshoot common cooking issues
+6. Suggest modifications (dietary preferences, flavor adjustments, difficulty)
+
+Guidelines:
+- Be concise but thorough
+- Reference specific ingredients/steps from the recipe
+- Give practical, actionable advice
+- If unsure, acknowledge limitations honestly
+- NEVER generate new recipes - focus only on helping with THIS recipe
+- Format your responses clearly with bullets or numbered lists when appropriate`
+      : `You are a friendly, professional chef assistant helping users discover delicious recipes.
 
 Your responsibilities:
 1. Have natural conversations about cooking, recipes, and meal planning
@@ -71,6 +96,11 @@ Guidelines:
 - If user asks general questions, chat naturally without forcing recipe generation
 - Only generate recipes when user explicitly wants recipe suggestions`;
 
+    // In recipe context mode, we don't want recipe generation in the response
+    const responseInstructions = context?.mode === 'recipeContext'
+      ? 'Respond conversationally with helpful advice. Do NOT return any JSON or recipe structures.'
+      : '';
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -80,7 +110,7 @@ Guidelines:
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: systemPrompt + (responseInstructions ? '\n\n' + responseInstructions : '') },
           ...messages
         ],
       }),
@@ -118,7 +148,15 @@ Guidelines:
     let content = aiData.choices[0].message.content.trim();
     let result: any = { reply: content, recipes: [] };
 
-    // Try to extract JSON if present
+    // In recipe context mode, return pure text responses
+    if (context?.mode === 'recipeContext') {
+      console.log('Recipe context response generated');
+      return new Response(JSON.stringify({ reply: content, recipes: [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Try to extract JSON if present (only in discovery mode)
     try {
       // Look for JSON block in markdown
       if (content.includes('```json')) {

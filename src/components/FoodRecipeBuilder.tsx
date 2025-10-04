@@ -3,9 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import { 
   Camera, Upload, Loader2, ChefHat, Clock, Users, 
-  Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight, Minus, Info, AlertTriangle
+  Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight, Minus, Info, AlertTriangle,
+  MessageCircle, Send, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -67,6 +71,12 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  
+  // Recipe-specific chat states
+  const [recipeChatMessages, setRecipeChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
+  const [recipeChatInput, setRecipeChatInput] = useState('');
+  const [isRecipeChatLoading, setIsRecipeChatLoading] = useState(false);
+  const [showRecipeChat, setShowRecipeChat] = useState(false);
 
   const generateId = () => crypto.randomUUID();
 
@@ -265,6 +275,62 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     } finally {
       setIsChatLoading(false);
     }
+  };
+
+  const handleRecipeChatSend = async (message?: string) => {
+    if (!selectedRecipe) return;
+    
+    const messageToSend = message || recipeChatInput.trim();
+    if (!messageToSend) return;
+
+    const userMessage = { role: 'user' as const, content: messageToSend };
+    const updatedMessages = [...recipeChatMessages, userMessage];
+    setRecipeChatMessages(updatedMessages);
+    setRecipeChatInput('');
+    setIsRecipeChatLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generateRecipesFromChat', {
+        body: {
+          messages: updatedMessages,
+          context: {
+            mode: 'recipeContext',
+            recipe: {
+              name: selectedRecipe.name,
+              ingredients: selectedRecipe.ingredients,
+              instructions: selectedRecipe.instructions,
+              tags: selectedRecipe.tags,
+              servings: adjustedServings,
+              description: selectedRecipe.description
+            }
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      const assistantMessage = {
+        role: 'assistant' as const,
+        content: data.reply || 'I apologize, I encountered an issue. Please try again.'
+      };
+
+      setRecipeChatMessages([...updatedMessages, assistantMessage]);
+    } catch (error) {
+      console.error('Recipe chat error:', error);
+      toast.error('Failed to get response. Please try again.');
+    } finally {
+      setIsRecipeChatLoading(false);
+    }
+  };
+
+  const handleRecipeQuickAction = (action: string) => {
+    const questions = {
+      'substitution': "What ingredient substitutions can I make?",
+      'vegan': "How can I make this recipe vegan?",
+      'faster': "How can I make this recipe faster?",
+      'scaling': "Tips for scaling this recipe?"
+    };
+    handleRecipeChatSend(questions[action as keyof typeof questions]);
   };
 
   const getDifficultyColor = (difficulty: string) => {
@@ -933,6 +999,121 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Recipe-specific chat assistant */}
+                <div className="mt-6 border-t pt-6">
+                  <button
+                    onClick={() => setShowRecipeChat(!showRecipeChat)}
+                    className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors mb-4 w-full"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    Ask About This Recipe
+                    {showRecipeChat ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+                  </button>
+
+                  <Collapsible open={showRecipeChat}>
+                    <CollapsibleContent>
+                      <div className="space-y-4">
+                        {/* Quick action buttons */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRecipeQuickAction('substitution')}
+                            disabled={isRecipeChatLoading}
+                          >
+                            🔄 Substitutions
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRecipeQuickAction('vegan')}
+                            disabled={isRecipeChatLoading}
+                          >
+                            🌱 Make Vegan
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRecipeQuickAction('faster')}
+                            disabled={isRecipeChatLoading}
+                          >
+                            ⚡ Make Faster
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRecipeQuickAction('scaling')}
+                            disabled={isRecipeChatLoading}
+                          >
+                            🍽️ Scaling Tips
+                          </Button>
+                        </div>
+
+                        {/* Chat messages */}
+                        <ScrollArea className="h-[300px] rounded-md border p-4">
+                          <div className="space-y-4">
+                            {recipeChatMessages.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-8">
+                                Ask me anything about this recipe! I can help with substitutions, techniques, modifications, and more.
+                              </p>
+                            ) : (
+                              recipeChatMessages.map((msg, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`flex gap-3 ${
+                                    msg.role === 'user' ? 'justify-end' : 'justify-start'
+                                  }`}
+                                >
+                                  <div
+                                    className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                                      msg.role === 'user'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-foreground'
+                                    }`}
+                                  >
+                                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                            {isRecipeChatLoading && (
+                              <div className="flex gap-3 justify-start">
+                                <div className="rounded-lg px-4 py-2 bg-muted">
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+
+                        {/* Chat input */}
+                        <div className="flex gap-2">
+                          <Input
+                            value={recipeChatInput}
+                            onChange={(e) => setRecipeChatInput(e.target.value)}
+                            placeholder="Ask a question about this recipe..."
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleRecipeChatSend();
+                              }
+                            }}
+                            disabled={isRecipeChatLoading}
+                            className="flex-1"
+                          />
+                          <Button
+                            onClick={() => handleRecipeChatSend()}
+                            disabled={isRecipeChatLoading || !recipeChatInput.trim()}
+                            size="icon"
+                          >
+                            <Send className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </CardContent>
             </Card>
