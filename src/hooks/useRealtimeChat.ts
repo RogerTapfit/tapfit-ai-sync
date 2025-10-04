@@ -32,10 +32,9 @@ export const useRealtimeChat = () => {
   // Get the correct WebSocket URL for the project
   const getWebSocketURL = (avatarName?: string) => {
     // Use the correct Supabase Edge Functions WebSocket URL format
-    const url = `wss://pbrayxmqzdxsmhqmzygc.functions.supabase.co/realtime-voice-chat`;
+    const url = `wss://pbrayxmqzdxsmhqmzygc.functions.supabase.co/functions/v1/realtime-voice-chat`;
     return avatarName ? `${url}?avatarName=${encodeURIComponent(avatarName)}` : url;
   };
-
   const connect = useCallback(async (avatarName?: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       try {
