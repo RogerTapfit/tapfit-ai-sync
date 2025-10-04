@@ -32,22 +32,23 @@ serve(async (req) => {
   
   let openAISocket: WebSocket | null = null;
   let sessionActive = false;
+  const pendingMessages: string[] = [];
 
   socket.onopen = async () => {
     try {
       console.log("Client WebSocket connected");
       
-      // Connect to OpenAI Realtime API
-      openAISocket = new WebSocket("wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01", {
-        headers: {
-          "Authorization": `Bearer ${openAIApiKey}`,
-          "OpenAI-Beta": "realtime=v1"
-        }
-      });
+      // Connect to OpenAI Realtime API using subprotocols for authentication
+      openAISocket = new WebSocket(
+        "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
+        [
+          `openai-insecure-api-key.${openAIApiKey}`,
+          "openai-beta.realtime-v1"
+        ]
+      );
 
       openAISocket.onopen = () => {
         console.log("Connected to OpenAI Realtime API");
-        sessionActive = true;
       };
 
       openAISocket.onmessage = (event) => {
@@ -56,6 +57,7 @@ serve(async (req) => {
 
         // Send session.update after receiving session.created
         if (data.type === 'session.created') {
+          console.log("Session created, sending session.update");
           const sessionUpdate = {
             type: 'session.update',
             session: {
@@ -112,6 +114,31 @@ serve(async (req) => {
           };
           
           openAISocket?.send(JSON.stringify(sessionUpdate));
+          
+          // Mark session as active and flush pending messages
+          sessionActive = true;
+          console.log(`Session active, flushing ${pendingMessages.length} pending messages`);
+          while (pendingMessages.length > 0) {
+            const msg = pendingMessages.shift()!;
+            openAISocket?.send(msg);
+          }
+          
+          // Send ready signal to client
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'server.ready' }));
+            console.log("Sent server.ready to client");
+          }
+        }
+
+        // Log important events
+        if (data.type === 'response.created') {
+          console.log("AI response started");
+        } else if (data.type === 'response.audio.delta') {
+          console.log("Audio delta received");
+        } else if (data.type === 'response.audio_transcript.delta') {
+          console.log("Transcript delta:", data.delta);
+        } else if (data.type === 'error') {
+          console.error("OpenAI error:", data);
         }
 
         // Forward all messages to client
@@ -146,8 +173,15 @@ serve(async (req) => {
       const data = JSON.parse(event.data);
       console.log("Client message:", data.type);
       
+      // Buffer messages until session is active
+      if (!sessionActive) {
+        console.log("Session not active yet, buffering message");
+        pendingMessages.push(event.data);
+        return;
+      }
+      
       // Forward client messages to OpenAI
-      if (openAISocket && sessionActive && openAISocket.readyState === WebSocket.OPEN) {
+      if (openAISocket && openAISocket.readyState === WebSocket.OPEN) {
         openAISocket.send(event.data);
       }
     } catch (error) {

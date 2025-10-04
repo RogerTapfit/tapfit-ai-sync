@@ -60,13 +60,22 @@ export const useRealtimeChat = () => {
           reject(new Error('Connection timeout'));
         }, 10000);
 
+        let serverReadyReceived = false;
+
         wsRef.current = new WebSocket(wsUrl);
 
         wsRef.current.onopen = () => {
-          clearTimeout(timeout);
-          console.log("WebSocket connected successfully!");
-          setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
-          resolve();
+          console.log("WebSocket opened, waiting for server.ready...");
+          
+          // Wait for server.ready with fallback
+          setTimeout(() => {
+            if (!serverReadyReceived) {
+              console.log("server.ready not received, proceeding anyway");
+              clearTimeout(timeout);
+              setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
+              resolve();
+            }
+          }, 100);
         };
 
         wsRef.current.onmessage = async (event) => {
@@ -75,6 +84,14 @@ export const useRealtimeChat = () => {
             console.log("Received message:", data.type);
 
             switch (data.type) {
+              case 'server.ready':
+                console.log("Server ready signal received");
+                serverReadyReceived = true;
+                clearTimeout(timeout);
+                setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
+                resolve();
+                break;
+
               case 'response.audio.delta':
                 // Play audio chunk
                 if (data.delta && audioContextRef.current) {
@@ -191,6 +208,13 @@ export const useRealtimeChat = () => {
     if (recorderRef.current) {
       recorderRef.current.stop();
       recorderRef.current = null;
+    }
+    
+    // Force commit and response when stopping manually
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log("Sending commit and response.create");
+      wsRef.current.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+      wsRef.current.send(JSON.stringify({ type: 'response.create' }));
     }
     
     setVoiceState(prev => ({ ...prev, isRecording: false }));
