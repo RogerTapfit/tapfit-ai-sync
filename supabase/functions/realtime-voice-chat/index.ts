@@ -43,7 +43,7 @@ serve(async (req) => {
         "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01",
         [
           `openai-insecure-api-key.${openAIApiKey}`,
-          "openai-beta.realtime-v1"
+          "openai-beta.realtime=v1"
         ]
       );
 
