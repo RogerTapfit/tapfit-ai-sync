@@ -101,19 +101,63 @@ Guidelines:
       ? 'Respond conversationally with helpful advice. Do NOT return any JSON or recipe structures.'
       : '';
 
+    const body: any = {
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: systemPrompt + (responseInstructions ? '\n\n' + responseInstructions : '') },
+        ...messages
+      ],
+    };
+
+    // Add tool calling for recipe context mode to extract structured modifications
+    if (context?.mode === 'recipeContext') {
+      body.tools = [
+        {
+          type: "function",
+          function: {
+            name: "suggest_recipe_modification",
+            description: "Suggest a modification to the current recipe (substitution, addition, removal, or adjustment)",
+            parameters: {
+              type: "object",
+              properties: {
+                modificationType: {
+                  type: "string",
+                  enum: ["substitute", "add", "remove", "adjust_amount", "none"],
+                  description: "Type of modification being suggested"
+                },
+                targetIngredient: {
+                  type: "string",
+                  description: "The ingredient being modified or affected"
+                },
+                newIngredient: {
+                  type: "string",
+                  description: "The replacement ingredient (for substitutions or additions)"
+                },
+                newAmount: {
+                  type: "string",
+                  description: "The new amount for the ingredient"
+                },
+                reason: {
+                  type: "string",
+                  description: "Brief explanation for the modification"
+                }
+              },
+              required: ["modificationType"],
+              additionalProperties: false
+            }
+          }
+        }
+      ];
+      body.tool_choice = "auto";
+    }
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt + (responseInstructions ? '\n\n' + responseInstructions : '') },
-          ...messages
-        ],
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -148,10 +192,37 @@ Guidelines:
     let content = aiData.choices[0].message.content.trim();
     let result: any = { reply: content, recipes: [] };
 
-    // In recipe context mode, return pure text responses
+    // In recipe context mode, return pure text responses with potential modifications
     if (context?.mode === 'recipeContext') {
-      console.log('Recipe context response generated');
-      return new Response(JSON.stringify({ reply: content, recipes: [] }), {
+      const toolCalls = aiData.choices[0]?.message?.tool_calls;
+      
+      let suggestedModification = null;
+      if (toolCalls && toolCalls.length > 0) {
+        const toolCall = toolCalls[0];
+        if (toolCall.function.name === 'suggest_recipe_modification') {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            if (args.modificationType !== 'none') {
+              suggestedModification = {
+                type: args.modificationType,
+                targetIngredient: args.targetIngredient,
+                newIngredient: args.newIngredient,
+                newAmount: args.newAmount,
+                reason: args.reason
+              };
+            }
+          } catch (e) {
+            console.error('Error parsing tool call:', e);
+          }
+        }
+      }
+      
+      console.log('Recipe context response generated', suggestedModification ? 'with modification' : '');
+      return new Response(JSON.stringify({ 
+        reply: content, 
+        recipes: [],
+        suggestedModification
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

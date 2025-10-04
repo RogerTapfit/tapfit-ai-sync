@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Camera, Upload, Loader2, ChefHat, Clock, Users, 
   Sparkles, Star, Heart, Leaf, Flame, Plus, ArrowRight, Minus, Info, AlertTriangle,
-  MessageCircle, Send, ChevronDown, ChevronUp
+  MessageCircle, Send, ChevronDown, ChevronUp, Utensils
 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -73,10 +73,21 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
   const [isChatLoading, setIsChatLoading] = useState(false);
   
   // Recipe-specific chat states
-  const [recipeChatMessages, setRecipeChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
+  const [recipeChatMessages, setRecipeChatMessages] = useState<Array<{ 
+    role: 'user' | 'assistant', 
+    content: string,
+    suggestedModification?: any
+  }>>([]);
   const [recipeChatInput, setRecipeChatInput] = useState('');
   const [isRecipeChatLoading, setIsRecipeChatLoading] = useState(false);
   const [showRecipeChat, setShowRecipeChat] = useState(false);
+  const [modifiedRecipe, setModifiedRecipe] = useState<RecipeRecommendation | null>(null);
+  const [modificationHistory, setModificationHistory] = useState<Array<{
+    type: string;
+    targetIngredient: string;
+    newIngredient?: string;
+    newAmount?: string;
+  }>>([]);
 
   const generateId = () => crypto.randomUUID();
 
@@ -290,18 +301,19 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     setIsRecipeChatLoading(true);
 
     try {
+      const currentRecipe = modifiedRecipe || selectedRecipe;
       const { data, error } = await supabase.functions.invoke('generateRecipesFromChat', {
         body: {
           messages: updatedMessages,
           context: {
             mode: 'recipeContext',
             recipe: {
-              name: selectedRecipe.name,
-              ingredients: selectedRecipe.ingredients,
-              instructions: selectedRecipe.instructions,
-              tags: selectedRecipe.tags,
+              name: currentRecipe.name,
+              ingredients: currentRecipe.ingredients,
+              instructions: currentRecipe.instructions,
+              tags: currentRecipe.tags,
               servings: adjustedServings,
-              description: selectedRecipe.description
+              description: currentRecipe.description
             }
           }
         }
@@ -311,7 +323,8 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
       const assistantMessage = {
         role: 'assistant' as const,
-        content: data.reply || 'I apologize, I encountered an issue. Please try again.'
+        content: data.reply || 'I apologize, I encountered an issue. Please try again.',
+        suggestedModification: data.suggestedModification
       };
 
       setRecipeChatMessages([...updatedMessages, assistantMessage]);
@@ -321,6 +334,60 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     } finally {
       setIsRecipeChatLoading(false);
     }
+  };
+
+  const applyModification = (modification: any) => {
+    if (!selectedRecipe) return;
+
+    const currentRecipe = modifiedRecipe || selectedRecipe;
+    let updatedIngredients = [...currentRecipe.ingredients];
+
+    switch (modification.type) {
+      case 'substitute':
+        updatedIngredients = updatedIngredients.map(ing => 
+          ing.name.toLowerCase().includes(modification.targetIngredient?.toLowerCase())
+            ? { ...ing, name: modification.newIngredient, amount: modification.newAmount || ing.amount, isModified: true }
+            : ing
+        );
+        break;
+      case 'remove':
+        updatedIngredients = updatedIngredients.filter(ing => 
+          !ing.name.toLowerCase().includes(modification.targetIngredient?.toLowerCase())
+        );
+        break;
+      case 'add':
+        updatedIngredients.push({
+          name: modification.newIngredient || modification.targetIngredient,
+          amount: modification.newAmount || '1',
+          available: true,
+          isModified: true,
+          isNew: true
+        } as any);
+        break;
+      case 'adjust_amount':
+        updatedIngredients = updatedIngredients.map(ing =>
+          ing.name.toLowerCase().includes(modification.targetIngredient?.toLowerCase())
+            ? { ...ing, amount: modification.newAmount || ing.amount, isModified: true }
+            : ing
+        );
+        break;
+    }
+
+    const updatedRecipe = {
+      ...currentRecipe,
+      ingredients: updatedIngredients
+    };
+
+    setModifiedRecipe(updatedRecipe);
+    setModificationHistory(prev => [...prev, modification]);
+    
+    toast.success(`Recipe updated: ${modification.type} applied`);
+  };
+
+  const resetToOriginal = () => {
+    setModifiedRecipe(null);
+    setModificationHistory([]);
+    toast.success("Recipe reset to original version");
   };
 
   const handleRecipeQuickAction = (action: string) => {
@@ -814,16 +881,47 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                 </div>
 
                 <div>
+                  {modificationHistory.length > 0 && (
+                    <div className="mb-4 bg-accent/50 border border-primary/20 rounded-lg p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">
+                          {modificationHistory.length} modification{modificationHistory.length !== 1 ? 's' : ''} applied
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetToOriginal}
+                        className="h-8 text-xs"
+                      >
+                        Reset to Original
+                      </Button>
+                    </div>
+                  )}
+                  
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <Leaf className="h-4 w-4 text-green-500" />
                     Ingredients
                   </h3>
                   <div className="space-y-2">
-                    {selectedRecipe.ingredients.map((ingredient, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {(modifiedRecipe || selectedRecipe).ingredients.map((ingredient: any, index) => (
+                      <div 
+                        key={index} 
+                        className={`flex items-center justify-between p-3 rounded-lg ${
+                          ingredient.isModified 
+                            ? 'bg-primary/10 border border-primary/20' 
+                            : 'bg-muted/30'
+                        }`}
+                      >
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${ingredient.available ? 'bg-green-500' : 'bg-red-500'}`} />
                           <span className="font-medium">{ingredient.name}</span>
+                          {ingredient.isModified && (
+                            <Badge variant="secondary" className="text-xs h-5">
+                              {ingredient.isNew ? 'Added' : 'Modified'}
+                            </Badge>
+                          )}
                         </div>
                          <span className="text-sm text-muted-foreground font-medium">
                            {scaleAmount(ingredient.amount, servingMultiplier)}
@@ -1058,23 +1156,40 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                               <p className="text-sm text-muted-foreground text-center py-8">
                                 Ask me anything about this recipe! I can help with substitutions, techniques, modifications, and more.
                               </p>
-                            ) : (
+                             ) : (
                               recipeChatMessages.map((msg, idx) => (
                                 <div
                                   key={idx}
-                                  className={`flex gap-3 ${
-                                    msg.role === 'user' ? 'justify-end' : 'justify-start'
-                                  }`}
+                                  className="flex flex-col gap-2"
                                 >
                                   <div
-                                    className={`rounded-lg px-4 py-2 max-w-[80%] ${
-                                      msg.role === 'user'
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-foreground'
+                                    className={`flex gap-3 ${
+                                      msg.role === 'user' ? 'justify-end' : 'justify-start'
                                     }`}
                                   >
-                                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                    <div
+                                      className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                                        msg.role === 'user'
+                                          ? 'bg-primary text-primary-foreground'
+                                          : 'bg-muted text-foreground'
+                                      }`}
+                                    >
+                                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                    </div>
                                   </div>
+                                  {msg.suggestedModification && msg.role === 'assistant' && (
+                                    <div className="flex justify-start">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs gap-1"
+                                        onClick={() => applyModification(msg.suggestedModification)}
+                                      >
+                                        <Sparkles className="w-3 h-3" />
+                                        Apply this change to recipe
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               ))
                             )}
