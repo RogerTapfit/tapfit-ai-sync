@@ -20,6 +20,11 @@ serve(async (req) => {
     return new Response("OpenAI API key not configured", { status: 500 });
   }
 
+  // Get avatar name from URL query parameter
+  const url = new URL(req.url);
+  const avatarName = url.searchParams.get('avatarName') || 'Tappy';
+  console.log("Avatar name:", avatarName);
+
   const { socket, response } = Deno.upgradeWebSocket(req);
   
   let openAISocket: WebSocket | null = null;
@@ -52,7 +57,7 @@ serve(async (req) => {
             type: 'session.update',
             session: {
               modalities: ['text', 'audio'],
-              instructions: `You are Tappy, an expert AI fitness coach for TapFit. You're knowledgeable, motivating, and personalized. 
+              instructions: `You are ${avatarName}, an expert AI fitness coach for TapFit. You're knowledgeable, motivating, and personalized. Always refer to yourself as ${avatarName}.
               
               Key traits:
               - Expert in exercise form, programming, nutrition, and injury prevention

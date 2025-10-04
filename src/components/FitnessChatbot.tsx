@@ -14,11 +14,15 @@ import {
   Dumbbell,
   Apple,
   Heart,
-  Target
+  Target,
+  Mic,
+  MicOff,
+  Volume2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAvatar as useSelectedAvatar } from '@/lib/avatarState';
+import { useRealtimeChat } from '@/hooks/useRealtimeChat';
 
 interface Message {
   id: string;
@@ -38,6 +42,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -46,15 +51,73 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const miniUrl = avatar?.mini_image_url;
   const avatarName = avatar?.name || 'FitBot';
 
+  // Voice chat integration
+  const {
+    messages: voiceMessages,
+    voiceState,
+    connect: connectVoice,
+    disconnect: disconnectVoice,
+    startRecording,
+    stopRecording,
+    sendTextMessage: sendVoiceText
+  } = useRealtimeChat();
+
   // Initialize messages with dynamic avatar name
   useEffect(() => {
-    setMessages([{
-      id: '1',
-      text: `👋 Hi! I'm ${avatarName}, your AI fitness companion. Ready to help with workouts, nutrition, and motivation!`,
-      isUser: false,
-      timestamp: new Date()
-    }]);
-  }, [avatarName]);
+    if (!voiceMode) {
+      setMessages([{
+        id: '1',
+        text: `👋 Hi! I'm ${avatarName}, your AI fitness companion. Ready to help with workouts, nutrition, and motivation!`,
+        isUser: false,
+        timestamp: new Date()
+      }]);
+    }
+  }, [avatarName, voiceMode]);
+
+  // Sync voice messages to display
+  useEffect(() => {
+    if (voiceMode && voiceMessages.length > 0) {
+      const convertedMessages = voiceMessages.map(vm => ({
+        id: vm.id,
+        text: vm.content,
+        isUser: vm.type === 'user',
+        timestamp: vm.timestamp
+      }));
+      setMessages(convertedMessages);
+    }
+  }, [voiceMessages, voiceMode]);
+
+  // Handle voice mode toggle
+  const toggleVoiceMode = async () => {
+    if (!voiceMode) {
+      // Entering voice mode
+      try {
+        await connectVoice(avatarName);
+        await startRecording();
+        setVoiceMode(true);
+        toast({
+          title: "Voice Mode Active",
+          description: `Now talking with ${avatarName}. Speak naturally!`,
+        });
+      } catch (error) {
+        console.error('Failed to start voice mode:', error);
+        toast({
+          title: "Voice Mode Failed",
+          description: "Please check microphone permissions and try again.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Exiting voice mode
+      stopRecording();
+      disconnectVoice();
+      setVoiceMode(false);
+      toast({
+        title: "Voice Mode Ended",
+        description: "Switched back to text chat.",
+      });
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,6 +137,14 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
 
+    // Voice mode - send through WebSocket
+    if (voiceMode && voiceState.isConnected) {
+      sendVoiceText(messageText);
+      setInputMessage('');
+      return;
+    }
+
+    // Text mode - use edge function
     const userMessage: Message = {
       id: Date.now().toString(),
       text: messageText,
@@ -150,7 +221,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
       <CardHeader className="p-4 pb-2 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm">
+            <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${voiceState.isAISpeaking ? 'border-green-500 animate-pulse' : 'border-primary/20'} bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shadow-sm relative`}>
               {miniUrl ? (
                 <img
                   src={miniUrl}
@@ -166,10 +237,34 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 />
               ) : null}
               <Bot className={`h-4 w-4 text-primary/60 ${miniUrl ? 'hidden' : ''}`} />
+              {voiceState.isAISpeaking && (
+                <Volume2 className="absolute -bottom-1 -right-1 h-3 w-3 text-green-500 animate-pulse" />
+              )}
             </div>
-            <CardTitle className="text-sm font-semibold">{avatarName}</CardTitle>
+            <div>
+              <CardTitle className="text-sm font-semibold">{avatarName}</CardTitle>
+              {voiceMode && (
+                <p className="text-xs text-muted-foreground">
+                  {voiceState.isConnected ? (voiceState.isRecording ? '🎤 Listening...' : '🔌 Connected') : '⏳ Connecting...'}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex gap-1">
+            <Button
+              variant={voiceMode ? "default" : "ghost"}
+              size="sm"
+              onClick={toggleVoiceMode}
+              className="h-6 w-6 p-0"
+              aria-label={voiceMode ? 'Disable voice mode' : 'Enable voice mode'}
+              disabled={voiceMode && !voiceState.isConnected}
+            >
+              {voiceMode ? (
+                voiceState.isRecording ? <Mic className="h-3 w-3 animate-pulse" /> : <MicOff className="h-3 w-3" />
+              ) : (
+                <Mic className="h-3 w-3" />
+              )}
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -218,14 +313,18 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                     )}
                   </div>
                 ))}
-                {isLoading && (
+                {(isLoading || voiceState.isAISpeaking) && (
                   <div className="flex gap-2 justify-start">
                     <div className="bg-muted p-3 rounded-lg text-sm">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
+                      {voiceState.isAISpeaking ? (
+                        <p className="text-muted-foreground">{avatarName} is speaking...</p>
+                      ) : (
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

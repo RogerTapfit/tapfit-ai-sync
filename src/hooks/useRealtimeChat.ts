@@ -30,12 +30,13 @@ export const useRealtimeChat = () => {
   const currentTranscriptRef = useRef<string>('');
 
   // Get the correct WebSocket URL for the project
-  const getWebSocketURL = () => {
+  const getWebSocketURL = (avatarName?: string) => {
     // Use the correct Supabase Functions WebSocket URL format
-    return `wss://pbrayxmqzdxsmhqmzygc.supabase.co/functions/v1/realtime-voice-chat`;
+    const url = `wss://pbrayxmqzdxsmhqmzygc.supabase.co/functions/v1/realtime-voice-chat`;
+    return avatarName ? `${url}?avatarName=${encodeURIComponent(avatarName)}` : url;
   };
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (avatarName?: string) => {
     try {
       console.log("Connecting to voice chat...");
       
@@ -45,8 +46,8 @@ export const useRealtimeChat = () => {
       }
 
       // Connect WebSocket
-      const wsUrl = getWebSocketURL();
-      console.log("Connecting to:", wsUrl);
+      const wsUrl = getWebSocketURL(avatarName);
+      console.log("Connecting to:", wsUrl, "with avatar:", avatarName);
       
       wsRef.current = new WebSocket(wsUrl);
 
