@@ -146,7 +146,27 @@ serve(async (req) => {
 
     const prompt = `Analyze these ${photos.length} food image(s) and provide detailed nutritional information. 
 
-IMPORTANT: Be extremely consistent in your analysis. Use standardized portion sizes and nutritional values for identical foods.
+CRITICAL CONSISTENCY RULES:
+1. Round ALL calorie estimates to nearest 10 (example: 580 not 577, 250 not 253)
+2. Use STANDARDIZED portion sizes consistently:
+   - Chicken breast (grilled): 150g = 250 calories, 47g protein
+   - Ground beef (cooked): 100g = 250 calories, 26g protein
+   - White rice (cooked): 100g = 130 calories, 28g carbs
+   - Brown rice (cooked): 100g = 110 calories, 23g carbs
+   - Broccoli: 100g = 35 calories, 3g protein, 7g carbs
+   - Banana (medium): 120g = 105 calories, 27g carbs
+3. For similar-looking items, ALWAYS use the same base values
+4. Round protein/carbs/fat to nearest 5g for consistency
+5. If uncertain about exact portion, use the MIDDLE of the range every time
+
+Standard Portion Reference Table:
+- Small chicken breast: 100g
+- Medium chicken breast: 150g (DEFAULT)
+- Large chicken breast: 200g
+- Rice serving: 100g cooked (DEFAULT)
+- Vegetables: 100g (DEFAULT)
+
+IMPORTANT: Same visual portion size = Same nutritional values EVERY TIME
 
 Photo Analysis Instructions:
 ${photoAnalysis}
@@ -156,11 +176,11 @@ Return a JSON object with this exact structure:
   "food_items": [
     {
       "name": "Food item name",
-      "quantity": "Estimated serving size",
-      "calories": 0,
-      "protein": 0,
-      "carbs": 0,
-      "fat": 0,
+      "quantity": "Use standardized portions (e.g., '150g' not '~150g')",
+      "calories": 0,  // MUST be multiple of 10
+      "protein": 0,   // MUST be multiple of 5
+      "carbs": 0,     // MUST be multiple of 5
+      "fat": 0,       // MUST be multiple of 5
       "confidence": 0.95,
       "brand": "Brand name if visible",
       "preparation_method": "How it was prepared"
@@ -180,15 +200,15 @@ Return a JSON object with this exact structure:
 }
 
 Enhanced Analysis Guidelines:
-- Use standardized portion estimates for consistency (e.g., always use 100g for similar meat portions)
 - Cross-reference nutrition labels with visual portions for accuracy
-- If nutrition labels are visible, use exact values and scale by visual portion
+- If nutrition labels are visible, use exact values scaled by visual portion
 - Identify specific brands and product types from packages
-- Note preparation methods (grilled, fried, baked, etc.)
+- Note preparation methods (grilled, fried, baked, etc.) - affects calories by ~20%
 - Be more precise with brand products vs homemade items
 - Use nutrition label data when available for exact macro calculations
 - Pay special attention to meat products, protein sources, and their preparation methods
-- BE CONSISTENT: Always use the same nutritional values for visually identical foods`;
+- BE HYPER-CONSISTENT: Identical visual food = Identical numbers
+- Always round to maintain consistency across analyses`;
 
     console.log('Sending request to OpenAI with', photos.length, 'photos');
 
@@ -259,6 +279,15 @@ Enhanced Analysis Guidelines:
     }
 
     console.log('Generated nutrition analysis:', JSON.stringify(nutritionData, null, 2));
+
+    // Add confidence range to help users understand variance
+    if (nutritionData.total_calories) {
+      nutritionData.calorie_confidence_range = {
+        min: Math.round(nutritionData.total_calories * 0.9 / 10) * 10,
+        max: Math.round(nutritionData.total_calories * 1.1 / 10) * 10,
+        note: "Estimates may vary ±10% based on exact ingredients and preparation"
+      };
+    }
 
     return new Response(JSON.stringify(nutritionData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

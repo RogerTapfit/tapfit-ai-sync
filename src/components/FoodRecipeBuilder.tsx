@@ -1139,13 +1139,17 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                   )}
                 </div>
 
-                {/* Running Equivalent Section */}
-                {userProfile && (() => {
+                {/* Running Equivalent Section - Always show with defaults if needed */}
+                {(() => {
                   const totalCalories = calculatedNutrition 
                     ? calculatedNutrition.totals_per_serving.calories_kcal * servingMultiplier
                     : (modifiedRecipe || selectedRecipe).nutrition.calories * servingMultiplier;
-                  const effectiveWeight = userProfile.weight_kg || 70;
-                  const effectiveGender = userProfile.gender || 'other';
+                  
+                  // Use profile data if available, otherwise use defaults
+                  const effectiveWeight = userProfile?.weight_kg || 70; // 70kg = 154lbs default
+                  const effectiveGender = userProfile?.gender || 'other';
+                  const usingDefaults = !userProfile?.weight_kg;
+                  
                   const runningData = calculateRunningMiles(totalCalories, effectiveWeight, effectiveGender);
                   
                   return (
@@ -1164,12 +1168,19 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                           </p>
                           <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                             <p className="text-xs text-muted-foreground">
-                              📊 Based on your profile: {runningData.weightLbs} lbs, {userProfile.gender}
+                              📊 {usingDefaults ? 'Estimated for' : 'Based on your profile:'} {runningData.weightLbs} lbs, {effectiveGender}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               (~{runningData.caloriesPerMile} cal/mile at moderate pace)
                             </p>
                           </div>
+                          {usingDefaults && (
+                            <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded">
+                              <p className="text-xs text-amber-700 dark:text-amber-400">
+                                ⚠️ Using default weight (154 lbs). Complete your profile for personalized calculations.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

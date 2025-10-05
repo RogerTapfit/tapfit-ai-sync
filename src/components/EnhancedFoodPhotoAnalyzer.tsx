@@ -182,6 +182,15 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     });
   };
 
+  // Generate SHA-256 hash of image data for caching
+  const hashImage = async (data: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   const handleAnalyzeImages = async (forceRefresh = false) => {
     if (photos.length === 0 || !mealType) {
       toast.error('Please add at least one photo and select meal type');
@@ -199,6 +208,44 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         }))
       );
 
+      // Generate cache key from all photos + meal type
+      const combinedData = photoData.map(p => p.base64).join('|') + `|${mealType}`;
+      const cacheKey = `food_analysis_${await hashImage(combinedData)}`;
+      
+      // Check cache unless force refresh
+      if (!forceRefresh) {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const cachedData = JSON.parse(cached);
+            // Cache valid for 24 hours
+            if (Date.now() - cachedData.timestamp < 24 * 60 * 60 * 1000) {
+              console.log('Using cached analysis result');
+              const result = cachedData.result;
+              setAnalysisResult(result);
+              setEditingItems(result.food_items || []);
+              onStateChange?.('results', { photoCount: photos.length, hasResults: true });
+              
+              // Initialize portion multipliers
+              const initialMultipliers: { [key: number]: number } = {};
+              (result.food_items || []).forEach((_: any, index: number) => {
+                initialMultipliers[index] = 1;
+              });
+              setPortionMultipliers(initialMultipliers);
+              
+              setPhotos(prev => prev.map(photo => ({ ...photo, analyzed: true })));
+              
+              toast.success('📋 Analysis loaded from cache for consistency');
+              setAnalyzing(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Cache parse error:', e);
+            localStorage.removeItem(cacheKey);
+          }
+        }
+      }
+
       // Enhanced analysis with multiple images
       const result = await analyzeFoodImage(
         JSON.stringify(photoData), 
@@ -210,6 +257,12 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         toast.error('No food items detected. Please try taking a clearer photo with better lighting.');
         return;
       }
+      
+      // Cache the result
+      localStorage.setItem(cacheKey, JSON.stringify({
+        result,
+        timestamp: Date.now()
+      }));
       
       setAnalysisResult(result);
       setEditingItems(result.food_items || []);
@@ -239,6 +292,8 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         setChatMessages([aiMessage]);
         setChatOpen(true);
       }
+      
+      toast.success('✨ Fresh analysis complete');
       
     } catch (error) {
       console.error('Error analyzing images:', error);
@@ -660,9 +715,10 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            className="space-y-2"
           >
             <Button
-              onClick={() => handleAnalyzeImages()}
+              onClick={() => handleAnalyzeImages(false)}
               disabled={photos.length === 0 || !mealType || analyzing || loading}
               className="w-full glow-button bg-gradient-to-r from-primary to-primary/80 border-0 text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
@@ -694,6 +750,20 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                 </>
               )}
             </Button>
+            
+            {analysisResult && (
+              <Button
+                onClick={() => handleAnalyzeImages(true)}
+                disabled={photos.length === 0 || !mealType || analyzing || loading}
+                variant="outline"
+                size="sm"
+                className="w-full"
+                title="Force a fresh analysis, bypassing cache"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Re-analyze (Fresh)
+              </Button>
+            )}
           </motion.div>
         </CardContent>
       </Card>
