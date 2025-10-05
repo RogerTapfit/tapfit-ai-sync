@@ -88,8 +88,27 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     newIngredient?: string;
     newAmount?: string;
   }>>([]);
+  
+  // User profile for running calculation
+  const [userProfile, setUserProfile] = useState<{ weight_kg: number; gender: string } | null>(null);
 
   const generateId = () => crypto.randomUUID();
+
+  // Fetch user profile data for running calculation
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('weight_kg, gender')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (data) setUserProfile(data);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   const handlePhotoCapture = async (source: 'camera' | 'gallery') => {
     try {
@@ -388,6 +407,27 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
     setModifiedRecipe(null);
     setModificationHistory([]);
     toast.success("Recipe reset to original version");
+  };
+
+  const calculateRunningMiles = (calories: number, weightKg: number, gender: string): { 
+    miles: number; 
+    weightLbs: number;
+    caloriesPerMile: number;
+  } => {
+    const weightLbs = weightKg * 2.20462; // kg to lbs
+    
+    // Gender-adjusted calorie burn factor per mile per pound
+    // Male: ~0.63 cal/lb/mile, Female: ~0.60 cal/lb/mile
+    const calorieBurnFactor = gender === 'male' ? 0.63 : 0.60;
+    
+    const caloriesPerMile = weightLbs * calorieBurnFactor;
+    const miles = calories / caloriesPerMile;
+    
+    return {
+      miles: parseFloat(miles.toFixed(1)),
+      weightLbs: Math.round(weightLbs),
+      caloriesPerMile: Math.round(caloriesPerMile)
+    };
   };
 
   const handleRecipeQuickAction = (action: string) => {
@@ -1098,6 +1138,43 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                     </div>
                   )}
                 </div>
+
+                {/* Running Equivalent Section */}
+                {userProfile && (() => {
+                  const totalCalories = calculatedNutrition 
+                    ? calculatedNutrition.totals_per_serving.calories_kcal * servingMultiplier
+                    : (modifiedRecipe || selectedRecipe).nutrition.calories * servingMultiplier;
+                  const effectiveWeight = userProfile.weight_kg || 70;
+                  const effectiveGender = userProfile.gender || 'other';
+                  const runningData = calculateRunningMiles(totalCalories, effectiveWeight, effectiveGender);
+                  
+                  return (
+                    <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                          <span className="text-2xl">🏃</span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm mb-1">Running Equivalent</h4>
+                          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                            {runningData.miles} miles
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            To burn off these {Math.round(totalCalories)} calories
+                          </p>
+                          <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-muted-foreground">
+                              📊 Based on your profile: {runningData.weightLbs} lbs, {userProfile.gender}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              (~{runningData.caloriesPerMile} cal/mile at moderate pace)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Recipe-specific chat assistant */}
                 <div className="mt-6 border-t pt-6">
