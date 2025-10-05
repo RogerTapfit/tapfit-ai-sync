@@ -19,6 +19,7 @@ const WorkoutPlanDashboard = lazy(() => import("./WorkoutPlanDashboard"));
 const AvatarGallery = lazy(() => import("./AvatarGallery"));
 const NutritionDashboard = lazy(() => import("./NutritionDashboard"));
 const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
+const LogoGenerator = lazy(() => import("./LogoGenerator").then(module => ({ default: module.LogoGenerator })));
 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -89,6 +90,11 @@ const TapFitApp = () => {
             </Button>
           </div>
         </Card>
+      </div>
+
+      {/* Logo Generator Section */}
+      <div className="max-w-4xl">
+        <LogoGenerator />
       </div>
 
       {/* NFC Tag Programming Section */}
