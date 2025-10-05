@@ -80,7 +80,7 @@ function setupNFC() {
   
   try {
     // Shorter URL to avoid data size issues
-    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/nfc");
+    NRF.nfcURL("https://tapfit.info/nfc");
     
     NRF.on('NFCon', function() {
       console.log("NFC detected!");

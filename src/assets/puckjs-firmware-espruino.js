@@ -5,7 +5,7 @@
 
 // Configuration
 var CONFIG = {
-  NFC_URL: "https://tapfit-ai-sync.lovable.app/#/workout/1?autoConnect=puck",
+  NFC_URL: "https://tapfit.info/#/workout/1?autoConnect=puck",
   DEVICE_NAME: "TapFit-Puck",
   BLE_SERVICE_UUID: "FFE0",
   BLE_CHAR_UUID: "FFE1",

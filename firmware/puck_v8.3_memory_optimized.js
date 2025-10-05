@@ -48,7 +48,7 @@ function ini(){
   
   // NFC
   try{
-    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/nfc");
+    NRF.nfcURL("https://tapfit.info/nfc");
     NRF.on('NFCon',function(){
       if(!on)str();
       LED1.set();setTimeout(function(){LED1.reset();},100);

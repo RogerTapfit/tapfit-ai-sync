@@ -697,7 +697,7 @@ function setupNFC() {
       profile: getCurrentMachineProfile()
     };
     
-    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/#/workout/1?autoConnect=puck");
+    NRF.nfcURL("https://tapfit.info/#/workout/1?autoConnect=puck");
     
     NRF.on("NFCTag", function() {
       state.lastNFCTap = Date.now();

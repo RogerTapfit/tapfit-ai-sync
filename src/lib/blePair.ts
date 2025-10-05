@@ -201,7 +201,7 @@ export function setupUniversalLinkPairing(callbacks?: BlePairCallbacks): void {
       const parsedUrl = new URL(url);
       console.log('Parsed URL:', parsedUrl.pathname, parsedUrl.search);
       
-      // Handle pairing URLs: https://tapfit-ai-sync.lovable.app/pair?station=LEGEXT01
+      // Handle pairing URLs: https://tapfit.info/pair?station=LEGEXT01
       if (parsedUrl.pathname.startsWith('/pair')) {
         const station = parsedUrl.searchParams.get('station');
         console.log('Starting NFC-triggered BLE connection for station:', station);

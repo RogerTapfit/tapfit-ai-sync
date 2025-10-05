@@ -676,7 +676,7 @@ function sendHeartbeat() {
 // Enhanced NFC System
 function setupNFC() {
   try {
-    var nfcUrl = "https://tapfit-ai-sync.lovable.app/#/workout/1?autoConnect=puck";
+    var nfcUrl = "https://tapfit.info/#/workout/1?autoConnect=puck";
     
     NRF.nfcURL(nfcUrl);
     logDebug("NFC", "URL set: " + nfcUrl);

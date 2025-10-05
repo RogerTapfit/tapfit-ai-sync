@@ -11,7 +11,7 @@ const TX_CHARACTERISTIC = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // TX (Puck â†
 const RX_CHARACTERISTIC = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // RX (App â†’ Puck)
 
 // NFC Configuration
-const NFC_URL = "https://tapfit-ai-sync.lovable.app/pair?station=TAPFIT01";
+const NFC_URL = "https://tapfit.info/pair?station=TAPFIT01";
 const NFC_DETECTION_TIMEOUT = 30000; // 30 seconds of aggressive advertising after NFC
 
 // Motion and Rep Counting

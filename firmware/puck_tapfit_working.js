@@ -8,7 +8,7 @@ const CONFIG = {
   ACCEL_SAMPLE_RATE: 26, // Valid rate for Puck.js
   REP_THRESHOLD: 0.8,
   REP_COOLDOWN: 800,
-  NFC_URL: "https://tapfit-ai-sync.lovable.app/pair?station=TAPFIT01",
+  NFC_URL: "https://tapfit.info/pair?station=TAPFIT01",
   DEBUG: true
 };
 

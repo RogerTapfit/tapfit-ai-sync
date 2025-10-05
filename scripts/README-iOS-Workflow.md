@@ -48,7 +48,7 @@ bash "$REPO_ROOT/scripts/ios_preflight_local.sh"
 - Source of truth: `package.json` version field
 
 ### Configuration Validation
-- Associated domains include `applinks:tapfit-ai-sync.lovable.app`
+- Associated domains include `applinks:tapfit.info`
 - Required Info.plist keys present:
   - `NSBluetoothAlwaysUsageDescription`
   - `NFCReaderUsageDescription`
@@ -88,6 +88,6 @@ scripts/
 
 ## Success Criteria
 - `pnpm ios:open-latest` reliably opens Xcode with correct version and embedded web
-- Universal Links work: `https://tapfit-ai-sync.lovable.app/nfc` opens app, not Safari
+- Universal Links work: `https://tapfit.info/nfc` opens app, not Safari
 - App shows correct version (1.2.6) in VersionDisplay component
 - Any configuration issues fail fast with clear error messages

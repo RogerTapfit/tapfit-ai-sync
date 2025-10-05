@@ -14,14 +14,14 @@ const testMachines: Array<{
   muscleGroup: string;
   url: string;
 }> = [
-  { id: 'LEGEXT01', name: 'Leg Extension', muscleGroup: 'Quadriceps', url: 'https://tapfit-ai-sync.lovable.app/pair?station=LEGEXT01' },
-  { id: 'CHESTPRESS01', name: 'Chest Press', muscleGroup: 'Chest', url: 'https://tapfit-ai-sync.lovable.app/pair?station=CHESTPRESS01' },
-  { id: 'LATPULL01', name: 'Lat Pulldown', muscleGroup: 'Back', url: 'https://tapfit-ai-sync.lovable.app/pair?station=LATPULL01' },
-  { id: 'SHOULDERPRESS01', name: 'Shoulder Press', muscleGroup: 'Shoulders', url: 'https://tapfit-ai-sync.lovable.app/pair?station=SHOULDERPRESS01' },
-  { id: 'LEGPRESS01', name: 'Leg Press', muscleGroup: 'Legs', url: 'https://tapfit-ai-sync.lovable.app/pair?station=LEGPRESS01' },
-  { id: 'BICEP01', name: 'Bicep Curl', muscleGroup: 'Biceps', url: 'https://tapfit-ai-sync.lovable.app/pair?station=BICEP01' },
-  { id: 'TRICEP01', name: 'Tricep Extension', muscleGroup: 'Triceps', url: 'https://tapfit-ai-sync.lovable.app/pair?station=TRICEP01' },
-  { id: 'SQUAT01', name: 'Squat Rack', muscleGroup: 'Full Body', url: 'https://tapfit-ai-sync.lovable.app/pair?station=SQUAT01' },
+  { id: 'LEGEXT01', name: 'Leg Extension', muscleGroup: 'Quadriceps', url: 'https://tapfit.info/pair?station=LEGEXT01' },
+  { id: 'CHESTPRESS01', name: 'Chest Press', muscleGroup: 'Chest', url: 'https://tapfit.info/pair?station=CHESTPRESS01' },
+  { id: 'LATPULL01', name: 'Lat Pulldown', muscleGroup: 'Back', url: 'https://tapfit.info/pair?station=LATPULL01' },
+  { id: 'SHOULDERPRESS01', name: 'Shoulder Press', muscleGroup: 'Shoulders', url: 'https://tapfit.info/pair?station=SHOULDERPRESS01' },
+  { id: 'LEGPRESS01', name: 'Leg Press', muscleGroup: 'Legs', url: 'https://tapfit.info/pair?station=LEGPRESS01' },
+  { id: 'BICEP01', name: 'Bicep Curl', muscleGroup: 'Biceps', url: 'https://tapfit.info/pair?station=BICEP01' },
+  { id: 'TRICEP01', name: 'Tricep Extension', muscleGroup: 'Triceps', url: 'https://tapfit.info/pair?station=TRICEP01' },
+  { id: 'SQUAT01', name: 'Squat Rack', muscleGroup: 'Full Body', url: 'https://tapfit.info/pair?station=SQUAT01' },
 ];
 
 export function NFCTestPanel() {

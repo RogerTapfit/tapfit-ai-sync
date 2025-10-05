@@ -109,7 +109,7 @@ function setupNFC() {
   
   try {
     // Enable NFC with auto-connect data
-    NRF.nfcURL("https://tapfit-ai-sync.lovable.app/nfc");
+    NRF.nfcURL("https://tapfit.info/nfc");
     
     // NFC field detection for instant response
     NRF.on('NFCon', () => {

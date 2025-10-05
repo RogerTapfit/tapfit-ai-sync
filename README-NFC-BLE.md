@@ -10,7 +10,7 @@ This system enables instant app opening and BLE pairing via NFC tap. The flow is
 ## NFC Tag Format
 Write this URL to NFC tags (single NDEF URI record):
 ```
-https://tapfit-ai-sync.lovable.app/pair?station=LEGEXT01
+https://tapfit.info/pair?station=LEGEXT01
 ```
 
 Replace `LEGEXT01` with the actual station ID that matches the Puck.js firmware.
@@ -29,7 +29,7 @@ Replace `LEGEXT01` with the actual station ID that matches the Puck.js firmware.
 ## Testing Steps
 
 ### 1. Universal Link Test
-Open in iOS Safari: `https://tapfit-ai-sync.lovable.app/pair?station=LEGEXT01`
+Open in iOS Safari: `https://tapfit.info/pair?station=LEGEXT01`
 - **Expected**: App opens directly (not Safari)
 
 ### 2. NFC Tag Test  
@@ -58,7 +58,7 @@ Located at `public/.well-known/apple-app-site-association`
 
 ### iOS Configuration
 Required in Xcode:
-- Associated Domains: `applinks:tapfit-ai-sync.lovable.app`
+- Associated Domains: `applinks:tapfit.info`
 - Bluetooth usage strings in Info.plist
 - NFC capability (already configured)
 

@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'TapFit',
   webDir: 'dist',
   // server: {
-  //   url: "https://tapfit-ai-sync.lovable.app?forceHideBadge=true",
+  //   url: "https://tapfit.info?forceHideBadge=true",
   //   cleartext: true
   // },
   ios: {
@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
     orientation: "portrait",
     minVersion: "16.0",
     entitlements: {
-      "com.apple.developer.associated-domains": ["applinks:tapfit-ai-sync.lovable.app"],
+      "com.apple.developer.associated-domains": ["applinks:tapfit.info"],
       "com.apple.developer.healthkit": true,
       "com.apple.developer.nfc.readersession.formats": ["NDEF", "TAG"],
       "com.apple.developer.nfc.readersession.iso7816.select-identifiers": ["*"]
