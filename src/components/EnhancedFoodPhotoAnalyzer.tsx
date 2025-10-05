@@ -1077,20 +1077,20 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                       
                       return (
                         <div className="mt-6 pt-6 border-t border-border">
-                          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 rounded-lg border border-primary/20 dark:border-primary/30">
                             <div className="flex items-start gap-3">
-                              <div className="p-2 bg-blue-500/10 rounded-lg">
+                              <div className="p-2 bg-primary/10 rounded-lg">
                                 <span className="text-2xl">🏃</span>
                               </div>
                               <div className="flex-1">
                                 <h4 className="font-semibold text-sm mb-1">Running Equivalent</h4>
-                                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                <div className="text-2xl font-bold text-primary">
                                   {runningData.miles} miles
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
                                   To burn off these {Math.round(totalCalories)} calories
                                 </p>
-                                <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                                <div className="mt-2 pt-2 border-t border-primary/20 dark:border-primary/30">
                                   <p className="text-xs text-muted-foreground">
                                     📊 {usingDefaults ? 'Estimated for' : 'Based on your profile:'} {runningData.weightLbs} lbs, {effectiveGender}
                                   </p>
@@ -1099,8 +1099,8 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                                   </p>
                                 </div>
                                 {usingDefaults && (
-                                  <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded">
-                                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  <div className="mt-2 p-2 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 rounded">
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
                                       ⚠️ Using default weight (154 lbs). Complete your profile for personalized calculations.
                                     </p>
                                   </div>
