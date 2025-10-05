@@ -55,6 +55,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [isSaving, setIsSaving] = useState(false);
   const [storageValidated, setStorageValidated] = useState(false);
   const [showValidation, setShowValidation] = useState(true);
+  const [userProfile, setUserProfile] = useState<{ weight_kg: number; gender: string } | null>(null);
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
@@ -64,6 +65,43 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   ];
 
   const generateId = () => crypto.randomUUID();
+
+  // Fetch user profile data for running calculation
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('weight_kg, gender')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (data) setUserProfile(data);
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  const calculateRunningMiles = (calories: number, weightKg: number, gender: string): { 
+    miles: number; 
+    weightLbs: number;
+    caloriesPerMile: number;
+  } => {
+    const weightLbs = weightKg * 2.20462; // kg to lbs
+    
+    // Gender-adjusted calorie burn factor per mile per pound
+    // Male: ~0.63 cal/lb/mile, Female: ~0.60 cal/lb/mile
+    const calorieBurnFactor = gender === 'male' ? 0.63 : 0.60;
+    
+    const caloriesPerMile = weightLbs * calorieBurnFactor;
+    const miles = calories / caloriesPerMile;
+    
+    return {
+      miles: parseFloat(miles.toFixed(1)),
+      weightLbs: Math.round(weightLbs),
+      caloriesPerMile: Math.round(caloriesPerMile)
+    };
+  };
 
   const handlePhotoCapture = async (source: 'camera' | 'gallery') => {
     try {
@@ -1027,6 +1065,52 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                         </p>
                       </div>
                     </div>
+
+                    {/* Running Equivalent Section */}
+                    {(() => {
+                      const totalCalories = editingItems.reduce((sum, item) => sum + item.calories, 0);
+                      const effectiveWeight = userProfile?.weight_kg || 70; // 70kg = 154lbs default
+                      const effectiveGender = userProfile?.gender || 'other';
+                      const usingDefaults = !userProfile?.weight_kg;
+                      
+                      const runningData = calculateRunningMiles(totalCalories, effectiveWeight, effectiveGender);
+                      
+                      return (
+                        <div className="mt-6 pt-6 border-t border-border">
+                          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 bg-blue-500/10 rounded-lg">
+                                <span className="text-2xl">🏃</span>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-sm mb-1">Running Equivalent</h4>
+                                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                  {runningData.miles} miles
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  To burn off these {Math.round(totalCalories)} calories
+                                </p>
+                                <div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                                  <p className="text-xs text-muted-foreground">
+                                    📊 {usingDefaults ? 'Estimated for' : 'Based on your profile:'} {runningData.weightLbs} lbs, {effectiveGender}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    (~{runningData.caloriesPerMile} cal/mile at moderate pace)
+                                  </p>
+                                </div>
+                                {usingDefaults && (
+                                  <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded">
+                                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                                      ⚠️ Using default weight (154 lbs). Complete your profile for personalized calculations.
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               )}
