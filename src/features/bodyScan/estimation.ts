@@ -31,7 +31,7 @@ function tiltDeg(lms: Keypoint[], li: number, ri: number) {
   const { L, R } = getPoint(lms, li, ri);
   if (!L || !R) return { deg: 0, conf: 0 };
   const angle = Math.atan2((R.y - L.y), (R.x - L.x));
-  return { deg: Math.abs(deg(angle)), conf: (L.v ?? 0.6 + R.v ?? 0.6) / 2 };
+  return { deg: Math.abs(deg(angle)), conf: ((L.v ?? 0.6) + (R.v ?? 0.6)) / 2 };
 }
 
 // From front width profile, estimate circumference assuming ellipse
