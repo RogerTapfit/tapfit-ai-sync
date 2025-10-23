@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, MapPin, Clock, Target, Heart } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Target, Heart, Footprints } from "lucide-react";
 import { RunSettings } from "@/types/run";
 import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 import { calculateHRZones, estimateMaxHR } from "@/utils/heartRateZones";
@@ -114,8 +114,8 @@ const RunSetup = () => {
   const zone3 = hrZones[2];
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 p-4">
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -123,14 +123,21 @@ const RunSetup = () => {
               variant="ghost"
               size="icon"
               onClick={() => navigate('/')}
+              className="hover-scale"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold">Setup Your Run</h1>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Footprints className="h-6 w-6 text-blue-500" />
+              </div>
+              <h1 className="text-3xl font-bold">Setup Your Run</h1>
+            </div>
           </div>
           <Button
             variant="outline"
             onClick={() => navigate('/run/history')}
+            className="hover-scale"
           >
             History
           </Button>
@@ -140,10 +147,12 @@ const RunSetup = () => {
         <RunGPSWarningBanner />
 
         {/* Training Mode */}
-        <Card className="p-6">
+        <Card className="p-6 hover:shadow-lg transition-all duration-300 border-red-500/20 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-red-500" />
+              <div className="p-2 bg-red-500/10 rounded-lg animate-pulse">
+                <Heart className="h-5 w-5 text-red-500" />
+              </div>
               <Label className="text-lg font-semibold">Training Mode</Label>
             </div>
             
@@ -156,7 +165,7 @@ const RunSetup = () => {
               onValueChange={handleTrainingModeChange}
             >
               {/* Pace-Based (Default) */}
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="pace_based" id="pace_based" />
                 <Label htmlFor="pace_based" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Pace-Based Run</div>
@@ -167,7 +176,7 @@ const RunSetup = () => {
               </div>
 
               {/* Steady Jog - Zone 2 */}
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="steady_jog" id="steady_jog" />
                 <Label htmlFor="steady_jog" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Steady Jog - Zone 2</div>
@@ -178,7 +187,7 @@ const RunSetup = () => {
               </div>
 
               {/* Steady Run - Zone 3 */}
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="steady_run" id="steady_run" />
                 <Label htmlFor="steady_run" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Steady Run - Zone 3</div>
@@ -189,7 +198,7 @@ const RunSetup = () => {
               </div>
 
               {/* Interval Training */}
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="intervals" id="intervals" />
                 <Label htmlFor="intervals" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Interval Training</div>
@@ -214,10 +223,12 @@ const RunSetup = () => {
         </Card>
 
         {/* Run Type */}
-        <Card className="p-6">
+        <Card className="p-6 hover:shadow-lg transition-all duration-300 border-blue-500/20 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Target className="h-5 w-5 text-blue-500" />
+              </div>
               <Label className="text-lg font-semibold">Run Goal (Optional)</Label>
             </div>
             <RadioGroup
@@ -226,7 +237,7 @@ const RunSetup = () => {
                 setSettings({ ...settings, goal_type: value })
               }
             >
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="distance" id="distance" />
                 <Label htmlFor="distance" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Distance Goal</div>
@@ -237,7 +248,7 @@ const RunSetup = () => {
                 <MapPin className="h-5 w-5 text-muted-foreground" />
               </div>
 
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="time" id="time" />
                 <Label htmlFor="time" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Time Goal</div>
@@ -248,7 +259,7 @@ const RunSetup = () => {
                 <Clock className="h-5 w-5 text-muted-foreground" />
               </div>
 
-              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent cursor-pointer">
+              <div className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-all cursor-pointer">
                 <RadioGroupItem value="none" id="none" />
                 <Label htmlFor="none" className="flex-1 cursor-pointer">
                   <div className="font-semibold">Free Run</div>
@@ -263,9 +274,14 @@ const RunSetup = () => {
 
         {/* Distance Goal */}
         {settings.goal_type === 'distance' && (
-          <Card className="p-6">
+          <Card className="p-6 hover:shadow-lg transition-all duration-300 border-green-500/20 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div className="space-y-4">
-              <Label className="text-lg font-semibold">Target Distance</Label>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <MapPin className="h-5 w-5 text-green-500" />
+                </div>
+                <Label className="text-lg font-semibold">Target Distance</Label>
+              </div>
               <RadioGroup
                 value={settings.goal_value?.toString()}
                 onValueChange={(value) =>
@@ -297,9 +313,14 @@ const RunSetup = () => {
 
         {/* Duration Goal */}
         {settings.goal_type === 'time' && (
-          <Card className="p-6">
+          <Card className="p-6 hover:shadow-lg transition-all duration-300 border-purple-500/20 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <div className="space-y-4">
-              <Label className="text-lg font-semibold">Target Duration (minutes)</Label>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Clock className="h-5 w-5 text-purple-500" />
+                </div>
+                <Label className="text-lg font-semibold">Target Duration (minutes)</Label>
+              </div>
               <RadioGroup
                 value={settings.goal_value?.toString()}
                 onValueChange={(value) =>
@@ -333,9 +354,10 @@ const RunSetup = () => {
         <Button
           size="lg"
           onClick={handleStart}
-          className="w-full text-xl py-6"
+          className="w-full text-xl py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in"
+          style={{ animationDelay: '0.4s' }}
         >
-          <MapPin className="h-6 w-6 mr-2" />
+          <Footprints className="h-6 w-6 mr-2" />
           Start Run
         </Button>
       </div>
