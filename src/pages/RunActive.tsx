@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pause, Play, Square, MapPin, Activity, Clock, Flame, Heart, Home, ArrowLeft, X } from "lucide-react";
+import { Pause, Play, Square, MapPin, Activity, Clock, Flame, Heart, Home, ArrowLeft, X, Footprints } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useRunTracker } from "@/hooks/useRunTracker";
 import { RunMap } from "@/components/RunMap";
@@ -107,24 +107,31 @@ const RunActive = () => {
   const isRunning = status === 'running';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5">
       {/* Header with Navigation */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b animate-fade-in">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handleNavigateAway('setup')}
+              className="hover-scale"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <span className="font-semibold">Active Run</span>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-500/10">
+                <Footprints className="h-4 w-4 text-blue-500" />
+              </div>
+              <span className="font-semibold">Active Run</span>
+            </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => handleNavigateAway('home')}
+            className="hover-scale"
           >
             <Home className="h-5 w-5" />
           </Button>
@@ -132,12 +139,12 @@ const RunActive = () => {
       </div>
 
       {/* Map Section */}
-      <div className="h-[40vh] relative">
+      <div className="h-[40vh] relative overflow-hidden animate-fade-in">
         <RunMap />
         
         {/* GPS Status Overlay */}
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <Card className="px-3 py-2 bg-card/90 backdrop-blur">
+          <Card className="px-3 py-2 bg-card/90 backdrop-blur border-blue-500/20 shadow-lg">
             <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${
                 status === 'running' ? 'bg-green-500 animate-pulse' :
@@ -153,7 +160,7 @@ const RunActive = () => {
           </Card>
           
           {metrics && (
-            <Card className="px-3 py-2 bg-card/90 backdrop-blur">
+            <Card className="px-3 py-2 bg-card/90 backdrop-blur border-green-500/20 shadow-lg">
               <div className="flex items-center gap-1">
                 <MapPin className="h-3 w-3 text-green-500" />
                 <span className="text-xs font-medium">
@@ -171,7 +178,7 @@ const RunActive = () => {
         <RunGPSWarningBanner />
 
         {/* Primary Metric - Distance */}
-        <Card className="p-6 text-center bg-gradient-to-br from-card to-accent">
+        <Card className="p-6 text-center bg-gradient-to-br from-blue-500/10 via-card to-blue-500/5 border-blue-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in">
           <div className="text-6xl font-bold text-foreground mb-2">
             {metrics ? formatDistance(metrics.distance_m, settings.unit) : '0.00 km'}
           </div>
@@ -182,11 +189,13 @@ const RunActive = () => {
 
         {/* Heart Rate Zone Indicator */}
         {metrics && session?.training_mode !== 'pace_based' && session?.target_hr_zone && (
-          <Card className="p-4 bg-gradient-to-br from-red-500/10 to-pink-500/10">
+          <Card className="p-4 bg-gradient-to-br from-red-500/10 to-pink-500/10 border-red-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Heart Rate</span>
-                <Heart className="h-5 w-5 text-red-500" />
+                <div className="p-1.5 rounded-lg bg-red-500/10">
+                  <Heart className="h-5 w-5 text-red-500 animate-pulse" />
+                </div>
               </div>
               <div className="text-4xl font-bold text-red-500">
                 {metrics.current_bpm || '--'} <span className="text-lg">bpm</span>
@@ -234,9 +243,11 @@ const RunActive = () => {
         {/* Secondary Metrics Grid */}
         <div className="grid grid-cols-2 gap-4">
           {/* Time */}
-          <Card className="p-4">
+          <Card className="p-4 border-purple-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4" style={{ color: 'hsl(var(--chart-1))' }} />
+              <div className="p-1 rounded-lg bg-purple-500/10">
+                <Clock className="h-4 w-4 text-purple-500" />
+              </div>
               <span className="text-xs text-muted-foreground">Time</span>
             </div>
             <div className="text-2xl font-bold">
@@ -245,9 +256,11 @@ const RunActive = () => {
           </Card>
 
           {/* Pace */}
-          <Card className="p-4">
+          <Card className="p-4 border-green-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="h-4 w-4" style={{ color: 'hsl(var(--chart-3))' }} />
+              <div className="p-1 rounded-lg bg-green-500/10">
+                <Activity className="h-4 w-4 text-green-500" />
+              </div>
               <span className="text-xs text-muted-foreground">Avg Pace</span>
             </div>
             <div className="text-2xl font-bold">
@@ -256,9 +269,11 @@ const RunActive = () => {
           </Card>
 
           {/* Calories */}
-          <Card className="p-4">
+          <Card className="p-4 border-orange-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
             <div className="flex items-center gap-2 mb-2">
-              <Flame className="h-4 w-4" style={{ color: 'hsl(var(--chart-5))' }} />
+              <div className="p-1 rounded-lg bg-orange-500/10">
+                <Flame className="h-4 w-4 text-orange-500" />
+              </div>
               <span className="text-xs text-muted-foreground">Calories</span>
             </div>
             <div className="text-2xl font-bold">
@@ -267,9 +282,11 @@ const RunActive = () => {
           </Card>
 
           {/* Split */}
-          <Card className="p-4">
+          <Card className="p-4 border-blue-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
             <div className="flex items-center gap-2 mb-2">
-              <MapPin className="h-4 w-4" style={{ color: 'hsl(var(--chart-2))' }} />
+              <div className="p-1 rounded-lg bg-blue-500/10">
+                <MapPin className="h-4 w-4 text-blue-500" />
+              </div>
               <span className="text-xs text-muted-foreground">Split</span>
             </div>
             <div className="text-2xl font-bold">
@@ -279,7 +296,7 @@ const RunActive = () => {
         </div>
 
         {/* Controls */}
-        <div className="space-y-3 pt-4">
+        <div className="space-y-3 pt-4 animate-fade-in">
           <div className="flex gap-3">
             {isPaused || isRunning ? (
               <>
@@ -287,7 +304,7 @@ const RunActive = () => {
                   variant="outline"
                   size="lg"
                   onClick={isPaused ? handleResume : handlePause}
-                  className="flex-1"
+                  className="flex-1 hover-scale border-blue-500/20 hover:border-blue-500/40"
                 >
                   {isPaused ? (
                     <>
@@ -302,10 +319,9 @@ const RunActive = () => {
                   )}
                 </Button>
                 <Button
-                  variant="destructive"
                   size="lg"
                   onClick={handleStop}
-                  className="flex-1"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover-scale"
                 >
                   <Square className="h-5 w-5 mr-2" />
                   Finish
