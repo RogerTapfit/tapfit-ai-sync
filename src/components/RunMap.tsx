@@ -64,24 +64,30 @@ export const RunMap = () => {
     };
   }, []);
 
-  // Update position/route when metrics change
+  // Update route when metrics change - this triggers on every GPS point update
   useEffect(() => {
-    if (!mapRef.current || !routeRef.current || !markerRef.current) return;
+    if (!mapRef.current || !routeRef.current || !markerRef.current || !metrics) return;
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const latlng: L.LatLngExpression = [pos.coords.latitude, pos.coords.longitude];
-          markerRef.current!.setLatLng(latlng as L.LatLngExpression);
-          routeRef.current!.addLatLng(latlng as any);
-          // Keep map centered on runner
-          mapRef.current!.panTo(latlng as L.LatLngExpression, { animate: true });
-        },
-        (err) => {
-          console.warn('Geolocation update error:', err);
-        }
-      );
-    }
+    // Get the current session from the tracker to access all tracked points
+    const runTrackerService = (window as any).__runTrackerService;
+    if (!runTrackerService) return;
+
+    const state = runTrackerService.getState();
+    if (!state || !state.session?.points || state.session.points.length === 0) return;
+
+    const points = state.session.points;
+    
+    // Update the route with all points
+    const latLngs: L.LatLngExpression[] = points.map(p => [p.lat, p.lon]);
+    routeRef.current.setLatLngs(latLngs);
+
+    // Update marker to latest position
+    const lastPoint = points[points.length - 1];
+    const lastLatLng: L.LatLngExpression = [lastPoint.lat, lastPoint.lon];
+    markerRef.current.setLatLng(lastLatLng);
+    
+    // Keep map centered on runner
+    mapRef.current.panTo(lastLatLng, { animate: true });
   }, [metrics]);
 
   return <div ref={containerRef} className="h-full w-full" />;

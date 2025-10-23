@@ -108,7 +108,7 @@ export type Database = {
         Row: {
           accessed_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_data: Json | null
           old_data: Json | null
           operation: string
@@ -119,7 +119,7 @@ export type Database = {
         Insert: {
           accessed_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
           operation: string
@@ -130,7 +130,7 @@ export type Database = {
         Update: {
           accessed_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
           operation?: string
@@ -1010,7 +1010,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           last_activity: string
           session_token: string
           user_agent: string | null
@@ -1019,7 +1019,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity?: string
           session_token: string
           user_agent?: string | null
@@ -1028,7 +1028,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity?: string
           session_token?: string
           user_agent?: string | null
@@ -1561,6 +1561,72 @@ export type Database = {
         }
         Relationships: []
       }
+      run_sessions: {
+        Row: {
+          avg_pace_sec_per_km: number
+          calories: number
+          created_at: string
+          elapsed_time_s: number
+          elevation_gain_m: number | null
+          elevation_loss_m: number | null
+          ended_at: string | null
+          id: string
+          moving_time_s: number
+          notes: string | null
+          route_points: Json | null
+          source: string
+          splits: Json | null
+          started_at: string
+          status: string
+          total_distance_m: number
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_pace_sec_per_km?: number
+          calories?: number
+          created_at?: string
+          elapsed_time_s?: number
+          elevation_gain_m?: number | null
+          elevation_loss_m?: number | null
+          ended_at?: string | null
+          id?: string
+          moving_time_s?: number
+          notes?: string | null
+          route_points?: Json | null
+          source?: string
+          splits?: Json | null
+          started_at: string
+          status: string
+          total_distance_m?: number
+          unit: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_pace_sec_per_km?: number
+          calories?: number
+          created_at?: string
+          elapsed_time_s?: number
+          elevation_gain_m?: number | null
+          elevation_loss_m?: number | null
+          ended_at?: string | null
+          id?: string
+          moving_time_s?: number
+          notes?: string | null
+          route_points?: Json | null
+          source?: string
+          splits?: Json | null
+          started_at?: string
+          status?: string
+          total_distance_m?: number
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_workouts: {
         Row: {
           completed_at: string | null
@@ -1614,7 +1680,7 @@ export type Database = {
           event_details: Json
           event_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -1623,7 +1689,7 @@ export type Database = {
           event_details?: Json
           event_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -1632,7 +1698,7 @@ export type Database = {
           event_details?: Json
           event_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2594,26 +2660,14 @@ export type Database = {
         }
         Returns: boolean
       }
-      clean_base64_photo_urls: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_food_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      clean_base64_photo_urls: { Args: never; Returns: undefined }
+      cleanup_expired_food_cache: { Args: never; Returns: undefined }
+      cleanup_old_data: { Args: never; Returns: undefined }
       cleanup_old_food_entries: {
         Args: { _days_to_keep?: number }
         Returns: undefined
       }
-      cleanup_rate_limit_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_rate_limit_logs: { Args: never; Returns: undefined }
       complete_user_calibration: {
         Args: { _user_id: string }
         Returns: boolean
@@ -2631,10 +2685,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      fix_incomplete_profiles: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      fix_incomplete_profiles: { Args: never; Returns: undefined }
       generate_nft_metadata: {
         Args: { _avatar_config: Json; _serial_number: number }
         Returns: Json
@@ -2652,10 +2703,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["cycle_phase"]
       }
-      get_power_level_tier: {
-        Args: { _score: number }
-        Returns: string
-      }
+      get_power_level_tier: { Args: { _score: number }; Returns: string }
       get_todays_workout_progress: {
         Args: { _user_id: string }
         Returns: {
@@ -2665,7 +2713,7 @@ export type Database = {
         }[]
       }
       get_trainer_accessible_profiles: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_data: Json
           avatar_id: string
@@ -2681,10 +2729,7 @@ export type Database = {
           primary_goal: string
         }[]
       }
-      get_user_gym_id: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_gym_id: { Args: { _user_id: string }; Returns: string }
       get_user_upload_success_rate: {
         Args: { _days?: number; _user_id: string }
         Returns: {
@@ -2708,10 +2753,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_valid_authenticated_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_valid_authenticated_user: { Args: never; Returns: boolean }
       log_photo_upload_attempt: {
         Args: {
           _error_message?: string
@@ -2731,10 +2773,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      mask_sensitive_data: {
-        Args: { data: Json }
-        Returns: Json
-      }
+      mask_sensitive_data: { Args: { data: Json }; Returns: Json }
       refresh_daily_nutrition_summary_for_user: {
         Args: { _user_id: string }
         Returns: undefined
@@ -2759,10 +2798,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      update_user_power_level: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      update_user_power_level: { Args: { _user_id: string }; Returns: boolean }
       validate_guest_session: {
         Args: { session_token: string }
         Returns: boolean
@@ -2771,10 +2807,7 @@ export type Database = {
         Args: { session_token: string }
         Returns: boolean
       }
-      validate_session_for_sensitive_data: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      validate_session_for_sensitive_data: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "user" | "trainer" | "admin"

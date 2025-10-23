@@ -28,15 +28,23 @@ const RunSetup = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold">Setup Your Run</h1>
+          </div>
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/')}
+            variant="outline"
+            onClick={() => navigate('/run/history')}
           >
-            <ArrowLeft className="h-5 w-5" />
+            History
           </Button>
-          <h1 className="text-3xl font-bold">Setup Your Run</h1>
         </div>
 
         {/* GPS Warning Banner */}

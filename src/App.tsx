@@ -28,6 +28,8 @@ import ScanMachine from "./pages/ScanMachine";
 import PuckTest from "./pages/PuckTest";
 import RunSetup from "./pages/RunSetup";
 import RunActive from "./pages/RunActive";
+import RunHistory from "./pages/RunHistory";
+import RunSummary from "./pages/RunSummary";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -178,6 +180,16 @@ const App = () => {
             <Route path="/run/active" element={
               <AuthGuard fallback={<Auth />}>
                 <RunActive />
+              </AuthGuard>
+            } />
+            <Route path="/run/history" element={
+              <AuthGuard fallback={<Auth />}>
+                <RunHistory />
+              </AuthGuard>
+            } />
+            <Route path="/run/summary/:runId" element={
+              <AuthGuard fallback={<Auth />}>
+                <RunSummary />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

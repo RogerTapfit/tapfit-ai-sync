@@ -250,8 +250,8 @@ class RunTrackerService {
     this.currentSession.status = 'completed';
     await runStorageService.saveSession(this.currentSession);
 
-    // Sync to Supabase (TODO: Enable after database migration)
-    // await this.syncToSupabase(this.currentSession);
+    // Sync to Supabase
+    await this.syncToSupabase(this.currentSession);
 
     const session = this.currentSession;
     this.currentSession = null;
@@ -264,11 +264,8 @@ class RunTrackerService {
   }
 
   private async syncToSupabase(session: RunSession): Promise<void> {
-    // TODO: Enable after database migration creates run_sessions table
-    console.log('Sync to Supabase disabled until migration', session.id);
-    /*
     try {
-      const { error } = await supabase.from('run_sessions').insert({
+      const { error } = await supabase.from('run_sessions').upsert({
         id: session.id,
         user_id: session.user_id,
         started_at: session.started_at,
@@ -282,16 +279,23 @@ class RunTrackerService {
         unit: session.unit,
         elevation_gain_m: session.elevation_gain_m,
         elevation_loss_m: session.elevation_loss_m,
+        route_points: session.points as any,
+        splits: session.splits as any,
       });
 
-      if (error) console.error('Failed to sync session:', error);
+      if (error) {
+        console.error('Failed to sync session to Supabase:', error);
+        throw error;
+      }
+      
+      console.log('✅ Run successfully synced to Supabase:', session.id);
     } catch (error) {
       console.error('Sync error:', error);
+      // Don't throw - we still have local copy in IndexedDB
     }
-    */
   }
 
-  getState(): { metrics: RunMetrics; status: RunTrackerStatus } | null {
+  getState(): { metrics: RunMetrics; status: RunTrackerStatus; session: RunSession | null } | null {
     if (!this.currentSession) return null;
 
     const metrics: RunMetrics = {
@@ -307,7 +311,14 @@ class RunTrackerService {
       gps_accuracy: this.lastPoint?.accuracy || 0,
     };
 
-    return { metrics, status: this.status };
+    return { metrics, status: this.status, session: this.currentSession };
+  }
+
+  // Expose service globally for map component to access session
+  constructor() {
+    if (typeof window !== 'undefined') {
+      (window as any).__runTrackerService = this;
+    }
   }
 
   private calculateCurrentPace(): number {
