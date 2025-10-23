@@ -121,15 +121,8 @@ class RideTrackerService {
       const speedKmh = point.speed ? metersPerSecondToSpeed(point.speed, 'km') : (distance / timeDiff) * 3.6;
 
       // Auto-pause logic for cycling (below 3 km/h)
-      if (this.currentSession.auto_pause_enabled && speedKmh < 3) {
-        if (this.status === 'riding') {
-          this.status = 'paused';
-          this.notifyListeners();
-        }
-        return;
-      } else if (this.status === 'paused' && speedKmh >= 3) {
-        this.status = 'riding';
-        this.notifyListeners();
+      if (this.currentSession.auto_pause_enabled && speedKmh < 3 && this.status === 'riding') {
+        return; // Don't update metrics during auto-pause
       }
 
       if (this.status === 'riding') {
@@ -277,7 +270,7 @@ class RideTrackerService {
 
   private async syncToSupabase(session: RideSession) {
     try {
-      const { error } = await supabase.from('ride_sessions').insert({
+      const { error } = await supabase.from('ride_sessions').insert([{
         id: session.id,
         user_id: session.user_id,
         started_at: session.started_at,
@@ -294,19 +287,19 @@ class RideTrackerService {
         elevation_gain_m: session.elevation_gain_m,
         elevation_loss_m: session.elevation_loss_m,
         source: session.source,
-        splits: session.splits,
-        points: session.points,
+        splits: session.splits as any,
+        points: session.points as any,
         auto_pause_enabled: session.auto_pause_enabled,
         audio_cues_enabled: session.audio_cues_enabled,
         training_mode: session.training_mode,
-        target_hr_zone: session.target_hr_zone,
+        target_hr_zone: session.target_hr_zone as any,
         avg_heart_rate: session.avg_heart_rate,
         max_heart_rate: session.max_heart_rate,
         time_in_zone_s: session.time_in_zone_s,
-        hr_samples: session.hr_samples,
+        hr_samples: session.hr_samples as any,
         avg_cadence: session.avg_cadence,
         ride_type: session.ride_type,
-      });
+      }]);
 
       if (error) throw error;
     } catch (error) {

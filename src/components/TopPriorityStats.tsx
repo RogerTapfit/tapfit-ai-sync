@@ -12,10 +12,11 @@ import { useHeartRate } from "@/hooks/useHeartRate";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
   onStartRun?: () => void;
+  onStartRide?: () => void;
   onCaloriesConsumedClick?: () => void;
 }
 
-export const TodaysPerformance = ({ onStartWorkout, onStartRun, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
+export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
   const { user } = useAuth();
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
@@ -47,6 +48,12 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onCaloriesConsum
             <Button className="bg-blue-500 hover:bg-blue-600 text-white border-0" onClick={onStartRun}>
               <MapPin className="h-4 w-4 mr-2" />
               Start Run
+            </Button>
+          )}
+          {onStartRide && (
+            <Button className="bg-green-500 hover:bg-green-600 text-white border-0" onClick={onStartRide}>
+              <Activity className="h-4 w-4 mr-2" />
+              Start Ride
             </Button>
           )}
         </div>

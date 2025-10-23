@@ -19,7 +19,13 @@ export function useRideById(rideId: string | undefined) {
         .single();
 
       if (error) throw error;
-      return data as RideSession;
+      return {
+        ...data,
+        splits: (data.splits as any) || [],
+        points: (data.points as any) || [],
+        hr_samples: (data.hr_samples as any) || [],
+        target_hr_zone: data.target_hr_zone as any,
+      } as RideSession;
     },
     enabled: !!rideId,
   });

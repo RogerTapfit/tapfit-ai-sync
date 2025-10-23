@@ -1561,6 +1561,105 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_sessions: {
+        Row: {
+          audio_cues_enabled: boolean | null
+          auto_pause_enabled: boolean | null
+          avg_cadence: number | null
+          avg_heart_rate: number | null
+          avg_speed_kmh: number | null
+          calories: number | null
+          created_at: string | null
+          elapsed_time_s: number
+          elevation_gain_m: number | null
+          elevation_loss_m: number | null
+          ended_at: string | null
+          hr_samples: Json | null
+          id: string
+          max_heart_rate: number | null
+          max_speed_kmh: number | null
+          moving_time_s: number
+          notes: string | null
+          points: Json | null
+          ride_type: string | null
+          source: string
+          splits: Json | null
+          started_at: string
+          status: string
+          target_hr_zone: Json | null
+          time_in_zone_s: number | null
+          total_distance_m: number
+          training_mode: string | null
+          unit: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_cues_enabled?: boolean | null
+          auto_pause_enabled?: boolean | null
+          avg_cadence?: number | null
+          avg_heart_rate?: number | null
+          avg_speed_kmh?: number | null
+          calories?: number | null
+          created_at?: string | null
+          elapsed_time_s?: number
+          elevation_gain_m?: number | null
+          elevation_loss_m?: number | null
+          ended_at?: string | null
+          hr_samples?: Json | null
+          id: string
+          max_heart_rate?: number | null
+          max_speed_kmh?: number | null
+          moving_time_s?: number
+          notes?: string | null
+          points?: Json | null
+          ride_type?: string | null
+          source?: string
+          splits?: Json | null
+          started_at: string
+          status: string
+          target_hr_zone?: Json | null
+          time_in_zone_s?: number | null
+          total_distance_m?: number
+          training_mode?: string | null
+          unit: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_cues_enabled?: boolean | null
+          auto_pause_enabled?: boolean | null
+          avg_cadence?: number | null
+          avg_heart_rate?: number | null
+          avg_speed_kmh?: number | null
+          calories?: number | null
+          created_at?: string | null
+          elapsed_time_s?: number
+          elevation_gain_m?: number | null
+          elevation_loss_m?: number | null
+          ended_at?: string | null
+          hr_samples?: Json | null
+          id?: string
+          max_heart_rate?: number | null
+          max_speed_kmh?: number | null
+          moving_time_s?: number
+          notes?: string | null
+          points?: Json | null
+          ride_type?: string | null
+          source?: string
+          splits?: Json | null
+          started_at?: string
+          status?: string
+          target_hr_zone?: Json | null
+          time_in_zone_s?: number | null
+          total_distance_m?: number
+          training_mode?: string | null
+          unit?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       run_sessions: {
         Row: {
           avg_heart_rate: number | null

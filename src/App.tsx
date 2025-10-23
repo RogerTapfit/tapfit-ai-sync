@@ -30,6 +30,10 @@ import RunSetup from "./pages/RunSetup";
 import RunActive from "./pages/RunActive";
 import RunHistory from "./pages/RunHistory";
 import RunSummary from "./pages/RunSummary";
+import RideSetup from "./pages/RideSetup";
+import RideActive from "./pages/RideActive";
+import RideHistory from "./pages/RideHistory";
+import RideSummary from "./pages/RideSummary";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -192,6 +196,10 @@ const App = () => {
                 <RunSummary />
               </AuthGuard>
             } />
+            <Route path="/ride/setup" element={<AuthGuard fallback={<Auth />}><RideSetup /></AuthGuard>} />
+            <Route path="/ride/active" element={<AuthGuard fallback={<Auth />}><RideActive /></AuthGuard>} />
+            <Route path="/ride/history" element={<AuthGuard fallback={<Auth />}><RideHistory /></AuthGuard>} />
+            <Route path="/ride/summary/:id" element={<AuthGuard fallback={<Auth />}><RideSummary /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
               <AuthGuard fallback={<Auth />}>

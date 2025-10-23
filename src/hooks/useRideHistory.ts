@@ -17,7 +17,13 @@ export function useRideHistory() {
         .order('started_at', { ascending: false });
 
       if (error) throw error;
-      return data as RideSession[];
+      return (data || []).map(row => ({
+        ...row,
+        splits: (row.splits as any) || [],
+        points: (row.points as any) || [],
+        hr_samples: (row.hr_samples as any) || [],
+        target_hr_zone: row.target_hr_zone as any,
+      })) as RideSession[];
     },
   });
 }

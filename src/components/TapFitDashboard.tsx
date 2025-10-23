@@ -125,6 +125,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     navigate('/run/setup');
   };
 
+  const handleStartRide = () => {
+    navigate('/ride/setup');
+  };
+
   const handleCaloriesConsumedClick = () => {
     try {
       localStorage.setItem('tapfit-open-food-entries', 'true');
@@ -221,11 +225,12 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       </Card>
 
       {/* 1. Today's Performance - Right after hero image */}
-      <TodaysPerformance 
-        onStartWorkout={handleStartWorkout}
-        onStartRun={handleStartRun}
-        onCaloriesConsumedClick={handleCaloriesConsumedClick}
-      />
+        <TodaysPerformance 
+          onStartWorkout={handleStartWorkout}
+          onStartRun={handleStartRun}
+          onStartRide={handleStartRide}
+          onCaloriesConsumedClick={handleCaloriesConsumedClick}
+        />
 
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
