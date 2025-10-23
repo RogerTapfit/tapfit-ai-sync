@@ -34,6 +34,10 @@ import RideSetup from "./pages/RideSetup";
 import RideActive from "./pages/RideActive";
 import RideHistory from "./pages/RideHistory";
 import RideSummary from "./pages/RideSummary";
+import SwimSetup from "./pages/SwimSetup";
+import SwimActive from "./pages/SwimActive";
+import SwimHistory from "./pages/SwimHistory";
+import SwimSummary from "./pages/SwimSummary";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -200,6 +204,10 @@ const App = () => {
             <Route path="/ride/active" element={<AuthGuard fallback={<Auth />}><RideActive /></AuthGuard>} />
             <Route path="/ride/history" element={<AuthGuard fallback={<Auth />}><RideHistory /></AuthGuard>} />
             <Route path="/ride/summary/:id" element={<AuthGuard fallback={<Auth />}><RideSummary /></AuthGuard>} />
+            <Route path="/swim/setup" element={<AuthGuard fallback={<Auth />}><SwimSetup /></AuthGuard>} />
+            <Route path="/swim/active" element={<AuthGuard fallback={<Auth />}><SwimActive /></AuthGuard>} />
+            <Route path="/swim/history" element={<AuthGuard fallback={<Auth />}><SwimHistory /></AuthGuard>} />
+            <Route path="/swim/summary/:id" element={<AuthGuard fallback={<Auth />}><SwimSummary /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
               <AuthGuard fallback={<Auth />}>
