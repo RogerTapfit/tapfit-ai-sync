@@ -1,4 +1,5 @@
 import { RunSession, RunPoint, RunSplit } from '@/types/run';
+import { supabase } from '@/integrations/supabase/client';
 
 const DB_NAME = 'tapfit_runs';
 const DB_VERSION = 1;
@@ -46,6 +47,42 @@ class RunStorageService {
   }
 
   async saveSession(session: RunSession): Promise<void> {
+    // Save to Supabase
+    try {
+      const { error } = await supabase
+        .from('run_sessions')
+        .upsert({
+          id: session.id,
+          user_id: session.user_id,
+          started_at: session.started_at,
+          ended_at: session.ended_at,
+          status: session.status,
+          total_distance_m: session.total_distance_m,
+          moving_time_s: session.moving_time_s,
+          elapsed_time_s: session.elapsed_time_s,
+          avg_pace_sec_per_km: session.avg_pace_sec_per_km,
+          calories: session.calories,
+          unit: session.unit,
+          notes: session.notes,
+          elevation_gain_m: session.elevation_gain_m,
+          elevation_loss_m: session.elevation_loss_m,
+          source: session.source,
+          route_points: session.points as any,
+          splits: session.splits as any,
+          training_mode: session.training_mode,
+          target_hr_zone: session.target_hr_zone as any,
+          avg_heart_rate: session.avg_heart_rate,
+          max_heart_rate: session.max_heart_rate,
+          time_in_zone_s: session.time_in_zone_s,
+          hr_samples: session.hr_samples as any,
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Failed to save run to Supabase:', error);
+    }
+
+    // Also save to IndexedDB as backup
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -86,6 +123,29 @@ class RunStorageService {
   }
 
   async getAllSessions(userId: string): Promise<RunSession[]> {
+    // Try to fetch from Supabase first
+    try {
+      const { data, error } = await supabase
+        .from('run_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map(session => ({
+          ...session,
+          points: (session.route_points as any) || [],
+          splits: (session.splits as any) || [],
+          auto_pause_enabled: true,
+          audio_cues_enabled: true,
+          status: session.status as any,
+        })) as unknown as RunSession[];
+      }
+    } catch (error) {
+      console.error('Failed to fetch run sessions from Supabase:', error);
+    }
+
+    // Fallback to IndexedDB
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -96,7 +156,6 @@ class RunStorageService {
 
       request.onsuccess = () => {
         const sessions = request.result || [];
-        // Sort by date, newest first
         sessions.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
         resolve(sessions);
       };

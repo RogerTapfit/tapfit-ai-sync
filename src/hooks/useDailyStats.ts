@@ -69,21 +69,51 @@ export const useDailyStats = (userId?: string): DailyStats => {
       }
 
       try {
-        // Get today's workout logs
-        const { data: workoutLogs } = await supabase
-          .from('workout_logs')
-          .select('*')
-          .eq('user_id', userId)
-          .gte('started_at', new Date().toISOString().split('T')[0]) // Today
-          .order('created_at', { ascending: false });
-
-        // Get today's smart pin data for more detailed workout info
-        const { data: smartPinData } = await supabase
-          .from('smart_pin_data')
-          .select('*')
-          .eq('user_id', userId)
-          .gte('created_at', new Date().toISOString().split('T')[0]) // Today
-          .order('created_at', { ascending: false });
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Get today's workout logs and cardio sessions in parallel
+        const [
+          { data: workoutLogs },
+          { data: smartPinData },
+          { data: runSessions },
+          { data: rideSessions },
+          { data: swimSessions }
+        ] = await Promise.all([
+          supabase
+            .from('workout_logs')
+            .select('*')
+            .eq('user_id', userId)
+            .gte('started_at', today)
+            .order('created_at', { ascending: false }),
+          
+          supabase
+            .from('smart_pin_data')
+            .select('*')
+            .eq('user_id', userId)
+            .gte('created_at', today)
+            .order('created_at', { ascending: false }),
+          
+          supabase
+            .from('run_sessions')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'completed')
+            .gte('started_at', today),
+          
+          supabase
+            .from('ride_sessions')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'completed')
+            .gte('started_at', today),
+          
+          supabase
+            .from('swim_sessions')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'completed')
+            .gte('started_at', today)
+        ]);
 
         // Calculate workout-based stats
         let totalDuration = 0;
@@ -118,12 +148,20 @@ export const useDailyStats = (userId?: string): DailyStats => {
         // Get steps from Apple Watch (if available)
         const steps = healthMetrics.steps || 0;
 
-        // Calculate calories burned
-        const caloriesBurned = CalorieCalculationService.calculateTotalDailyCalories(
+        // Calculate cardio calories
+        const cardioCalories = (runSessions || []).reduce((sum, run) => sum + run.calories, 0) +
+                               (rideSessions || []).reduce((sum, ride) => sum + ride.calories, 0) +
+                               (swimSessions || []).reduce((sum, swim) => sum + swim.calories, 0);
+
+        // Calculate workout calories
+        const workoutCalories = CalorieCalculationService.calculateTotalDailyCalories(
           workouts,
           steps,
           userProfile
         );
+
+        // Total calories burned
+        const caloriesBurned = workoutCalories + cardioCalories;
 
         // Get calories consumed from nutrition data
         const caloriesConsumed = dailySummary?.total_calories || 0;

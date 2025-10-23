@@ -11,6 +11,7 @@ export interface CalendarDay {
   date: Date;
   dateString: string;
   workouts: WorkoutActivity[];
+  cardioSessions: CardioActivity[];
   foodEntries: FoodActivity[];
   alcoholEntries: AlcoholActivity[];
   tapCoins: TapCoinsActivity[];
@@ -65,6 +66,15 @@ export interface AlcoholActivity {
   notes?: string;
 }
 
+export interface CardioActivity {
+  id: string;
+  type: 'run' | 'ride' | 'swim';
+  distance_m: number;
+  duration_s: number;
+  calories: number;
+  time: string;
+}
+
 export const useCalendarData = (userId?: string) => {
   const [loading, setLoading] = useState(false);
   const [calendarData, setCalendarData] = useState<Map<string, CalendarDay>>(new Map());
@@ -88,11 +98,44 @@ export const useCalendarData = (userId?: string) => {
       const endDateStr = getLocalDateString(endDate);
 
       // Fetch comprehensive data in parallel
-      const [workoutLogsResponse, foodEntriesResponse, alcoholEntriesResponse, dailyStepsResponse, tapCoinsResponse] = await Promise.all([
+      const [
+        workoutLogsResponse,
+        runSessionsResponse,
+        rideSessionsResponse,
+        swimSessionsResponse,
+        foodEntriesResponse,
+        alcoholEntriesResponse,
+        dailyStepsResponse,
+        tapCoinsResponse
+      ] = await Promise.all([
         supabase
           .from('workout_logs')
           .select('*')
           .eq('user_id', userId)
+          .gte('started_at', startDateStr)
+          .lte('started_at', endDateStr + 'T23:59:59'),
+          
+        supabase
+          .from('run_sessions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'completed')
+          .gte('started_at', startDateStr)
+          .lte('started_at', endDateStr + 'T23:59:59'),
+          
+        supabase
+          .from('ride_sessions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'completed')
+          .gte('started_at', startDateStr)
+          .lte('started_at', endDateStr + 'T23:59:59'),
+          
+        supabase
+          .from('swim_sessions')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'completed')
           .gte('started_at', startDateStr)
           .lte('started_at', endDateStr + 'T23:59:59'),
           
@@ -128,6 +171,9 @@ export const useCalendarData = (userId?: string) => {
 
       const newCalendarData = new Map<string, CalendarDay>();
       const workoutLogs = workoutLogsResponse.data || [];
+      const runSessions = runSessionsResponse.data || [];
+      const rideSessions = rideSessionsResponse.data || [];
+      const swimSessions = swimSessionsResponse.data || [];
       const fetchedFoodEntries = foodEntriesResponse.data || [];
       const alcoholEntries = alcoholEntriesResponse.data || [];
       const dailySteps = dailyStepsResponse.data || [];
@@ -142,7 +188,7 @@ export const useCalendarData = (userId?: string) => {
         const dayWorkouts: WorkoutActivity[] = workoutLogs
           .filter(log => {
             const logDate = getLocalDateString(new Date(log.started_at));
-            return logDate === dateString && log.completed_at !== null; // Only completed workouts
+            return logDate === dateString && log.completed_at !== null;
           })
           .map(log => ({
             id: log.id,
@@ -153,6 +199,40 @@ export const useCalendarData = (userId?: string) => {
             exercises: log.completed_exercises || 0,
             calories: log.calories_burned
           }));
+        
+        // Get cardio sessions for this day
+        const dayCardioSessions: CardioActivity[] = [
+          ...runSessions
+            .filter(run => getLocalDateString(new Date(run.started_at)) === dateString)
+            .map(run => ({
+              id: run.id,
+              type: 'run' as const,
+              distance_m: run.total_distance_m,
+              duration_s: run.moving_time_s,
+              calories: run.calories,
+              time: run.started_at
+            })),
+          ...rideSessions
+            .filter(ride => getLocalDateString(new Date(ride.started_at)) === dateString)
+            .map(ride => ({
+              id: ride.id,
+              type: 'ride' as const,
+              distance_m: ride.total_distance_m,
+              duration_s: ride.moving_time_s,
+              calories: ride.calories,
+              time: ride.started_at
+            })),
+          ...swimSessions
+            .filter(swim => getLocalDateString(new Date(swim.started_at)) === dateString)
+            .map(swim => ({
+              id: swim.id,
+              type: 'swim' as const,
+              distance_m: swim.total_distance_m,
+              duration_s: swim.elapsed_time_s,
+              calories: swim.calories,
+              time: swim.started_at
+            }))
+        ];
         
         // Get food entries for this day
         const dayFoodEntries: FoodActivity[] = fetchedFoodEntries
@@ -197,9 +277,11 @@ export const useCalendarData = (userId?: string) => {
         
         // Calculate daily stats
         const totalWorkoutCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0);
+        const totalCardioCalories = dayCardioSessions.reduce((sum, c) => sum + c.calories, 0);
         const totalConsumedCalories = dayFoodEntries.reduce((sum, f) => sum + f.totalCalories, 0);
         const totalExercises = dayWorkouts.reduce((sum, w) => sum + w.exercises, 0);
         const totalWorkoutDuration = dayWorkouts.reduce((sum, w) => sum + w.duration, 0);
+        const totalCardioDuration = dayCardioSessions.reduce((sum, c) => sum + Math.round(c.duration_s / 60), 0);
         const totalTapCoinsEarned = dayTapCoins
           .filter(coin => coin.amount > 0)
           .reduce((sum, coin) => sum + coin.amount, 0);
@@ -207,22 +289,23 @@ export const useCalendarData = (userId?: string) => {
         
         // Calculate cycle phase for this day
         const cyclePhase = calculatePhaseInfo(currentDate);
-        const hasActivity = dayWorkouts.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || (cyclePhase !== null);
+        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || (cyclePhase !== null);
         
         newCalendarData.set(dateString, {
           date: currentDate,
           dateString,
           workouts: dayWorkouts,
+          cardioSessions: dayCardioSessions,
           foodEntries: dayFoodEntries,
           alcoholEntries: dayAlcoholEntries,
           tapCoins: dayTapCoins,
           steps: dayStep?.step_count || 0,
-          calories: totalWorkoutCalories,
+          calories: totalWorkoutCalories + totalCardioCalories,
           dailyStats: {
-            caloriesBurned: totalWorkoutCalories + Math.round((dayStep?.step_count || 0) * 0.04),
+            caloriesBurned: totalWorkoutCalories + totalCardioCalories + Math.round((dayStep?.step_count || 0) * 0.04),
             caloriesConsumed: totalConsumedCalories,
             exercisesCompleted: totalExercises,
-            workoutDuration: totalWorkoutDuration,
+            workoutDuration: totalWorkoutDuration + totalCardioDuration,
             tapCoinsEarned: totalTapCoinsEarned,
             alcoholDrinks: totalAlcoholDrinks
           },
@@ -295,6 +378,7 @@ export const useCalendarData = (userId?: string) => {
             date: new Date(current),
             dateString,
             workouts: [],
+            cardioSessions: [],
             foodEntries: [],
             alcoholEntries: [],
             tapCoins: [],
