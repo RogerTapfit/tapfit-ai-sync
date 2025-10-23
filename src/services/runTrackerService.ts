@@ -246,8 +246,8 @@ class RunTrackerService {
     this.currentSession.status = 'completed';
     await runStorageService.saveSession(this.currentSession);
 
-    // Sync to Supabase
-    await this.syncToSupabase(this.currentSession);
+    // Sync to Supabase (TODO: Enable after database migration)
+    // await this.syncToSupabase(this.currentSession);
 
     const session = this.currentSession;
     this.currentSession = null;
@@ -260,6 +260,9 @@ class RunTrackerService {
   }
 
   private async syncToSupabase(session: RunSession): Promise<void> {
+    // TODO: Enable after database migration creates run_sessions table
+    console.log('Sync to Supabase disabled until migration', session.id);
+    /*
     try {
       const { error } = await supabase.from('run_sessions').insert({
         id: session.id,
@@ -281,6 +284,7 @@ class RunTrackerService {
     } catch (error) {
       console.error('Sync error:', error);
     }
+    */
   }
 
   getState(): { metrics: RunMetrics; status: RunTrackerStatus } | null {
