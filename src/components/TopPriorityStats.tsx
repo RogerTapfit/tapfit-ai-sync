@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, MapPin } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, MapPin, Bike } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -52,7 +52,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onC
           )}
           {onStartRide && (
             <Button className="bg-green-500 hover:bg-green-600 text-white border-0" onClick={onStartRide}>
-              <Activity className="h-4 w-4 mr-2" />
+              <Bike className="h-4 w-4 mr-2" />
               Start Ride
             </Button>
           )}
