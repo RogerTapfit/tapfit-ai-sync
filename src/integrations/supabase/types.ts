@@ -1987,6 +1987,96 @@ export type Database = {
         }
         Relationships: []
       }
+      swim_sessions: {
+        Row: {
+          avg_heart_rate: number | null
+          avg_pace_sec_per_100m: number
+          avg_strokes_per_lap: number | null
+          calories: number
+          created_at: string
+          elapsed_time_s: number
+          ended_at: string | null
+          hr_samples: Json | null
+          id: string
+          laps: Json | null
+          max_heart_rate: number | null
+          moving_time_s: number
+          notes: string | null
+          pool_length_m: number | null
+          source: string
+          started_at: string
+          status: string
+          stroke_type: string | null
+          swolf_score: number | null
+          target_hr_zone: Json | null
+          time_in_zone_s: number | null
+          total_distance_m: number
+          total_laps: number | null
+          training_mode: string | null
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_heart_rate?: number | null
+          avg_pace_sec_per_100m?: number
+          avg_strokes_per_lap?: number | null
+          calories?: number
+          created_at?: string
+          elapsed_time_s?: number
+          ended_at?: string | null
+          hr_samples?: Json | null
+          id?: string
+          laps?: Json | null
+          max_heart_rate?: number | null
+          moving_time_s?: number
+          notes?: string | null
+          pool_length_m?: number | null
+          source?: string
+          started_at: string
+          status: string
+          stroke_type?: string | null
+          swolf_score?: number | null
+          target_hr_zone?: Json | null
+          time_in_zone_s?: number | null
+          total_distance_m?: number
+          total_laps?: number | null
+          training_mode?: string | null
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_heart_rate?: number | null
+          avg_pace_sec_per_100m?: number
+          avg_strokes_per_lap?: number | null
+          calories?: number
+          created_at?: string
+          elapsed_time_s?: number
+          ended_at?: string | null
+          hr_samples?: Json | null
+          id?: string
+          laps?: Json | null
+          max_heart_rate?: number | null
+          moving_time_s?: number
+          notes?: string | null
+          pool_length_m?: number | null
+          source?: string
+          started_at?: string
+          status?: string
+          stroke_type?: string | null
+          swolf_score?: number | null
+          target_hr_zone?: Json | null
+          time_in_zone_s?: number | null
+          total_distance_m?: number
+          total_laps?: number | null
+          training_mode?: string | null
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tap_coins_transactions: {
         Row: {
           amount: number

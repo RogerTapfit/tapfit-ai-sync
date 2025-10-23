@@ -129,6 +129,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     navigate('/ride/setup');
   };
 
+  const handleStartSwim = () => {
+    navigate('/swim/setup');
+  };
+
   const handleCaloriesConsumedClick = () => {
     try {
       localStorage.setItem('tapfit-open-food-entries', 'true');
@@ -229,6 +233,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           onStartWorkout={handleStartWorkout}
           onStartRun={handleStartRun}
           onStartRide={handleStartRide}
+          onStartSwim={handleStartSwim}
           onCaloriesConsumedClick={handleCaloriesConsumedClick}
         />
 

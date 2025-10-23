@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { swimStorageService } from '@/services/swimStorageService';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/components/AuthGuard';
 
 export function useSwimHistory() {
   const { user } = useAuth();

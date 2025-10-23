@@ -22,7 +22,9 @@ export default function SwimActive() {
 
   useEffect(() => {
     startHR('swimming');
-    return () => stopHR();
+    return () => {
+      stopHR();
+    };
   }, [startHR, stopHR]);
 
   useEffect(() => {

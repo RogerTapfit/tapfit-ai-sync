@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, MapPin, Bike } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -13,10 +13,11 @@ interface TodaysPerformanceProps {
   onStartWorkout: () => void;
   onStartRun?: () => void;
   onStartRide?: () => void;
+  onStartSwim?: () => void;
   onCaloriesConsumedClick?: () => void;
 }
 
-export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
+export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onStartSwim, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
   const { user } = useAuth();
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
@@ -54,6 +55,12 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onC
             <Button className="bg-green-500 hover:bg-green-600 text-white border-0" onClick={onStartRide}>
               <Bike className="h-4 w-4 mr-2" />
               Start Ride
+            </Button>
+          )}
+          {onStartSwim && (
+            <Button className="bg-cyan-500 hover:bg-cyan-600 text-white border-0" onClick={onStartSwim}>
+              <Waves className="h-4 w-4 mr-2" />
+              Start Swim
             </Button>
           )}
         </div>

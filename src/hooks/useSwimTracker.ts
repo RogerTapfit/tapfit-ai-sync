@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { swimTrackerService } from '@/services/swimTrackerService';
 import { SwimSettings, SwimMetrics, SwimTrackerStatus } from '@/types/swim';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/components/AuthGuard';
 
 export function useSwimTracker() {
   const { user } = useAuth();

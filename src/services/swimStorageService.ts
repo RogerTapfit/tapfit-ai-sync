@@ -44,7 +44,7 @@ export const swimStorageService = {
       .single();
 
     if (error) throw error;
-    return data as SwimSession;
+    return data as any as SwimSession;
   },
 
   async getUserSessions(userId: string): Promise<SwimSession[]> {
@@ -55,7 +55,7 @@ export const swimStorageService = {
       .order('started_at', { ascending: false });
 
     if (error) throw error;
-    return (data as SwimSession[]) || [];
+    return (data as any as SwimSession[]) || [];
   },
 
   async deleteSession(sessionId: string): Promise<void> {
