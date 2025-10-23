@@ -39,6 +39,7 @@ import SwimActive from "./pages/SwimActive";
 import SwimHistory from "./pages/SwimHistory";
 import SwimSummary from "./pages/SwimSummary";
 import { AuthGuard } from "./components/AuthGuard";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -100,9 +101,10 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <HashRouter>
-          <NFCHandler />
-          <Routes>
+      <HashRouter>
+        <ScrollToTop />
+        <NFCHandler />
+        <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <AuthGuard fallback={<Auth />}>
