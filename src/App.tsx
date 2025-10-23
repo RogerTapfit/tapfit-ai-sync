@@ -27,6 +27,7 @@ import FoodScanner from "./pages/FoodScanner";
 import ScanMachine from "./pages/ScanMachine";
 import PuckTest from "./pages/PuckTest";
 import RunSetup from "./pages/RunSetup";
+import RunActive from "./pages/RunActive";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -172,6 +173,11 @@ const App = () => {
             <Route path="/run/setup" element={
               <AuthGuard fallback={<Auth />}>
                 <RunSetup />
+              </AuthGuard>
+            } />
+            <Route path="/run/active" element={
+              <AuthGuard fallback={<Auth />}>
+                <RunActive />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
