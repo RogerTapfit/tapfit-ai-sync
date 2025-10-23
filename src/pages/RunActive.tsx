@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pause, Play, Square, MapPin, Activity, Clock, Flame, Heart } from "lucide-react";
+import { Pause, Play, Square, MapPin, Activity, Clock, Flame, Heart, Home, ArrowLeft, X } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useRunTracker } from "@/hooks/useRunTracker";
 import { RunMap } from "@/components/RunMap";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
@@ -21,6 +22,8 @@ const RunActive = () => {
     const stored = sessionStorage.getItem('runSettings');
     return stored ? JSON.parse(stored) : { unit: 'km', auto_pause: true, audio_cues: true };
   });
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelDestination, setCancelDestination] = useState<'setup' | 'home'>('setup');
   
   // Get session for HR zone info
   const session = runTrackerService.getState()?.session;
@@ -78,11 +81,56 @@ const RunActive = () => {
     }
   };
 
+  const handleNavigateAway = (destination: 'setup' | 'home') => {
+    if (status === 'running' || status === 'paused') {
+      setCancelDestination(destination);
+      setShowCancelDialog(true);
+    } else {
+      // If not started yet, navigate freely
+      navigate(destination === 'home' ? '/' : '/run/setup');
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    try {
+      await stopRun();
+      toast.info("Run cancelled");
+      navigate(cancelDestination === 'home' ? '/' : '/run/setup');
+    } catch (error) {
+      console.error('Failed to cancel run:', error);
+      toast.error("Failed to cancel run");
+    }
+    setShowCancelDialog(false);
+  };
+
   const isPaused = status === 'paused';
   const isRunning = status === 'running';
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header with Navigation */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleNavigateAway('setup')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <span className="font-semibold">Active Run</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleNavigateAway('home')}
+          >
+            <Home className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       {/* Map Section */}
       <div className="h-[40vh] relative">
         <RunMap />
@@ -231,44 +279,81 @@ const RunActive = () => {
         </div>
 
         {/* Controls */}
-        <div className="flex gap-3 pt-4">
-          {isPaused || isRunning ? (
-            <>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={isPaused ? handleResume : handlePause}
-                className="flex-1"
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="h-5 w-5 mr-2" />
-                    Resume
-                  </>
-                ) : (
-                  <>
-                    <Pause className="h-5 w-5 mr-2" />
-                    Pause
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="destructive"
-                size="lg"
-                onClick={handleStop}
-                className="flex-1"
-              >
-                <Square className="h-5 w-5 mr-2" />
-                Finish
-              </Button>
-            </>
-          ) : (
-            <div className="flex-1 text-center text-muted-foreground py-4">
-              Initializing GPS...
-            </div>
+        <div className="space-y-3 pt-4">
+          <div className="flex gap-3">
+            {isPaused || isRunning ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={isPaused ? handleResume : handlePause}
+                  className="flex-1"
+                >
+                  {isPaused ? (
+                    <>
+                      <Play className="h-5 w-5 mr-2" />
+                      Resume
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="h-5 w-5 mr-2" />
+                      Pause
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  onClick={handleStop}
+                  className="flex-1"
+                >
+                  <Square className="h-5 w-5 mr-2" />
+                  Finish
+                </Button>
+              </>
+            ) : (
+              <div className="flex-1 text-center text-muted-foreground py-4">
+                Initializing GPS...
+              </div>
+            )}
+          </div>
+
+          {/* Cancel Option */}
+          {(isPaused || isRunning) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleNavigateAway('setup')}
+              className="w-full text-muted-foreground"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel Run
+            </Button>
           )}
         </div>
       </div>
+
+      {/* Cancel Run Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Abandon Run?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current run data will be lost if you leave now.
+              {status === 'running' && ' Your run is still active.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay Here</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              End Run
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
