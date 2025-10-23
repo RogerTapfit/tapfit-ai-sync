@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, MapPin } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -11,10 +11,11 @@ import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
+  onStartRun?: () => void;
   onCaloriesConsumedClick?: () => void;
 }
 
-export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
+export const TodaysPerformance = ({ onStartWorkout, onStartRun, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
   const { user } = useAuth();
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
@@ -35,12 +36,20 @@ export const TodaysPerformance = ({ onStartWorkout, onCaloriesConsumedClick }: T
   };
   return (
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
-        <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
-          <Activity className="h-4 w-4 mr-2" />
-          Start Workout
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
+            <Activity className="h-4 w-4 mr-2" />
+            Start Workout
+          </Button>
+          {onStartRun && (
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white border-0" onClick={onStartRun}>
+              <MapPin className="h-4 w-4 mr-2" />
+              Start Run
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
