@@ -44,36 +44,45 @@ export default function RideSetup() {
   return (
     <>
       <SEO title="Setup Ride" description="Configure your cycling workout with GPS tracking and heart rate training" />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-green-500/5">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover-scale">
                 <Home className="h-5 w-5" />
               </Button>
-              <span className="font-semibold">Setup Ride</span>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <Bike className="h-5 w-5 text-green-500" />
+                </div>
+                <span className="font-semibold">Setup Ride</span>
+              </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => navigate('/ride/history')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/ride/history')} className="hover-scale">
               <History className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        <div className="container max-w-2xl mx-auto p-4 space-y-4">
+        <div className="container max-w-2xl mx-auto p-4 space-y-4 animate-fade-in">
           {/* Info Banner */}
-          <Alert>
-            <Bike className="h-4 w-4" />
-            <AlertDescription>
+          <Alert className="border-green-500/30 bg-green-500/5 animate-fade-in">
+            <div className="p-2 bg-green-500/10 rounded-full">
+              <Bike className="h-4 w-4 text-green-500" />
+            </div>
+            <AlertDescription className="ml-2">
               GPS tracking with optional heart rate training. Pair your Apple Watch for real-time HR monitoring.
             </AlertDescription>
           </Alert>
 
           {/* Ride Type */}
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 border-green-500/20 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bike className="h-5 w-5" />
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <Bike className="h-5 w-5 text-green-500" />
+                </div>
                 Ride Type
               </CardTitle>
               <CardDescription>Select your cycling environment</CardDescription>
@@ -94,10 +103,12 @@ export default function RideSetup() {
           </Card>
 
           {/* Training Mode */}
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 border-red-500/20 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Heart className="h-5 w-5" />
+                <div className="p-2 bg-red-500/10 rounded-lg animate-pulse">
+                  <Heart className="h-5 w-5 text-red-500" />
+                </div>
                 Training Mode
               </CardTitle>
               <CardDescription>Choose heart rate training strategy</CardDescription>
@@ -124,10 +135,12 @@ export default function RideSetup() {
           </Card>
 
           {/* Goal Type */}
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 border-blue-500/20 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+                <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <MapPin className="h-5 w-5 text-blue-500" />
+                </div>
                 Goal
               </CardTitle>
             </CardHeader>
@@ -176,9 +189,14 @@ export default function RideSetup() {
           </Card>
 
           {/* Ride Settings */}
-          <Card>
+          <Card className="hover:shadow-lg transition-all duration-300 border-purple-500/20 animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <CardHeader>
-              <CardTitle>Ride Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Clock className="h-5 w-5 text-purple-500" />
+                </div>
+                Ride Settings
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -213,7 +231,12 @@ export default function RideSetup() {
           </Card>
 
           {/* Start Button */}
-          <Button className="w-full" size="lg" onClick={handleStartRide}>
+          <Button 
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in" 
+            size="lg" 
+            onClick={handleStartRide}
+            style={{ animationDelay: '0.5s' }}
+          >
             <Bike className="h-5 w-5 mr-2" />
             Start Ride
           </Button>
