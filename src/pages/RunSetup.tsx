@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, MapPin, Clock, Target, Heart, Footprints } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Target, Heart, Activity } from "lucide-react";
 import { RunSettings } from "@/types/run";
 import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 import { calculateHRZones, estimateMaxHR } from "@/utils/heartRateZones";
@@ -129,7 +129,7 @@ const RunSetup = () => {
             </Button>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/10 rounded-lg">
-                <Footprints className="h-6 w-6 text-blue-500" />
+                <Activity className="h-6 w-6 text-blue-500" />
               </div>
               <h1 className="text-3xl font-bold">Setup Your Run</h1>
             </div>
@@ -357,7 +357,7 @@ const RunSetup = () => {
           className="w-full text-xl py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in"
           style={{ animationDelay: '0.4s' }}
         >
-          <Footprints className="h-6 w-6 mr-2" />
+          <Activity className="h-6 w-6 mr-2" />
           Start Run
         </Button>
       </div>
