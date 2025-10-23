@@ -41,26 +41,42 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow items-center" onClick={onStartWorkout}>
-            <Activity className="h-4 w-4 mr-2 flex-shrink-0" style={{ marginTop: 0, marginBottom: 0 }} />
-            Start Workout
+          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
+            <span className="inline-flex items-center gap-2 leading-none">
+              <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                <Activity className="size-4 block" />
+              </span>
+              <span className="leading-none">Start Workout</span>
+            </span>
           </Button>
           {onStartRun && (
-            <Button className="bg-orange-700 hover:bg-orange-800 text-white border-0 items-center" onClick={onStartRun}>
-              <Footprints className="h-4 w-4 mr-2 flex-shrink-0" style={{ marginTop: 0, marginBottom: 0 }} />
-              Start Run
+            <Button className="bg-orange-700 hover:bg-orange-800 text-white border-0" onClick={onStartRun}>
+              <span className="inline-flex items-center gap-2 leading-none">
+                <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <Footprints className="size-4 block" />
+                </span>
+                <span className="leading-none">Start Run</span>
+              </span>
             </Button>
           )}
           {onStartRide && (
-            <Button className="bg-green-700 hover:bg-green-800 text-white border-0 items-center" onClick={onStartRide}>
-              <Bike className="h-4 w-4 mr-2 flex-shrink-0" style={{ marginTop: 0, marginBottom: 0 }} />
-              Start Ride
+            <Button className="bg-green-700 hover:bg-green-800 text-white border-0" onClick={onStartRide}>
+              <span className="inline-flex items-center gap-2 leading-none">
+                <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <Bike className="size-4 block" />
+                </span>
+                <span className="leading-none">Start Ride</span>
+              </span>
             </Button>
           )}
           {onStartSwim && (
-            <Button className="bg-cyan-700 hover:bg-cyan-800 text-white border-0 items-center" onClick={onStartSwim}>
-              <Waves className="h-4 w-4 mr-2 flex-shrink-0" style={{ marginTop: 0, marginBottom: 0 }} />
-              Start Swim
+            <Button className="bg-cyan-700 hover:bg-cyan-800 text-white border-0" onClick={onStartSwim}>
+              <span className="inline-flex items-center gap-2 leading-none">
+                <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <Waves className="size-4 block" />
+                </span>
+                <span className="leading-none">Start Swim</span>
+              </span>
             </Button>
           )}
         </div>
@@ -68,8 +84,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
-            <Activity className="h-6 w-6 text-stats-heart" />
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center">
+            <Activity className="size-6 block text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={stats.loading ? 0 : stats.caloriesBurned} duration={2500} />
@@ -90,8 +106,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             }
           }}
         >
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-200">
-            <Utensils className="h-6 w-6 text-green-500" />
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-200">
+            <Utensils className="size-6 block text-green-500" />
           </div>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={stats.loading ? 0 : stats.caloriesConsumed} duration={2200} />
@@ -100,8 +116,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
-            <Footprints className="h-6 w-6 text-blue-500" />
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center">
+            <Footprints className="size-6 block text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={stats.loading ? 0 : stats.steps} duration={1800} />
@@ -110,8 +126,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
-            <Clock className="h-6 w-6 text-stats-heart" />
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center">
+            <Clock className="size-6 block text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={stats.loading ? 0 : stats.workoutDuration} duration={2000} suffix="m" />
@@ -120,8 +136,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
         </div>
 
         <div className="text-center space-y-2">
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit">
-            <Dumbbell className="h-6 w-6 text-stats-heart" />
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center">
+            <Dumbbell className="size-6 block text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={stats.loading ? 0 : stats.exercisesCompleted} duration={2300} />
@@ -142,8 +158,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             }
           }}
         >
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 mx-auto w-fit hover:bg-stats-heart/10 hover:border-stats-heart/30 transition-all duration-200 group">
-            <Heart className="h-6 w-6 text-stats-heart group-hover:animate-pulse" />
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-stats-heart/10 hover:border-stats-heart/30 transition-all duration-200 group">
+            <Heart className="size-6 block text-stats-heart group-hover:animate-pulse" />
           </div>
           <p className="text-2xl font-bold text-white">
             <AnimatedNumber finalValue={bpm ?? (stats.loading ? 0 : stats.avgHeartRate)} duration={2800} />
