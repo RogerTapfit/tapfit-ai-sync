@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Home, Play, Pause, StopCircle, X } from 'lucide-react';
+import { ArrowLeft, Home, Play, Pause, StopCircle, X, Bike, Gauge, MapPin, Clock, Flame, TrendingUp, Heart } from 'lucide-react';
 import { useRideTracker } from '@/hooks/useRideTracker';
 import { RideSettings } from '@/types/ride';
 import { toast } from 'sonner';
@@ -114,49 +114,79 @@ export default function RideActive() {
   return (
     <>
       <SEO title="Active Ride" description="Live cycling workout with GPS and heart rate tracking" />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-green-500/5">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b animate-fade-in">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => handleNavigateAway('setup')}>
+              <Button variant="ghost" size="icon" onClick={() => handleNavigateAway('setup')} className="hover-scale">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <span className="font-semibold">Active Ride</span>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-green-500/10">
+                  <Bike className="h-4 w-4 text-green-500" />
+                </div>
+                <span className="font-semibold">Active Ride</span>
+              </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => handleNavigateAway('home')}>
+            <Button variant="ghost" size="icon" onClick={() => handleNavigateAway('home')} className="hover-scale">
               <Home className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
         {/* Map */}
-        <div className="h-[40vh] relative">
+        <div className="h-[40vh] relative overflow-hidden animate-fade-in">
           <RunMap />
+          
+          {/* Status Badge Overlay */}
+          <div className="absolute top-4 left-4">
+            <Card className="px-3 py-2 bg-card/90 backdrop-blur border-green-500/20 shadow-lg">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  status === 'riding' ? 'bg-green-500 animate-pulse' :
+                  status === 'acquiring_gps' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-red-500'
+                }`} />
+                <span className="text-xs font-medium capitalize">{status}</span>
+              </div>
+            </Card>
+          </div>
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Status */}
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground capitalize">{status}</p>
-          </div>
 
           {/* Primary Metrics */}
           <div className="grid grid-cols-3 gap-3">
-            <Card>
+            <Card className="border-green-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-6 text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <Gauge className="h-5 w-5 text-green-500" />
+                  </div>
+                </div>
                 <p className="text-3xl font-bold">{formatSpeed(metrics?.current_speed_kmh || 0, 'km')}</p>
                 <p className="text-xs text-muted-foreground">km/h</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-blue-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-6 text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <MapPin className="h-5 w-5 text-blue-500" />
+                  </div>
+                </div>
                 <p className="text-3xl font-bold">{formatDistance(metrics?.distance_m || 0, 'km')}</p>
                 <p className="text-xs text-muted-foreground">km</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-purple-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-6 text-center">
+                <div className="flex justify-center mb-2">
+                  <div className="p-2 rounded-lg bg-purple-500/10">
+                    <Clock className="h-5 w-5 text-purple-500" />
+                  </div>
+                </div>
                 <p className="text-3xl font-bold">{formatTime(metrics?.moving_time_s || 0)}</p>
                 <p className="text-xs text-muted-foreground">time</p>
               </CardContent>
@@ -165,27 +195,47 @@ export default function RideActive() {
 
           {/* Secondary Metrics */}
           <div className="grid grid-cols-2 gap-3">
-            <Card>
+            <Card className="border-cyan-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-4 pb-4">
-                <p className="text-sm text-muted-foreground">Avg Speed</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1 rounded-lg bg-cyan-500/10">
+                    <Gauge className="h-3 w-3 text-cyan-500" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Avg Speed</p>
+                </div>
                 <p className="text-xl font-semibold">{formatSpeed(metrics?.avg_speed_kmh || 0, 'km')} km/h</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-orange-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-4 pb-4">
-                <p className="text-sm text-muted-foreground">Calories</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1 rounded-lg bg-orange-500/10">
+                    <Flame className="h-3 w-3 text-orange-500" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Calories</p>
+                </div>
                 <p className="text-xl font-semibold">{metrics?.calories || 0}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-emerald-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-4 pb-4">
-                <p className="text-sm text-muted-foreground">Elevation</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1 rounded-lg bg-emerald-500/10">
+                    <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Elevation</p>
+                </div>
                 <p className="text-xl font-semibold">{Math.round(metrics?.elevation_gain_m || 0)}m</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-yellow-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in hover-scale">
               <CardContent className="pt-4 pb-4">
-                <p className="text-sm text-muted-foreground">GPS</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-1 rounded-lg bg-yellow-500/10">
+                    <MapPin className="h-3 w-3 text-yellow-500" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">GPS</p>
+                </div>
                 <p className="text-xl font-semibold">{Math.round(metrics?.gps_accuracy || 0)}m</p>
               </CardContent>
             </Card>
@@ -193,16 +243,21 @@ export default function RideActive() {
 
           {/* Heart Rate Zone */}
           {metrics?.current_bpm && (
-            <Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-pink-500/10 border-red-500/20 hover:shadow-lg transition-all duration-300 animate-fade-in">
               <CardContent className="pt-4 pb-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Heart Rate</p>
-                  <p className="text-2xl font-bold">{metrics.current_bpm} <span className="text-sm font-normal">BPM</span></p>
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-red-500/10">
+                      <Heart className="h-4 w-4 text-red-500 animate-pulse" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">Heart Rate</p>
+                  </div>
+                  <p className="text-2xl font-bold text-red-500">{metrics.current_bpm} <span className="text-sm font-normal">BPM</span></p>
                 </div>
                 {metrics.zone_status && (
                   <>
                     <Progress value={metrics.time_in_zone_s || 0} max={100} className={getZoneColor(metrics.zone_status)} />
-                    <p className="text-xs text-center">{getZoneMessage(metrics.zone_status)}</p>
+                    <p className="text-xs text-center font-medium">{getZoneMessage(metrics.zone_status)}</p>
                   </>
                 )}
               </CardContent>
@@ -210,22 +265,22 @@ export default function RideActive() {
           )}
 
           {/* Controls */}
-          <div className="space-y-3 pt-4">
+          <div className="space-y-3 pt-4 animate-fade-in">
             <div className="flex gap-3">
               {status === 'riding' ? (
-                <Button variant="secondary" size="lg" className="flex-1" onClick={handlePause}>
+                <Button variant="outline" size="lg" className="flex-1 hover-scale border-green-500/20 hover:border-green-500/40" onClick={handlePause}>
                   <Pause className="h-5 w-5 mr-2" />
                   Pause
                 </Button>
               ) : status === 'paused' ? (
-                <Button variant="secondary" size="lg" className="flex-1" onClick={handleResume}>
+                <Button variant="outline" size="lg" className="flex-1 hover-scale border-green-500/20 hover:border-green-500/40" onClick={handleResume}>
                   <Play className="h-5 w-5 mr-2" />
                   Resume
                 </Button>
               ) : null}
 
               {(status === 'riding' || status === 'paused') && (
-                <Button size="lg" className="flex-1" onClick={handleFinish}>
+                <Button size="lg" className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover-scale" onClick={handleFinish}>
                   <StopCircle className="h-5 w-5 mr-2" />
                   Finish
                 </Button>
