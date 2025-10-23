@@ -1,6 +1,9 @@
-import { BackgroundGeolocation } from '@capacitor-community/background-geolocation';
+import { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation';
+import { registerPlugin } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
 import { RunSession, RunPoint, RunSplit, RunSettings, RunMetrics, RunTrackerStatus } from '@/types/run';
 import { calculateDistance, calculateCalories, smoothElevation, calculateElevationChange } from '@/utils/runFormatters';
 import { runStorageService } from './runStorageService';
