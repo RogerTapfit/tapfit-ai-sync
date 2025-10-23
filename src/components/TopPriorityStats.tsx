@@ -41,25 +41,25 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
-            <Activity className="h-4 w-4 mr-2" />
+          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow justify-center" onClick={onStartWorkout}>
+            <Activity className="h-4 w-4 mr-2 flex-shrink-0" />
             Start Workout
           </Button>
           {onStartRun && (
-            <Button className="bg-orange-700 hover:bg-orange-800 text-white border-0" onClick={onStartRun}>
-              <Footprints className="h-4 w-4 mr-2" />
+            <Button className="bg-orange-700 hover:bg-orange-800 text-white border-0 justify-center" onClick={onStartRun}>
+              <Footprints className="h-4 w-4 mr-2 flex-shrink-0" />
               Start Run
             </Button>
           )}
           {onStartRide && (
-            <Button className="bg-green-700 hover:bg-green-800 text-white border-0" onClick={onStartRide}>
-              <Bike className="h-4 w-4 mr-2" />
+            <Button className="bg-green-700 hover:bg-green-800 text-white border-0 justify-center" onClick={onStartRide}>
+              <Bike className="h-4 w-4 mr-2 flex-shrink-0" />
               Start Ride
             </Button>
           )}
           {onStartSwim && (
-            <Button className="bg-cyan-700 hover:bg-cyan-800 text-white border-0" onClick={onStartSwim}>
-              <Waves className="h-4 w-4 mr-2" />
+            <Button className="bg-cyan-700 hover:bg-cyan-800 text-white border-0 justify-center" onClick={onStartSwim}>
+              <Waves className="h-4 w-4 mr-2 flex-shrink-0" />
               Start Swim
             </Button>
           )}
