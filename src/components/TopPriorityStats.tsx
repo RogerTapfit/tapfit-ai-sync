@@ -46,19 +46,19 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             Start Workout
           </Button>
           {onStartRun && (
-            <Button className="bg-orange-500 hover:bg-orange-600 text-white border-0" onClick={onStartRun}>
+            <Button className="bg-orange-700 hover:bg-orange-800 text-white border-0" onClick={onStartRun}>
               <Footprints className="h-4 w-4 mr-2" />
               Start Run
             </Button>
           )}
           {onStartRide && (
-            <Button className="bg-green-500 hover:bg-green-600 text-white border-0" onClick={onStartRide}>
+            <Button className="bg-green-700 hover:bg-green-800 text-white border-0" onClick={onStartRide}>
               <Bike className="h-4 w-4 mr-2" />
               Start Ride
             </Button>
           )}
           {onStartSwim && (
-            <Button className="bg-cyan-500 hover:bg-cyan-600 text-white border-0" onClick={onStartSwim}>
+            <Button className="bg-cyan-700 hover:bg-cyan-800 text-white border-0" onClick={onStartSwim}>
               <Waves className="h-4 w-4 mr-2" />
               Start Swim
             </Button>

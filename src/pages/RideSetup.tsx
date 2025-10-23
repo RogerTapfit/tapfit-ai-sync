@@ -232,7 +232,7 @@ export default function RideSetup() {
 
           {/* Start Button */}
           <Button 
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in" 
+            className="w-full bg-gradient-to-r from-green-700 to-green-800 hover:from-green-800 hover:to-green-900 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in" 
             size="lg" 
             onClick={handleStartRide}
             style={{ animationDelay: '0.5s' }}

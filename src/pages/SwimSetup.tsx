@@ -231,7 +231,7 @@ export default function SwimSetup() {
         <Button
           onClick={handleStart}
           disabled={isStarting}
-          className="w-full h-16 text-lg bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg hover-scale"
+          className="w-full h-16 text-lg bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-800 hover:to-cyan-800 shadow-lg hover-scale"
         >
           <Waves className="h-6 w-6 mr-2" />
           {isStarting ? 'Starting...' : 'Start Swimming'}

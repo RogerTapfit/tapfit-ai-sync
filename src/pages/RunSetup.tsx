@@ -354,7 +354,7 @@ const RunSetup = () => {
         <Button
           size="lg"
           onClick={handleStart}
-          className="w-full text-xl py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in"
+          className="w-full text-xl py-6 bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover-scale animate-fade-in"
           style={{ animationDelay: '0.4s' }}
         >
           <Activity className="h-6 w-6 mr-2" />
