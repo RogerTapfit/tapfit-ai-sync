@@ -26,6 +26,7 @@ import AvatarSelection from "./pages/AvatarSelection";
 import FoodScanner from "./pages/FoodScanner";
 import ScanMachine from "./pages/ScanMachine";
 import PuckTest from "./pages/PuckTest";
+import RunSetup from "./pages/RunSetup";
 import { AuthGuard } from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -166,6 +167,11 @@ const App = () => {
             <Route path="/puck-test" element={
               <AuthGuard fallback={<Auth />}>
                 <PuckTest />
+              </AuthGuard>
+            } />
+            <Route path="/run/setup" element={
+              <AuthGuard fallback={<Auth />}>
+                <RunSetup />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
