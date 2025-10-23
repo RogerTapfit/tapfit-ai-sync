@@ -46,7 +46,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             Start Workout
           </Button>
           {onStartRun && (
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white border-0" onClick={onStartRun}>
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white border-0" onClick={onStartRun}>
               <Footprints className="h-4 w-4 mr-2" />
               Start Run
             </Button>
