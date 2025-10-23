@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pause, Play, Square, MapPin, Activity, Clock, Flame } from "lucide-react";
+import { Pause, Play, Square, MapPin, Activity, Clock, Flame, Heart } from "lucide-react";
 import { useRunTracker } from "@/hooks/useRunTracker";
 import { RunMap } from "@/components/RunMap";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
@@ -10,6 +10,8 @@ import { RunSettings } from "@/types/run";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
+import { getCoachingCue, getZoneColor } from "@/utils/heartRateZones";
+import { runTrackerService } from "@/services/runTrackerService";
 
 const RunActive = () => {
   const navigate = useNavigate();
@@ -19,6 +21,9 @@ const RunActive = () => {
     const stored = sessionStorage.getItem('runSettings');
     return stored ? JSON.parse(stored) : { unit: 'km', auto_pause: true, audio_cues: true };
   });
+  
+  // Get session for HR zone info
+  const session = runTrackerService.getState()?.session;
 
   useEffect(() => {
     // Wait for auth to be ready, then start tracking
@@ -127,12 +132,63 @@ const RunActive = () => {
           </div>
         </Card>
 
+        {/* Heart Rate Zone Indicator */}
+        {metrics && session?.training_mode !== 'pace_based' && session?.target_hr_zone && (
+          <Card className="p-4 bg-gradient-to-br from-red-500/10 to-pink-500/10">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Heart Rate</span>
+                <Heart className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="text-4xl font-bold text-red-500">
+                {metrics.current_bpm || '--'} <span className="text-lg">bpm</span>
+              </div>
+              
+              {/* Target Zone */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Target: {session.target_hr_zone.zone_name}</span>
+                  <span>{session.target_hr_zone.min_bpm}-{session.target_hr_zone.max_bpm} bpm</span>
+                </div>
+                
+                {/* HR Zone Progress Bar */}
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full transition-all"
+                    style={{ 
+                      backgroundColor: metrics.zone_status ? getZoneColor(metrics.zone_status) : 'hsl(var(--muted))',
+                      width: `${Math.min(100, Math.max(0, ((metrics.current_bpm || 0) / session.target_hr_zone.max_bpm) * 100))}%` 
+                    }}
+                  />
+                </div>
+
+                {/* Coaching Cue */}
+                {metrics.zone_status && (
+                  <div 
+                    className="text-center text-sm font-medium"
+                    style={{ color: getZoneColor(metrics.zone_status) }}
+                  >
+                    {getCoachingCue(metrics.zone_status)}
+                  </div>
+                )}
+              </div>
+
+              {/* Time in Zone */}
+              {metrics.time_in_zone_s !== undefined && (
+                <div className="text-xs text-muted-foreground text-center">
+                  Time in zone: {formatTime(metrics.time_in_zone_s)}
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
         {/* Secondary Metrics Grid */}
         <div className="grid grid-cols-2 gap-4">
           {/* Time */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-blue-500" />
+              <Clock className="h-4 w-4" style={{ color: 'hsl(var(--chart-1))' }} />
               <span className="text-xs text-muted-foreground">Time</span>
             </div>
             <div className="text-2xl font-bold">
@@ -143,7 +199,7 @@ const RunActive = () => {
           {/* Pace */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="h-4 w-4 text-purple-500" />
+              <Activity className="h-4 w-4" style={{ color: 'hsl(var(--chart-3))' }} />
               <span className="text-xs text-muted-foreground">Avg Pace</span>
             </div>
             <div className="text-2xl font-bold">
@@ -154,7 +210,7 @@ const RunActive = () => {
           {/* Calories */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Flame className="h-4 w-4 text-orange-500" />
+              <Flame className="h-4 w-4" style={{ color: 'hsl(var(--chart-5))' }} />
               <span className="text-xs text-muted-foreground">Calories</span>
             </div>
             <div className="text-2xl font-bold">
@@ -165,7 +221,7 @@ const RunActive = () => {
           {/* Split */}
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <MapPin className="h-4 w-4 text-green-500" />
+              <MapPin className="h-4 w-4" style={{ color: 'hsl(var(--chart-2))' }} />
               <span className="text-xs text-muted-foreground">Split</span>
             </div>
             <div className="text-2xl font-bold">

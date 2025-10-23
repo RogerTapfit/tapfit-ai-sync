@@ -4,10 +4,12 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
-import { RunSession, RunPoint, RunSplit, RunSettings, RunMetrics, RunTrackerStatus } from '@/types/run';
+import { RunSession, RunPoint, RunSplit, RunSettings, RunMetrics, RunTrackerStatus, HRSample } from '@/types/run';
 import { calculateDistance, calculateCalories, smoothElevation, calculateElevationChange } from '@/utils/runFormatters';
 import { runStorageService } from './runStorageService';
 import { supabase } from '@/integrations/supabase/client';
+import { TapfitHealth } from '@/lib/tapfitHealth';
+import { getZoneStatus, getCoachingCue } from '@/utils/heartRateZones';
 
 type StateCallback = (metrics: RunMetrics, status: RunTrackerStatus) => void;
 
@@ -22,6 +24,11 @@ class RunTrackerService {
   private pauseStartTime: number | null = null;
   private autoPauseTimer: NodeJS.Timeout | null = null;
   private saveTimer: NodeJS.Timeout | null = null;
+  
+  // Heart Rate Monitoring
+  private hrListener: any = null;
+  private currentBPM: number | null = null;
+  private hrSamples: HRSample[] = [];
 
   async initialize(): Promise<void> {
     await runStorageService.init();
@@ -60,7 +67,17 @@ class RunTrackerService {
       audio_cues_enabled: settings.audio_cues,
       elevation_gain_m: 0,
       elevation_loss_m: 0,
+      
+      // Heart Rate Training
+      training_mode: settings.training_mode || 'pace_based',
+      target_hr_zone: settings.target_hr_zone,
+      hr_samples: [],
     };
+
+    // Start HR monitoring if training mode requires it
+    if (settings.training_mode && settings.training_mode !== 'pace_based') {
+      await this.startHeartRateMonitoring();
+    }
 
     // Save initial session
     await runStorageService.saveSession(this.currentSession);
@@ -245,6 +262,13 @@ class RunTrackerService {
       this.saveTimer = null;
     }
 
+    // Stop HR monitoring
+    if (this.hrListener) {
+      this.hrListener.remove();
+      await TapfitHealth.stopWorkout();
+      this.hrListener = null;
+    }
+
     // Finalize session
     this.currentSession.ended_at = new Date().toISOString();
     this.currentSession.status = 'completed';
@@ -257,6 +281,8 @@ class RunTrackerService {
     this.currentSession = null;
     this.lastPoint = null;
     this.recentSpeeds = [];
+    this.hrSamples = [];
+    this.currentBPM = null;
     this.status = 'idle';
     this.notifyListeners();
 
@@ -281,6 +307,14 @@ class RunTrackerService {
         elevation_loss_m: session.elevation_loss_m,
         route_points: session.points as any,
         splits: session.splits as any,
+        
+        // Heart Rate Data
+        training_mode: session.training_mode,
+        target_hr_zone: session.target_hr_zone as any,
+        avg_heart_rate: session.avg_heart_rate,
+        max_heart_rate: session.max_heart_rate,
+        time_in_zone_s: session.time_in_zone_s,
+        hr_samples: session.hr_samples as any,
       });
 
       if (error) {
@@ -293,6 +327,80 @@ class RunTrackerService {
       console.error('Sync error:', error);
       // Don't throw - we still have local copy in IndexedDB
     }
+  }
+
+  private async startHeartRateMonitoring(): Promise<void> {
+    try {
+      console.log('🫀 Starting HR monitoring...');
+      
+      // Start Apple Watch workout
+      const activityType = this.currentSession?.training_mode === 'steady_jog' ? 'walking' : 'running';
+      await TapfitHealth.startWorkout({ activityType });
+
+      // Listen for HR updates
+      this.hrListener = await TapfitHealth.addListener('heartRate', ({ bpm, timestamp }) => {
+        this.currentBPM = Math.round(bpm);
+        
+        // Store HR sample
+        this.hrSamples.push({ bpm: this.currentBPM, timestamp });
+        
+        // Update session with HR data
+        if (this.currentSession) {
+          this.currentSession.hr_samples = this.hrSamples;
+          this.updateHRMetrics();
+        }
+
+        // Check zone status and provide coaching
+        if (this.currentSession?.target_hr_zone) {
+          const zoneStatus = getZoneStatus(this.currentBPM, this.currentSession.target_hr_zone);
+          this.provideHRCoaching(zoneStatus);
+        }
+      });
+
+      console.log('✅ HR monitoring started');
+    } catch (error) {
+      console.error('❌ Failed to start HR monitoring:', error);
+    }
+  }
+
+  private updateHRMetrics(): void {
+    if (!this.currentSession || this.hrSamples.length === 0) return;
+
+    // Calculate average HR
+    const avgBPM = Math.round(
+      this.hrSamples.reduce((sum, s) => sum + s.bpm, 0) / this.hrSamples.length
+    );
+
+    // Calculate max HR
+    const maxBPM = Math.max(...this.hrSamples.map(s => s.bpm));
+
+    // Calculate time in target zone
+    let timeInZone = 0;
+    if (this.currentSession.target_hr_zone) {
+      const zone = this.currentSession.target_hr_zone;
+      timeInZone = this.hrSamples.filter(
+        s => s.bpm >= zone.min_bpm && s.bpm <= zone.max_bpm
+      ).length * 5; // Assuming ~5s per sample
+    }
+
+    this.currentSession.avg_heart_rate = avgBPM;
+    this.currentSession.max_heart_rate = maxBPM;
+    this.currentSession.time_in_zone_s = timeInZone;
+  }
+
+  private provideHRCoaching(zoneStatus: 'below' | 'in_zone' | 'above'): void {
+    if (!this.currentSession?.audio_cues_enabled) return;
+
+    // Haptic feedback
+    if (zoneStatus === 'in_zone') {
+      Haptics.impact({ style: ImpactStyle.Light });
+    } else {
+      Haptics.impact({ style: ImpactStyle.Medium });
+    }
+
+    // Log coaching cue (could add text-to-speech in future)
+    const cue = getCoachingCue(zoneStatus);
+    console.log('🫀 HR Coaching:', cue);
   }
 
   getState(): { metrics: RunMetrics; status: RunTrackerStatus; session: RunSession | null } | null {
@@ -309,6 +417,14 @@ class RunTrackerService {
       elevation_gain_m: this.currentSession.elevation_gain_m || 0,
       elevation_loss_m: this.currentSession.elevation_loss_m || 0,
       gps_accuracy: this.lastPoint?.accuracy || 0,
+      
+      // Heart Rate Metrics
+      current_bpm: this.currentBPM,
+      avg_bpm: this.currentSession.avg_heart_rate,
+      time_in_zone_s: this.currentSession.time_in_zone_s,
+      zone_status: this.currentSession.target_hr_zone && this.currentBPM
+        ? getZoneStatus(this.currentBPM, this.currentSession.target_hr_zone)
+        : undefined,
     };
 
     return { metrics, status: this.status, session: this.currentSession };
