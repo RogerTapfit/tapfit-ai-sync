@@ -62,38 +62,38 @@ export const RunMap = () => {
       className="h-full w-full"
       zoomControl={false}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      
-      <MapController position={center} />
-      
-      {/* Route polyline */}
-      {routePoints.length > 1 && (
-        <Polyline
-          positions={routePoints}
-          pathOptions={{
-            color: 'hsl(0, 84%, 60%)',
-            weight: 4,
-            opacity: 0.8,
-          }}
+      <>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-      )}
-      
-      {/* Current position marker */}
-      {center && (
-        <CircleMarker
-          center={center}
-          radius={8}
-          pathOptions={{
-            fillColor: 'hsl(217, 91%, 60%)',
-            fillOpacity: 1,
-            color: 'white',
-            weight: 3,
-          }}
-        />
-      )}
+        
+        <MapController position={center} />
+        
+        {routePoints.length > 1 && (
+          <Polyline
+            positions={routePoints}
+            pathOptions={{
+              color: 'hsl(0, 84%, 60%)',
+              weight: 4,
+              opacity: 0.8,
+            }}
+          />
+        )}
+        
+        {center && (
+          <CircleMarker
+            center={center}
+            radius={8}
+            pathOptions={{
+              fillColor: 'hsl(217, 91%, 60%)',
+              fillOpacity: 1,
+              color: 'white',
+              weight: 3,
+            }}
+          />
+        )}
+      </>
     </MapContainer>
   );
 };

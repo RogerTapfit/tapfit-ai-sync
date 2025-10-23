@@ -8,20 +8,30 @@ import { RunMap } from "@/components/RunMap";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { RunSettings } from "@/types/run";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const RunActive = () => {
   const navigate = useNavigate();
   const { metrics, status, startRun, pauseRun, resumeRun, stopRun } = useRunTracker();
+  const [isInitialized, setIsInitialized] = useState(false);
   const [settings] = useState<RunSettings>(() => {
     const stored = sessionStorage.getItem('runSettings');
     return stored ? JSON.parse(stored) : { unit: 'km', auto_pause: true, audio_cues: true };
   });
 
   useEffect(() => {
-    // Auto-start tracking when component mounts
+    // Wait for auth to be ready, then start tracking
     const initRun = async () => {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error("Please sign in to track runs");
+          navigate('/auth');
+          return;
+        }
+
         await startRun(settings);
+        setIsInitialized(true);
         toast.success("GPS tracking started");
       } catch (error) {
         console.error('Failed to start run:', error);
@@ -29,10 +39,10 @@ const RunActive = () => {
       }
     };
 
-    if (status === 'idle') {
+    if (status === 'idle' && !isInitialized) {
       initRun();
     }
-  }, []);
+  }, [status, isInitialized]);
 
   const handlePause = async () => {
     try {
