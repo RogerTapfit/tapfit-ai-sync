@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, MapPin, Clock, Target } from "lucide-react";
 import { RunSettings } from "@/types/run";
+import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 
 const RunSetup = () => {
   const navigate = useNavigate();
@@ -37,6 +38,9 @@ const RunSetup = () => {
           </Button>
           <h1 className="text-3xl font-bold">Setup Your Run</h1>
         </div>
+
+        {/* GPS Warning Banner */}
+        <RunGPSWarningBanner />
 
         {/* Run Type */}
         <Card className="p-6">

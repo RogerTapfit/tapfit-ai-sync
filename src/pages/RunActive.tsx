@@ -9,6 +9,7 @@ import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { RunSettings } from "@/types/run";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 
 const RunActive = () => {
   const navigate = useNavigate();
@@ -113,6 +114,9 @@ const RunActive = () => {
 
       {/* Metrics Section */}
       <div className="p-4 space-y-4">
+        {/* GPS Warning Banner */}
+        <RunGPSWarningBanner />
+
         {/* Primary Metric - Distance */}
         <Card className="p-6 text-center bg-gradient-to-br from-card to-accent">
           <div className="text-6xl font-bold text-foreground mb-2">

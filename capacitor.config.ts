@@ -19,12 +19,15 @@ const config: CapacitorConfig = {
       "com.apple.developer.nfc.readersession.iso7816.select-identifiers": ["*"]
     },
     backgroundModes: [
-      "bluetooth-central"
+      "bluetooth-central",
+      "location"
     ],
     infoPlist: {
       NSBluetoothAlwaysUsageDescription: "TapFit uses Bluetooth to connect to your gym machine sensor.",
       NFCReaderUsageDescription: "TapFit uses NFC to detect and connect to compatible workout stations.",
-      UIBackgroundModes: ["bluetooth-central"],
+      NSLocationAlwaysAndWhenInUseUsageDescription: "TapFit needs continuous access to your location to accurately track your runs with GPS, even when the app is in the background.",
+      NSLocationWhenInUseUsageDescription: "TapFit uses your location to track your runs with GPS and find nearby gyms.",
+      UIBackgroundModes: ["bluetooth-central", "location"],
       LSApplicationQueriesSchemes: ["tapfit"]
     }
   }

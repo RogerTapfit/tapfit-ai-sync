@@ -29,7 +29,11 @@ class RunTrackerService {
     // Check permissions
     const status = await Geolocation.checkPermissions();
     if (status.location !== 'granted') {
-      await Geolocation.requestPermissions();
+      // Request permissions - on iOS this will show the system dialog
+      const result = await Geolocation.requestPermissions();
+      if (result.location !== 'granted') {
+        throw new Error('Location permission denied. GPS tracking requires location access.');
+      }
     }
   }
 
@@ -61,14 +65,14 @@ class RunTrackerService {
     // Save initial session
     await runStorageService.saveSession(this.currentSession);
 
-    // Start GPS tracking
+    // Start GPS tracking with optimizations
     this.watcherId = await BackgroundGeolocation.addWatcher(
       {
         backgroundMessage: 'TapFit is tracking your run',
         backgroundTitle: 'Run Tracking Active',
         requestPermissions: true,
         stale: false,
-        distanceFilter: 0,
+        distanceFilter: 5, // Update every 5 meters for better accuracy and battery efficiency
       },
       (location) => {
         this.handleLocationUpdate({

@@ -75,8 +75,12 @@
 	<string>This app needs access to your photo library to save and view your fitness progress photos.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>This app uses motion data to track your workouts and fitness activities.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>TapFit needs continuous access to your location to accurately track your runs with GPS, even when the app is in the background or the screen is locked. This enables features like distance tracking, pace calculation, and route mapping during your workouts.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>TapFit needs continuous access to your location to accurately track your runs with GPS, even when the app is in the background or the screen is locked.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app uses location to find nearby gyms and fitness facilities.</string>
+	<string>TapFit uses your location to track your runs with GPS, map your routes, and find nearby gyms and fitness facilities.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app uses the microphone for voice commands during workouts.</string>
 	<key>NFCReaderUsageDescription</key>
@@ -95,6 +99,7 @@
 		<string>background-processing</string>
 		<string>bluetooth-central</string>
 		<string>bluetooth-peripheral</string>
+		<string>location</string>
 	</array>
 	<key>UIRequiresFullScreen</key>
 	<true/>
