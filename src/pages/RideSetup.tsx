@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Bike, Home, Clock, MapPin, Heart, Info, History } from 'lucide-react';
 import { RideSettings } from '@/types/ride';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -114,18 +115,68 @@ export default function RideSetup() {
               <CardDescription>Choose heart rate training strategy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Select value={settings.training_mode} onValueChange={(v: any) => setSettings({ ...settings, training_mode: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pace_based">GPS Only (No HR)</SelectItem>
-                  <SelectItem value="zone2_endurance">Zone 2 Endurance</SelectItem>
-                  <SelectItem value="zone3_tempo">Zone 3 Tempo</SelectItem>
-                  <SelectItem value="intervals">Zone 4 Intervals</SelectItem>
-                  <SelectItem value="recovery">Recovery Ride</SelectItem>
-                </SelectContent>
-              </Select>
+              <TooltipProvider>
+                <Select value={settings.training_mode} onValueChange={(v: any) => setSettings({ ...settings, training_mode: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover">
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="pace_based">GPS Only (No HR)</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">GPS Only Mode</p>
+                        <p className="text-sm">Track your ride using GPS without heart rate monitoring. Perfect for casual rides or when you don't have a heart rate monitor.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="zone2_endurance">Zone 2 Endurance</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Zone 2 Endurance</p>
+                        <p className="text-sm text-muted-foreground mb-2">60-70% of max heart rate</p>
+                        <p className="text-sm">Build your aerobic base with conversational-pace riding. You should be able to hold a conversation. Ideal for 1-3 hour rides to improve fat burning and endurance.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="zone3_tempo">Zone 3 Tempo</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Zone 3 Tempo</p>
+                        <p className="text-sm text-muted-foreground mb-2">70-80% of max heart rate</p>
+                        <p className="text-sm">Comfortably hard sustained effort. Improves lactate threshold and race pace. Typical duration: 30-90 minutes. You can speak in short sentences.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="intervals">Zone 4 Intervals</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Zone 4 Intervals</p>
+                        <p className="text-sm text-muted-foreground mb-2">80-90% of max heart rate</p>
+                        <p className="text-sm">High-intensity interval training to build VO2 max and power. Short bursts of hard effort with recovery periods. Total workout: 20-45 minutes.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="recovery">Recovery Ride</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Recovery Ride</p>
+                        <p className="text-sm text-muted-foreground mb-2">50-60% of max heart rate</p>
+                        <p className="text-sm">Very easy spinning for active recovery. Helps flush out metabolic waste from hard workouts. Keep it light: 30-60 minutes.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </SelectContent>
+                </Select>
+              </TooltipProvider>
               
               <div className="flex gap-2 p-3 bg-muted rounded-lg">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
