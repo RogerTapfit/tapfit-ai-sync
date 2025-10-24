@@ -15,9 +15,10 @@ interface TodaysPerformanceProps {
   onStartRide?: () => void;
   onStartSwim?: () => void;
   onCaloriesConsumedClick?: () => void;
+  onCaloriesBurnedClick?: () => void;
 }
 
-export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onStartSwim, onCaloriesConsumedClick }: TodaysPerformanceProps) => {
+export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onStartSwim, onCaloriesConsumedClick, onCaloriesBurnedClick }: TodaysPerformanceProps) => {
   const { user } = useAuth();
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
@@ -83,8 +84,20 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="text-center space-y-2">
-          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center">
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => onCaloriesBurnedClick?.()}
+          role="button"
+          aria-label="View workout history"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onCaloriesBurnedClick?.();
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-stats-heart/10 hover:border-stats-heart/30 transition-all duration-200">
             <Activity className="size-6 block text-stats-heart" />
           </div>
           <p className="text-2xl font-bold text-white">

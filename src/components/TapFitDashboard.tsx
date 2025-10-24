@@ -140,6 +140,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     onPageChange?.('nutrition');
   };
 
+  const handleCaloriesBurnedClick = () => {
+    navigate('/workout-history');
+  };
+
   if (showAvatarBuilder) {
     return <AvatarBuilder onClose={() => setShowAvatarBuilder(false)} />;
   }
@@ -235,6 +239,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           onStartRide={handleStartRide}
           onStartSwim={handleStartSwim}
           onCaloriesConsumedClick={handleCaloriesConsumedClick}
+          onCaloriesBurnedClick={handleCaloriesBurnedClick}
         />
 
       {/* 2. Tap Coins Widget */}
