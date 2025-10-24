@@ -29,15 +29,28 @@ const WorkoutHistory = () => {
       if (!user?.id) return;
 
       try {
-        const [strengthData, runsData, ridesData, swimsData] = await Promise.all([
-          supabase.from('exercise_logs').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(20),
-          supabase.from('runs').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(20),
-          supabase.from('rides').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(20),
-          supabase.from('swims').select('*').eq('user_id', user.id).order('completed_at', { ascending: false }).limit(20),
-        ]);
+        // Fetch strength workouts from workout_logs
+        const { data: workoutLogsData } = await supabase
+          .from('workout_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: false })
+          .limit(20);
+
+        // Get runs from localStorage
+        const runsJson = localStorage.getItem('tapfit-runs') || '[]';
+        const allRuns = JSON.parse(runsJson).filter((r: any) => r.user_id === user.id);
+
+        // Get rides from localStorage
+        const ridesJson = localStorage.getItem('tapfit-rides') || '[]';
+        const allRides = JSON.parse(ridesJson).filter((r: any) => r.user_id === user.id);
+
+        // Get swims from localStorage
+        const swimsJson = localStorage.getItem('tapfit-swims') || '[]';
+        const allSwims = JSON.parse(swimsJson).filter((s: any) => s.user_id === user.id);
 
         const allWorkouts: WorkoutHistoryItem[] = [
-          ...(strengthData.data || []).map(w => ({
+          ...(workoutLogsData || []).map((w: any) => ({
             id: w.id,
             type: 'strength' as const,
             date: new Date(w.completed_at),
@@ -45,7 +58,7 @@ const WorkoutHistory = () => {
             caloriesBurned: w.calories_burned || 0,
             details: w
           })),
-          ...(runsData.data || []).map(r => ({
+          ...allRuns.map((r: any) => ({
             id: r.id,
             type: 'run' as const,
             date: new Date(r.completed_at),
@@ -53,7 +66,7 @@ const WorkoutHistory = () => {
             caloriesBurned: r.calories_burned || 0,
             details: r
           })),
-          ...(ridesData.data || []).map(r => ({
+          ...allRides.map((r: any) => ({
             id: r.id,
             type: 'ride' as const,
             date: new Date(r.completed_at),
@@ -61,7 +74,7 @@ const WorkoutHistory = () => {
             caloriesBurned: r.calories_burned || 0,
             details: r
           })),
-          ...(swimsData.data || []).map(s => ({
+          ...allSwims.map((s: any) => ({
             id: s.id,
             type: 'swim' as const,
             date: new Date(s.completed_at),

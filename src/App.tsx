@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import WorkoutList from "./pages/WorkoutList";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import WorkoutSummary from "./pages/WorkoutSummary";
+import WorkoutHistory from "./pages/WorkoutHistory";
 import WorkoutPlans from "./pages/WorkoutPlans";
 import WorkoutPlan from "./pages/WorkoutPlan";
 import MachineAccess from "./pages/MachineAccess";
@@ -124,6 +125,11 @@ const App = () => {
             <Route path="/workout-summary" element={
               <AuthGuard fallback={<Auth />}>
                 <WorkoutSummary />
+              </AuthGuard>
+            } />
+            <Route path="/workout-history" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutHistory />
               </AuthGuard>
             } />
             <Route path="/workout-plans" element={
