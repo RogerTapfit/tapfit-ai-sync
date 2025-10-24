@@ -467,6 +467,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
         open={activeBreakdown === 'burned'}
         onOpenChange={(open) => !open && setActiveBreakdown(null)}
         workouts={day.workouts}
+        cardioSessions={day.cardioSessions}
         totalCalories={day.dailyStats.caloriesBurned}
         date={day.date}
       />

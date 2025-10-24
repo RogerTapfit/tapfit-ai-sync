@@ -2,13 +2,14 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Flame, Dumbbell, Heart, Clock } from 'lucide-react';
-import { WorkoutActivity } from '@/hooks/useCalendarData';
+import { Flame, Dumbbell, Heart, Clock, Waves, Footprints, Bike } from 'lucide-react';
+import { WorkoutActivity, CardioActivity } from '@/hooks/useCalendarData';
 
 interface BurnedCaloriesBreakdownProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workouts: WorkoutActivity[];
+  cardioSessions: CardioActivity[];
   totalCalories: number;
   date: Date;
 }
@@ -17,6 +18,7 @@ export const BurnedCaloriesBreakdown: React.FC<BurnedCaloriesBreakdownProps> = (
   open,
   onOpenChange,
   workouts,
+  cardioSessions,
   totalCalories,
   date,
 }) => {
@@ -53,7 +55,43 @@ export const BurnedCaloriesBreakdown: React.FC<BurnedCaloriesBreakdownProps> = (
     return colors[muscleGroup.toLowerCase()] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
   };
 
+  const getCardioIcon = (type: CardioActivity['type']) => {
+    switch (type) {
+      case 'swim':
+        return <Waves className="h-4 w-4 text-blue-500" />;
+      case 'run':
+        return <Footprints className="h-4 w-4 text-green-500" />;
+      case 'ride':
+        return <Bike className="h-4 w-4 text-orange-500" />;
+    }
+  };
+
+  const getCardioLabel = (type: CardioActivity['type']) => {
+    switch (type) {
+      case 'swim':
+        return 'Swimming';
+      case 'run':
+        return 'Running';
+      case 'ride':
+        return 'Cycling';
+    }
+  };
+
+  const formatCardioDetails = (cardio: CardioActivity) => {
+    const distanceKm = (cardio.distance_m / 1000).toFixed(2);
+    const distanceMi = (cardio.distance_m / 1609.34).toFixed(2);
+    const durationMin = Math.round(cardio.duration_s / 60);
+    
+    if (cardio.type === 'swim') {
+      const distanceM = cardio.distance_m;
+      return `${distanceM}m in ${durationMin} min`;
+    }
+    
+    return `${distanceKm}km (${distanceMi}mi) in ${durationMin} min`;
+  };
+
   const completedWorkouts = workouts.filter(w => w.type === 'completed');
+  const totalActivities = completedWorkouts.length + cardioSessions.length;
   const baseMetabolicRate = Math.floor(totalCalories * 0.3); // Approximate BMR portion
   const exerciseCalories = totalCalories - baseMetabolicRate;
 
@@ -91,11 +129,13 @@ export const BurnedCaloriesBreakdown: React.FC<BurnedCaloriesBreakdownProps> = (
           </div>
 
           {/* Workout Breakdown */}
-          {completedWorkouts.length > 0 ? (
+          {totalActivities > 0 ? (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Workout Breakdown</h3>
+              <h3 className="text-lg font-semibold">Activity Breakdown</h3>
+              
+              {/* Strength Training Workouts */}
               {completedWorkouts.map((workout, index) => (
-                <Card key={index} className="p-4 hover:bg-accent/50 transition-colors">
+                <Card key={`workout-${index}`} className="p-4 hover:bg-accent/50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {getWorkoutTypeIcon(workout.type)}
@@ -116,13 +156,38 @@ export const BurnedCaloriesBreakdown: React.FC<BurnedCaloriesBreakdownProps> = (
                     </div>
                     <div className="text-right">
                       <div className="font-semibold text-destructive">
-                        ~{Math.floor(exerciseCalories / completedWorkouts.length)} cal
+                        ~{Math.floor(workout.calories || (exerciseCalories / totalActivities))} cal
                       </div>
                       {workout.exercises && (
                         <div className="text-sm text-muted-foreground">
                           {workout.exercises} exercises
                         </div>
                       )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              
+              {/* Cardio Sessions */}
+              {cardioSessions.map((cardio, index) => (
+                <Card key={`cardio-${index}`} className="p-4 hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {getCardioIcon(cardio.type)}
+                      <div>
+                        <h4 className="font-medium">{getCardioLabel(cardio.type)}</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{formatCardioDetails(cardio)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-destructive">
+                        ~{cardio.calories} cal
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {cardio.type}
+                      </div>
                     </div>
                   </div>
                 </Card>
