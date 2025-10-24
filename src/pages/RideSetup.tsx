@@ -89,17 +89,54 @@ export default function RideSetup() {
               <CardDescription>Select your cycling environment</CardDescription>
             </CardHeader>
             <CardContent>
-              <Select value={settings.ride_type} onValueChange={(v: any) => setSettings({ ...settings, ride_type: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="road">🚴 Road Cycling</SelectItem>
-                  <SelectItem value="mountain">🏔️ Mountain Biking</SelectItem>
-                  <SelectItem value="indoor">🏠 Indoor Trainer</SelectItem>
-                  <SelectItem value="commute">🚲 Commute</SelectItem>
-                </SelectContent>
-              </Select>
+              <TooltipProvider>
+                <Select value={settings.ride_type} onValueChange={(v: any) => setSettings({ ...settings, ride_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-popover">
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="road">🚴 Road Cycling</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Road Cycling</p>
+                        <p className="text-sm">Outdoor riding on paved roads. Optimized for tracking speed, distance, and elevation on smooth surfaces. Best for training rides, group rides, or solo adventures.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="mountain">🏔️ Mountain Biking</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Mountain Biking</p>
+                        <p className="text-sm">Off-road trail riding with variable terrain. Tracks technical sections, elevation changes, and challenging trails. Perfect for singletrack, cross-country, or enduro rides.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="indoor">🏠 Indoor Trainer</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Indoor Trainer</p>
+                        <p className="text-sm">Stationary bike or smart trainer workout. Focuses on power, cadence, and heart rate without GPS tracking. Ideal for structured interval training or bad weather days.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <SelectItem value="commute">🚲 Commute</SelectItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs bg-popover border shadow-lg z-[100]">
+                        <p className="font-semibold mb-1">Commute</p>
+                        <p className="text-sm">Daily transportation cycling to work or errands. Tracks your regular routes and helps monitor commute time. Great for tracking active transportation and carbon offset.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </SelectContent>
+                </Select>
+              </TooltipProvider>
             </CardContent>
           </Card>
 
