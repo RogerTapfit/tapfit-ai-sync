@@ -22,6 +22,11 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Check for mode parameter to open signup tab
+  const searchParams = new URLSearchParams(location.search);
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const [activeTab, setActiveTab] = useState(initialMode);
 
   const handleBack = () => {
     // Check if there's a referrer in location state, otherwise go to dashboard
@@ -341,7 +346,7 @@ const Auth = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>

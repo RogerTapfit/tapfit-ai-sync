@@ -148,8 +148,42 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     return <AvatarBuilder onClose={() => setShowAvatarBuilder(false)} />;
   }
 
+  // Check if user is guest
+  const isGuestUser = (user as any)?.is_anonymous === true || localStorage.getItem('tapfit_guest') === '1';
+
   return (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
+      {/* Guest User Banner */}
+      {isGuestUser && (
+        <Card className="glow-card relative overflow-hidden border-2 border-primary/30 animate-pulse-slow">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10" />
+          <div className="relative p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  You're in Guest Mode
+                </h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Your progress won't be saved! Create a free account to keep your workouts, food entries, and achievements.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  ✓ Save your progress forever • ✓ Track across devices • ✓ Unlock all features
+                </p>
+              </div>
+              <Button 
+                variant="glow" 
+                size="lg"
+                onClick={() => navigate('/auth?mode=signup')}
+                className="shadow-glow w-full md:w-auto"
+              >
+                Create Free Account
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Hero Section */}
       <div className="relative overflow-hidden rounded-2xl h-[250px] sm:h-[270px] md:h-[280px] lg:h-[320px]">
         <img 

@@ -141,18 +141,23 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
             </div>
             <div className="space-y-3">
               {isGuest ? (
-                <Button
-                  variant="glow"
-                  size="sm"
-                  onClick={() => {
-                    navigate('/auth');
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full justify-start touch-target"
-                >
-                  <UserIcon className="h-3 w-3 mr-2" />
-                  Sign In
-                </Button>
+                <div className="space-y-2">
+                  <Badge variant="outline" className="w-full justify-center text-xs">
+                    Guest Mode
+                  </Badge>
+                  <Button
+                    variant="glow"
+                    size="sm"
+                    onClick={() => {
+                      navigate('/auth?mode=signup');
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full justify-start touch-target"
+                  >
+                    <UserIcon className="h-3 w-3 mr-2" />
+                    Create Account
+                  </Button>
+                </div>
               ) : (
                 <>
                   <div className="text-sm font-medium truncate">
