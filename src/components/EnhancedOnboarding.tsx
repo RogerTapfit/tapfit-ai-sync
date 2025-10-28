@@ -7,11 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Target, Dumbbell, Calendar, Heart } from 'lucide-react';
+import { User, Target, Dumbbell, Calendar, Heart, Ruler } from 'lucide-react';
 import { SmartWeightRecommendation } from './SmartWeightRecommendation';
 import { UserWeightProfile } from '@/services/weightCalculationService';
+import { lbsToKg, kgToLbs, feetInchesToCm, cmToFeetInches } from '@/lib/unitConversions';
+import type { UnitSystem } from '@/lib/unitConversions';
 
 interface EnhancedProfile {
   age: number;
@@ -37,6 +40,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showSmartRecommendation, setShowSmartRecommendation] = useState(false);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
   const [profile, setProfile] = useState<EnhancedProfile>({
     age: 25,
     weight_kg: 70,
@@ -59,17 +63,6 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
 
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
-
-  // Conversion utilities
-  const lbsToKg = (lbs: number) => lbs * 0.453592;
-  const kgToLbs = (kg: number) => kg / 0.453592;
-  const feetInchesToCm = (feet: number, inches: number) => (feet * 12 + inches) * 2.54;
-  const cmToFeetInches = (cm: number) => {
-    const totalInches = cm / 2.54;
-    const feet = Math.floor(totalInches / 12);
-    const inches = Math.round(totalInches % 12);
-    return { feet, inches };
-  };
 
   // Fallback nutrition goal estimator (client-side)
   const estimateGoals = (weightKg: number, heightCm: number, age: number, gender: 'male' | 'female' | 'other') => {
@@ -228,6 +221,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           diet_type: profile.diet_type,
           health_conditions: healthConditionsArray,
           previous_injuries: previousInjuriesArray,
+          unit_preference: unitSystem,
           onboarding_completed: true
         }], { onConflict: 'id' });
 
@@ -325,6 +319,34 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
               <h2 className="text-2xl font-bold">Basic Information</h2>
               <p className="text-muted-foreground">Help us personalize your experience</p>
             </div>
+
+            {/* Unit System Selector */}
+            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Ruler className="h-4 w-4 text-primary" />
+                <Label className="font-semibold">Measurement Units</Label>
+              </div>
+              <RadioGroup 
+                value={unitSystem} 
+                onValueChange={(value) => setUnitSystem(value as UnitSystem)}
+                className="grid grid-cols-2 gap-3"
+              >
+                <div className="flex items-center space-x-2 p-3 rounded-md border hover:bg-accent/50 transition-colors">
+                  <RadioGroupItem value="imperial" id="unit-imperial" />
+                  <Label htmlFor="unit-imperial" className="cursor-pointer flex-1">
+                    <div className="font-medium">Imperial</div>
+                    <div className="text-xs text-muted-foreground">lbs, ft, in</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 rounded-md border hover:bg-accent/50 transition-colors">
+                  <RadioGroupItem value="metric" id="unit-metric" />
+                  <Label htmlFor="unit-metric" className="cursor-pointer flex-1">
+                    <div className="font-medium">Metric</div>
+                    <div className="text-xs text-muted-foreground">kg, cm</div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -358,52 +380,90 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (lbs)</Label>
-                <Input
-                  id="weight"
-                  type="text"
-                  inputMode="decimal"
-                  pattern="[0-9]*\\.?[0-9]*"
-                  value={weightLbsInput}
-                  onChange={(e) => {
-                    // Allow digits and a single dot
-                    let v = e.target.value.replace(/[^0-9.]/g, '');
-                    const parts = v.split('.');
-                    if (parts.length > 2) {
-                      v = parts[0] + '.' + parts.slice(1).join('');
-                    }
-                    setWeightLbsInput(v);
-                  }}
-                  placeholder="e.g. 165.5"
-                />
+            {unitSystem === 'imperial' ? (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight (lbs)</Label>
+                  <Input
+                    id="weight"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\\.?[0-9]*"
+                    value={weightLbsInput}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = v.split('.');
+                      if (parts.length > 2) {
+                        v = parts[0] + '.' + parts.slice(1).join('');
+                      }
+                      setWeightLbsInput(v);
+                    }}
+                    placeholder="e.g. 165.5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height-feet">Height (feet)</Label>
+                  <Input
+                    id="height-feet"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={heightFeetInput}
+                    onChange={(e) => setHeightFeetInput(e.target.value.replace(/\D/g, ''))}
+                    placeholder="e.g. 5"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height-inches">Height (inches)</Label>
+                  <Input
+                    id="height-inches"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={heightInchesInput}
+                    onChange={(e) => setHeightInchesInput(e.target.value.replace(/\D/g, ''))}
+                    placeholder="e.g. 7"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="height-feet">Height (feet)</Label>
-                <Input
-                  id="height-feet"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={heightFeetInput}
-                  onChange={(e) => setHeightFeetInput(e.target.value.replace(/\D/g, ''))}
-                  placeholder="e.g. 5"
-                />
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight-kg">Weight (kg)</Label>
+                  <Input
+                    id="weight-kg"
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\\.?[0-9]*"
+                    value={profile.weight_kg ? profile.weight_kg.toFixed(1) : ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        handleInputChange('weight_kg', val);
+                      }
+                    }}
+                    placeholder="e.g. 75.0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height-cm">Height (cm)</Label>
+                  <Input
+                    id="height-cm"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={profile.height_cm ? Math.round(profile.height_cm) : ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        handleInputChange('height_cm', val);
+                      }
+                    }}
+                    placeholder="e.g. 175"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="height-inches">Height (inches)</Label>
-                <Input
-                  id="height-inches"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={heightInchesInput}
-                  onChange={(e) => setHeightInchesInput(e.target.value.replace(/\D/g, ''))}
-                  placeholder="e.g. 7"
-                />
-              </div>
-            </div>
+            )}
           </div>
         );
 

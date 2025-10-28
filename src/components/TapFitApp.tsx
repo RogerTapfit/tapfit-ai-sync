@@ -2,7 +2,7 @@ import { useState, Suspense, lazy } from "react";
 import Navigation from "./Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Trophy, Settings, Smartphone, Apple } from "lucide-react";
+import { Users, Trophy, Settings, Smartphone, Apple, Ruler } from "lucide-react";
 import { useAuth } from "./AuthGuard";
 import LoadingSpinner from "./LoadingSpinner";
 import { VersionDisplay } from "./VersionDisplay";
@@ -20,6 +20,7 @@ const AvatarGallery = lazy(() => import("./AvatarGallery"));
 const NutritionDashboard = lazy(() => import("./NutritionDashboard"));
 const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
 const LogoGenerator = lazy(() => import("./LogoGenerator").then(module => ({ default: module.LogoGenerator })));
+const UnitPreferenceSettings = lazy(() => import("./UnitPreferenceSettings").then(module => ({ default: module.UnitPreferenceSettings })));
 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -50,6 +51,11 @@ const TapFitApp = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl">
+        {/* Unit Preference Settings */}
+        <div className="lg:col-span-2">
+          <UnitPreferenceSettings userId={user?.id} />
+        </div>
+
         <Card className="glow-card p-6">
           <div className="flex items-center gap-3 mb-4">
             <Smartphone className="h-5 w-5 text-primary" />

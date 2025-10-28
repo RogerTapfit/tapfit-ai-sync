@@ -1464,6 +1464,7 @@ export type Database = {
           target_daily_calories: number | null
           target_fat_grams: number | null
           target_protein_grams: number | null
+          unit_preference: string | null
           vo2max_velocity: number | null
           weight_kg: number | null
         }
@@ -1497,6 +1498,7 @@ export type Database = {
           target_daily_calories?: number | null
           target_fat_grams?: number | null
           target_protein_grams?: number | null
+          unit_preference?: string | null
           vo2max_velocity?: number | null
           weight_kg?: number | null
         }
@@ -1530,6 +1532,7 @@ export type Database = {
           target_daily_calories?: number | null
           target_fat_grams?: number | null
           target_protein_grams?: number | null
+          unit_preference?: string | null
           vo2max_velocity?: number | null
           weight_kg?: number | null
         }
