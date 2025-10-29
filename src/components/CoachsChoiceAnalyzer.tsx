@@ -160,22 +160,39 @@ export const CoachsChoiceAnalyzer = () => {
                 Capture multiple products clearly in one photo
               </p>
             </div>
-            <label htmlFor="shelf-photo" className="cursor-pointer">
-              <Button size="lg" asChild>
-                <span>
-                  <Camera className="h-5 w-5 mr-2" />
-                  Capture Shelf Photo
-                </span>
-              </Button>
-              <input
-                id="shelf-photo"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handlePhotoCapture}
-              />
-            </label>
+            <div className="flex gap-3 justify-center">
+              <label htmlFor="shelf-photo-camera" className="cursor-pointer flex-1 max-w-xs">
+                <Button size="lg" className="w-full" asChild>
+                  <span>
+                    <Camera className="h-5 w-5 mr-2" />
+                    Take Photo
+                  </span>
+                </Button>
+                <input
+                  id="shelf-photo-camera"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoCapture}
+                />
+              </label>
+              <label htmlFor="shelf-photo-upload" className="cursor-pointer flex-1 max-w-xs">
+                <Button size="lg" variant="outline" className="w-full" asChild>
+                  <span>
+                    <Camera className="h-5 w-5 mr-2" />
+                    Upload Photo
+                  </span>
+                </Button>
+                <input
+                  id="shelf-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoCapture}
+                />
+              </label>
+            </div>
           </div>
         </Card>
       ) : (
