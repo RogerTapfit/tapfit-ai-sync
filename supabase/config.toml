@@ -64,3 +64,8 @@ verify_jwt = false
 verify_jwt = true
 cpu = "auto"
 memory = "auto"
+
+[functions.analyzeShelfChoice]
+verify_jwt = false
+cpu = "auto"
+memory = "auto"
