@@ -47,6 +47,7 @@ const INTENT_CATEGORIES = [
   { id: 'post_workout', label: 'Post-Workout', icon: Activity, description: 'Recover well' },
   { id: 'low_sugar', label: 'Low-Sugar Snack', icon: Apple, description: 'Cut the sugar' },
   { id: 'whole_food', label: 'Whole Food Option', icon: Leaf, description: 'Keep it natural' },
+  { id: 'party', label: 'Party', icon: Sparkles, description: 'Smart alcohol choice' },
 ];
 
 export const CoachsChoiceAnalyzer = () => {
