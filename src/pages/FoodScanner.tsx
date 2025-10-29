@@ -111,8 +111,8 @@ const FoodScanner = () => {
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xs:inline">Coach's Choice</span>
-                  <span className="xs:hidden">Coach</span>
+                  <span className="hidden xs:inline">Smart Pick</span>
+                  <span className="xs:hidden">Pick</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="builder" 

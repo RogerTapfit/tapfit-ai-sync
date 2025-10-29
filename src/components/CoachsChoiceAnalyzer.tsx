@@ -141,7 +141,7 @@ export const CoachsChoiceAnalyzer = () => {
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <Target className="h-8 w-8 text-primary" />
-          <h2 className="text-3xl font-bold">Coach's Choice</h2>
+          <h2 className="text-3xl font-bold">Smart Pick</h2>
         </div>
         <p className="text-muted-foreground">
           Let AI help you pick the healthiest option from any shelf
