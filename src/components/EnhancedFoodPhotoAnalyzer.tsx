@@ -290,8 +290,18 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
         mealType
       );
       
-      // Check if no food items were detected
+      // Check if no food items were detected but allow cute_rating responses
       if (!result.food_items || result.food_items.length === 0) {
+        // If there's a cute_rating (person/animal detected), show that instead
+        if (result.cute_rating?.detected) {
+          setAnalysisResult(result);
+          setEditingItems([]);
+          onStateChange?.('results', { photoCount: photos.length, hasResults: true });
+          setPhotos(prev => prev.map(photo => ({ ...photo, analyzed: true })));
+          toast.success('✨ ' + (result.cute_rating.whats_good_message || 'Photo analyzed!'));
+          return;
+        }
+        // Otherwise show error for actual food analysis
         toast.error('No food items detected. Please try taking a clearer photo with better lighting.');
         return;
       }
@@ -833,6 +843,41 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Cute Rating Display (when no food detected) */}
+              {editingItems.length === 0 && analysisResult?.cute_rating?.detected && (
+                <Card className="bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/20 dark:to-purple-950/20 border-2 border-pink-200 dark:border-pink-900">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="text-center space-y-3">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", duration: 0.5 }}
+                        className="flex justify-center"
+                      >
+                        <div className="bg-gradient-to-br from-pink-400 to-purple-500 rounded-full p-4">
+                          <Sparkles className="h-8 w-8 text-white" />
+                        </div>
+                      </motion.div>
+                      
+                      <div>
+                        <h3 className="text-2xl font-bold text-pink-700 dark:text-pink-300 mb-2">
+                          {analysisResult.cute_rating.rating || "10/10"}
+                        </h3>
+                        <p className="text-lg font-medium text-pink-600 dark:text-pink-400">
+                          {analysisResult.cute_rating.compliment}
+                        </p>
+                      </div>
+                      
+                      {analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
+                        <div className="mt-4 text-sm text-muted-foreground italic">
+                          {analysisResult.suggestions[0]}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Health Grade Analysis */}
               {editingItems.length > 0 && (() => {
                 const totalCalories = editingItems.reduce((sum, item) => sum + item.calories, 0);
