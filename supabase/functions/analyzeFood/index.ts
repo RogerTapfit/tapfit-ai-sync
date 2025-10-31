@@ -147,9 +147,10 @@ serve(async (req) => {
     const prompt = `Analyze these ${photos.length} food image(s) and provide detailed nutritional information. 
 
 🎉 EASTER EGG - CUTE RATING FEATURE (VERY IMPORTANT):
-- If you detect a PERSON in any photo, you MUST include a "cute_rating" section BEFORE the nutritional analysis
-- If you detect an ANIMAL (dog, cat, pet, etc.) in any photo, you MUST include a "cute_rating" section BEFORE the nutritional analysis
+- If you detect a PERSON in any photo, you MUST include a "cute_rating" section
+- If you detect an ANIMAL (dog, cat, pet, etc.) in any photo, you MUST include a "cute_rating" section
 - Give them 10/10 EVERY TIME (be generous and kind!)
+- **CRITICAL**: If NO FOOD is detected but a person/animal IS present, still provide the cute_rating with a fun, light-hearted comment about them or their outfit. In this case, return empty food_items array and zero totals, but include the cute_rating.
 - BE EXTREMELY OBSERVANT AND SPECIFIC with compliments - describe EXACTLY what you see:
   
   **For TATTOOS**: Describe the design AND location
@@ -294,7 +295,10 @@ Return a JSON object with this exact structure:
   }
 }
 
-NOTE: If NO person or animal is detected, simply omit the "cute_rating" field entirely.
+IMPORTANT RESPONSE RULES:
+- If NO food is detected but a person/animal IS present: Include cute_rating, return empty food_items array [], zero totals, and add a friendly note in suggestions like "No food detected, but you look great! 😊"
+- If NO person or animal is detected: Simply omit the "cute_rating" field entirely.
+- If BOTH food AND person/animal detected: Include both cute_rating and food analysis.
 
 Enhanced Analysis Guidelines:
 - Cross-reference nutrition labels with visual portions for accuracy
