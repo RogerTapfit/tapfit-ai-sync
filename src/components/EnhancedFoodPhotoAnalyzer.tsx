@@ -854,13 +854,26 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                         </div>
                       </div>
                       
-                      {gradeResult.pros.length > 0 && (
+                      {(gradeResult.pros.length > 0 || analysisResult?.cute_rating?.detected) && (
                         <div>
                           <h5 className="font-medium text-stats-exercises mb-2 flex items-center gap-1">
                             <CheckCircle2 className="h-4 w-4" />
                             What's Good
                           </h5>
                           <ul className="space-y-1">
+                            {analysisResult?.cute_rating?.detected && (
+                              <motion.li
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="text-sm font-medium flex items-start gap-2 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-950/20 dark:to-purple-950/20 p-2 rounded-md border border-pink-200 dark:border-pink-900"
+                              >
+                                <Sparkles className="h-3 w-3 text-pink-500 mt-1 flex-shrink-0" />
+                                <span className="text-pink-700 dark:text-pink-300">
+                                  {analysisResult.cute_rating.whats_good_message || analysisResult.cute_rating.compliment}
+                                </span>
+                              </motion.li>
+                            )}
                             {gradeResult.pros.map((pro, index) => (
                               <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
                                 <CheckCircle2 className="h-3 w-3 text-stats-exercises mt-1 flex-shrink-0" />

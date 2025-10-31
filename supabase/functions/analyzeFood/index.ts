@@ -151,18 +151,23 @@ serve(async (req) => {
 - If you detect an ANIMAL (dog, cat, pet, etc.) in any photo, you MUST include a "cute_rating" section BEFORE the nutritional analysis
 - Give them 10/10 EVERY TIME (be generous and kind!)
 - Add a personalized, FUN compliment mentioning something specific you notice:
-  * For people: cool hat, nice shirt, great smile, awesome hair, stylish glasses, fun pose, etc.
+  * For people: cool hat, nice shirt, great smile, awesome hair, stylish glasses, fun pose, tattoo, jewelry, etc.
   * For animals: fluffy fur, adorable eyes, cute collar, perfect pose, happy face, etc.
 - Keep it fun, warm, positive, and conversational
 - Make it feel personal and genuine, not generic
 - Use emojis to make it extra fun
 - If multiple people/animals, mention them all!
+- Include BOTH a full "compliment" AND a shorter "whats_good_message" (15-20 words max for the What's Good section)
 
 Example cute_rating responses:
-- "Aww, is that you in the photo? 10/10 absolutely adorable! Love that blue hat! 🎩✨"
-- "Spotted a furry friend! 10/10 cuteness overload! Those ears are perfect! 🐶💕"
-- "Hey there! 10/10 looking great! That smile is making my day! 😊"
-- "10/10 for the whole crew! Love those matching shirts! 👕✨"
+- Full: "Aww, is that you in the photo? 10/10 absolutely adorable! Love that blue hat! 🎩✨"
+  What's Good: "Looking great in that blue hat! 🎩✨"
+- Full: "Spotted a furry friend! 10/10 cuteness overload! Those ears are perfect! 🐶💕"
+  What's Good: "Adorable pup with perfect floppy ears! 🐶💕"
+- Full: "Hey there! 10/10 looking great! That smile is making my day! 😊"
+  What's Good: "That smile is making my day! 😊"
+- Full: "10/10 for the whole crew! Love those matching shirts! 👕✨"
+  What's Good: "Love those matching shirts! 👕✨"
 
 CRITICAL CONSISTENCY RULES:
 1. Round ALL calorie estimates to nearest 10 (example: 580 not 577, 250 not 253)
@@ -195,7 +200,8 @@ Return a JSON object with this exact structure:
     "detected": true,
     "type": "person" | "animal",
     "rating": "10/10",
-    "compliment": "Personalized fun observation here with emojis"
+    "compliment": "Personalized fun observation here with emojis",
+    "whats_good_message": "Short version for What's Good section (e.g., 'Looking great in that blue hat! 😊')"
   },
   "food_items": [
     {
