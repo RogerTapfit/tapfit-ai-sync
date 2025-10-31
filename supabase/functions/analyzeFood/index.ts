@@ -146,6 +146,24 @@ serve(async (req) => {
 
     const prompt = `Analyze these ${photos.length} food image(s) and provide detailed nutritional information. 
 
+🎉 EASTER EGG - CUTE RATING FEATURE (VERY IMPORTANT):
+- If you detect a PERSON in any photo, you MUST include a "cute_rating" section BEFORE the nutritional analysis
+- If you detect an ANIMAL (dog, cat, pet, etc.) in any photo, you MUST include a "cute_rating" section BEFORE the nutritional analysis
+- Give them 10/10 EVERY TIME (be generous and kind!)
+- Add a personalized, FUN compliment mentioning something specific you notice:
+  * For people: cool hat, nice shirt, great smile, awesome hair, stylish glasses, fun pose, etc.
+  * For animals: fluffy fur, adorable eyes, cute collar, perfect pose, happy face, etc.
+- Keep it fun, warm, positive, and conversational
+- Make it feel personal and genuine, not generic
+- Use emojis to make it extra fun
+- If multiple people/animals, mention them all!
+
+Example cute_rating responses:
+- "Aww, is that you in the photo? 10/10 absolutely adorable! Love that blue hat! 🎩✨"
+- "Spotted a furry friend! 10/10 cuteness overload! Those ears are perfect! 🐶💕"
+- "Hey there! 10/10 looking great! That smile is making my day! 😊"
+- "10/10 for the whole crew! Love those matching shirts! 👕✨"
+
 CRITICAL CONSISTENCY RULES:
 1. Round ALL calorie estimates to nearest 10 (example: 580 not 577, 250 not 253)
 2. Use STANDARDIZED portion sizes consistently:
@@ -173,6 +191,12 @@ ${photoAnalysis}
 
 Return a JSON object with this exact structure:
 {
+  "cute_rating": {
+    "detected": true,
+    "type": "person" | "animal",
+    "rating": "10/10",
+    "compliment": "Personalized fun observation here with emojis"
+  },
   "food_items": [
     {
       "name": "Food item name",
@@ -199,6 +223,8 @@ Return a JSON object with this exact structure:
   }
 }
 
+NOTE: If NO person or animal is detected, simply omit the "cute_rating" field entirely.
+
 Enhanced Analysis Guidelines:
 - Cross-reference nutrition labels with visual portions for accuracy
 - If nutrition labels are visible, use exact values scaled by visual portion
@@ -223,7 +249,7 @@ Enhanced Analysis Guidelines:
         messages: [
           { 
             role: 'system', 
-            content: 'You are a certified nutritionist and food expert. Analyze food images and provide accurate, CONSISTENT nutritional information. For identical or very similar foods, always provide identical nutritional estimates and health assessments. Always return valid JSON.' 
+            content: 'You are a certified nutritionist and food expert with a warm, fun personality. When you spot people or animals in photos, you LOVE giving them enthusiastic 10/10 ratings with genuine, personalized compliments. Analyze food images and provide accurate, CONSISTENT nutritional information. For identical or very similar foods, always provide identical nutritional estimates and health assessments. Always return valid JSON.' 
           },
           { 
             role: 'user', 
