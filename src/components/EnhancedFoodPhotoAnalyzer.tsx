@@ -897,6 +897,21 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                             {gradeResult.grade}
                           </span>
                         </div>
+                        <div className="text-xs text-muted-foreground italic ml-auto">
+                          {(() => {
+                            const grade = gradeResult.grade;
+                            const hasProcessed = gradeResult.cons.some(con => 
+                              con.toLowerCase().includes('processed')
+                            );
+                            if (grade === 'D' || grade === 'F') {
+                              if (hasProcessed) return "⚠️ Ultra-processed foods";
+                              return "⚠️ Highly processed";
+                            }
+                            if (grade.startsWith('C')) return "Moderately processed";
+                            if (grade.startsWith('B')) return "Lightly processed";
+                            return "Whole foods";
+                          })()}
+                        </div>
                       </div>
                       
                       {(gradeResult.pros.length > 0 || analysisResult?.cute_rating?.detected) && (

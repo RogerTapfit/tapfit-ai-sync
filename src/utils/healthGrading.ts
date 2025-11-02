@@ -40,12 +40,19 @@ export const calculateHealthGrade = (
     item.name.toLowerCase().includes('tomato')
   );
 
+  // STRICT GRADING PHILOSOPHY: Prioritize whole foods, penalize processing
+  // We grade tough on processed foods to align with fitness-first philosophy
+  // Even "healthy" processed foods (protein bars, diet sodas) get lower grades
   const hasProcessedFood = foodItems.some(item =>
     item.name.toLowerCase().includes('fried') ||
     item.name.toLowerCase().includes('pizza') ||
     item.name.toLowerCase().includes('burger') ||
     item.name.toLowerCase().includes('fries') ||
-    item.name.toLowerCase().includes('chips')
+    item.name.toLowerCase().includes('chips') ||
+    item.name.toLowerCase().includes('soda') ||
+    item.name.toLowerCase().includes('candy') ||
+    item.name.toLowerCase().includes('cookie') ||
+    item.name.toLowerCase().includes('processed')
   );
 
   const hasHighFiber = foodItems.some(item =>

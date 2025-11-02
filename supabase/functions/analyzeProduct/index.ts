@@ -70,6 +70,26 @@ PRODUCT ANALYSIS REQUIREMENTS:
 - Classify processing level (NOVA score 1-4)
 - Note major allergens and safety concerns
 
+STRICT GRADING PHILOSOPHY (MATCH FOOD ANALYZER):
+Grade based on whole food quality and minimal processing. Be tough on processed foods.
+- A = Whole foods, minimal processing, nutrient-dense (fresh produce, nuts, eggs, plain yogurt)
+- B = Lightly processed with clean ingredients (minimally processed proteins, whole grain products)
+- C = Moderately processed OR high sugar/sodium/fat (flavored yogurts, granola bars with added sugar)
+- D = Ultra-processed, artificial ingredients, or concerning additives (diet sodas, chips, candy, processed meats)
+- F = Severe safety concerns, harmful additives, or extreme processing
+
+SPECIFIC GRADING RULES:
+- Zero-calorie/sugar-free sodas/drinks: Grade D (ultra-processed with artificial sweeteners, not "healthy" just low-impact)
+- Diet beverages with artificial sweeteners: Grade D (concerns about artificial ingredients despite low calories)
+- Protein bars with clean ingredients: Grade B-C depending on processing level
+- Whole fruits/vegetables: Grade A
+- Processed/cured meats: Grade D-F (nitrates, high sodium, processing concerns)
+- Natural plain yogurt: Grade A-B
+- Sweetened/flavored yogurt: Grade C-D depending on sugar content
+- Energy drinks: Grade D-F (high caffeine, artificial ingredients)
+- Fresh meat/fish: Grade A-B
+- Packaged snacks (chips, cookies): Grade D (ultra-processed)
+
 RESPONSE FORMAT: Return valid JSON only, no markdown formatting.
 {
   "product": {

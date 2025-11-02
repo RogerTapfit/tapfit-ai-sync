@@ -716,6 +716,20 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                       <p className="text-xs text-muted-foreground mt-2 font-medium">
                         Health Score: <span className="text-primary font-bold">{analysisResult.health_grade.score}/100</span>
                       </p>
+                      <div className="mt-2 text-xs text-muted-foreground italic max-w-[180px]">
+                        {(() => {
+                          const grade = analysisResult.health_grade.letter.toUpperCase();
+                          const nova = analysisResult.detailed_processing.nova_score;
+                          if (grade === 'D' || grade === 'F') {
+                            if (nova >= 4) return "⚠️ Ultra-processed beverage";
+                            if (analysisResult.chemical_analysis.artificial_ingredients.length > 0) return "⚠️ Contains artificial ingredients";
+                            return "⚠️ Highly processed food";
+                          }
+                          if (grade.startsWith('C')) return "Moderately processed";
+                          if (grade.startsWith('B')) return "Lightly processed";
+                          return "Whole food";
+                        })()}
+                      </div>
                     </motion.div>
                   </div>
 
