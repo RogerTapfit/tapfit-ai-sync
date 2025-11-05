@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MachineRegistryService } from '@/services/machineRegistryService';
 import { useWeightRecommendation } from '@/hooks/useWeightRecommendation';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
+import { useMachineHistory } from '@/hooks/useMachineHistory';
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
@@ -48,6 +49,9 @@ export default function MachineWorkout() {
   const [workoutStarted, setWorkoutStarted] = useState(false);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   
+  // Get machine history for weight recommendations
+  const { history: machineHistory, loading: historyLoading } = useMachineHistory(machine?.name || '');
+  
   // Get personalized weight recommendations
   const { 
     recommendation, 
@@ -57,15 +61,16 @@ export default function MachineWorkout() {
   } = useWeightRecommendation({
     exerciseName: machine?.type || 'chest_press',
     machineName: machine?.name || '',
-    muscleGroup: machine?.muscleGroup || 'chest'
+    muscleGroup: machine?.muscleGroup || 'chest',
+    historicalWeight: machineHistory?.lastWeight // Pass historical weight!
   });
 
   // Initialize sets when machine and recommendation are loaded
   useEffect(() => {
-    if (machine && recommendation && !recommendationLoading) {
+    if (machine && recommendation && !recommendationLoading && !historyLoading) {
       initializeSets();
     }
-  }, [machine, recommendation, recommendationLoading]);
+  }, [machine, recommendation, recommendationLoading, historyLoading, machineHistory]);
 
   // Ensure we have an active workout session
   useEffect(() => {
@@ -111,6 +116,11 @@ export default function MachineWorkout() {
   const initializeSets = () => {
     if (!machine || !recommendation) return;
     
+    // Prioritize last used weight over calculated recommendation
+    const startingWeight = machineHistory?.lastWeight || 
+                           recommendation.recommended_weight || 
+                           80;
+    
     const newSets: WorkoutSet[] = [];
     for (let i = 0; i < (recommendation.sets || 3); i++) {
       newSets.push({
@@ -119,7 +129,7 @@ export default function MachineWorkout() {
         weight: 0,
         completed: false,
         actualReps: recommendation.reps || 12,
-        actualWeight: recommendation.recommended_weight || 80
+        actualWeight: startingWeight // Use historical weight!
       });
     }
     setSets(newSets);
@@ -180,6 +190,23 @@ export default function MachineWorkout() {
   const handleSetEdit = (setIndex: number, field: 'actualReps' | 'actualWeight', value: number) => {
     const updatedSets = [...sets];
     updatedSets[setIndex][field] = value;
+    
+    // AUTO-PROPAGATE WEIGHT: If editing Set 1's weight and no other sets are completed yet
+    if (setIndex === 0 && field === 'actualWeight') {
+      const anyOtherSetsCompleted = updatedSets.slice(1).some(set => set.completed);
+      
+      if (!anyOtherSetsCompleted) {
+        // User is setting their working weight - apply to all uncompleted sets
+        updatedSets.forEach((set, idx) => {
+          if (!set.completed) {
+            set.actualWeight = value;
+          }
+        });
+        
+        toast.success(`Weight updated to ${value} lbs for all sets`);
+      }
+    }
+    
     setSets(updatedSets);
   };
 
@@ -536,6 +563,12 @@ export default function MachineWorkout() {
                     <div className="text-xs text-muted-foreground text-center">
                       Based on your profile and experience level
                     </div>
+                    
+                    {machineHistory && (
+                      <div className="text-xs text-center text-muted-foreground mt-2 p-2 bg-secondary/20 rounded">
+                        💪 Last time: {machineHistory.lastWeight} lbs × {machineHistory.lastReps} reps
+                      </div>
+                    )}
                   </>
                 )}
               </CardContent>

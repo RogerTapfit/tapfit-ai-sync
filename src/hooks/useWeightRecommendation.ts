@@ -12,12 +12,14 @@ interface UseWeightRecommendationProps {
   exerciseName: string;
   machineName: string;
   muscleGroup: string;
+  historicalWeight?: number; // Priority override from last workout
 }
 
 export const useWeightRecommendation = ({ 
   exerciseName, 
   machineName, 
-  muscleGroup 
+  muscleGroup,
+  historicalWeight
 }: UseWeightRecommendationProps) => {
   const [recommendation, setRecommendation] = useState<ExerciseWeightCalculation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,11 +84,11 @@ export const useWeightRecommendation = ({
       const exerciseRecommendation: ExerciseWeightCalculation = {
         exercise_name: exerciseName,
         machine_name: machineName,
-        recommended_weight: recommendedWeight,
+        recommended_weight: historicalWeight || recommendedWeight, // Prioritize history!
         sets,
         reps,
         rest_seconds,
-        confidence
+        confidence: historicalWeight ? 'high' : confidence // Boost confidence if using history
       };
 
       setRecommendation(exerciseRecommendation);
