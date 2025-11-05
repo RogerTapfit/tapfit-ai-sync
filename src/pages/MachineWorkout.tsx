@@ -9,6 +9,8 @@ import { MachineRegistryService } from '@/services/machineRegistryService';
 import { useWeightRecommendation } from '@/hooks/useWeightRecommendation';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useMachineHistory } from '@/hooks/useMachineHistory';
+import { usePersonalRecords } from '@/hooks/usePersonalRecords';
+import { PRCelebration } from '@/components/PRCelebration';
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
@@ -21,7 +23,8 @@ import {
   Weight, 
   Edit3,
   Play,
-  TrendingUp
+  TrendingUp,
+  Trophy
 } from 'lucide-react';
 
 interface WorkoutSet {
@@ -49,9 +52,14 @@ export default function MachineWorkout() {
   const [loading, setLoading] = useState(false);
   const [workoutStarted, setWorkoutStarted] = useState(false);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
+  const [showPRCelebration, setShowPRCelebration] = useState(false);
+  const [prData, setPRData] = useState<{ oldPR: number; newPR: number; improvement: number; coins: number } | null>(null);
   
   // Get machine history for weight recommendations
   const { history: machineHistory, loading: historyLoading } = useMachineHistory(machine?.name || '');
+  
+  // Get personal records tracking
+  const { currentPR, checkForNewPR } = usePersonalRecords(machine?.name || '');
   
   // Get personalized weight recommendations
   const { 
@@ -334,6 +342,31 @@ export default function MachineWorkout() {
       avgWeight
     );
 
+    // Check for new PR
+    if (success && avgWeight > 0) {
+      const prResult = await checkForNewPR(
+        machine.name,
+        workoutName,
+        avgWeight,
+        totalReps,
+        completedSets
+      );
+
+      if (prResult.isNewPR) {
+        // Calculate coins based on improvement
+        const improvement = prResult.improvement || 0;
+        const coinsEarned = improvement >= 20 ? 100 : improvement >= 10 ? 50 : 25;
+        
+        setPRData({
+          oldPR: prResult.oldPR || 0,
+          newPR: prResult.newPR || avgWeight,
+          improvement,
+          coins: coinsEarned
+        });
+        setShowPRCelebration(true);
+      }
+    }
+
     if (success) {
       toast.success('Exercise completed and saved!');
       navigate('/workout-summary', { 
@@ -565,6 +598,22 @@ export default function MachineWorkout() {
                       Based on your profile and experience level
                     </div>
                     
+                    {/* Current PR Display */}
+                    {currentPR && (
+                      <div className="p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Trophy className="h-4 w-4 text-yellow-500" />
+                          <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">
+                            Current PR
+                          </span>
+                        </div>
+                        <div className="text-lg font-bold">{currentPR.weightLbs} lbs</div>
+                        <div className="text-xs text-muted-foreground">
+                          {currentPR.sets} sets × {currentPR.reps} reps
+                        </div>
+                      </div>
+                    )}
+                    
                     {machineHistory && !machineHistory.shouldProgressWeight && (
                       <div className="text-xs text-center text-muted-foreground mt-2 p-2 bg-secondary/20 rounded">
                         💪 Last time: {machineHistory.lastWeight} lbs × {machineHistory.lastReps} reps
@@ -758,6 +807,36 @@ export default function MachineWorkout() {
           </div>
         </div>
       </div>
+      
+      {/* PR Celebration Modal */}
+      {prData && (
+        <PRCelebration
+          isVisible={showPRCelebration}
+          machineName={machine.name}
+          oldPR={prData.oldPR}
+          newPR={prData.newPR}
+          improvement={prData.improvement}
+          coinsEarned={prData.coins}
+          onClose={() => {
+            setShowPRCelebration(false);
+            toast.success('Exercise completed and saved!');
+            navigate('/workout-summary', { 
+              state: { 
+                workoutData: {
+                  name: mapMachineNameToWorkoutName(machine.name),
+                  exercises: 1,
+                  duration: workoutStartTime ? Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60)) : 0,
+                  sets: sets.filter(s => s.completed).length,
+                  totalReps: sets.reduce((sum, set) => sum + (set.actualReps || 0), 0),
+                  totalWeightLifted: sets.filter(set => set.completed).reduce((sum, set) => sum + ((set.actualWeight || 0) * (set.actualReps || 0)), 0),
+                  notes: notes,
+                  allWorkoutsCompleted: false
+                }
+              }
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

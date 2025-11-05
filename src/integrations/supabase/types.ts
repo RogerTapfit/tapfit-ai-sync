@@ -1376,6 +1376,51 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_records: {
+        Row: {
+          achieved_at: string
+          celebrated: boolean | null
+          created_at: string
+          exercise_name: string
+          id: string
+          improvement_percentage: number | null
+          machine_name: string
+          previous_record_weight: number | null
+          reps: number
+          sets: number
+          user_id: string
+          weight_lbs: number
+        }
+        Insert: {
+          achieved_at?: string
+          celebrated?: boolean | null
+          created_at?: string
+          exercise_name: string
+          id?: string
+          improvement_percentage?: number | null
+          machine_name: string
+          previous_record_weight?: number | null
+          reps: number
+          sets: number
+          user_id: string
+          weight_lbs: number
+        }
+        Update: {
+          achieved_at?: string
+          celebrated?: boolean | null
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          improvement_percentage?: number | null
+          machine_name?: string
+          previous_record_weight?: number | null
+          reps?: number
+          sets?: number
+          user_id?: string
+          weight_lbs?: number
+        }
+        Relationships: []
+      }
       photo_upload_logs: {
         Row: {
           created_at: string | null
@@ -1430,6 +1475,48 @@ export type Database = {
           score?: number
           tier?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      pr_history: {
+        Row: {
+          achieved_at: string
+          coins_awarded: number | null
+          created_at: string
+          exercise_name: string
+          id: string
+          is_current_pr: boolean | null
+          machine_name: string
+          reps: number
+          sets: number
+          user_id: string
+          weight_lbs: number
+        }
+        Insert: {
+          achieved_at?: string
+          coins_awarded?: number | null
+          created_at?: string
+          exercise_name: string
+          id?: string
+          is_current_pr?: boolean | null
+          machine_name: string
+          reps: number
+          sets: number
+          user_id: string
+          weight_lbs: number
+        }
+        Update: {
+          achieved_at?: string
+          coins_awarded?: number | null
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          is_current_pr?: boolean | null
+          machine_name?: string
+          reps?: number
+          sets?: number
+          user_id?: string
+          weight_lbs?: number
         }
         Relationships: []
       }
