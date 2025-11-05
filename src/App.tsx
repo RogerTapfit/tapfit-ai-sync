@@ -39,6 +39,7 @@ import SwimSetup from "./pages/SwimSetup";
 import SwimActive from "./pages/SwimActive";
 import SwimHistory from "./pages/SwimHistory";
 import SwimSummary from "./pages/SwimSummary";
+import PRLeaderboard from "./pages/PRLeaderboard";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -216,6 +217,7 @@ const App = () => {
             <Route path="/swim/active" element={<AuthGuard fallback={<Auth />}><SwimActive /></AuthGuard>} />
             <Route path="/swim/history" element={<AuthGuard fallback={<Auth />}><SwimHistory /></AuthGuard>} />
             <Route path="/swim/summary/:id" element={<AuthGuard fallback={<Auth />}><SwimSummary /></AuthGuard>} />
+            <Route path="/pr-leaderboard" element={<AuthGuard fallback={<Auth />}><PRLeaderboard /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
               <AuthGuard fallback={<Auth />}>

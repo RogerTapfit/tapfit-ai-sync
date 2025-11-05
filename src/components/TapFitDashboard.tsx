@@ -520,14 +520,23 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Button 
+          variant="outline" 
+          className="glow-card h-16 text-lg"
+          onClick={() => navigate('/pr-leaderboard')}
+        >
+          <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
+          Personal Records
+        </Button>
+        
         <Button variant="outline" className="glow-card h-16 text-lg">
           <Users className="h-5 w-5 mr-2" />
           Social
         </Button>
         
         <Button variant="outline" className="glow-card h-16 text-lg">
-          <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
+          <Target className="h-5 w-5 mr-2 text-primary" />
           View Challenges
         </Button>
       </div>
