@@ -23,6 +23,7 @@ import {
 import heroImage from "@/assets/tapfit-hero-new.jpg";
 const HERO_MASCOT_URL = "/lovable-uploads/e3f47cfe-bdb8-47c1-a1d6-4df0229e046f.png";
 import { TapCoinsWidget } from "./TapCoinsWidget";
+import { WorkoutStreakTracker } from "./WorkoutStreakTracker";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
 import { TodaysPerformance } from "./TopPriorityStats";
@@ -278,6 +279,9 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
 
       {/* 2. Tap Coins Widget */}
       <TapCoinsWidget />
+
+      {/* Workout Streak Tracker */}
+      <WorkoutStreakTracker showMilestones={true} />
 
       {/* Calendar Feature */}
       <Card className="glow-card animate-slide-up">

@@ -2077,6 +2077,36 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_milestones: {
+        Row: {
+          achieved_at: string
+          coins_awarded: number
+          created_at: string
+          id: string
+          milestone_days: number
+          streak_count: number
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string
+          coins_awarded?: number
+          created_at?: string
+          id?: string
+          milestone_days: number
+          streak_count: number
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string
+          coins_awarded?: number
+          created_at?: string
+          id?: string
+          milestone_days?: number
+          streak_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       swim_sessions: {
         Row: {
           avg_heart_rate: number | null
@@ -2872,6 +2902,45 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_workout_date: string | null
+          longest_streak: number
+          milestones_achieved: Json | null
+          streak_start_date: string | null
+          total_workout_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_workout_date?: string | null
+          longest_streak?: number
+          milestones_achieved?: Json | null
+          streak_start_date?: string | null
+          total_workout_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_workout_date?: string | null
+          longest_streak?: number
+          milestones_achieved?: Json | null
+          streak_start_date?: string | null
+          total_workout_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       user_most_common_muscle_group: {
@@ -3096,6 +3165,10 @@ export type Database = {
         Returns: boolean
       }
       update_user_power_level: { Args: { _user_id: string }; Returns: boolean }
+      update_workout_streak: {
+        Args: { _user_id: string; _workout_date: string }
+        Returns: Json
+      }
       validate_guest_session: {
         Args: { session_token: string }
         Returns: boolean

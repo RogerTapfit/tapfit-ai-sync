@@ -374,6 +374,12 @@ export const useWorkoutLogger = () => {
 
       if (error) throw error;
 
+      // Update workout streak
+      await supabase.rpc('update_workout_streak', {
+        _user_id: user.id,
+        _workout_date: new Date().toISOString().split('T')[0]
+      });
+
       await fetchTodaysProgress();
       setCurrentWorkoutLog(null);
       clearWorkoutLogId();
