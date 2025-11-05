@@ -20,7 +20,8 @@ import {
   Target, 
   Weight, 
   Edit3,
-  Play
+  Play,
+  TrendingUp
 } from 'lucide-react';
 
 interface WorkoutSet {
@@ -564,9 +565,44 @@ export default function MachineWorkout() {
                       Based on your profile and experience level
                     </div>
                     
-                    {machineHistory && (
+                    {machineHistory && !machineHistory.shouldProgressWeight && (
                       <div className="text-xs text-center text-muted-foreground mt-2 p-2 bg-secondary/20 rounded">
                         💪 Last time: {machineHistory.lastWeight} lbs × {machineHistory.lastReps} reps
+                      </div>
+                    )}
+                    
+                    {machineHistory?.shouldProgressWeight && (
+                      <div className="mt-3 p-3 bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary rounded-r-lg">
+                        <div className="flex items-start gap-2">
+                          <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <div className="font-semibold text-sm mb-1 text-primary">
+                              Progressive Overload Opportunity! 🎯
+                            </div>
+                            <div className="text-xs text-muted-foreground mb-2">
+                              You've completed all sets at {machineHistory.lastWeight} lbs for {machineHistory.consecutiveSuccessfulWorkouts} consecutive workouts. Time to level up!
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  const updatedSets = sets.map(set => ({
+                                    ...set,
+                                    actualWeight: machineHistory.suggestedWeight || set.actualWeight
+                                  }));
+                                  setSets(updatedSets);
+                                  toast.success(`Weight increased to ${machineHistory.suggestedWeight} lbs! 💪`);
+                                }}
+                                className="text-xs h-7"
+                              >
+                                Accept {machineHistory.suggestedWeight} lbs
+                              </Button>
+                              <span className="text-xs text-muted-foreground">
+                                (+{Math.round(((machineHistory.suggestedWeight || 0) - machineHistory.lastWeight) / machineHistory.lastWeight * 100)}%)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </>
