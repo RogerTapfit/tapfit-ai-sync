@@ -34,6 +34,11 @@ export class CalorieCalculationService {
     const { duration_minutes, muscle_group, total_reps, completed_exercises } = workoutData;
     const { weight_lbs = 154, age = 30, gender = 'male' } = userProfile;
 
+    // Don't calculate calories for workouts with no exercises
+    if (!completed_exercises || completed_exercises === 0) {
+      return 0;
+    }
+
     // Get MET value for muscle group
     const metValue = this.MET_VALUES[muscle_group as keyof typeof this.MET_VALUES] || this.MET_VALUES.default;
     

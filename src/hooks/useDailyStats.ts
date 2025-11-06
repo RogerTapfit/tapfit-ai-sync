@@ -140,6 +140,11 @@ export const useDailyStats = (userId?: string): DailyStats => {
               (ex: any) => ex.workout_log_id === workout.id
             ) || [];
             
+            // Skip workouts with no exercises (empty workout sessions)
+            if (workoutExercises.length === 0) {
+              return;
+            }
+            
             // Use actual duration if completed, otherwise calculate from exercise timestamps
             if (workout.completed_at) {
               totalDuration += workout.duration_minutes || 0;
