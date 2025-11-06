@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell, Weight, Target, Clock, Flame, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutActivity } from '@/hooks/useCalendarData';
 import { MachineRegistryService } from '@/services/machineRegistryService';
+import { WorkoutComparison } from './WorkoutComparison';
 
 interface CompletedWorkoutDetailProps {
   open: boolean;
@@ -74,9 +76,12 @@ export const CompletedWorkoutDetail: React.FC<CompletedWorkoutDetailProps> = ({
 
   if (!workout) return null;
 
+  // Get first exercise for progression tracking
+  const firstExercise = exercises[0];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Dumbbell className="h-5 w-5 text-primary" />
@@ -84,7 +89,13 @@ export const CompletedWorkoutDetail: React.FC<CompletedWorkoutDetailProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Workout Details</TabsTrigger>
+            <TabsTrigger value="progress">Historical Progress</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="space-y-6 mt-4">
           {/* Workout Summary Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card className="p-3 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
@@ -257,7 +268,16 @@ export const CompletedWorkoutDetail: React.FC<CompletedWorkoutDetailProps> = ({
               </p>
             </Card>
           )}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="progress" className="mt-4">
+            <WorkoutComparison 
+              muscleGroup={workout.muscleGroup}
+              exerciseName={firstExercise?.exercise_name}
+              machineName={firstExercise?.machine_name}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
