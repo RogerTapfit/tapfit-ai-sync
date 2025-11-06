@@ -92,8 +92,9 @@ export const BurnedCaloriesBreakdown: React.FC<BurnedCaloriesBreakdownProps> = (
 
   const completedWorkouts = workouts.filter(w => w.type === 'completed');
   const totalActivities = completedWorkouts.length + cardioSessions.length;
-  const baseMetabolicRate = Math.floor(totalCalories * 0.3); // Approximate BMR portion
-  const exerciseCalories = totalCalories - baseMetabolicRate;
+  const baseMetabolicRate = Math.max(0, Math.floor(totalCalories * 0.3)); // Approximate BMR portion
+  const exerciseCalories = Math.max(0, totalCalories - baseMetabolicRate);
+  const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -206,22 +207,22 @@ export const BurnedCaloriesBreakdown: React.FC<BurnedCaloriesBreakdownProps> = (
           {/* Calorie Breakdown Chart */}
           <div className="space-y-2">
             <h4 className="font-medium">Daily Calorie Distribution</h4>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
-                <span className="flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-destructive" />
-                  Exercise & Activity
-                </span>
-                <span className="font-semibold">{exerciseCalories} cal ({Math.round((exerciseCalories / totalCalories) * 100)}%)</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
+                  <span className="flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4 text-destructive" />
+                    Exercise & Activity
+                  </span>
+                  <span className="font-semibold">{exerciseCalories} cal ({pct(exerciseCalories, totalCalories)}%)</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
+                  <span className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-secondary-foreground" />
+                    Base Metabolic Rate
+                  </span>
+                  <span className="font-semibold">{baseMetabolicRate} cal ({pct(baseMetabolicRate, totalCalories)}%)</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
-                <span className="flex items-center gap-2">
-                  <Heart className="h-4 w-4 text-secondary-foreground" />
-                  Base Metabolic Rate
-                </span>
-                <span className="font-semibold">{baseMetabolicRate} cal ({Math.round((baseMetabolicRate / totalCalories) * 100)}%)</span>
-              </div>
-            </div>
           </div>
         </div>
       </DialogContent>

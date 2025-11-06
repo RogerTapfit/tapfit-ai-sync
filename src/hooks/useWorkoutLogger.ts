@@ -110,18 +110,19 @@ export const useWorkoutLogger = () => {
       .gte('started_at', new Date().toISOString().split('T')[0])
       .lt('started_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0])
       .is('completed_at', null)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Error fetching active workout log:', error);
       return null;
     }
 
-    if (data) {
-      console.log("Found today's active workout log:", data);
-      setCurrentWorkoutLog(data);
-      saveWorkoutLogId(data.id);
-      return data;
+    if (data && data.length > 0) {
+      console.log("Found today's active workout log:", data[0]);
+      setCurrentWorkoutLog(data[0]);
+      saveWorkoutLogId(data[0].id);
+      return data[0];
     }
 
     return null;

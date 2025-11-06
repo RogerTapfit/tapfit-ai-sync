@@ -40,7 +40,7 @@ export default function MachineWorkout() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { logExercise, currentWorkoutLog, startWorkout } = useWorkoutLogger();
+  const { logExercise, currentWorkoutLog, startWorkout, completeWorkout } = useWorkoutLogger();
   
   const machine = workoutId ? MachineRegistryService.getMachineByWorkoutId(workoutId) : null;
   
@@ -368,6 +368,13 @@ export default function MachineWorkout() {
     }
 
     if (success) {
+      // Ensure the workout is fully completed before navigating
+      try {
+        await completeWorkout(currentWorkoutLog.id, duration, notes);
+      } catch (e) {
+        console.error('Failed to complete workout before summary:', e);
+      }
+
       toast.success('Exercise completed and saved!');
       navigate('/workout-summary', { 
         state: { 
