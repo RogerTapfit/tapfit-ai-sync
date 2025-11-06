@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,9 +14,11 @@ import {
   ArrowLeft,
   Flame,
   Target,
-  Crown
+  Crown,
+  BarChart3
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { WeightProgressionChart } from '@/components/WeightProgressionChart';
 
 interface PersonalRecord {
   id: string;
@@ -44,6 +46,7 @@ export default function PRLeaderboard() {
   const [prHistory, setPRHistory] = useState<PRHistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'recent' | 'biggest'>('all');
+  const [selectedExercise, setSelectedExercise] = useState<{ exerciseName: string; machineName: string } | null>(null);
 
   useEffect(() => {
     fetchPersonalRecords();
@@ -241,9 +244,10 @@ export default function PRLeaderboard() {
 
       {/* Main Content */}
       <Tabs defaultValue="current" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="current">Current PRs</TabsTrigger>
           <TabsTrigger value="history">PR History</TabsTrigger>
+          <TabsTrigger value="charts">Progress Charts</TabsTrigger>
         </TabsList>
 
         <TabsContent value="current" className="space-y-4">
@@ -394,6 +398,60 @@ export default function PRLeaderboard() {
                 </Card>
               ))}
             </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="charts" className="space-y-6">
+          {selectedExercise ? (
+            <div className="space-y-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setSelectedExercise(null)}
+              >
+                ← Back to Exercise List
+              </Button>
+              <WeightProgressionChart
+                exerciseName={selectedExercise.exerciseName}
+                machineName={selectedExercise.machineName}
+              />
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Select an Exercise</CardTitle>
+                <CardDescription>Choose an exercise to view detailed progression charts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3">
+                  {filteredRecords.map((record) => (
+                    <Button
+                      key={record.id}
+                      variant="outline"
+                      className="justify-start h-auto p-4"
+                      onClick={() => setSelectedExercise({ 
+                        exerciseName: record.exerciseName, 
+                        machineName: record.machineName 
+                      })}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="text-left">
+                          <div className="font-semibold">{record.exerciseName}</div>
+                          <div className="text-sm text-muted-foreground">{record.machineName}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right mr-4">
+                            <div className="font-bold">{record.weightLbs} lbs</div>
+                            <div className="text-xs text-muted-foreground">{record.reps}×{record.sets}</div>
+                          </div>
+                          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
