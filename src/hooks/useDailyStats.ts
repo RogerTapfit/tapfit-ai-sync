@@ -135,26 +135,26 @@ export const useDailyStats = (userId?: string): DailyStats => {
 
         if (workoutLogs) {
           workoutLogs.forEach(workout => {
+            // Get exercises for THIS specific workout
+            const workoutExercises = exerciseLogs?.filter(
+              (ex: any) => ex.workout_log_id === workout.id
+            ) || [];
+            
             // Use actual duration if completed, otherwise calculate from exercise timestamps
             if (workout.completed_at) {
               totalDuration += workout.duration_minutes || 0;
-            } else if (exerciseLogs && exerciseLogs.length > 0) {
+            } else if (workoutExercises.length > 0) {
               // Calculate duration from exercise timestamps for in-progress workouts
-              const workoutExercises = exerciseLogs.filter(
-                (ex: any) => ex.workout_log_id === workout.id
-              );
-              if (workoutExercises.length > 0) {
-                const firstExercise = new Date(workoutExercises[0].created_at).getTime();
-                const lastExercise = new Date(workoutExercises[workoutExercises.length - 1].created_at).getTime();
-                totalDuration += Math.round((lastExercise - firstExercise) / 60000);
-              }
+              const firstExercise = new Date(workoutExercises[0].created_at).getTime();
+              const lastExercise = new Date(workoutExercises[workoutExercises.length - 1].created_at).getTime();
+              totalDuration += Math.round((lastExercise - firstExercise) / 60000);
             }
             
             workouts.push({
               duration_minutes: workout.duration_minutes || 30,
               muscle_group: workout.muscle_group,
               total_reps: workout.total_reps || 0,
-              completed_exercises: totalExercises
+              completed_exercises: workoutExercises.length // Use count for THIS workout only
             });
           });
         }
