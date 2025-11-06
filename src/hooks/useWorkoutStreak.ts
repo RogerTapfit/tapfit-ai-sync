@@ -29,6 +29,7 @@ export const useWorkoutStreak = () => {
   const [streak, setStreak] = useState<WorkoutStreak | null>(null);
   const [milestones, setMilestones] = useState<StreakMilestone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [backfillAttempted, setBackfillAttempted] = useState(false);
 
   useEffect(() => {
     fetchStreak();
@@ -162,6 +163,68 @@ export const useWorkoutStreak = () => {
     // Streak is active if last workout was today or yesterday
     return diffDays <= 1;
   };
+
+  // One-time auto backfill to ensure recent 1-2 day streaks are reflected
+  useEffect(() => {
+    const runBackfill = async () => {
+      if (backfillAttempted || loading || !streak) return;
+      setBackfillAttempted(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const fmt = (d: Date) => d.toISOString().split('T')[0];
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const todayStr = fmt(today);
+      const yStr = fmt(yesterday);
+
+      const hasWorkoutOn = async (dateStr: string) => {
+        const [wl, el] = await Promise.all([
+          supabase
+            .from('workout_logs')
+            .select('id')
+            .eq('user_id', user.id)
+            .gte('started_at', dateStr)
+            .lte('started_at', `${dateStr}T23:59:59`)
+            .not('completed_at', 'is', null)
+            .limit(1),
+          supabase
+            .from('exercise_logs')
+            .select('id')
+            .eq('user_id', user.id)
+            .gte('completed_at', dateStr)
+            .lte('completed_at', `${dateStr}T23:59:59`)
+            .limit(1)
+        ]);
+        return (wl.data && wl.data.length > 0) || (el.data && el.data.length > 0);
+      };
+
+      try {
+        const [didYesterday, didToday] = await Promise.all([
+          hasWorkoutOn(yStr),
+          hasWorkoutOn(todayStr)
+        ]);
+
+        const lastDateStr = streak.lastWorkoutDate ? streak.lastWorkoutDate.split('T')[0] : null;
+
+        // Backfill yesterday first if needed
+        if (didYesterday && lastDateStr !== yStr) {
+          await updateStreak(new Date(yStr));
+        }
+
+        // Then ensure today is counted if a workout exists
+        if (didToday && lastDateStr !== todayStr) {
+          await updateStreak(new Date(todayStr));
+        }
+      } catch (e) {
+        console.error('Auto backfill streak failed:', e);
+      }
+    };
+
+    runBackfill();
+  }, [streak, loading, backfillAttempted]);
 
   return {
     streak,
