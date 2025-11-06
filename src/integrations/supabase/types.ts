@@ -1526,6 +1526,7 @@ export type Database = {
           avatar_data: Json | null
           avatar_id: string | null
           avatar_url: string | null
+          bio: string | null
           calibration_completed: boolean | null
           created_at: string
           current_max_weights: Json | null
@@ -1541,10 +1542,12 @@ export type Database = {
           hr_max: number | null
           hr_rest: number | null
           id: string
+          is_profile_public: boolean | null
           onboarding_completed: boolean | null
           preferred_equipment_type: string | null
           previous_injuries: string[] | null
           primary_goal: string | null
+          share_workout_stats: boolean | null
           tap_coins_balance: number
           tap_tokens_balance: number
           target_carbs_grams: number | null
@@ -1552,6 +1555,7 @@ export type Database = {
           target_fat_grams: number | null
           target_protein_grams: number | null
           unit_preference: string | null
+          username: string | null
           vo2max_velocity: number | null
           weight_kg: number | null
         }
@@ -1560,6 +1564,7 @@ export type Database = {
           avatar_data?: Json | null
           avatar_id?: string | null
           avatar_url?: string | null
+          bio?: string | null
           calibration_completed?: boolean | null
           created_at?: string
           current_max_weights?: Json | null
@@ -1575,10 +1580,12 @@ export type Database = {
           hr_max?: number | null
           hr_rest?: number | null
           id: string
+          is_profile_public?: boolean | null
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
           previous_injuries?: string[] | null
           primary_goal?: string | null
+          share_workout_stats?: boolean | null
           tap_coins_balance?: number
           tap_tokens_balance?: number
           target_carbs_grams?: number | null
@@ -1586,6 +1593,7 @@ export type Database = {
           target_fat_grams?: number | null
           target_protein_grams?: number | null
           unit_preference?: string | null
+          username?: string | null
           vo2max_velocity?: number | null
           weight_kg?: number | null
         }
@@ -1594,6 +1602,7 @@ export type Database = {
           avatar_data?: Json | null
           avatar_id?: string | null
           avatar_url?: string | null
+          bio?: string | null
           calibration_completed?: boolean | null
           created_at?: string
           current_max_weights?: Json | null
@@ -1609,10 +1618,12 @@ export type Database = {
           hr_max?: number | null
           hr_rest?: number | null
           id?: string
+          is_profile_public?: boolean | null
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
           previous_injuries?: string[] | null
           primary_goal?: string | null
+          share_workout_stats?: boolean | null
           tap_coins_balance?: number
           tap_tokens_balance?: number
           target_carbs_grams?: number | null
@@ -1620,6 +1631,7 @@ export type Database = {
           target_fat_grams?: number | null
           target_protein_grams?: number | null
           unit_preference?: string | null
+          username?: string | null
           vo2max_velocity?: number | null
           weight_kg?: number | null
         }
@@ -2441,6 +2453,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_follows_following_id_fkey"
+            columns: ["following_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_loot_openings: {
         Row: {
           id: string
@@ -3096,6 +3147,7 @@ export type Database = {
         }[]
       }
       get_user_gym_id: { Args: { _user_id: string }; Returns: string }
+      get_user_social_stats: { Args: { user_uuid: string }; Returns: Json }
       get_user_upload_success_rate: {
         Args: { _days?: number; _user_id: string }
         Returns: {
@@ -3117,6 +3169,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_following: {
+        Args: { follower_uuid: string; following_uuid: string }
         Returns: boolean
       }
       is_valid_authenticated_user: { Args: never; Returns: boolean }

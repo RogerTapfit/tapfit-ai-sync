@@ -120,6 +120,8 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
                       navigate('/workouts');
                     } else if (item.id === 'avatar') {
                       navigate('/avatars');
+                    } else if (item.id === 'social') {
+                      navigate('/social');
                     } else {
                       console.log('Calling onPageChange with:', item.id);
                       onPageChange(item.id);
