@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dumbbell, Target, TrendingUp, Award, Clock, Zap, ArrowLeft, Weight } from 'lucide-react';
 import { WorkoutActivity } from '@/hooks/useCalendarData';
 import { supabase } from '@/integrations/supabase/client';
+import { CompletedWorkoutDetail } from './CompletedWorkoutDetail';
 
 interface ExercisesBreakdownProps {
   open: boolean;
@@ -36,6 +37,8 @@ export const ExercisesBreakdown: React.FC<ExercisesBreakdownProps> = ({
   const [showDetailedView, setShowDetailedView] = useState(false);
   const [exerciseDetails, setExerciseDetails] = useState<ExerciseDetail[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutActivity | null>(null);
+  const [showWorkoutDetail, setShowWorkoutDetail] = useState(false);
 
   const fetchExerciseDetails = async () => {
     setLoading(true);
@@ -120,8 +123,15 @@ export const ExercisesBreakdown: React.FC<ExercisesBreakdownProps> = ({
     if (!open) {
       setShowDetailedView(false);
       setExerciseDetails([]);
+      setSelectedWorkout(null);
+      setShowWorkoutDetail(false);
     }
     onOpenChange(open);
+  };
+
+  const handleWorkoutClick = (workout: WorkoutActivity) => {
+    setSelectedWorkout(workout);
+    setShowWorkoutDetail(true);
   };
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -186,7 +196,8 @@ export const ExercisesBreakdown: React.FC<ExercisesBreakdownProps> = ({
   }, {} as Record<string, number>);
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogChange}>
+    <>
+      <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -385,7 +396,8 @@ export const ExercisesBreakdown: React.FC<ExercisesBreakdownProps> = ({
                 {completedWorkouts.map((workout, index) => (
                   <Card 
                     key={index} 
-                    className={`p-4 ${getWorkoutStatusColor(workout.type)} hover:bg-accent/50 transition-colors`}
+                    className={`p-4 ${getWorkoutStatusColor(workout.type)} hover:bg-accent/50 transition-colors cursor-pointer`}
+                    onClick={() => handleWorkoutClick(workout)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -508,5 +520,12 @@ export const ExercisesBreakdown: React.FC<ExercisesBreakdownProps> = ({
         )}
       </DialogContent>
     </Dialog>
+
+    <CompletedWorkoutDetail
+      open={showWorkoutDetail}
+      onOpenChange={setShowWorkoutDetail}
+      workout={selectedWorkout}
+    />
+    </>
   );
 };
