@@ -207,15 +207,13 @@ export const useWorkoutStreak = () => {
           hasWorkoutOn(todayStr)
         ]);
 
-        const lastDateStr = streak.lastWorkoutDate ? streak.lastWorkoutDate.split('T')[0] : null;
-
-        // Backfill yesterday first if needed
-        if (didYesterday && lastDateStr !== yStr) {
+        // Call updateStreak unconditionally for each day with workouts
+        // The database function already handles duplicate dates safely
+        if (didYesterday) {
           await updateStreak(new Date(yStr));
         }
 
-        // Then ensure today is counted if a workout exists
-        if (didToday && lastDateStr !== todayStr) {
+        if (didToday) {
           await updateStreak(new Date(todayStr));
         }
       } catch (e) {
