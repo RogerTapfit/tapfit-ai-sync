@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy } from "react";
+import React, { useState, Suspense, lazy } from "react";
 import Navigation from "./Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,20 +7,71 @@ import { useAuth } from "./AuthGuard";
 import LoadingSpinner from "./LoadingSpinner";
 import { VersionDisplay } from "./VersionDisplay";
 
-// Lazy load components for better performance
-const TapFitDashboard = lazy(() => import("./TapFitDashboard"));
-const SmartPinDashboard = lazy(() => import("./SmartPinDashboard"));
-const SubscriptionPlans = lazy(() => import("./SubscriptionPlans"));
-const ChallengesAchievements = lazy(() => import("./ChallengesAchievements"));
-const SensorWorkout = lazy(() => import("../pages/SensorWorkout"));
-const PuckTest = lazy(() => import("../pages/PuckTest"));
-const HealthDataExport = lazy(() => import("./HealthDataExport").then(module => ({ default: module.HealthDataExport })));
-const WorkoutPlanDashboard = lazy(() => import("./WorkoutPlanDashboard"));
-const AvatarGallery = lazy(() => import("./AvatarGallery"));
-const NutritionDashboard = lazy(() => import("./NutritionDashboard"));
-const NFCTagWriter = lazy(() => import("./NFCTagWriter"));
-const LogoGenerator = lazy(() => import("./LogoGenerator").then(module => ({ default: module.LogoGenerator })));
-const UnitPreferenceSettings = lazy(() => import("./UnitPreferenceSettings").then(module => ({ default: module.UnitPreferenceSettings })));
+// Lazy load with retry helper to mitigate Safari's "Importing a module script failed" on chunk fetch
+const lazyWithRetry = (factory: () => Promise<any>) => {
+  return lazy(() =>
+    factory().catch((err) => {
+      console.warn('Chunk load failed, retrying once...', err);
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          factory().then(resolve).catch((e2) => {
+            if (typeof window !== 'undefined' && !(window as any).__chunk_reload__) {
+              (window as any).__chunk_reload__ = true;
+              window.location.reload();
+            }
+            reject(e2);
+          });
+        }, 50);
+      });
+    })
+  );
+};
+
+// Lazy load components for better performance (with retry)
+const TapFitDashboard = lazyWithRetry(() => import("./TapFitDashboard"));
+const SmartPinDashboard = lazyWithRetry(() => import("./SmartPinDashboard"));
+const SubscriptionPlans = lazyWithRetry(() => import("./SubscriptionPlans"));
+const ChallengesAchievements = lazyWithRetry(() => import("./ChallengesAchievements"));
+const SensorWorkout = lazyWithRetry(() => import("../pages/SensorWorkout"));
+const PuckTest = lazyWithRetry(() => import("../pages/PuckTest"));
+const HealthDataExport = lazyWithRetry(() => import("./HealthDataExport").then(module => ({ default: module.HealthDataExport })));
+const WorkoutPlanDashboard = lazyWithRetry(() => import("./WorkoutPlanDashboard"));
+const AvatarGallery = lazyWithRetry(() => import("./AvatarGallery"));
+const NutritionDashboard = lazyWithRetry(() => import("./NutritionDashboard"));
+const NFCTagWriter = lazyWithRetry(() => import("./NFCTagWriter"));
+const LogoGenerator = lazyWithRetry(() => import("./LogoGenerator").then(module => ({ default: module.LogoGenerator })));
+const UnitPreferenceSettings = lazyWithRetry(() => import("./UnitPreferenceSettings").then(module => ({ default: module.UnitPreferenceSettings })));
+
+// Error boundary to display a friendly fallback instead of blank screen
+class ChunkErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error('UI ErrorBoundary caught', error, info);
+  }
+  handleReload = () => {
+    if (typeof window !== 'undefined') window.location.reload();
+  };
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <Card className="p-6 max-w-md text-center">
+            <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
+            <p className="text-sm text-muted-foreground mb-4">We couldn’t load part of the app. Please try reloading.</p>
+            <Button onClick={this.handleReload}>Reload</Button>
+          </Card>
+        </div>
+      );
+    }
+    return this.props.children as any;
+  }
+}
 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -165,9 +216,11 @@ const TapFitApp = () => {
     })();
 
     return (
-      <Suspense fallback={<LoadingSpinner size="lg" text="Loading..." />}>
-        {content}
-      </Suspense>
+      <ChunkErrorBoundary>
+        <Suspense fallback={<LoadingSpinner size="lg" text="Loading..." />}>
+          {content}
+        </Suspense>
+      </ChunkErrorBoundary>
     );
   };
 
