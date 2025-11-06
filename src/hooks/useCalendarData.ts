@@ -172,7 +172,7 @@ export const useCalendarData = (userId?: string) => {
         // Exercise logs used to infer completed workouts without completed_at
         supabase
           .from('exercise_logs')
-          .select('workout_log_id, reps_completed, sets_completed, weight_used, completed_at')
+          .select('workout_log_id, exercise_name, machine_name, reps_completed, sets_completed, weight_used, completed_at')
           .eq('user_id', userId)
           .gte('completed_at', startDateStr)
           .lte('completed_at', endDateStr + 'T23:59:59')
@@ -189,18 +189,56 @@ export const useCalendarData = (userId?: string) => {
       const tapCoinsTransactions = tapCoinsResponse.data || [];
       const exerciseLogs = exerciseLogsResponse.data || [] as any[];
 
-      // Build a quick index of exercise logs by workout_log_id
-      const exerciseByWorkout = new Map<string, {count: number; reps: number; first?: number; last?: number}>();
+      // Build a quick index of exercise logs by workout_log_id with exercise names
+      const exerciseByWorkout = new Map<string, {
+        count: number; 
+        reps: number; 
+        first?: number; 
+        last?: number;
+        exercises: string[];
+      }>();
+      
       for (const ex of exerciseLogs) {
         const id = ex.workout_log_id;
-        const stats = exerciseByWorkout.get(id) || { count: 0, reps: 0, first: undefined, last: undefined };
+        const stats = exerciseByWorkout.get(id) || { 
+          count: 0, 
+          reps: 0, 
+          first: undefined, 
+          last: undefined,
+          exercises: []
+        };
         stats.count += 1;
         stats.reps += (ex.reps_completed || 0);
         const t = new Date(ex.completed_at).getTime();
         stats.first = Math.min(stats.first ?? t, t);
         stats.last = Math.max(stats.last ?? t, t);
+        
+        // Add unique exercise names
+        const exerciseName = ex.exercise_name || ex.machine_name || 'Exercise';
+        if (!stats.exercises.includes(exerciseName)) {
+          stats.exercises.push(exerciseName);
+        }
+        
         exerciseByWorkout.set(id, stats);
       }
+
+      // Helper function to generate workout name from exercises
+      const generateWorkoutName = (exercises: string[], muscleGroup?: string): string => {
+        if (!exercises || exercises.length === 0) {
+          return muscleGroup ? `${muscleGroup} Workout` : 'Workout';
+        }
+        
+        if (exercises.length === 1) {
+          return exercises[0];
+        }
+        
+        if (exercises.length === 2) {
+          return `${exercises[0]} + ${exercises[1]}`;
+        }
+        
+        // For 3+ exercises, show first two and count
+        return `${exercises[0]}, ${exercises[1]} +${exercises.length - 2} more`;
+      };
 
       // Generate days for the month
       for (let day = 1; day <= endDate.getDate(); day++) {
@@ -213,15 +251,22 @@ export const useCalendarData = (userId?: string) => {
             const logDate = getLocalDateString(new Date(log.started_at));
             return logDate === dateString && log.completed_at !== null;
           })
-          .map(log => ({
-            id: log.id,
-            type: 'completed' as const,
-            name: log.workout_name || 'Workout',
-            muscleGroup: log.muscle_group || 'general',
-            duration: log.duration_minutes || 0,
-            exercises: log.completed_exercises || 0,
-            calories: log.calories_burned
-          }));
+          .map(log => {
+            const stats = exerciseByWorkout.get(log.id);
+            const workoutName = stats?.exercises 
+              ? generateWorkoutName(stats.exercises, log.muscle_group)
+              : log.workout_name || `${log.muscle_group || 'General'} Workout`;
+            
+            return {
+              id: log.id,
+              type: 'completed' as const,
+              name: workoutName,
+              muscleGroup: log.muscle_group || 'general',
+              duration: log.duration_minutes || 0,
+              exercises: log.completed_exercises || 0,
+              calories: log.calories_burned
+            };
+          });
 
         // Include inferred workouts: started today, not marked completed, but exercise logs exist
         const inferred = workoutLogs
@@ -235,10 +280,14 @@ export const useCalendarData = (userId?: string) => {
             const duration = stats.first && stats.last ? Math.max(15, Math.round((stats.last - stats.first) / (1000 * 60))) : 15;
             const exercises = stats.count;
             const calories = Math.round(duration * 8 + (stats.reps || 0) * 0.5);
+            const workoutName = stats.exercises 
+              ? generateWorkoutName(stats.exercises, log.muscle_group)
+              : log.workout_name || `${log.muscle_group || 'General'} Workout`;
+            
             return {
               id: log.id,
               type: 'completed' as const, // treat as completed for display
-              name: log.workout_name || 'Workout',
+              name: workoutName,
               muscleGroup: log.muscle_group || 'general',
               duration,
               exercises,
