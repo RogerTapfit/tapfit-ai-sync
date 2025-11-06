@@ -23,12 +23,15 @@ import { toast } from "sonner";
 import { AnimatedCoinCounter } from "@/components/AnimatedCoinCounter";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useAvatar } from "@/lib/avatarState";
+import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
+import { supabase } from "@/integrations/supabase/client";
 
 const WorkoutSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { awardCoins } = useTapCoins();
   const { avatar } = useAvatar();
+  const { completeWorkout } = useWorkoutLogger();
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -53,7 +56,6 @@ const WorkoutSummary = () => {
     try {
       // Complete the workout if it hasn't been completed yet
       if (workoutData.workoutLogId) {
-        const { supabase } = await import('@/integrations/supabase/client');
         const { data: workoutLog } = await supabase
           .from('workout_logs')
           .select('completed_at')
@@ -62,8 +64,6 @@ const WorkoutSummary = () => {
 
         // If workout is not completed, complete it now
         if (workoutLog && !workoutLog.completed_at) {
-          const { useWorkoutLogger } = await import('@/hooks/useWorkoutLogger');
-          const { completeWorkout } = useWorkoutLogger();
           await completeWorkout(workoutData.workoutLogId, workoutData.duration, workoutData.notes);
         }
       }
