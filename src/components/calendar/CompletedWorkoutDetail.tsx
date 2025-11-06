@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell, Weight, Target, Clock, Flame, TrendingUp } from 'lucide-react';
@@ -76,9 +76,6 @@ export const CompletedWorkoutDetail: React.FC<CompletedWorkoutDetailProps> = ({
 
   if (!workout) return null;
 
-  // Get first exercise for progression tracking
-  const firstExercise = exercises[0];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -92,7 +89,9 @@ export const CompletedWorkoutDetail: React.FC<CompletedWorkoutDetailProps> = ({
         <Tabs defaultValue="details" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details">Workout Details</TabsTrigger>
-            <TabsTrigger value="progress">Historical Progress</TabsTrigger>
+            <TabsTrigger value="progress" disabled={loading || exercises.length === 0}>
+              Historical Progress
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="space-y-6 mt-4">
@@ -271,11 +270,21 @@ export const CompletedWorkoutDetail: React.FC<CompletedWorkoutDetailProps> = ({
           </TabsContent>
           
           <TabsContent value="progress" className="mt-4">
-            <WorkoutComparison 
-              muscleGroup={workout.muscleGroup}
-              exerciseName={firstExercise?.exercise_name}
-              machineName={firstExercise?.machine_name}
-            />
+            {!loading && exercises.length > 0 ? (
+              <WorkoutComparison 
+                muscleGroup={workout.muscleGroup}
+                exerciseName={exercises[0]?.exercise_name}
+                machineName={exercises[0]?.machine_name}
+              />
+            ) : (
+              <Card className="bg-card/50">
+                <CardContent className="pt-6">
+                  <p className="text-sm text-muted-foreground text-center">
+                    No exercise data available for comparison
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </DialogContent>
