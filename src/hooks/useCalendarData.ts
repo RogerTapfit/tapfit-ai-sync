@@ -106,7 +106,8 @@ export const useCalendarData = (userId?: string) => {
         foodEntriesResponse,
         alcoholEntriesResponse,
         dailyStepsResponse,
-        tapCoinsResponse
+        tapCoinsResponse,
+        exerciseLogsResponse
       ] = await Promise.all([
         supabase
           .from('workout_logs')
@@ -166,7 +167,15 @@ export const useCalendarData = (userId?: string) => {
           .eq('user_id', userId)
           .gte('created_at', startDateStr)
           .lte('created_at', endDateStr + 'T23:59:59')
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }),
+
+        // Exercise logs used to infer completed workouts without completed_at
+        supabase
+          .from('exercise_logs')
+          .select('workout_log_id, reps_completed, sets_completed, weight_used, completed_at')
+          .eq('user_id', userId)
+          .gte('completed_at', startDateStr)
+          .lte('completed_at', endDateStr + 'T23:59:59')
       ]);
 
       const newCalendarData = new Map<string, CalendarDay>();
@@ -178,13 +187,27 @@ export const useCalendarData = (userId?: string) => {
       const alcoholEntries = alcoholEntriesResponse.data || [];
       const dailySteps = dailyStepsResponse.data || [];
       const tapCoinsTransactions = tapCoinsResponse.data || [];
+      const exerciseLogs = exerciseLogsResponse.data || [] as any[];
+
+      // Build a quick index of exercise logs by workout_log_id
+      const exerciseByWorkout = new Map<string, {count: number; reps: number; first?: number; last?: number}>();
+      for (const ex of exerciseLogs) {
+        const id = ex.workout_log_id;
+        const stats = exerciseByWorkout.get(id) || { count: 0, reps: 0, first: undefined, last: undefined };
+        stats.count += 1;
+        stats.reps += (ex.reps_completed || 0);
+        const t = new Date(ex.completed_at).getTime();
+        stats.first = Math.min(stats.first ?? t, t);
+        stats.last = Math.max(stats.last ?? t, t);
+        exerciseByWorkout.set(id, stats);
+      }
 
       // Generate days for the month
       for (let day = 1; day <= endDate.getDate(); day++) {
         const currentDate = new Date(month.getFullYear(), month.getMonth(), day);
         const dateString = getLocalDateString(currentDate);
         
-        // Get workouts for this day - only show truly completed workouts
+        // Get workouts for this day - show completed and inferred-completed (based on exercise logs)
         const dayWorkouts: WorkoutActivity[] = workoutLogs
           .filter(log => {
             const logDate = getLocalDateString(new Date(log.started_at));
@@ -199,6 +222,32 @@ export const useCalendarData = (userId?: string) => {
             exercises: log.completed_exercises || 0,
             calories: log.calories_burned
           }));
+
+        // Include inferred workouts: started today, not marked completed, but exercise logs exist
+        const inferred = workoutLogs
+          .filter(log => {
+            const logDate = getLocalDateString(new Date(log.started_at));
+            return logDate === dateString && (log.completed_at === null || typeof log.completed_at === 'undefined');
+          })
+          .map(log => {
+            const stats = exerciseByWorkout.get(log.id);
+            if (!stats || stats.count === 0) return null;
+            const duration = stats.first && stats.last ? Math.max(15, Math.round((stats.last - stats.first) / (1000 * 60))) : 15;
+            const exercises = stats.count;
+            const calories = Math.round(duration * 8 + (stats.reps || 0) * 0.5);
+            return {
+              id: log.id,
+              type: 'completed' as const, // treat as completed for display
+              name: log.workout_name || 'Workout',
+              muscleGroup: log.muscle_group || 'general',
+              duration,
+              exercises,
+              calories
+            } as WorkoutActivity;
+          })
+          .filter(Boolean) as WorkoutActivity[];
+
+        dayWorkouts.push(...inferred);
         
         // Get cardio sessions for this day
         const dayCardioSessions: CardioActivity[] = [
