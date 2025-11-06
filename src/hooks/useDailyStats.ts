@@ -72,20 +72,20 @@ export const useDailyStats = (userId?: string): DailyStats => {
         const today = new Date().toISOString().split('T')[0];
         
         // Get today's workout logs and cardio sessions in parallel
-        // Only include completed workouts (where completed_at is not null)
+        // Include both completed and in-progress workouts
         const [
           { data: workoutLogs },
           { data: smartPinData },
           { data: runSessions },
           { data: rideSessions },
-          { data: swimSessions }
+          { data: swimSessions },
+          { data: exerciseLogs }
         ] = await Promise.all([
           supabase
             .from('workout_logs')
             .select('*')
             .eq('user_id', userId)
             .gte('started_at', today)
-            .not('completed_at', 'is', null)
             .order('created_at', { ascending: false }),
           
           supabase
@@ -114,26 +114,47 @@ export const useDailyStats = (userId?: string): DailyStats => {
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'completed')
-            .gte('started_at', today)
+            .gte('started_at', today),
+          
+          supabase
+            .from('exercise_logs')
+            .select('*')
+            .eq('user_id', userId)
+            .gte('created_at', today)
         ]);
 
-        // Calculate workout-based stats
+        // Calculate workout-based stats from exercise_logs
         let totalDuration = 0;
         let totalExercises = 0;
         let totalHeartRate = 0;
         let heartRateCount = 0;
         const workouts: any[] = [];
 
+        // Count actual exercises completed
+        totalExercises = exerciseLogs?.length || 0;
+
         if (workoutLogs) {
           workoutLogs.forEach(workout => {
-            totalDuration += workout.duration_minutes || 0;
-            totalExercises += workout.completed_exercises || 0;
+            // Use actual duration if completed, otherwise calculate from exercise timestamps
+            if (workout.completed_at) {
+              totalDuration += workout.duration_minutes || 0;
+            } else if (exerciseLogs && exerciseLogs.length > 0) {
+              // Calculate duration from exercise timestamps for in-progress workouts
+              const workoutExercises = exerciseLogs.filter(
+                (ex: any) => ex.workout_log_id === workout.id
+              );
+              if (workoutExercises.length > 0) {
+                const firstExercise = new Date(workoutExercises[0].created_at).getTime();
+                const lastExercise = new Date(workoutExercises[workoutExercises.length - 1].created_at).getTime();
+                totalDuration += Math.round((lastExercise - firstExercise) / 60000);
+              }
+            }
             
             workouts.push({
               duration_minutes: workout.duration_minutes || 30,
               muscle_group: workout.muscle_group,
               total_reps: workout.total_reps || 0,
-              completed_exercises: workout.completed_exercises || 0
+              completed_exercises: totalExercises
             });
           });
         }
@@ -229,9 +250,27 @@ export const useDailyStats = (userId?: string): DailyStats => {
       )
       .subscribe();
 
+    const exerciseLogsChannel = supabase
+      .channel('exercise_logs_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'exercise_logs',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          // Refetch data when exercise logs change
+          setStats(prev => ({ ...prev, loading: true }));
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(workoutChannel);
       supabase.removeChannel(smartPinChannel);
+      supabase.removeChannel(exerciseLogsChannel);
     };
   }, [userId]);
 
