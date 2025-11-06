@@ -363,11 +363,61 @@ export const useWorkoutLogger = () => {
     if (!user) return false;
 
     try {
+      // Fetch all exercise logs for this workout to calculate calories
+      const { data: exerciseLogs, error: exerciseError } = await supabase
+        .from('exercise_logs')
+        .select('*')
+        .eq('workout_log_id', workoutLogId);
+
+      if (exerciseError) {
+        console.error('Error fetching exercise logs:', exerciseError);
+      }
+
+      // Get workout log to determine muscle group
+      const { data: workoutLog } = await supabase
+        .from('workout_logs')
+        .select('muscle_group')
+        .eq('id', workoutLogId)
+        .single();
+
+      // Get user profile for calorie calculation
+      let userProfile = {};
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('weight_kg, age, gender, height_cm')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile) {
+        userProfile = {
+          ...profile,
+          weight_lbs: profile.weight_kg ? profile.weight_kg * 2.2 : undefined
+        };
+      }
+
+      // Calculate calories burned using CalorieCalculationService
+      const { CalorieCalculationService } = await import('@/services/calorieCalculationService');
+      const totalReps = exerciseLogs?.reduce((sum, log) => sum + (log.reps_completed || 0), 0) || 0;
+      const completedExercises = exerciseLogs?.length || 0;
+      
+      const calories = CalorieCalculationService.calculateWorkoutCalories(
+        {
+          duration_minutes: duration || 30,
+          muscle_group: workoutLog?.muscle_group || 'Full Body',
+          total_reps: totalReps,
+          completed_exercises: completedExercises
+        },
+        userProfile
+      );
+
+      console.log('Calculated calories for workout:', calories);
+
       const { error } = await supabase
         .from('workout_logs')
         .update({
           completed_at: new Date().toISOString(),
           duration_minutes: duration,
+          calories_burned: calories,
           notes: notes
         })
         .eq('id', workoutLogId);

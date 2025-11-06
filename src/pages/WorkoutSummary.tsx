@@ -51,6 +51,23 @@ const WorkoutSummary = () => {
     }
 
     try {
+      // Complete the workout if it hasn't been completed yet
+      if (workoutData.workoutLogId) {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: workoutLog } = await supabase
+          .from('workout_logs')
+          .select('completed_at')
+          .eq('id', workoutData.workoutLogId)
+          .single();
+
+        // If workout is not completed, complete it now
+        if (workoutLog && !workoutLog.completed_at) {
+          const { useWorkoutLogger } = await import('@/hooks/useWorkoutLogger');
+          const { completeWorkout } = useWorkoutLogger();
+          await completeWorkout(workoutData.workoutLogId, workoutData.duration, workoutData.notes);
+        }
+      }
+
       // Calculate total coins including review bonus
       const baseSubtotal = 
         0.5 + // Base completion

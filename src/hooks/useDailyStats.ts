@@ -72,6 +72,7 @@ export const useDailyStats = (userId?: string): DailyStats => {
         const today = new Date().toISOString().split('T')[0];
         
         // Get today's workout logs and cardio sessions in parallel
+        // Only include completed workouts (where completed_at is not null)
         const [
           { data: workoutLogs },
           { data: smartPinData },
@@ -84,6 +85,7 @@ export const useDailyStats = (userId?: string): DailyStats => {
             .select('*')
             .eq('user_id', userId)
             .gte('started_at', today)
+            .not('completed_at', 'is', null)
             .order('created_at', { ascending: false }),
           
           supabase

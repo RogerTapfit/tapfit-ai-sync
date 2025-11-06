@@ -379,7 +379,8 @@ export default function MachineWorkout() {
             totalReps: totalReps,
             totalWeightLifted: totalWeightLifted,
             notes: notes,
-            allWorkoutsCompleted: false
+            allWorkoutsCompleted: false,
+            workoutLogId: currentWorkoutLog.id // Pass workout log ID for completion
           }
         }
       });
