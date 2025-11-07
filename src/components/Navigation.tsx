@@ -37,13 +37,13 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'social', label: 'Social', icon: Users },
     { id: 'workout-plan', label: 'AI Workout Plan', icon: Brain },
     { id: 'workouts', label: 'Workouts', icon: Dumbbell },
     { id: 'smart-pins', label: 'Smart Pins', icon: Activity },
     { id: 'sensor-workout', label: 'BLE Sensors', icon: Bluetooth },
     { id: 'puck-test', label: 'Puck Test', icon: Bluetooth },
     { id: 'nutrition', label: 'Nutrition', icon: Apple },
-    { id: 'social', label: 'Social', icon: Users },
     { id: 'challenges', label: 'Challenges', icon: Trophy },
     { id: 'avatar', label: 'Choose Coach', icon: UserIcon },
     { id: 'settings', label: 'Settings', icon: Settings },
