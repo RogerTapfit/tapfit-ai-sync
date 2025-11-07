@@ -4,6 +4,7 @@ import { UserSearchBar } from '@/components/social/UserSearchBar';
 import { ActivityFeed } from '@/components/social/ActivityFeed';
 import { UsernameSetupBanner } from '@/components/social/UsernameSetupBanner';
 import { UsernameSetupDialog } from '@/components/social/UsernameSetupDialog';
+import { ProfilePhotoUpload } from '@/components/social/ProfilePhotoUpload';
 import { Users, Search, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ export default function Social() {
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,11 +29,12 @@ export default function Social() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('username')
+        .select('username, avatar_url')
         .eq('id', user.id)
         .single();
 
       setUsername(profile?.username || null);
+      setAvatarUrl(profile?.avatar_url || null);
       setNeedsUsername(!profile?.username);
     } catch (error) {
       console.error('Error checking username:', error);
@@ -57,14 +60,33 @@ export default function Social() {
           Connect with other users and follow their fitness journey
         </p>
         {!loading && username && (
-          <p className="text-sm text-muted-foreground mt-1">
-            Signed in as <span className="font-medium text-foreground">@{username}</span>
-          </p>
+          <div className="mt-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">
+                Signed in as <span className="font-medium text-foreground">@{username}</span>
+              </p>
+            </div>
+          </div>
         )}
       </div>
 
       {!loading && needsUsername && (
         <UsernameSetupBanner onSetup={() => setShowUsernameDialog(true)} />
+      )}
+
+      {!loading && username && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Your Profile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProfilePhotoUpload 
+              currentAvatarUrl={avatarUrl}
+              username={username}
+              onUploadSuccess={checkUsername}
+            />
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
