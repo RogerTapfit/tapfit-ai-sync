@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '@/services/socialService';
 import { useUserFollow } from '@/hooks/useUserFollow';
-import { Users, Share2 } from 'lucide-react';
+import { Users, Share2, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ProfileQRCode } from './ProfileQRCode';
+import { useState } from 'react';
 
 interface UserProfileCardProps {
   user: UserProfile;
@@ -17,6 +19,7 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isFollowing, actionLoading, toggleFollow } = useUserFollow(user.id);
+  const [showQRCode, setShowQRCode] = useState(false);
 
   const handleClick = () => {
     if (onClick) {
@@ -51,6 +54,11 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
     }
   };
 
+  const handleQRClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowQRCode(true);
+  };
+
   const getInitials = () => {
     if (user.full_name) {
       return user.full_name
@@ -64,60 +72,80 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
   };
 
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleClick}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12">
-            <AvatarImage src={user.avatar_url || undefined} alt={user.username || 'User'} />
-            <AvatarFallback>{getInitials()}</AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm truncate">
-              {user.full_name || user.username}
-            </div>
-            {user.username && (
-              <div className="text-xs text-muted-foreground truncate">
-                @{user.username}
+    <>
+      <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleClick}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={user.avatar_url || undefined} alt={user.username || 'User'} />
+              <AvatarFallback>{getInitials()}</AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-sm truncate">
+                {user.full_name || user.username}
               </div>
-            )}
-            {user.bio && (
-              <div className="text-xs text-muted-foreground truncate mt-1">
-                {user.bio}
+              {user.username && (
+                <div className="text-xs text-muted-foreground truncate">
+                  @{user.username}
+                </div>
+              )}
+              {user.bio && (
+                <div className="text-xs text-muted-foreground truncate mt-1">
+                  {user.bio}
+                </div>
+              )}
+            </div>
+
+            {showFollowButton && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleQRClick}
+                  className="h-8 w-8 p-0"
+                  title="View QR code"
+                >
+                  <QrCode className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShareClick}
+                  className="h-8 w-8 p-0"
+                  title="Share profile"
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={isFollowing ? "outline" : "default"}
+                  size="sm"
+                  onClick={handleFollowClick}
+                  disabled={actionLoading}
+                >
+                  {isFollowing ? (
+                    <>
+                      <Users className="h-4 w-4 mr-1" />
+                      Following
+                    </>
+                  ) : (
+                    'Follow'
+                  )}
+                </Button>
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
 
-          {showFollowButton && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleShareClick}
-                className="h-8 w-8 p-0"
-                title="Share profile"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={isFollowing ? "outline" : "default"}
-                size="sm"
-                onClick={handleFollowClick}
-                disabled={actionLoading}
-              >
-                {isFollowing ? (
-                  <>
-                    <Users className="h-4 w-4 mr-1" />
-                    Following
-                  </>
-                ) : (
-                  'Follow'
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      {user.username && (
+        <ProfileQRCode
+          open={showQRCode}
+          onOpenChange={setShowQRCode}
+          username={user.username}
+          displayName={user.full_name || undefined}
+        />
+      )}
+    </>
   );
 };
