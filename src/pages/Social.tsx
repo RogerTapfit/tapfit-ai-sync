@@ -59,10 +59,10 @@ export default function Social() {
           </Button>
           
           {/* Hero Header with Gradient */}
-          <div className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 bg-gradient-to-br from-blue-500/10 via-cyan-500/10 to-blue-600/10 border border-blue-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-cyan-500/5 to-blue-600/5 animate-pulse-slow" />
+          <div className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 bg-gradient-to-br from-red-500/8 via-rose-500/8 to-red-600/8 border border-red-500/15">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/3 via-rose-500/3 to-red-600/3 animate-pulse-slow" />
             <div className="relative">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">
                 Social
               </h1>
               <p className="text-muted-foreground">
@@ -71,7 +71,7 @@ export default function Social() {
               {!loading && username && (
                 <div className="mt-4">
                   <p className="text-sm text-muted-foreground">
-                    Signed in as <span className="font-medium text-cyan-400">@{username}</span>
+                    Signed in as <span className="font-medium text-rose-400">@{username}</span>
                   </p>
                 </div>
               )}
@@ -84,12 +84,12 @@ export default function Social() {
         )}
 
         {!loading && username && (
-          <Card className="mb-6 border-cyan-500/20 shadow-lg shadow-cyan-500/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-lg" />
+          <Card className="mb-6 border-red-500/15 shadow-lg shadow-red-500/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-rose-500/5 rounded-lg" />
             <CardHeader className="relative">
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
-                  <Home className="h-5 w-5 text-cyan-400" />
+                <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/15 to-rose-500/15">
+                  <Home className="h-5 w-5 text-red-400" />
                 </div>
                 Your Profile
               </CardTitle>
@@ -113,14 +113,14 @@ export default function Social() {
             <UserSearchBar />
 
             <Card 
-              className="cursor-pointer hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 border-amber-500/20 group"
+              className="cursor-pointer hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 border-orange-500/15 group"
               onClick={() => navigate('/leaderboard')}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
               <CardHeader className="relative">
                 <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20">
-                    <Trophy className="h-5 w-5 text-amber-400" />
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/15 to-red-500/15">
+                    <Trophy className="h-5 w-5 text-orange-400" />
                   </div>
                   Leaderboard
                 </CardTitle>
@@ -132,12 +132,12 @@ export default function Social() {
               </CardContent>
             </Card>
 
-            <Card className="border-sky-500/20 shadow-lg shadow-sky-500/5">
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-blue-500/5 rounded-lg" />
+            <Card className="border-rose-500/15 shadow-lg shadow-rose-500/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-pink-500/5 rounded-lg" />
               <CardHeader className="relative">
                 <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-sky-500/20 to-blue-500/20">
-                    <Search className="h-5 w-5 text-sky-400" />
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-rose-500/15 to-pink-500/15">
+                    <Search className="h-5 w-5 text-rose-400" />
                   </div>
                   Find Users
                 </CardTitle>
