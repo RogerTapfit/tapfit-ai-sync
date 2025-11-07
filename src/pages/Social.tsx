@@ -4,10 +4,13 @@ import { UserSearchBar } from '@/components/social/UserSearchBar';
 import { ActivityFeed } from '@/components/social/ActivityFeed';
 import { UsernameSetupBanner } from '@/components/social/UsernameSetupBanner';
 import { UsernameSetupDialog } from '@/components/social/UsernameSetupDialog';
-import { Users, Search } from 'lucide-react';
+import { Users, Search, Home } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 export default function Social() {
+  const navigate = useNavigate();
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
@@ -39,7 +42,16 @@ export default function Social() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl pb-20">
-      <div className="mb-8">
+      <div className="mb-6">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate('/')}
+          className="mb-4"
+        >
+          <Home className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
         <h1 className="text-3xl font-bold mb-2">Social</h1>
         <p className="text-muted-foreground">
           Connect with other users and follow their fitness journey

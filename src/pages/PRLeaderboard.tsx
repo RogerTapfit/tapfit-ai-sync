@@ -15,7 +15,8 @@ import {
   Flame,
   Target,
   Crown,
-  BarChart3
+  BarChart3,
+  Home
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { WeightProgressionChart } from '@/components/WeightProgressionChart';
@@ -165,13 +166,23 @@ export default function PRLeaderboard() {
     <div className="container max-w-6xl mx-auto p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/')}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Dashboard
+          </Button>
+        </div>
         <div className="flex-1">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Trophy className="h-8 w-8 text-yellow-500" />

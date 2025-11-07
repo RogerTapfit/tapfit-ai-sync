@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSocialProfile } from '@/hooks/useSocialProfile';
 import { useUserFollow } from '@/hooks/useUserFollow';
 import { socialService } from '@/services/socialService';
-import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 
@@ -58,14 +58,23 @@ export default function UserProfile() {
 
   return (
     <div className="container max-w-4xl mx-auto p-4 pb-20">
-      <Button
-        variant="ghost"
-        onClick={() => navigate(-1)}
-        className="mb-4"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
-      </Button>
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/')}
+        >
+          <Home className="h-4 w-4 mr-2" />
+          Dashboard
+        </Button>
+      </div>
 
       {/* Profile Header */}
       <Card className="mb-6">

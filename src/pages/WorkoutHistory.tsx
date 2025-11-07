@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Activity, Footprints, Bike, Waves, Clock, Flame, Dumbbell, Heart } from "lucide-react";
+import { ArrowLeft, Activity, Footprints, Bike, Waves, Clock, Flame, Dumbbell, Heart, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthGuard";
 import { format } from "date-fns";
@@ -135,9 +135,15 @@ const WorkoutHistory = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
+              <Home className="h-4 w-4 mr-2" />
+              Dashboard
+            </Button>
+          </div>
           <div>
             <h1 className="text-3xl font-bold">Workout History</h1>
             <p className="text-muted-foreground">All your fitness activities</p>
