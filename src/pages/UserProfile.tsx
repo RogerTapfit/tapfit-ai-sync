@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { useSocialProfile } from '@/hooks/useSocialProfile';
 import { useUserFollow } from '@/hooks/useUserFollow';
 import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { socialService } from '@/services/socialService';
-import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins } from 'lucide-react';
+import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins, Flame, Target, Calendar } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -156,6 +157,74 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="overview">
+            {/* Progress Section */}
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="text-lg">Progress & Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Weekly Goal Progress */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-red-500" />
+                      <span className="font-medium">Weekly Workouts</span>
+                    </div>
+                    <span className="text-muted-foreground">{Math.min(stats?.workout_count || 0, 4)}/4</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(((stats?.workout_count || 0) / 4) * 100, 100)} 
+                    className="h-2"
+                  />
+                </div>
+
+                {/* Current Streak */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium">Current Streak</span>
+                    </div>
+                    <span className="text-muted-foreground">{Math.min(stats?.workout_count || 0, 7)} days</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(((stats?.workout_count || 0) / 7) * 100, 100)} 
+                    className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-orange-500 [&>div]:to-red-500"
+                  />
+                </div>
+
+                {/* Monthly Activity */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-500" />
+                      <span className="font-medium">Monthly Activity</span>
+                    </div>
+                    <span className="text-muted-foreground">{Math.min(stats?.workout_count || 0, 12)}/12 workouts</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(((stats?.workout_count || 0) / 12) * 100, 100)} 
+                    className="h-2 [&>div]:bg-blue-500"
+                  />
+                </div>
+
+                {/* Total Exercises Progress */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                      <span className="font-medium">Total Exercises</span>
+                    </div>
+                    <span className="text-muted-foreground">{stats?.total_exercises || 0}</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(((stats?.total_exercises || 0) / 100) * 100, 100)} 
+                    className="h-2 [&>div]:bg-green-500"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid gap-4 md:grid-cols-3">
               <Card className="hover:border-red-500/20 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
