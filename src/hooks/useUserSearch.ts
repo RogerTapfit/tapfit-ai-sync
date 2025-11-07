@@ -8,14 +8,19 @@ export const useUserSearch = () => {
   const [query, setQuery] = useState('');
 
   const performSearch = async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.trim().length < 2) {
+    // Strip @ symbol if present at the start
+    const cleanQuery = searchQuery.startsWith('@') 
+      ? searchQuery.substring(1) 
+      : searchQuery;
+
+    if (!cleanQuery || cleanQuery.trim().length < 2) {
       setResults([]);
       return;
     }
 
     setLoading(true);
     try {
-      const users = await socialService.searchUsers(searchQuery);
+      const users = await socialService.searchUsers(cleanQuery);
       setResults(users);
     } catch (error) {
       console.error('Error searching users:', error);
