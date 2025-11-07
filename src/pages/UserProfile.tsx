@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSocialProfile } from '@/hooks/useSocialProfile';
 import { useUserFollow } from '@/hooks/useUserFollow';
 import { socialService } from '@/services/socialService';
-import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home } from 'lucide-react';
+import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -107,6 +107,13 @@ export default function UserProfile() {
                 <div className="text-center">
                   <div className="font-bold text-lg">{stats?.workout_count || 0}</div>
                   <div className="text-xs text-muted-foreground">Workouts</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-lg flex items-center gap-1 justify-center">
+                    <Coins className="h-4 w-4 text-yellow-500" />
+                    {profile.tap_coins_balance || 0}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Tap Coins</div>
                 </div>
               </div>
 

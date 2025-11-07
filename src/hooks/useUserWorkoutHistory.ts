@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ExerciseDetail {
+  exercise_name: string;
+  machine_name: string;
+  sets_completed: number;
+  reps_completed: number;
+  weight_used: number;
+}
+
 interface WorkoutHistoryItem {
   id: string;
   type: 'strength' | 'cardio';
@@ -9,6 +17,7 @@ interface WorkoutHistoryItem {
   caloriesBurned: number;
   muscleGroup: string;
   exercisesCompleted: number;
+  exercises: ExerciseDetail[];
 }
 
 export const useUserWorkoutHistory = (userId?: string) => {
@@ -25,10 +34,19 @@ export const useUserWorkoutHistory = (userId?: string) => {
       try {
         setLoading(true);
 
-        // Fetch workout logs
+        // Fetch workout logs with exercise details
         const { data: workoutLogs, error } = await supabase
           .from('workout_logs')
-          .select('*')
+          .select(`
+            *,
+            exercise_logs (
+              exercise_name,
+              machine_name,
+              sets_completed,
+              reps_completed,
+              weight_used
+            )
+          `)
           .eq('user_id', userId)
           .order('completed_at', { ascending: false })
           .limit(10);
@@ -43,6 +61,13 @@ export const useUserWorkoutHistory = (userId?: string) => {
           caloriesBurned: w.calories_burned || 0,
           muscleGroup: w.muscle_group || 'General',
           exercisesCompleted: w.exercises_completed || w.completed_exercises || 0,
+          exercises: (w.exercise_logs || []).map((ex: any) => ({
+            exercise_name: ex.exercise_name || 'Unknown Exercise',
+            machine_name: ex.machine_name || 'Unknown Machine',
+            sets_completed: ex.sets_completed || 0,
+            reps_completed: ex.reps_completed || 0,
+            weight_used: ex.weight_used || 0,
+          })),
         }));
 
         setWorkouts(formattedWorkouts);
