@@ -9,7 +9,8 @@ import { useSocialProfile } from '@/hooks/useSocialProfile';
 import { useUserFollow } from '@/hooks/useUserFollow';
 import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { socialService } from '@/services/socialService';
-import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins, Flame, Target, Calendar, Globe, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins, Flame, Target, Calendar, Globe, Lock, Eye, EyeOff, Settings } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -23,10 +24,27 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
   
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
   const { achievements, loading: achievementsLoading } = useUserAchievements(userId);
+
+  useEffect(() => {
+    if (username) {
+      loadUserByUsername();
+    }
+  }, [username]);
+
+  useEffect(() => {
+    checkIfOwnProfile();
+  }, [userId]);
+
+  const checkIfOwnProfile = async () => {
+    if (!userId) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsOwnProfile(user?.id === userId);
+  };
 
   useEffect(() => {
     if (username) {
@@ -67,6 +85,7 @@ export default function UserProfile() {
 
   return (
     <div className="container max-w-4xl mx-auto p-4 pb-20">
+      {/* Header */}
       <div className="flex gap-2 mb-4">
         <Button
           variant="ghost"
@@ -83,6 +102,17 @@ export default function UserProfile() {
           <Home className="h-4 w-4 mr-2" />
           Dashboard
         </Button>
+        {isOwnProfile && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/profile-customize')}
+            className="ml-auto"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Customize
+          </Button>
+        )}
       </div>
 
       {/* Profile Header */}

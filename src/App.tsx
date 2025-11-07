@@ -42,6 +42,7 @@ import SwimSummary from "./pages/SwimSummary";
 import PRLeaderboard from "./pages/PRLeaderboard";
 import Social from "./pages/Social";
 import UserProfile from "./pages/UserProfile";
+import ProfileCustomization from "./pages/ProfileCustomization";
 import Leaderboard from "./pages/Leaderboard";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -224,6 +225,7 @@ const App = () => {
             <Route path="/leaderboard" element={<AuthGuard fallback={<Auth />}><Leaderboard /></AuthGuard>} />
             <Route path="/social" element={<AuthGuard fallback={<Auth />}><Social /></AuthGuard>} />
             <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
+            <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
               <AuthGuard fallback={<Auth />}>

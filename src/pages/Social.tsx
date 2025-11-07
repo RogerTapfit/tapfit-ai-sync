@@ -86,12 +86,22 @@ export default function Social() {
         {!loading && username && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-accent">
-                  <Home className="h-5 w-5" />
-                </div>
-                Your Profile
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-accent">
+                    <Home className="h-5 w-5" />
+                  </div>
+                  Your Profile
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/profile-customize')}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Customize Profile
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="relative">
               <ProfilePhotoUpload 
