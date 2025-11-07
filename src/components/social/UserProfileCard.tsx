@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '@/services/socialService';
 import { useUserFollow } from '@/hooks/useUserFollow';
-import { Users, Share2, QrCode } from 'lucide-react';
+import { Users, Share2, QrCode, Globe, Lock, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ProfileQRCode } from './ProfileQRCode';
+import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 
 interface UserProfileCardProps {
@@ -95,6 +96,26 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
                   {user.bio}
                 </div>
               )}
+              
+              {/* Workout Visibility Badge */}
+              <div className="mt-1.5">
+                {!user.share_workout_stats ? (
+                  <Badge variant="outline" className="text-xs gap-1 border-muted-foreground/30 h-5">
+                    <EyeOff className="h-2.5 w-2.5" />
+                    <span>Private</span>
+                  </Badge>
+                ) : user.workout_visibility === 'public' ? (
+                  <Badge variant="outline" className="text-xs gap-1 border-green-500/30 text-green-500 h-5">
+                    <Globe className="h-2.5 w-2.5" />
+                    <span>Public</span>
+                  </Badge>
+                ) : user.workout_visibility === 'followers' ? (
+                  <Badge variant="outline" className="text-xs gap-1 border-blue-500/30 text-blue-500 h-5">
+                    <Users className="h-2.5 w-2.5" />
+                    <span>Followers</span>
+                  </Badge>
+                ) : null}
+              </div>
             </div>
 
             {showFollowButton && (

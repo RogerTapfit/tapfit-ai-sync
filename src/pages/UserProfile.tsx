@@ -9,7 +9,7 @@ import { useSocialProfile } from '@/hooks/useSocialProfile';
 import { useUserFollow } from '@/hooks/useUserFollow';
 import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { socialService } from '@/services/socialService';
-import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins, Flame, Target, Calendar } from 'lucide-react';
+import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins, Flame, Target, Calendar, Globe, Lock, Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -101,6 +101,31 @@ export default function UserProfile() {
               {profile.bio && (
                 <p className="mt-2 text-sm">{profile.bio}</p>
               )}
+
+              {/* Workout Visibility Indicator */}
+              <div className="mt-3 flex justify-center md:justify-start">
+                {!profile.share_workout_stats ? (
+                  <Badge variant="outline" className="gap-1.5 border-muted-foreground/30">
+                    <EyeOff className="h-3 w-3" />
+                    <span>Workouts Private</span>
+                  </Badge>
+                ) : profile.workout_visibility === 'public' ? (
+                  <Badge variant="outline" className="gap-1.5 border-green-500/30 text-green-500">
+                    <Globe className="h-3 w-3" />
+                    <span>Public Workouts</span>
+                  </Badge>
+                ) : profile.workout_visibility === 'followers' ? (
+                  <Badge variant="outline" className="gap-1.5 border-blue-500/30 text-blue-500">
+                    <Users className="h-3 w-3" />
+                    <span>Followers Only</span>
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="gap-1.5 border-muted-foreground/30">
+                    <Lock className="h-3 w-3" />
+                    <span>Private</span>
+                  </Badge>
+                )}
+              </div>
 
               <div className="flex flex-wrap gap-6 mt-4 justify-center md:justify-start">
                 <div className="text-center">
