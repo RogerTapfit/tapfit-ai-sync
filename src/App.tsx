@@ -42,6 +42,7 @@ import SwimSummary from "./pages/SwimSummary";
 import PRLeaderboard from "./pages/PRLeaderboard";
 import Social from "./pages/Social";
 import UserProfile from "./pages/UserProfile";
+import Leaderboard from "./pages/Leaderboard";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -220,6 +221,7 @@ const App = () => {
             <Route path="/swim/history" element={<AuthGuard fallback={<Auth />}><SwimHistory /></AuthGuard>} />
             <Route path="/swim/summary/:id" element={<AuthGuard fallback={<Auth />}><SwimSummary /></AuthGuard>} />
             <Route path="/pr-leaderboard" element={<AuthGuard fallback={<Auth />}><PRLeaderboard /></AuthGuard>} />
+            <Route path="/leaderboard" element={<AuthGuard fallback={<Auth />}><Leaderboard /></AuthGuard>} />
             <Route path="/social" element={<AuthGuard fallback={<Auth />}><Social /></AuthGuard>} />
             <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

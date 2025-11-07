@@ -6,7 +6,7 @@ import { UsernameSetupBanner } from '@/components/social/UsernameSetupBanner';
 import { UsernameSetupDialog } from '@/components/social/UsernameSetupDialog';
 import { ProfilePhotoUpload } from '@/components/social/ProfilePhotoUpload';
 import { NetworkList } from '@/components/social/NetworkList';
-import { Search, Home } from 'lucide-react';
+import { Search, Home, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -97,6 +97,23 @@ export default function Social() {
 
         <div className="space-y-6">
           <UserSearchBar />
+
+          <Card 
+            className="cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => navigate('/leaderboard')}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                Leaderboard
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                See how you rank against other users in tap coins, workouts, and calories burned
+              </p>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
