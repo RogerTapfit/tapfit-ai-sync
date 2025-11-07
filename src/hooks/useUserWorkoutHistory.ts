@@ -18,6 +18,7 @@ interface WorkoutHistoryItem {
   muscleGroup: string;
   exercisesCompleted: number;
   exercises: ExerciseDetail[];
+  isCompleted: boolean;
 }
 
 export const useUserWorkoutHistory = (userId?: string) => {
@@ -48,8 +49,7 @@ export const useUserWorkoutHistory = (userId?: string) => {
             )
           `)
           .eq('user_id', userId)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(10);
 
         if (error) throw error;
@@ -69,6 +69,7 @@ export const useUserWorkoutHistory = (userId?: string) => {
             reps_completed: ex.reps_completed || 0,
             weight_used: ex.weight_used || 0,
           })),
+          isCompleted: !!w.completed_at,
         }));
 
         setWorkouts(formattedWorkouts);

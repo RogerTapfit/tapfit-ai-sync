@@ -284,9 +284,16 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                     </p>
                   </div>
                 </div>
-                <Badge variant="outline" className="capitalize">
-                  {workout.type}
-                </Badge>
+                <div className="flex gap-2">
+                  {!workout.isCompleted && (
+                    <Badge variant="destructive" className="text-xs">
+                      Abandoned
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="capitalize">
+                    {workout.type}
+                  </Badge>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3 text-sm mb-3">
