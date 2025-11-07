@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
 import { AchievementBadges } from '@/components/social/AchievementBadges';
 import { ProfileChallengesStreaks } from '@/components/social/ProfileChallengesStreaks';
+import { WorkoutHeatmap } from '@/components/social/WorkoutHeatmap';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -157,6 +158,25 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="overview">
+            {/* Activity Heatmap */}
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-red-500" />
+                  Workout Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {userId ? (
+                  <WorkoutHeatmap userId={userId} months={6} />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Loading activity data...
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Progress Section */}
             <Card className="mb-4">
               <CardHeader>
