@@ -288,106 +288,122 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
             open={isExpanded}
             onOpenChange={() => toggleWorkout(workout.id)}
           >
-            <Card className="p-4 hover:bg-accent/50 transition-colors">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Dumbbell className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold capitalize">{workout.muscleGroup}</h4>
-                    <p className="text-xs text-muted-foreground">
-                      {format(workout.date, 'MMM d, yyyy')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {!workout.isCompleted && (
-                    <Badge variant="destructive" className="text-xs">
-                      Abandoned
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="capitalize">
-                    {workout.type}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Workout Statistics Summary */}
-              <div className="p-4 mb-4 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Workout Summary
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Dumbbell className="h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Volume</p>
-                      <p className="text-base font-bold">{workout.totalVolume.toLocaleString()} lbs</p>
-                    </div>
-                  </div>
-                  {workout.avgPowerLevel && (
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-yellow-500" />
+            <Card className="hover:shadow-lg transition-all">
+              <CollapsibleTrigger asChild>
+                <div className="p-4 cursor-pointer hover:bg-accent/30 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Dumbbell className="h-4 w-4 text-primary" />
+                      </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Avg Power</p>
-                        <p className="text-base font-bold">{workout.avgPowerLevel.toFixed(1)}/10</p>
+                        <h4 className="font-semibold capitalize">{workout.muscleGroup}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {format(workout.date, 'MMM d, yyyy')}
+                        </p>
                       </div>
                     </div>
-                  )}
-                  {workout.prCount > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-yellow-500" fill="currentColor" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">PRs</p>
-                        <p className="text-base font-bold text-yellow-500">{workout.prCount}</p>
+                    <div className="flex gap-2">
+                      {!workout.isCompleted && (
+                        <Badge variant="destructive" className="text-xs">
+                          Abandoned
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="capitalize">
+                        {workout.type}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Workout Statistics Summary */}
+                  <div className="p-4 mb-4 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Workout Summary
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Volume</p>
+                          <p className="text-base font-bold">{workout.totalVolume.toLocaleString()} lbs</p>
+                        </div>
+                      </div>
+                      {workout.avgPowerLevel && (
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-yellow-500" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Avg Power</p>
+                            <p className="text-base font-bold">{workout.avgPowerLevel.toFixed(1)}/10</p>
+                          </div>
+                        </div>
+                      )}
+                      {workout.prCount > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-4 w-4 text-yellow-500" fill="currentColor" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">PRs</p>
+                            <p className="text-base font-bold text-yellow-500">{workout.prCount}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Timer className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Rest</p>
+                          <p className="text-base font-bold">{Math.round(workout.totalRestTime / 60)} min</p>
+                        </div>
                       </div>
                     </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Timer className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Rest</p>
-                      <p className="text-base font-bold">{Math.round(workout.totalRestTime / 60)} min</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Duration</p>
+                        <p className="text-lg font-semibold">{workout.duration} min</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Calories</p>
+                        <p className="text-lg font-semibold">{workout.caloriesBurned}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Sets × Reps</p>
+                        <p className="text-lg font-semibold">{workout.totalSets} × {workout.totalReps}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Type</p>
+                        <Badge variant="outline">{workout.muscleGroup}</Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Duration</p>
-                    <p className="text-lg font-semibold">{workout.duration} min</p>
+                  {/* Expand/Collapse Indicator */}
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {isExpanded ? 'Hide' : 'View'} {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''} breakdown
+                    </span>
+                    {isExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-primary" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-primary" />
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Flame className="h-4 w-4 text-orange-500" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Calories</p>
-                    <p className="text-lg font-semibold">{workout.caloriesBurned}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Dumbbell className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Sets × Reps</p>
-                    <p className="text-lg font-semibold">{workout.totalSets} × {workout.totalReps}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Type</p>
-                    <Badge variant="outline">{workout.muscleGroup}</Badge>
-                  </div>
-                </div>
-              </div>
+              </CollapsibleTrigger>
 
               {/* Exercise Details */}
-              <CollapsibleContent className="mt-6 space-y-4">
+              <CollapsibleContent className="px-4 pb-4 space-y-4">
                 <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                   <Dumbbell className="h-4 w-4" />
                   Exercises Performed
