@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { RobotAvatarDisplay } from '@/components/RobotAvatarDisplay';
 import { ProfilePhotoUpload } from '@/components/social/ProfilePhotoUpload';
-import { AvatarDropInGrid } from '@/components/AvatarDropInGrid';
+import { CharacterSelector } from '@/components/CharacterSelector';
 import { useRobotAvatar } from '@/hooks/useRobotAvatar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ export default function ProfileCustomization() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { avatarData, loading: avatarLoading } = useRobotAvatar();
+  const { avatarData, loading: avatarLoading, updateAvatar } = useRobotAvatar();
 
   useEffect(() => {
     loadUserData();
@@ -152,13 +152,23 @@ export default function ProfileCustomization() {
             <TabsContent value="coach" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Coach Avatar</CardTitle>
+                  <CardTitle>Select Your Coach Avatar</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Drag and drop images to create or update your coach avatar
+                    Choose the coach that will motivate you through your fitness journey
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <AvatarDropInGrid />
+                  <CharacterSelector 
+                    selectedCharacter={avatarData?.character_type}
+                    onCharacterSelect={(characterId) => {
+                      console.log('Coach avatar selected:', characterId);
+                      updateAvatar({ character_type: characterId });
+                    }}
+                    onPreview={(characterId) => {
+                      // Update live preview
+                      updateAvatar({ character_type: characterId });
+                    }}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

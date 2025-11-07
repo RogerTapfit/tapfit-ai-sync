@@ -2,6 +2,8 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RobotAvatarData } from '@/hooks/useRobotAvatar';
+import { useAvatarImage } from '@/hooks/useAvatarImage';
+import { Loader2 } from 'lucide-react';
 
 interface CharacterAvatarDisplayProps {
   avatarData: RobotAvatarData;
@@ -20,57 +22,12 @@ export const CharacterAvatarDisplay = ({
   emotion = 'happy',
   pose = 'idle'
 }: CharacterAvatarDisplayProps) => {
+  const { data: avatar, isLoading } = useAvatarImage(avatarData.character_type);
+
   const sizeClasses = {
     small: 'w-16 h-16 min-w-16 min-h-16',
     medium: 'w-24 h-24 min-w-24 min-h-24 sm:w-32 sm:h-32',
     large: 'w-full h-full max-w-full max-h-full min-w-32 min-h-32'
-  };
-
-  // Character image mapping to actual robot images
-  const getCharacterImage = (characterType: string) => {
-    // Check for custom uploaded image first
-    const customImages = avatarData.custom_character_images || {};
-    if (customImages[characterType]) {
-      const customUrl = customImages[characterType];
-      console.log(`🎨 Using custom image for ${characterType}:`, customUrl);
-      return customUrl;
-    }
-
-    // Fallback to default character images
-    const characterImages = {
-      shadow_eagle: '/lovable-uploads/27cddadb-e225-480e-a614-c725b169ba44.png', // Blue eagle robot
-      emerald_chameleon: '/lovable-uploads/2a0aaf68-4405-4647-a95b-730174a6fe3a.png', // Green chameleon robot
-      cyber_panda: '/lovable-uploads/79a266e1-e0f4-4558-9496-c75a57fe4fec.png', // Panda robot
-      lightning_cheetah: '/lovable-uploads/11650ae8-731f-445a-8014-4248533521a7.png', // Cheetah robot
-      mystic_fox: '/lovable-uploads/5cd8a425-4161-4a2f-99a6-6fe7f4285ccc.png', // Purple fox robot
-      iron_guardian: '/lovable-uploads/6ba39a66-8012-413c-8358-7eff61357bb3.png', // Red guardian robot
-      cosmic_bunny: '/lovable-uploads/a0730c0a-c88b-43fa-b6d0-fad9941cc39b.png', // Purple/dark bunny robot
-      steel_warrior: '/lovable-uploads/fd7d572f-53b0-4dd9-809a-272deb4a09ff.png', // Red armored warrior robot
-      cyber_dragon: '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png', // Gray dragon robot with horns
-      gorilla_guardian: '/lovable-uploads/81dac889-b82f-4359-a3a6-a77b066d007c.png', // Gray gorilla robot
-      demon_bull: '/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png' // Red/black bull robot
-    };
-
-    return characterImages[characterType as keyof typeof characterImages] || characterImages.steel_warrior;
-  };
-
-  // Character features for display names and emojis
-  const getCharacterFeatures = (characterType: string) => {
-    const features = {
-      shadow_eagle: { emoji: '🦅', name: 'Shadow Eagle' },
-      emerald_chameleon: { emoji: '🦎', name: 'Emerald Chameleon' },
-      cyber_panda: { emoji: '🐼', name: 'Cyber Panda' },
-      lightning_cheetah: { emoji: '🐆', name: 'Lightning Cheetah' },
-      mystic_fox: { emoji: '🦊', name: 'Mystic Fox' },
-      iron_guardian: { emoji: '🛡️', name: 'Iron Guardian' },
-      cosmic_bunny: { emoji: '🐰', name: 'Cosmic Bunny' },
-      steel_warrior: { emoji: '⚔️', name: 'Steel Warrior' },
-      cyber_dragon: { emoji: '🐉', name: 'Cyber Dragon' },
-      gorilla_guardian: { emoji: '🦍', name: 'Gorilla Guardian' },
-      demon_bull: { emoji: '🐂', name: 'Demon Bull' }
-    };
-
-    return features[characterType as keyof typeof features] || features.steel_warrior;
   };
 
   const getCurrentPose = (pose: string) => {
@@ -85,27 +42,24 @@ export const CharacterAvatarDisplay = ({
     }
   };
 
-  const getHueRotation = (hue: number) => {
-    return { filter: `hue-rotate(${hue}deg)` };
-  };
-
-  const character = getCharacterFeatures(avatarData.character_type);
   const currentPose = getCurrentPose(pose);
-  const characterImage = getCharacterImage(avatarData.character_type);
 
-  // Debug logging
-  console.log('CharacterAvatarDisplay rendering:', {
-    characterType: avatarData.character_type,
-    characterImage,
-    character: character.name,
-    customImages: avatarData.custom_character_images
-  });
+  if (isLoading) {
+    return (
+      <Card className={`${sizeClasses[size]} ${className} flex items-center justify-center`}>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </Card>
+    );
+  }
 
-  // Add cache-busting parameter to force fresh image load
-  const isCustomImage = avatarData.custom_character_images?.[avatarData.character_type];
-  const imageUrlWithCacheBust = isCustomImage 
-    ? `${characterImage}?t=${Date.now()}` 
-    : characterImage;
+  if (!avatar) {
+    return (
+      <Card className={`${sizeClasses[size]} ${className} flex flex-col items-center justify-center p-4 text-center`}>
+        <div className="text-4xl mb-2">🤖</div>
+        <div className="text-xs text-muted-foreground">No coach selected</div>
+      </Card>
+    );
+  }
 
   return (
     <Card className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 shadow-xl transition-all duration-300 ${showAnimation ? 'hover:scale-105' : ''}`}>
@@ -113,50 +67,24 @@ export const CharacterAvatarDisplay = ({
       {/* Character Header */}
       <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          {character.emoji} {character.name}
-          {isCustomImage && <span className="ml-1 text-primary">🎨</span>}
+          {avatar.name}
         </Badge>
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          ⚡{avatarData.power_level}%
+          ⚡{avatarData.power_level || 100}%
         </Badge>
       </div>
 
-      {/* Robot Image Display */}
+      {/* Coach Image Display */}
       <div className={`absolute inset-0 flex items-center justify-center p-2 ${currentPose} transition-transform duration-300`}>
         <img 
-          src={imageUrlWithCacheBust}
-          alt={`${character.name} robot avatar`}
-          className="w-full h-full object-contain rounded-lg"
-          style={getHueRotation(avatarData.base_hue || 0)}
-          onLoad={(e) => {
-            console.log(`✅ Image loaded successfully for ${character.name}:`, characterImage);
-            const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-emoji');
-            if (fallback) {
-              (fallback as HTMLElement).style.display = 'none';
-            }
-          }}
+          src={avatar.image_url}
+          alt={`${avatar.name} coach avatar`}
+          className="w-full h-full object-cover rounded-lg"
           onError={(e) => {
-            console.error(`❌ Image failed to load for ${character.name}:`, characterImage);
-            console.error('Full image URL:', imageUrlWithCacheBust);
-            
-            // Fallback to emoji display
             const target = e.target as HTMLImageElement;
-            target.style.display = 'none';
-            const fallback = target.parentElement?.querySelector('.fallback-emoji');
-            if (fallback) {
-              (fallback as HTMLElement).style.display = 'flex';
-              console.log(`🔄 Showing fallback emoji for ${character.name}`);
-            }
+            target.src = '/placeholder.svg';
           }}
         />
-        
-        {/* Fallback emoji display - enhanced */}
-        <div className="fallback-emoji hidden w-full h-full items-center justify-center text-4xl bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30">
-          <div className="text-center">
-            <div className="text-6xl mb-2">{character.emoji}</div>
-            <div className="text-xs text-muted-foreground">Image Loading...</div>
-          </div>
-        </div>
       </div>
 
       {/* Speech bubble for animations */}

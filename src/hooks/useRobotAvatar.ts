@@ -3,10 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTapCoins } from './useTapCoins';
 
 export interface RobotAvatarData {
-  // Character selection (replaces chassis_type)
-  character_type: 'shadow_eagle' | 'emerald_chameleon' | 'cyber_panda' | 'lightning_cheetah' | 
-                  'mystic_fox' | 'iron_guardian' | 'cosmic_bunny' | 'steel_warrior' | 
-                  'cyber_dragon' | 'gorilla_guardian' | 'demon_bull';
+  // Character selection - now accepts avatar ID from database
+  character_type: string;
   
   // Character customization
   base_hue: number; // 0-360 degree hue for color shifting
