@@ -2,7 +2,7 @@ import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { ActivityFeedItem } from './ActivityFeedItem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Activity } from 'lucide-react';
 
 interface ActivityFeedProps {
   limit?: number;
@@ -13,12 +13,18 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (loading) {
     return (
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
+      <Card className="border-green-500/20 shadow-lg shadow-green-500/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg" />
+        <CardHeader className="relative">
+          <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+              <Activity className="h-5 w-5 text-green-500" />
+            </div>
+            Activity Feed
+          </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="flex items-center justify-center py-8 relative">
+          <Loader2 className="h-8 w-8 animate-spin text-green-500" />
         </CardContent>
       </Card>
     );
@@ -26,11 +32,17 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (activities.length === 0) {
     return (
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
+      <Card className="border-green-500/20 shadow-lg shadow-green-500/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg" />
+        <CardHeader className="relative">
+          <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+              <Activity className="h-5 w-5 text-green-500" />
+            </div>
+            Activity Feed
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="text-center py-8 text-muted-foreground">
             <p className="mb-2 font-medium">No recent activity</p>
             <p className="text-sm">
@@ -43,11 +55,17 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
   }
 
   return (
-    <Card className="border-border">
-      <CardHeader>
-        <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
+    <Card className="border-green-500/20 shadow-lg shadow-green-500/5">
+      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg" />
+      <CardHeader className="relative">
+        <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+          <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+            <Activity className="h-5 w-5 text-green-500" />
+          </div>
+          Activity Feed
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 relative">
         <ScrollArea className="h-[600px]">
           <div className="space-y-3 p-3 sm:p-6">
             {activities.map((activity) => (

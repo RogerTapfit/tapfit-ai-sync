@@ -45,24 +45,24 @@ export default function Social() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-purple-500/5 to-background">
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl pb-20">
         <div className="mb-6 pt-6">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => navigate('/')}
-            className="mb-4"
+            className="mb-4 hover:bg-accent"
           >
             <Home className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
           
           {/* Hero Header with Gradient */}
-          <div className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 bg-gradient-to-br from-muted/50 to-background border border-border">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent" />
+          <div className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 border border-purple-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-pink-500/5 to-blue-500/5 animate-pulse-slow" />
             <div className="relative">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                 Social
               </h1>
               <p className="text-muted-foreground">
@@ -71,7 +71,7 @@ export default function Social() {
               {!loading && username && (
                 <div className="mt-4">
                   <p className="text-sm text-muted-foreground">
-                    Signed in as <span className="font-medium text-foreground">@{username}</span>
+                    Signed in as <span className="font-medium text-purple-500">@{username}</span>
                   </p>
                 </div>
               )}
@@ -84,16 +84,17 @@ export default function Social() {
         )}
 
         {!loading && username && (
-          <Card className="mb-6 border-border">
-            <CardHeader>
+          <Card className="mb-6 border-purple-500/20 shadow-lg shadow-purple-500/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-lg" />
+            <CardHeader className="relative">
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-accent">
-                  <Home className="h-5 w-5" />
+                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                  <Home className="h-5 w-5 text-purple-500" />
                 </div>
                 Your Profile
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative">
               <ProfilePhotoUpload 
                 currentAvatarUrl={avatarUrl}
                 username={username}
@@ -112,34 +113,36 @@ export default function Social() {
             <UserSearchBar />
 
             <Card 
-              className="cursor-pointer hover:bg-accent/50 transition-all duration-300 border-border group"
+              className="cursor-pointer hover:shadow-xl hover:shadow-yellow-500/10 transition-all duration-300 border-yellow-500/20 group"
               onClick={() => navigate('/leaderboard')}
             >
-              <CardHeader>
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardHeader className="relative">
                 <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-yellow-500/10">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/20">
                     <Trophy className="h-5 w-5 text-yellow-500" />
                   </div>
                   Leaderboard
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative">
                 <p className="text-sm text-muted-foreground">
                   See how you rank against other users in tap coins, workouts, and calories burned
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="border-border">
-              <CardHeader>
+            <Card className="border-blue-500/20 shadow-lg shadow-blue-500/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-lg" />
+              <CardHeader className="relative">
                 <CardTitle className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-accent">
-                    <Search className="h-5 w-5" />
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+                    <Search className="h-5 w-5 text-blue-500" />
                   </div>
                   Find Users
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative">
                 <p className="text-sm text-muted-foreground">
                   Search for users by username to view their profiles and follow their progress
                 </p>
