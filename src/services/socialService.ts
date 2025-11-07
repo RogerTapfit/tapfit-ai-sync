@@ -254,11 +254,40 @@ class SocialService {
   }
 
   /**
-   * Update user's username and bio
+   * Validate username format
    */
-  async updateProfile(updates: { username?: string; bio?: string }): Promise<boolean> {
+  validateUsernameFormat(username: string): { valid: boolean; error?: string } {
+    if (!username) return { valid: false, error: 'Username is required' };
+    if (username.length < 3) return { valid: false, error: 'Username must be at least 3 characters' };
+    if (username.length > 30) return { valid: false, error: 'Username must be less than 30 characters' };
+    
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(username)) {
+      return { valid: false, error: 'Username can only contain letters, numbers, underscores, and hyphens' };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Update user's profile
+   */
+  async updateProfile(updates: { 
+    username?: string; 
+    bio?: string;
+    is_profile_public?: boolean;
+    share_workout_stats?: boolean;
+  }): Promise<boolean> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
+    if (!user) throw new Error('Not authenticated');
+
+    // Validate username format if provided
+    if (updates.username) {
+      const validation = this.validateUsernameFormat(updates.username);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+    }
 
     const { error } = await supabase
       .from('profiles')
@@ -266,8 +295,10 @@ class SocialService {
       .eq('id', user.id);
 
     if (error) {
-      console.error('Error updating profile:', error);
-      return false;
+      if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
+        throw new Error('Username already taken');
+      }
+      throw error;
     }
 
     return true;
