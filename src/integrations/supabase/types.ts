@@ -1364,6 +1364,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          notification_data: Json
+          notification_type: string
+          read: boolean
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          notification_data?: Json
+          notification_type: string
+          read?: boolean
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          notification_data?: Json
+          notification_type?: string
+          read?: boolean
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrition_goals: {
         Row: {
           carbs_grams: number
@@ -3221,6 +3254,14 @@ export type Database = {
           _user_id?: string
         }
         Returns: undefined
+      }
+      mark_all_notifications_read: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      mark_notifications_read: {
+        Args: { _notification_ids: string[]; _user_id: string }
+        Returns: boolean
       }
       mask_sensitive_data: { Args: { data: Json }; Returns: Json }
       refresh_daily_nutrition_summary_for_user: {

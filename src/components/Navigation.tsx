@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { getShortVersionString } from "@/lib/version";
+import { NotificationBell } from "@/components/social/NotificationBell";
 import { 
   Home, 
   Activity, 
@@ -79,9 +80,18 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
         <div className="space-y-6">
           {/* Logo */}
           <div className="text-center pt-8 md:pt-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-              TapFit
-            </h1>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex-1" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                TapFit
+              </h1>
+              {!isGuest && (
+                <div className="flex-1 flex justify-end">
+                  <NotificationBell />
+                </div>
+              )}
+              {isGuest && <div className="flex-1" />}
+            </div>
             <p className="text-xs text-muted-foreground">AI-Powered Fitness</p>
             <div className="mt-1">
               <span className="text-xs text-muted-foreground font-mono">{getShortVersionString()}</span>
