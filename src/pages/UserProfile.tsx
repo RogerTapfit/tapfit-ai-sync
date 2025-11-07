@@ -21,6 +21,7 @@ export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState("overview");
   
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
@@ -149,7 +150,7 @@ export default function UserProfile() {
 
       {/* Stats Tabs */}
       {profile.share_workout_stats ? (
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="workouts">Workouts</TabsTrigger>
@@ -246,7 +247,10 @@ export default function UserProfile() {
             </Card>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <Card className="hover:border-red-500/20 transition-colors">
+              <Card 
+                className="hover:border-red-500/20 transition-colors cursor-pointer"
+                onClick={() => setActiveTab("workouts")}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Workouts</CardTitle>
                   <div className="p-2 rounded-lg bg-red-500/10">
@@ -255,10 +259,14 @@ export default function UserProfile() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.workout_count || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Click to view details</p>
                 </CardContent>
               </Card>
 
-              <Card className="hover:border-blue-500/20 transition-colors">
+              <Card 
+                className="hover:border-blue-500/20 transition-colors cursor-pointer"
+                onClick={() => setActiveTab("workouts")}
+              >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Exercises</CardTitle>
                   <div className="p-2 rounded-lg bg-blue-500/10">
@@ -267,6 +275,7 @@ export default function UserProfile() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.total_exercises || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Click to view details</p>
                 </CardContent>
               </Card>
 
