@@ -49,7 +49,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ full_name?: string; id?: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ full_name?: string; username?: string; id?: string } | null>(null);
   const [showChatbot, setShowChatbot] = useState(false);
   
   // Use the new AI insights hook
@@ -86,7 +86,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       if (user?.id) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, id')
+          .select('full_name, username, id')
           .eq('id', user.id)
           .single();
         
@@ -205,6 +205,11 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
               <h1 className="text-[clamp(1.25rem,3.5vw,2.5rem)] md:text-4xl font-bold text-foreground drop-shadow-lg">
                 Welcome Back{greetingName ? `, ${greetingName}` : ''}
               </h1>
+              {userProfile?.username && (
+                <p className="text-foreground/75 text-sm drop-shadow-sm mb-1">
+                  @{userProfile.username}
+                </p>
+              )}
               <p className="text-foreground/90 text-[clamp(0.9rem,2.4vw,1rem)] drop-shadow-sm">
                 Ready to crush today&apos;s workout?
               </p>

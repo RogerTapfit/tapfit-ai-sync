@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Social() {
   const [showUsernameDialog, setShowUsernameDialog] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function Social() {
         .eq('id', user.id)
         .single();
 
+      setUsername(profile?.username || null);
       setNeedsUsername(!profile?.username);
     } catch (error) {
       console.error('Error checking username:', error);
@@ -42,6 +44,11 @@ export default function Social() {
         <p className="text-muted-foreground">
           Connect with other users and follow their fitness journey
         </p>
+        {!loading && username && (
+          <p className="text-sm text-muted-foreground mt-1">
+            Signed in as <span className="font-medium text-foreground">@{username}</span>
+          </p>
+        )}
       </div>
 
       {!loading && needsUsername && (
