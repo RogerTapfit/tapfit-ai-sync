@@ -54,7 +54,16 @@ export const useUserWorkoutHistory = (userId?: string) => {
 
         if (error) throw error;
 
-        const formattedWorkouts: WorkoutHistoryItem[] = (workoutLogs || []).map((w: any) => ({
+        // Filter out abandoned workouts with 0 exercises
+        const filteredWorkouts = (workoutLogs || []).filter((w: any) => {
+          // Keep completed workouts
+          if (w.completed_at) return true;
+          
+          // Keep abandoned workouts that have at least one exercise logged
+          return w.exercise_logs && w.exercise_logs.length > 0;
+        });
+
+        const formattedWorkouts: WorkoutHistoryItem[] = filteredWorkouts.map((w: any) => ({
           id: w.id,
           type: w.muscle_group?.toLowerCase() === 'cardio' ? 'cardio' : 'strength',
           date: new Date(w.completed_at || w.started_at),

@@ -81,22 +81,6 @@ export default function MachineWorkout() {
     }
   }, [machine, recommendation, recommendationLoading, historyLoading, machineHistory]);
 
-  // Ensure we have an active workout session
-  useEffect(() => {
-    const ensureWorkoutSession = async () => {
-      if (machine && !currentWorkoutLog) {
-        console.log('No active workout session, starting one for machine workout');
-        await startWorkout(
-          `${machine.muscleGroup} Workout`,
-          machine.muscleGroup,
-          8 // Default total exercises for a muscle group workout
-        );
-      }
-    };
-
-    ensureWorkoutSession();
-  }, [machine, currentWorkoutLog, startWorkout]);
-
   // Rest timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -145,6 +129,16 @@ export default function MachineWorkout() {
   };
 
   const handleStartWorkout = async () => {
+    // Create workout session when user actually starts
+    if (!currentWorkoutLog && machine) {
+      console.log('Starting workout session for machine workout');
+      await startWorkout(
+        `${machine.muscleGroup} Workout`,
+        machine.muscleGroup,
+        8 // Default total exercises for a muscle group workout
+      );
+    }
+    
     setWorkoutStarted(true);
     setWorkoutStartTime(new Date());
     const { audioManager } = await import('@/utils/audioUtils');
@@ -397,7 +391,28 @@ export default function MachineWorkout() {
   };
 
   const handleBackToList = async () => {
-    await saveProgress();
+    // Check if workout has any exercises before navigating
+    if (currentWorkoutLog) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: exerciseLogs } = await supabase
+        .from('exercise_logs')
+        .select('id')
+        .eq('workout_log_id', currentWorkoutLog.id);
+      
+      // Delete empty workout_logs to prevent clutter
+      if (!exerciseLogs || exerciseLogs.length === 0) {
+        await supabase
+          .from('workout_logs')
+          .delete()
+          .eq('id', currentWorkoutLog.id);
+        
+        console.log('Deleted empty workout_log - no exercises were logged');
+      } else {
+        // Save progress if exercises were logged
+        await saveProgress();
+      }
+    }
+    
     navigate('/workout-list', { state: { fromWorkoutDetail: true } });
   };
 
