@@ -65,15 +65,7 @@ export const useUserWorkoutHistory = (userId?: string) => {
               machine_name,
               sets_completed,
               reps_completed,
-              weight_used,
-              exercise_sets (
-                set_number,
-                reps_completed,
-                weight_used,
-                rest_duration_seconds,
-                perceived_effort,
-                completed_at
-              )
+              weight_used
             )
           `)
           .eq('user_id', userId)
