@@ -175,11 +175,15 @@ export const RobotAvatarDisplay = ({
 
   const currentPose = pose || avatarData.animation;
   const currentBodySize = bodySize[size];
-  const { primary, secondary, accent } = avatarData.color_scheme;
+  const { primary, secondary, accent } = avatarData.color_scheme || {
+    primary: "hsl(0, 84%, 60%)",
+    secondary: "hsl(0, 0%, 15%)",
+    accent: "hsl(0, 100%, 70%)"
+  };
 
   return (
     <Card 
-      className={`${sizeClasses[size]} ${className} border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background)} transition-all duration-300 flex flex-col overflow-visible`}
+      className={`${sizeClasses[size]} ${className} border-2 border-primary/30 bg-gradient-to-br ${getBackgroundGradient(avatarData.background || 'tech_lab')} transition-all duration-300 flex flex-col overflow-visible`}
       style={{ 
         boxShadow: `0 0 20px ${accent}40, inset 0 0 20px ${primary}20`,
         objectFit: 'contain',
@@ -191,16 +195,16 @@ export const RobotAvatarDisplay = ({
         {/* Left: Chassis Label and Power Level */}
         <div className="flex flex-col gap-1">
           <div className="bg-black/60 px-2 py-1 rounded text-xs font-bold text-white">
-            {avatarData.chassis_type.replace('_', ' ').toUpperCase()}
+            {(avatarData.chassis_type || 'slim_bot').replace('_', ' ').toUpperCase()}
           </div>
           <div className="flex items-center gap-1">
             <div className="w-8 h-1 bg-black/40 rounded-full overflow-hidden border border-white/20">
               <div 
                 className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300"
-                style={{ width: `${avatarData.power_level}%` }}
+                style={{ width: `${avatarData.power_level || 25}%` }}
               />
             </div>
-            <span className="text-xs text-white/80 font-mono">{avatarData.power_level}%</span>
+            <span className="text-xs text-white/80 font-mono">{avatarData.power_level || 25}%</span>
           </div>
         </div>
         
@@ -219,14 +223,14 @@ export const RobotAvatarDisplay = ({
                emotion === 'charging' ? '🔋' : '🤖'}
             </Badge>
           )}
-          {getChassisSpecialFeatures(avatarData.chassis_type, size)}
+          {getChassisSpecialFeatures(avatarData.chassis_type || 'slim_bot', size)}
         </div>
       </div>
 
       {/* Main Robot Section */}
       <div className="flex-1 flex items-center justify-center p-2 z-5">
         <div 
-          className={`relative ${getAnimationClass(currentPose, emotion)} ${getChassisStyle(avatarData.chassis_type)}`}
+          className={`relative ${getAnimationClass(currentPose, emotion)} ${getChassisStyle(avatarData.chassis_type || 'slim_bot')}`}
         >
           {/* Robot Head */}
           <div 
@@ -242,14 +246,14 @@ export const RobotAvatarDisplay = ({
             {/* Robot Eyes - Large oval glowing eyes */}
             <div className="flex gap-2 absolute top-1/3 left-1/2 transform -translate-x-1/2">
               <div 
-                className={`${size === 'small' ? 'w-2 h-3' : size === 'medium' ? 'w-3 h-4' : 'w-4 h-5'} rounded-full ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-cyan-300/30`}
+                className={`${size === 'small' ? 'w-2 h-3' : size === 'medium' ? 'w-3 h-4' : 'w-4 h-5'} rounded-full ${getRobotEyeDisplay(emotion, avatarData.eye_color || 'blue_led')} border border-cyan-300/30`}
                 style={{ 
                   background: 'radial-gradient(ellipse at center, #00ffff, #0088ff)',
                   boxShadow: '0 0 15px cyan, inset 0 0 10px rgba(0, 255, 255, 0.5)'
                 }}
               />
               <div 
-                className={`${size === 'small' ? 'w-2 h-3' : size === 'medium' ? 'w-3 h-4' : 'w-4 h-5'} rounded-full ${getRobotEyeDisplay(emotion, avatarData.eye_color)} border border-cyan-300/30`}
+                className={`${size === 'small' ? 'w-2 h-3' : size === 'medium' ? 'w-3 h-4' : 'w-4 h-5'} rounded-full ${getRobotEyeDisplay(emotion, avatarData.eye_color || 'blue_led')} border border-cyan-300/30`}
                 style={{ 
                   background: 'radial-gradient(ellipse at center, #00ffff, #0088ff)',
                   boxShadow: '0 0 15px cyan, inset 0 0 10px rgba(0, 255, 255, 0.5)'
