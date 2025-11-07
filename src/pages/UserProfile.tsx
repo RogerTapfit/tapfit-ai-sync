@@ -82,10 +82,10 @@ export default function UserProfile() {
       </div>
 
       {/* Profile Header */}
-      <Card className="mb-6">
+      <Card className="mb-6 border-border/50">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <Avatar className="h-24 w-24">
+            <Avatar className="h-24 w-24 ring-2 ring-red-500/10">
               <AvatarImage src={profile.avatar_url || undefined} alt={profile.username || 'User'} />
               <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
             </Avatar>
@@ -93,13 +93,13 @@ export default function UserProfile() {
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-2xl font-bold">{profile.full_name || profile.username}</h1>
               {profile.username && (
-                <p className="text-muted-foreground">@{profile.username}</p>
+                <p className="text-muted-foreground">@<span className="text-red-500">{profile.username}</span></p>
               )}
               {profile.bio && (
                 <p className="mt-2 text-sm">{profile.bio}</p>
               )}
 
-              <div className="flex flex-wrap gap-4 mt-4 justify-center md:justify-start">
+              <div className="flex flex-wrap gap-6 mt-4 justify-center md:justify-start">
                 <div className="text-center">
                   <div className="font-bold text-lg">{stats?.follower_count || 0}</div>
                   <div className="text-xs text-muted-foreground">Followers</div>
@@ -109,12 +109,12 @@ export default function UserProfile() {
                   <div className="text-xs text-muted-foreground">Following</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-lg">{stats?.workout_count || 0}</div>
+                  <div className="font-bold text-lg text-red-500">{stats?.workout_count || 0}</div>
                   <div className="text-xs text-muted-foreground">Workouts</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-lg flex items-center gap-1 justify-center">
-                    <Coins className="h-4 w-4 text-yellow-500" />
+                  <div className="font-bold text-lg flex items-center gap-1 justify-center text-yellow-500">
+                    <Coins className="h-4 w-4" />
                     {profile.tap_coins_balance || 0}
                   </div>
                   <div className="text-xs text-muted-foreground">Tap Coins</div>
@@ -157,30 +157,36 @@ export default function UserProfile() {
 
           <TabsContent value="overview">
             <div className="grid gap-4 md:grid-cols-3">
-              <Card>
+              <Card className="hover:border-red-500/20 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Workouts</CardTitle>
-                  <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2 rounded-lg bg-red-500/10">
+                    <Dumbbell className="h-4 w-4 text-red-500" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.workout_count || 0}</div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover:border-blue-500/20 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Exercises</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.total_exercises || 0}</div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="hover:border-yellow-500/20 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Achievements</CardTitle>
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2 rounded-lg bg-yellow-500/10">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{achievements.length}</div>
