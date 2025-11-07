@@ -13,18 +13,17 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (loading) {
     return (
-      <Card className="border-red-500/15 shadow-lg shadow-red-500/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-rose-500/5 rounded-lg" />
-        <CardHeader className="relative">
+      <Card>
+        <CardHeader>
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/15 to-rose-500/15">
-              <Activity className="h-5 w-5 text-red-400" />
+            <div className="p-2 rounded-lg bg-accent">
+              <Activity className="h-5 w-5 text-red-500" />
             </div>
             Activity Feed
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-8 relative">
-          <Loader2 className="h-8 w-8 animate-spin text-red-400" />
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-red-500" />
         </CardContent>
       </Card>
     );
@@ -32,12 +31,11 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (activities.length === 0) {
     return (
-      <Card className="border-red-500/15 shadow-lg shadow-red-500/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-rose-500/5 rounded-lg" />
-        <CardHeader className="relative">
+      <Card>
+        <CardHeader>
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/15 to-rose-500/15">
-              <Activity className="h-5 w-5 text-red-400" />
+            <div className="p-2 rounded-lg bg-accent">
+              <Activity className="h-5 w-5 text-red-500" />
             </div>
             Activity Feed
           </CardTitle>
@@ -55,12 +53,11 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
   }
 
   return (
-    <Card className="border-red-500/15 shadow-lg shadow-red-500/5">
-      <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-rose-500/5 rounded-lg" />
-      <CardHeader className="relative">
+    <Card>
+      <CardHeader>
         <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/15 to-rose-500/15">
-            <Activity className="h-5 w-5 text-red-400" />
+          <div className="p-2 rounded-lg bg-accent">
+            <Activity className="h-5 w-5 text-red-500" />
           </div>
           Activity Feed
         </CardTitle>

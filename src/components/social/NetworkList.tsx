@@ -11,12 +11,11 @@ export function NetworkList() {
 
   if (loading) {
     return (
-      <Card className="border-pink-500/15 shadow-lg shadow-pink-500/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-rose-500/5 rounded-lg" />
-        <CardHeader className="relative">
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-pink-500/15 to-rose-500/15">
-              <Users className="h-4 w-4 text-pink-400" />
+            <div className="p-2 rounded-lg bg-accent">
+              <Users className="h-4 w-4" />
             </div>
             Your Network
           </CardTitle>
@@ -38,22 +37,21 @@ export function NetworkList() {
   }
 
   return (
-    <Card className="border-pink-500/15 shadow-lg shadow-pink-500/5">
-      <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-rose-500/5 rounded-lg" />
-      <CardHeader className="relative">
+    <Card>
+      <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-pink-500/15 to-rose-500/15">
-            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-pink-400" />
+          <div className="p-2 rounded-lg bg-accent">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           Your Network
         </CardTitle>
         <CardDescription>
-          <span className="font-medium text-pink-400">{followers.length}</span> followers · <span className="font-medium text-rose-400">{following.length}</span> following
+          <span className="font-medium text-red-500">{followers.length}</span> followers · <span className="font-medium text-red-500">{following.length}</span> following
         </CardDescription>
       </CardHeader>
-      <CardContent className="relative">
+      <CardContent>
         <Tabs defaultValue="following" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-pink-500/5">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="following" className="text-xs sm:text-sm">
               Following ({following.length})
             </TabsTrigger>
