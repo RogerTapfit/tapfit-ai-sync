@@ -17,6 +17,17 @@ export interface SocialStats {
   total_exercises: number;
 }
 
+export interface UserWorkoutStats {
+  total_calories_burned: number;
+  total_workouts: number;
+  total_workout_minutes: number;
+  total_exercises: number;
+}
+
+export interface UserWithStats extends UserProfile {
+  workout_stats?: UserWorkoutStats | null;
+}
+
 export interface FollowRelationship {
   isFollowing: boolean;
   isFollower: boolean;
@@ -189,16 +200,58 @@ class SocialService {
   }
 
   /**
-   * Get followers list for a user
+   * Get workout stats for a user
    */
-  async getFollowers(userId: string, limit: number = 50) {
+  async getUserWorkoutStats(userId: string): Promise<UserWorkoutStats | null> {
+    // Get last 30 days of activity
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data, error } = await supabase
+      .from('daily_activity_summary')
+      .select('total_calories_burned, workouts_completed, total_workout_minutes, total_exercises')
+      .eq('user_id', userId)
+      .gte('activity_date', thirtyDaysAgo.toISOString().split('T')[0]);
+
+    if (error) {
+      console.error('Error fetching workout stats:', error);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      return {
+        total_calories_burned: 0,
+        total_workouts: 0,
+        total_workout_minutes: 0,
+        total_exercises: 0
+      };
+    }
+
+    // Aggregate the data
+    return data.reduce((acc, day) => ({
+      total_calories_burned: acc.total_calories_burned + (day.total_calories_burned || 0),
+      total_workouts: acc.total_workouts + (day.workouts_completed || 0),
+      total_workout_minutes: acc.total_workout_minutes + (day.total_workout_minutes || 0),
+      total_exercises: acc.total_exercises + (day.total_exercises || 0)
+    }), {
+      total_calories_burned: 0,
+      total_workouts: 0,
+      total_workout_minutes: 0,
+      total_exercises: 0
+    });
+  }
+
+  /**
+   * Get followers list for a user with workout stats
+   */
+  async getFollowers(userId: string, limit: number = 50): Promise<UserWithStats[]> {
     const { data, error } = await supabase
       .from('user_follows')
       .select(`
         follower_id,
         created_at,
         profiles!user_follows_follower_id_fkey(
-          id, username, full_name, avatar_url
+          id, username, full_name, avatar_url, bio, is_profile_public, share_workout_stats
         )
       `)
       .eq('following_id', userId)
@@ -211,20 +264,46 @@ class SocialService {
       return [];
     }
 
-    return data || [];
+    if (!data) return [];
+
+    // Fetch workout stats for each follower
+    const followersWithStats = await Promise.all(
+      data.map(async (follow: any) => {
+        const profile = follow.profiles;
+        if (!profile) return null;
+
+        let workout_stats = null;
+        if (profile.share_workout_stats) {
+          workout_stats = await this.getUserWorkoutStats(profile.id);
+        }
+
+        return {
+          id: profile.id,
+          username: profile.username,
+          full_name: profile.full_name,
+          bio: profile.bio,
+          avatar_url: profile.avatar_url,
+          is_profile_public: profile.is_profile_public,
+          share_workout_stats: profile.share_workout_stats,
+          workout_stats
+        } as UserWithStats;
+      })
+    );
+
+    return followersWithStats.filter((f): f is UserWithStats => f !== null);
   }
 
   /**
-   * Get following list for a user
+   * Get following list for a user with workout stats
    */
-  async getFollowing(userId: string, limit: number = 50) {
+  async getFollowing(userId: string, limit: number = 50): Promise<UserWithStats[]> {
     const { data, error } = await supabase
       .from('user_follows')
       .select(`
         following_id,
         created_at,
         profiles!user_follows_following_id_fkey(
-          id, username, full_name, avatar_url
+          id, username, full_name, avatar_url, bio, is_profile_public, share_workout_stats
         )
       `)
       .eq('follower_id', userId)
@@ -237,7 +316,33 @@ class SocialService {
       return [];
     }
 
-    return data || [];
+    if (!data) return [];
+
+    // Fetch workout stats for each user being followed
+    const followingWithStats = await Promise.all(
+      data.map(async (follow: any) => {
+        const profile = follow.profiles;
+        if (!profile) return null;
+
+        let workout_stats = null;
+        if (profile.share_workout_stats) {
+          workout_stats = await this.getUserWorkoutStats(profile.id);
+        }
+
+        return {
+          id: profile.id,
+          username: profile.username,
+          full_name: profile.full_name,
+          bio: profile.bio,
+          avatar_url: profile.avatar_url,
+          is_profile_public: profile.is_profile_public,
+          share_workout_stats: profile.share_workout_stats,
+          workout_stats
+        } as UserWithStats;
+      })
+    );
+
+    return followingWithStats.filter((f): f is UserWithStats => f !== null);
   }
 
   /**
