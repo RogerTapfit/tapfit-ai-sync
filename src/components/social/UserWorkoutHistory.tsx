@@ -1,11 +1,28 @@
-import { useState, useMemo } from 'react';
-import { useUserWorkoutHistory } from '@/hooks/useUserWorkoutHistory';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dumbbell, Clock, Flame, Activity, ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
+import { useUserWorkoutHistory } from '@/hooks/useUserWorkoutHistory';
+import { useMemo, useState } from 'react';
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  Calendar as CalendarIcon, 
+  Dumbbell, 
+  Flame, 
+  Clock,
+  X,
+  Filter,
+  TrendingUp,
+  Zap,
+  Trophy,
+  Timer,
+  Activity
+} from 'lucide-react';
+import { SetDetailTable } from './SetDetailTable';
+import { RPEMeter } from './RPEMeter';
+import { PRBadge } from './PRBadge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import {
   Collapsible,
   CollapsibleContent,
@@ -296,74 +313,141 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+              {/* Workout Statistics Summary */}
+              <div className="p-4 mb-4 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Workout Summary
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Volume</p>
+                      <p className="text-base font-bold">{workout.totalVolume.toLocaleString()} lbs</p>
+                    </div>
+                  </div>
+                  {workout.avgPowerLevel && (
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-yellow-500" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Avg Power</p>
+                        <p className="text-base font-bold">{workout.avgPowerLevel.toFixed(1)}/10</p>
+                      </div>
+                    </div>
+                  )}
+                  {workout.prCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-yellow-500" fill="currentColor" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">PRs</p>
+                        <p className="text-base font-bold text-yellow-500">{workout.prCount}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Rest</p>
+                      <p className="text-base font-bold">{Math.round(workout.totalRestTime / 60)} min</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Duration</p>
-                    <p className="font-semibold">{workout.duration} min</p>
+                    <p className="text-sm text-muted-foreground">Duration</p>
+                    <p className="text-lg font-semibold">{workout.duration} min</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Flame className="h-4 w-4 text-orange-500" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Calories</p>
-                    <p className="font-semibold">{workout.caloriesBurned}</p>
+                    <p className="text-sm text-muted-foreground">Calories</p>
+                    <p className="text-lg font-semibold">{workout.caloriesBurned}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Dumbbell className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Exercises</p>
-                    <p className="font-semibold">{workout.exercisesCompleted}</p>
+                    <p className="text-sm text-muted-foreground">Sets × Reps</p>
+                    <p className="text-lg font-semibold">{workout.totalSets} × {workout.totalReps}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Type</p>
+                    <Badge variant="outline">{workout.muscleGroup}</Badge>
                   </div>
                 </div>
               </div>
 
-              {workout.exercises.length > 0 && (
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full">
-                    {isExpanded ? (
-                      <>
-                        <ChevronUp className="h-4 w-4 mr-2" />
-                        Hide Exercises
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-4 w-4 mr-2" />
-                        View Exercises ({workout.exercises.length})
-                      </>
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-              )}
-
-              <CollapsibleContent className="mt-3 space-y-2">
+              {/* Exercise Details */}
+              <CollapsibleContent className="mt-6 space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                  <Dumbbell className="h-4 w-4" />
+                  Exercises Performed
+                </h4>
                 {workout.exercises.map((exercise, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-lg bg-muted/50 border border-border"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h5 className="font-semibold text-sm">{exercise.exercise_name}</h5>
-                        <p className="text-xs text-muted-foreground">{exercise.machine_name}</p>
+                  <div key={idx} className="rounded-lg border border-border overflow-hidden">
+                    {/* Exercise Header */}
+                    <div className="p-4 bg-muted/30 border-b border-border">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h5 className="font-semibold text-base">{exercise.exercise_name}</h5>
+                            {exercise.is_pr && <PRBadge variant="full" />}
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {exercise.machine_name}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground mb-1">Total Volume</p>
+                          <p className="text-lg font-bold text-primary">
+                            {exercise.total_volume.toLocaleString()} lbs
+                          </p>
+                        </div>
                       </div>
+                      
+                      {/* Exercise Stats */}
+                      <div className="mt-3 flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground">Sets:</span>
+                          <span className="font-semibold">{exercise.sets_completed}</span>
+                        </div>
+                        <span className="text-muted-foreground">•</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground">Total Reps:</span>
+                          <span className="font-semibold">{exercise.reps_completed}</span>
+                        </div>
+                        {exercise.avg_rpe && (
+                          <>
+                            <span className="text-muted-foreground">•</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground">Avg RPE:</span>
+                              <span className="font-semibold">{exercise.avg_rpe.toFixed(1)}/10</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* RPE Meter */}
+                      {exercise.avg_rpe && (
+                        <div className="mt-3">
+                          <RPEMeter rpe={exercise.avg_rpe} showLabel={true} />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-4 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">Sets: </span>
-                        <span className="font-semibold">{exercise.sets_completed}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Reps: </span>
-                        <span className="font-semibold">{exercise.reps_completed}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Weight: </span>
-                        <span className="font-semibold">{exercise.weight_used} lbs</span>
-                      </div>
-                    </div>
+
+                    {/* Set-by-Set Breakdown */}
+                    {exercise.sets.length > 0 && (
+                      <SetDetailTable sets={exercise.sets} totalVolume={exercise.total_volume} />
+                    )}
                   </div>
                 ))}
               </CollapsibleContent>
