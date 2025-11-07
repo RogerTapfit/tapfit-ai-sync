@@ -10,6 +10,7 @@ import { socialService } from '@/services/socialService';
 import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
+import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -182,9 +183,13 @@ export default function UserProfile() {
                 <CardTitle>Recent Workouts</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Workout history coming soon
-                </p>
+                {userId ? (
+                  <UserWorkoutHistory userId={userId} />
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Loading workout history...
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
