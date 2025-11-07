@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSocialProfile } from '@/hooks/useSocialProfile';
 import { useUserFollow } from '@/hooks/useUserFollow';
+import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { socialService } from '@/services/socialService';
 import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
+import { AchievementBadges } from '@/components/social/AchievementBadges';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -19,6 +21,7 @@ export default function UserProfile() {
   
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
+  const { achievements, loading: achievementsLoading } = useUserAchievements(userId);
 
   useEffect(() => {
     if (username) {
@@ -178,7 +181,8 @@ export default function UserProfile() {
                   <Trophy className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">Coming Soon</div>
+                  <div className="text-2xl font-bold">{achievements.length}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Badges earned</p>
                 </CardContent>
               </Card>
             </div>
@@ -204,12 +208,13 @@ export default function UserProfile() {
           <TabsContent value="achievements">
             <Card>
               <CardHeader>
-                <CardTitle>Achievements</CardTitle>
+                <CardTitle>Achievement Badges</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Achievements display coming soon
-                </p>
+                <AchievementBadges 
+                  achievements={achievements} 
+                  loading={achievementsLoading}
+                />
               </CardContent>
             </Card>
           </TabsContent>
