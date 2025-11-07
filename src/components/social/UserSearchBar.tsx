@@ -1,16 +1,23 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-react';
+import { Search, X, Clock } from 'lucide-react';
 import { useUserSearch } from '@/hooks/useUserSearch';
+import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { UserProfileCard } from './UserProfileCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 
 export const UserSearchBar = () => {
   const { query, results, loading, search, clearSearch } = useUserSearch();
+  const { recentSearches, addRecentSearch, clearRecentSearches } = useRecentSearches();
   const [isFocused, setIsFocused] = useState(false);
 
-  const showResults = isFocused && (query.length >= 2 || results.length > 0);
+  const showResults = isFocused && query.length >= 2;
+  const showRecentSearches = isFocused && query.length === 0 && recentSearches.length > 0;
+
+  const handleUserClick = (user: any) => {
+    addRecentSearch(user);
+  };
 
   return (
     <div className="relative w-full max-w-md">
@@ -51,14 +58,48 @@ export const UserSearchBar = () => {
                     key={user.id}
                     user={user}
                     showFollowButton={true}
+                    onClick={() => handleUserClick(user)}
                   />
                 ))}
               </div>
-            ) : query.length >= 2 ? (
+            ) : (
               <div className="p-4 text-center text-sm text-muted-foreground">
                 No users found
               </div>
-            ) : null}
+            )}
+          </ScrollArea>
+        </div>
+      )}
+
+      {showRecentSearches && (
+        <div className="absolute top-full mt-2 w-full bg-background border rounded-md shadow-lg z-50">
+          <div className="p-3 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Recent Searches</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearRecentSearches}
+                className="h-7 text-xs"
+              >
+                Clear All
+              </Button>
+            </div>
+          </div>
+          <ScrollArea className="max-h-[300px]">
+            <div className="p-2 space-y-2">
+              {recentSearches.map((user) => (
+                <UserProfileCard
+                  key={user.id}
+                  user={user}
+                  showFollowButton={false}
+                  onClick={() => handleUserClick(user)}
+                />
+              ))}
+            </div>
           </ScrollArea>
         </div>
       )}
