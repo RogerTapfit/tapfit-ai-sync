@@ -13,6 +13,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
 import { AchievementBadges } from '@/components/social/AchievementBadges';
+import { ProfileChallengesStreaks } from '@/components/social/ProfileChallengesStreaks';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -147,9 +148,10 @@ export default function UserProfile() {
       {/* Stats Tabs */}
       {profile.share_workout_stats ? (
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="workouts">Workouts</TabsTrigger>
+            <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
 
@@ -203,6 +205,18 @@ export default function UserProfile() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="challenges">
+            {userId ? (
+              <ProfileChallengesStreaks userId={userId} />
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">Loading challenges...</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="achievements">
