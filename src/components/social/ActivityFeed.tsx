@@ -13,12 +13,12 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="glow-card border-primary/20">
         <CardHeader>
-          <CardTitle>Activity Feed</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </CardContent>
       </Card>
     );
@@ -26,13 +26,14 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (activities.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Feed</CardTitle>
+      <Card className="glow-card border-primary/20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+        <CardHeader className="relative">
+          <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="text-center py-8 text-muted-foreground">
-            <p className="mb-2">No recent activity</p>
+            <p className="mb-2 font-medium">No recent activity</p>
             <p className="text-sm">
               Follow users to see their achievements, PRs, and milestones here!
             </p>
@@ -43,13 +44,14 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Activity Feed</CardTitle>
+    <Card className="glow-card border-primary/20 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+      <CardHeader className="relative">
+        <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 relative">
         <ScrollArea className="h-[600px]">
-          <div className="space-y-4 p-6">
+          <div className="space-y-3 p-3 sm:p-6">
             {activities.map((activity) => (
               <ActivityFeedItem key={activity.id} activity={activity} />
             ))}

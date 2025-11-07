@@ -93,36 +93,36 @@ export const ActivityFeedItem = ({ activity }: ActivityFeedItemProps) => {
   };
 
   return (
-    <Card className="p-4 hover:bg-accent/5 transition-colors">
-      <div className="flex items-start gap-3">
+    <Card className="p-3 sm:p-4 hover:bg-accent/5 transition-colors border-primary/10 overflow-hidden">
+      <div className="flex items-start gap-2 sm:gap-3 min-w-0">
         <div className="flex-shrink-0">
           <Avatar 
-            className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+            className="h-8 w-8 sm:h-10 sm:w-10 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20"
             onClick={handleProfileClick}
           >
             <AvatarImage src={activity.profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
               {getInitials(activity.profile?.full_name || activity.profile?.username)}
             </AvatarFallback>
           </Avatar>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             {getActivityIcon()}
             <button
               onClick={handleProfileClick}
-              className="font-semibold hover:underline text-foreground"
+              className="font-semibold hover:underline text-foreground text-sm sm:text-base truncate"
             >
               {activity.profile?.username || activity.profile?.full_name || 'User'}
             </button>
           </div>
           
-          <p className="text-sm text-muted-foreground mb-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-2 break-words">
             {getActivityText()}
           </p>
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
             </span>

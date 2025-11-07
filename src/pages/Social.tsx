@@ -45,91 +45,112 @@ export default function Social() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl pb-20">
-      <div className="mb-6">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => navigate('/')}
-          className="mb-4"
-        >
-          <Home className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <h1 className="text-3xl font-bold mb-2">Social</h1>
-        <p className="text-muted-foreground">
-          Connect with other users and follow their fitness journey
-        </p>
-        {!loading && username && (
-          <div className="mt-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">
-                Signed in as <span className="font-medium text-foreground">@{username}</span>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="container mx-auto px-4 sm:px-6 max-w-7xl pb-20">
+        <div className="mb-6 pt-6">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/')}
+            className="mb-4"
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          
+          {/* Hero Header with Gradient */}
+          <div className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+            <div className="relative">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Social
+              </h1>
+              <p className="text-muted-foreground">
+                Connect with other users and follow their fitness journey
               </p>
+              {!loading && username && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Signed in as <span className="font-medium text-primary">@{username}</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
-
-      {!loading && needsUsername && (
-        <UsernameSetupBanner onSetup={() => setShowUsernameDialog(true)} />
-      )}
-
-      {!loading && username && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Your Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProfilePhotoUpload 
-              currentAvatarUrl={avatarUrl}
-              username={username}
-              onUploadSuccess={checkUsername}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <ActivityFeed />
         </div>
 
-        <div className="space-y-6">
-          <UserSearchBar />
+        {!loading && needsUsername && (
+          <UsernameSetupBanner onSetup={() => setShowUsernameDialog(true)} />
+        )}
 
-          <Card 
-            className="cursor-pointer hover:bg-accent/50 transition-colors"
-            onClick={() => navigate('/leaderboard')}
-          >
-            <CardHeader>
+        {!loading && username && (
+          <Card className="mb-6 glow-card border-primary/20 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+            <CardHeader className="relative">
               <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-yellow-500" />
-                Leaderboard
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Home className="h-5 w-5 text-primary" />
+                </div>
+                Your Profile
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                See how you rank against other users in tap coins, workouts, and calories burned
-              </p>
+            <CardContent className="relative">
+              <ProfilePhotoUpload 
+                currentAvatarUrl={avatarUrl}
+                username={username}
+                onUploadSuccess={checkUsername}
+              />
             </CardContent>
           </Card>
+        )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="h-5 w-5" />
-                Find Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Search for users by username to view their profiles and follow their progress
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 min-w-0">
+            <ActivityFeed />
+          </div>
 
-          <NetworkList />
+          <div className="space-y-4 sm:space-y-6 min-w-0">
+            <UserSearchBar />
+
+            <Card 
+              className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30 group overflow-hidden"
+              onClick={() => navigate('/leaderboard')}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-yellow-500/10">
+                    <Trophy className="h-5 w-5 text-yellow-500" />
+                  </div>
+                  Leaderboard
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-sm text-muted-foreground">
+                  See how you rank against other users in tap coins, workouts, and calories burned
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="glow-card border-primary/20 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+              <CardHeader className="relative">
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Search className="h-5 w-5 text-primary" />
+                  </div>
+                  Find Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-sm text-muted-foreground">
+                  Search for users by username to view their profiles and follow their progress
+                </p>
+              </CardContent>
+            </Card>
+
+            <NetworkList />
+          </div>
         </div>
       </div>
 
