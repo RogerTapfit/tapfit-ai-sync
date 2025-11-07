@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '@/services/socialService';
 import { useUserFollow } from '@/hooks/useUserFollow';
-import { Users } from 'lucide-react';
+import { Users, Share2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfileCardProps {
   user: UserProfile;
@@ -14,6 +15,7 @@ interface UserProfileCardProps {
 
 export const UserProfileCard = ({ user, showFollowButton = true, onClick }: UserProfileCardProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { isFollowing, actionLoading, toggleFollow } = useUserFollow(user.id);
 
   const handleClick = () => {
@@ -27,6 +29,26 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
   const handleFollowClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await toggleFollow();
+  };
+
+  const handleShareClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/profile/${user.username}`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied!",
+        description: "Profile link copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const getInitials = () => {
@@ -67,21 +89,32 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
           </div>
 
           {showFollowButton && (
-            <Button
-              variant={isFollowing ? "outline" : "default"}
-              size="sm"
-              onClick={handleFollowClick}
-              disabled={actionLoading}
-            >
-              {isFollowing ? (
-                <>
-                  <Users className="h-4 w-4 mr-1" />
-                  Following
-                </>
-              ) : (
-                'Follow'
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleShareClick}
+                className="h-8 w-8 p-0"
+                title="Share profile"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={isFollowing ? "outline" : "default"}
+                size="sm"
+                onClick={handleFollowClick}
+                disabled={actionLoading}
+              >
+                {isFollowing ? (
+                  <>
+                    <Users className="h-4 w-4 mr-1" />
+                    Following
+                  </>
+                ) : (
+                  'Follow'
+                )}
+              </Button>
+            </div>
           )}
         </div>
       </CardContent>
