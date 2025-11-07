@@ -121,11 +121,18 @@ export const useRobotAvatar = () => {
         const existingData = profile.avatar_data as any;
         console.log('Existing avatar data:', existingData);
         
+        // Preserve character_type if it exists (UUID from database)
+        // Only apply migration if character_type is missing
+        let characterType = existingData.character_type;
+        if (!characterType) {
+          // Migration: convert old chassis_type to default character
+          characterType = existingData.chassis_type === 'slim_bot' ? 'steel_warrior' : 'steel_warrior';
+        }
+
         const robotData: RobotAvatarData = {
           ...defaultRobotAvatar,
           ...existingData,
-          // Migrate old chassis_type to character_type if needed
-          character_type: existingData.character_type || (existingData.chassis_type === 'slim_bot' ? 'steel_warrior' : 'steel_warrior'),
+          character_type: characterType,
           base_hue: existingData.base_hue || 0,
           character_species: existingData.character_species || 'humanoid',
           special_features: existingData.special_features || ['armor_plating'],
@@ -174,7 +181,9 @@ export const useRobotAvatar = () => {
       }
 
       console.log('✅ Avatar updated successfully in database');
-      setAvatarData(updatedData);
+      
+      // Refetch from database to ensure state is in sync
+      await fetchAvatarData();
       return true;
     } catch (error) {
       console.error('Error updating robot avatar:', error);
