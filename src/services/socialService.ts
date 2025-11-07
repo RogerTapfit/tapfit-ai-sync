@@ -248,9 +248,11 @@ class SocialService {
       .from('profiles')
       .select('id')
       .eq('username', username)
-      .single();
+      .maybeSingle();
 
-    return !data && !error;
+    // If data exists, username is taken
+    // If no data, username is available
+    return !data;
   }
 
   /**
