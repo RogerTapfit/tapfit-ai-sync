@@ -133,10 +133,10 @@ export default function UserProfile() {
               {/* Coach/Robot Avatar */}
               <div className="flex flex-col items-center gap-2">
                 <span className="text-xs text-muted-foreground font-medium">Coach</span>
-                {profile.avatar_data ? (
+                {profile.avatar_data || (profile as any).avatar_id ? (
                   <div className="w-24">
                     <RobotAvatarDisplay
-                      avatarData={profile.avatar_data}
+                      avatarData={{ ...(profile as any).avatar_data, avatar_id: (profile as any).avatar_id }}
                       size="small"
                       showAnimation={true}
                     />
@@ -145,7 +145,7 @@ export default function UserProfile() {
                   <div className="h-24 w-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/20">
                     <span className="text-xs text-muted-foreground text-center px-2">No coach</span>
                   </div>
-                )}
+                )
               </div>
             </div>
 

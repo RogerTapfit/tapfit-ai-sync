@@ -55,8 +55,8 @@ export const CharacterAvatarDisplay = ({
 
   const currentPose = getCurrentPose(pose);
 
-  // Use default avatar if none is set
-  const displayAvatar = avatar || (allAvatars && allAvatars.length > 0 ? allAvatars[0] : null);
+  // Do not fallback to the first avatar to avoid showing the wrong coach
+  const displayAvatar = avatar;
 
   if (isLoading) {
     return (
@@ -81,7 +81,7 @@ export const CharacterAvatarDisplay = ({
       {/* Character Header */}
       <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          {displayAvatar.name}
+          {displayAvatar?.name || 'No coach'}
         </Badge>
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
           ⚡{avatarData?.power_level || 100}%
@@ -90,15 +90,19 @@ export const CharacterAvatarDisplay = ({
 
       {/* Coach Image Display */}
       <div className={`absolute inset-0 flex items-center justify-center p-2 ${currentPose} transition-transform duration-300`}>
-        <img 
-          src={displayAvatar.image_url}
-          alt={`${displayAvatar.name} coach avatar`}
-          className="w-full h-full object-cover rounded-lg"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = '/placeholder.svg';
-          }}
-        />
+        {displayAvatar ? (
+          <img 
+            src={displayAvatar.image_url}
+            alt={`${displayAvatar.name} coach avatar`}
+            className="w-full h-full object-cover rounded-lg"
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              target.src = '/placeholder.svg';
+            }}
+          />
+        ) : (
+          <div className="text-xs text-muted-foreground">No coach selected</div>
+        )}
       </div>
 
       {/* Speech bubble for animations */}

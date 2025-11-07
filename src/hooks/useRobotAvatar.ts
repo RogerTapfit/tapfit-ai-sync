@@ -69,7 +69,7 @@ export const useRobotAvatar = () => {
 
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('avatar_data')
+        .select('avatar_data, avatar_id')
         .eq('id', user.id)
         .single();
 
@@ -125,6 +125,10 @@ export const useRobotAvatar = () => {
         // Only apply migration if character_type is missing
         let characterType = existingData.character_type;
         if (!characterType) {
+          // Prefer top-level avatar_id if present
+          characterType = (profile as any)?.avatar_id || null;
+        }
+        if (!characterType) {
           // Migration: convert old chassis_type to default character
           characterType = existingData.chassis_type === 'slim_bot' ? 'steel_warrior' : 'steel_warrior';
         }
@@ -170,9 +174,15 @@ export const useRobotAvatar = () => {
       const updatedData = { ...avatarData, ...newAvatarData };
       console.log('📦 Full updated data:', updatedData);
 
+      // Also keep profiles.avatar_id in sync when character_type changes
+      const updatePayload: any = { avatar_data: updatedData };
+      if (typeof newAvatarData.character_type === 'string' && newAvatarData.character_type) {
+        updatePayload.avatar_id = newAvatarData.character_type as any;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({ avatar_data: updatedData })
+        .update(updatePayload)
         .eq('id', user.id);
 
       if (error) {

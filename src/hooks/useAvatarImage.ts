@@ -18,7 +18,7 @@ export const useAvatarImage = (avatarId?: string) => {
         .from('avatars')
         .select('id, name, image_url')
         .eq('id', avatarId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching avatar image:', error);
