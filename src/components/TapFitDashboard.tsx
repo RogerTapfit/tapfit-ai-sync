@@ -272,6 +272,21 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Card>
 
+      {/* Social Button */}
+      <Card 
+        className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30"
+        onClick={() => navigate('/social')}
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/20">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold">Social</h3>
+          </div>
+        </div>
+      </Card>
+
       {/* 1. Today's Performance - Right after hero image */}
         <TodaysPerformance 
           onStartWorkout={handleStartWorkout}
