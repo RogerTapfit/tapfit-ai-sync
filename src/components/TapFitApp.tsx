@@ -84,7 +84,23 @@ const TapFitApp = () => {
         <Users className="h-16 w-16 text-primary mx-auto mb-4" />
         <h2 className="text-2xl font-bold mb-2">Social Features</h2>
         <p className="text-muted-foreground mb-6">Connect with friends and track progress together</p>
-        <Card className="glow-card max-w-md mx-auto p-6">
+        
+        {/* View Challenges Button */}
+        <Card 
+          className="glow-card max-w-md mx-auto cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30"
+          onClick={() => setCurrentPage('challenges')}
+        >
+          <div className="p-6">
+            <div className="flex items-center justify-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/20">
+                <Trophy className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">View Challenges</h3>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glow-card max-w-md mx-auto p-6 mt-6">
           <p className="text-sm text-muted-foreground">
             Follow friends, join challenges, and climb leaderboards. Coming in the next update!
           </p>
