@@ -56,6 +56,33 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_feed: {
+        Row: {
+          activity_data: Json
+          activity_type: string
+          created_at: string
+          id: string
+          reference_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json
+          activity_type: string
+          created_at?: string
+          id?: string
+          reference_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json
+          activity_type?: string
+          created_at?: string
+          id?: string
+          reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       alcohol_entries: {
         Row: {
           alcohol_content: number | null
