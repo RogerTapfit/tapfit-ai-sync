@@ -13,18 +13,18 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (loading) {
     return (
-      <Card className="border-green-500/20 shadow-lg shadow-green-500/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg" />
+      <Card className="border-teal-500/20 shadow-lg shadow-teal-500/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 rounded-lg" />
         <CardHeader className="relative">
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-              <Activity className="h-5 w-5 text-green-500" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500/20 to-cyan-500/20">
+              <Activity className="h-5 w-5 text-teal-400" />
             </div>
             Activity Feed
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8 relative">
-          <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
         </CardContent>
       </Card>
     );
@@ -32,12 +32,12 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (activities.length === 0) {
     return (
-      <Card className="border-green-500/20 shadow-lg shadow-green-500/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg" />
+      <Card className="border-teal-500/20 shadow-lg shadow-teal-500/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 rounded-lg" />
         <CardHeader className="relative">
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-              <Activity className="h-5 w-5 text-green-500" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500/20 to-cyan-500/20">
+              <Activity className="h-5 w-5 text-teal-400" />
             </div>
             Activity Feed
           </CardTitle>
@@ -55,12 +55,12 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
   }
 
   return (
-    <Card className="border-green-500/20 shadow-lg shadow-green-500/5">
-      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-lg" />
+    <Card className="border-teal-500/20 shadow-lg shadow-teal-500/5">
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 rounded-lg" />
       <CardHeader className="relative">
         <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-            <Activity className="h-5 w-5 text-green-500" />
+          <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500/20 to-cyan-500/20">
+            <Activity className="h-5 w-5 text-teal-400" />
           </div>
           Activity Feed
         </CardTitle>
