@@ -56,6 +56,36 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_comments: {
+        Row: {
+          comment_text: string
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string
+          id?: string
+          target_id: string
+          target_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       activity_feed: {
         Row: {
           activity_data: Json
@@ -79,6 +109,33 @@ export type Database = {
           created_at?: string
           id?: string
           reference_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      activity_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          reaction_type: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          target_id: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          target_id?: string
+          target_type?: string
           user_id?: string
         }
         Relationships: []
