@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Target, Dumbbell, Calendar, Heart, Ruler } from 'lucide-react';
+import { User, Target, Dumbbell, Calendar, Heart, Ruler, AtSign, Check, X, Loader2 } from 'lucide-react';
 import { SmartWeightRecommendation } from './SmartWeightRecommendation';
 import { UserWeightProfile } from '@/services/weightCalculationService';
 import { lbsToKg, kgToLbs, feetInchesToCm, cmToFeetInches } from '@/lib/unitConversions';
 import type { UnitSystem } from '@/lib/unitConversions';
+import { useSocialProfile } from '@/hooks/useSocialProfile';
 
 interface EnhancedProfile {
   age: number;
@@ -61,7 +63,15 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
   const [heightFeetInput, setHeightFeetInput] = useState<string>(String(5));
   const [heightInchesInput, setHeightInchesInput] = useState<string>(String(7));
 
-  const totalSteps = 5;
+  // Social profile fields
+  const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
+  const [isProfilePublic, setIsProfilePublic] = useState(true);
+  const [shareWorkoutStats, setShareWorkoutStats] = useState(true);
+  const [usernameCheckStatus, setUsernameCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  
+  const { checkUsernameAvailable } = useSocialProfile();
+  const totalSteps = 6;
   const progress = (currentStep / totalSteps) * 100;
 
   // Fallback nutrition goal estimator (client-side)
@@ -152,11 +162,58 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     return true;
   };
 
+  // Check username availability with debounce
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      setUsernameCheckStatus('idle');
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setUsernameCheckStatus('checking');
+      const isAvailable = await checkUsernameAvailable(username);
+      setUsernameCheckStatus(isAvailable ? 'available' : 'taken');
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [username, checkUsernameAvailable]);
+
+  const validateUsername = (): boolean => {
+    if (username.trim().length < 3) {
+      toast.error('Username must be at least 3 characters');
+      return false;
+    }
+    if (username.length > 20) {
+      toast.error('Username must be less than 20 characters');
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      toast.error('Username can only contain letters, numbers, and underscores');
+      return false;
+    }
+    if (usernameCheckStatus === 'taken') {
+      toast.error('This username is already taken');
+      return false;
+    }
+    if (usernameCheckStatus === 'checking') {
+      toast.error('Please wait while we check username availability');
+      return false;
+    }
+    return true;
+  };
+
   const handleNext = () => {
     // Validate step-specific input before moving on
     if (currentStep === 1) {
       const ok = commitBasicInfo();
       if (!ok) return;
+    }
+    
+    if (currentStep === 6) {
+      // Username is optional but if provided, must be valid
+      if (username.trim() && !validateUsername()) {
+        return;
+      }
     }
 
     if (currentStep < totalSteps) {
@@ -222,6 +279,10 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           health_conditions: healthConditionsArray,
           previous_injuries: previousInjuriesArray,
           unit_preference: unitSystem,
+          username: username.trim() || null,
+          bio: bio.trim() || null,
+          is_profile_public: isProfilePublic,
+          share_workout_stats: shareWorkoutStats,
           onboarding_completed: true
         }], { onConflict: 'id' });
 
@@ -641,16 +702,116 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
                 />
               </div>
             </div>
+          </div>
+        );
 
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Profile Summary</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Age: {profile.age} years</div>
-                <div>Weight: {Math.round(profile.weight_lbs)} lbs</div>
-                <div>Height: {profile.height_feet}'{profile.height_inches}"</div>
-                <div>Goal: {profile.primary_goal.replace('_', ' ')}</div>
-                <div>Experience: {profile.experience_level}</div>
-                <div>Equipment: {profile.preferred_equipment_type.replace('_', ' ')}</div>
+      case 6:
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <AtSign className="h-12 w-12 text-primary mx-auto" />
+              <h2 className="text-2xl font-bold">Create Your Profile</h2>
+              <p className="text-muted-foreground">Set up your username and customize your social presence</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username (Optional)</Label>
+                <div className="relative">
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="e.g. fitness_warrior"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    maxLength={20}
+                    className="pr-10"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {usernameCheckStatus === 'checking' && (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                    {usernameCheckStatus === 'available' && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
+                    {usernameCheckStatus === 'taken' && (
+                      <X className="h-4 w-4 text-destructive" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  3-20 characters, letters, numbers, and underscores only
+                </p>
+                {usernameCheckStatus === 'available' && username.length >= 3 && (
+                  <p className="text-xs text-green-500">✓ Username is available!</p>
+                )}
+                {usernameCheckStatus === 'taken' && (
+                  <p className="text-xs text-destructive">✗ Username is already taken</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio (Optional)</Label>
+                <Textarea
+                  id="bio"
+                  placeholder="Tell others about your fitness journey..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  maxLength={160}
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {bio.length}/160 characters
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-semibold">Privacy Settings</h3>
+                
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex-1">
+                    <Label htmlFor="public-profile" className="cursor-pointer">
+                      Public Profile
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow others to find and view your profile
+                    </p>
+                  </div>
+                  <Switch
+                    id="public-profile"
+                    checked={isProfilePublic}
+                    onCheckedChange={setIsProfilePublic}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between space-x-2">
+                  <div className="flex-1">
+                    <Label htmlFor="share-workouts" className="cursor-pointer">
+                      Share Workout Stats
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Let followers see your workout progress
+                    </p>
+                  </div>
+                  <Switch
+                    id="share-workouts"
+                    checked={shareWorkoutStats}
+                    onCheckedChange={setShareWorkoutStats}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                <h3 className="font-semibold text-sm">💡 Why create a username?</h3>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Connect with other fitness enthusiasts</li>
+                  <li>• Share your progress and achievements</li>
+                  <li>• Find workout buddies and motivation</li>
+                  <li>• Join challenges and compete on leaderboards</li>
+                </ul>
+                <p className="text-xs text-muted-foreground pt-2">
+                  You can always add or change your username later in settings
+                </p>
               </div>
             </div>
           </div>
