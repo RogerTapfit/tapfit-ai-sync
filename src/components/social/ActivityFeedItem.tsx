@@ -93,15 +93,15 @@ export const ActivityFeedItem = ({ activity }: ActivityFeedItemProps) => {
   };
 
   return (
-    <Card className="p-3 sm:p-4 hover:bg-accent/5 transition-colors border-primary/10 overflow-hidden">
+    <Card className="p-3 sm:p-4 hover:bg-accent/30 transition-colors border-border">
       <div className="flex items-start gap-2 sm:gap-3 min-w-0">
         <div className="flex-shrink-0">
           <Avatar 
-            className="h-8 w-8 sm:h-10 sm:w-10 cursor-pointer hover:opacity-80 transition-opacity ring-2 ring-primary/20"
+            className="h-8 w-8 sm:h-10 sm:w-10 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleProfileClick}
           >
             <AvatarImage src={activity.profile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
+            <AvatarFallback className="bg-accent text-xs sm:text-sm">
               {getInitials(activity.profile?.full_name || activity.profile?.username)}
             </AvatarFallback>
           </Avatar>

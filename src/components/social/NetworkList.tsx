@@ -11,11 +11,11 @@ export function NetworkList() {
 
   if (loading) {
     return (
-      <Card className="glow-card border-primary/20">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users className="h-4 w-4 text-primary" />
+            <div className="p-2 rounded-lg bg-accent">
+              <Users className="h-4 w-4" />
             </div>
             Your Network
           </CardTitle>
@@ -37,22 +37,21 @@ export function NetworkList() {
   }
 
   return (
-    <Card className="glow-card border-primary/20 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-      <CardHeader className="relative">
+    <Card className="border-border">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <div className="p-2 rounded-lg bg-accent">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           Your Network
         </CardTitle>
         <CardDescription>
-          <span className="text-primary font-medium">{followers.length}</span> followers · <span className="text-primary font-medium">{following.length}</span> following
+          <span className="font-medium">{followers.length}</span> followers · <span className="font-medium">{following.length}</span> following
         </CardDescription>
       </CardHeader>
-      <CardContent className="relative">
+      <CardContent>
         <Tabs defaultValue="following" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-primary/5">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="following" className="text-xs sm:text-sm">
               Following ({following.length})
             </TabsTrigger>
@@ -64,7 +63,7 @@ export function NetworkList() {
           <TabsContent value="following" className="mt-4 space-y-3">
             {following.length === 0 ? (
               <div className="text-center py-8">
-                <UserPlus className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-primary/50 mb-3" />
+                <UserPlus className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
                   You're not following anyone yet
                 </p>
@@ -82,7 +81,7 @@ export function NetworkList() {
           <TabsContent value="followers" className="mt-4 space-y-3">
             {followers.length === 0 ? (
               <div className="text-center py-8">
-                <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-primary/50 mb-3" />
+                <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
                   No followers yet
                 </p>

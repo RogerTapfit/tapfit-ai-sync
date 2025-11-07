@@ -13,12 +13,12 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (loading) {
     return (
-      <Card className="glow-card border-primary/20">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -26,12 +26,11 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
 
   if (activities.length === 0) {
     return (
-      <Card className="glow-card border-primary/20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-        <CardHeader className="relative">
+      <Card className="border-border">
+        <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
         </CardHeader>
-        <CardContent className="relative">
+        <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <p className="mb-2 font-medium">No recent activity</p>
             <p className="text-sm">
@@ -44,12 +43,11 @@ export const ActivityFeed = ({ limit = 20 }: ActivityFeedProps) => {
   }
 
   return (
-    <Card className="glow-card border-primary/20 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-      <CardHeader className="relative">
+    <Card className="border-border">
+      <CardHeader>
         <CardTitle className="text-lg sm:text-xl">Activity Feed</CardTitle>
       </CardHeader>
-      <CardContent className="p-0 relative">
+      <CardContent className="p-0">
         <ScrollArea className="h-[600px]">
           <div className="space-y-3 p-3 sm:p-6">
             {activities.map((activity) => (

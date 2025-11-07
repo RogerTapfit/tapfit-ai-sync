@@ -22,7 +22,7 @@ export const UserSearchBar = () => {
   return (
     <div className="relative w-full">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Search users by username..."
@@ -30,7 +30,7 @@ export const UserSearchBar = () => {
           onChange={(e) => search(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-          className="pl-10 pr-10 border-primary/20 focus:border-primary/40"
+          className="pl-10 pr-10"
         />
         {query && (
           <Button
@@ -45,7 +45,7 @@ export const UserSearchBar = () => {
       </div>
 
       {showResults && (
-        <div className="absolute top-full mt-2 w-full bg-background border border-primary/20 rounded-md shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg z-50 overflow-hidden">
           <ScrollArea className="max-h-[400px]">
             {loading ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
@@ -72,11 +72,11 @@ export const UserSearchBar = () => {
       )}
 
       {showRecentSearches && (
-        <div className="absolute top-full mt-2 w-full bg-background border border-primary/20 rounded-md shadow-lg z-50 overflow-hidden">
-          <div className="p-3 border-b border-primary/10 bg-primary/5">
+        <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg z-50 overflow-hidden">
+          <div className="p-3 border-b bg-muted/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
+                <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Recent Searches</span>
               </div>
               <Button
