@@ -1675,6 +1675,7 @@ export type Database = {
           username: string | null
           vo2max_velocity: number | null
           weight_kg: number | null
+          workout_visibility: string | null
         }
         Insert: {
           age?: number | null
@@ -1713,6 +1714,7 @@ export type Database = {
           username?: string | null
           vo2max_velocity?: number | null
           weight_kg?: number | null
+          workout_visibility?: string | null
         }
         Update: {
           age?: number | null
@@ -1751,6 +1753,7 @@ export type Database = {
           username?: string | null
           vo2max_velocity?: number | null
           weight_kg?: number | null
+          workout_visibility?: string | null
         }
         Relationships: [
           {

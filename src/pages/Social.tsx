@@ -6,7 +6,8 @@ import { UsernameSetupBanner } from '@/components/social/UsernameSetupBanner';
 import { UsernameSetupDialog } from '@/components/social/UsernameSetupDialog';
 import { ProfilePhotoUpload } from '@/components/social/ProfilePhotoUpload';
 import { NetworkList } from '@/components/social/NetworkList';
-import { Search, Home, Trophy } from 'lucide-react';
+import { WorkoutVisibilitySettings } from '@/components/social/WorkoutVisibilitySettings';
+import { Search, Home, Trophy, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -109,6 +110,8 @@ export default function Social() {
 
           <div className="space-y-4 sm:space-y-6 min-w-0">
             <UserSearchBar />
+
+            <WorkoutVisibilitySettings />
 
             <Card 
               className="cursor-pointer hover:border-red-500/20 transition-all duration-300 group"
