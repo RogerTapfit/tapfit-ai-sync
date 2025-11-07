@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { ActivityFeedItem as ActivityFeedItemType } from '@/services/activityFeedService';
 import { useNavigate } from 'react-router-dom';
+import { ReactionButtons } from './ReactionButtons';
+import { TargetType } from '@/hooks/useActivityReactions';
 
 interface ActivityFeedItemProps {
   activity: ActivityFeedItemType;
@@ -120,9 +122,16 @@ export const ActivityFeedItem = ({ activity }: ActivityFeedItemProps) => {
             {getActivityText()}
           </p>
 
-          <span className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-          </span>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">
+              {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+            </span>
+            
+            <ReactionButtons 
+              targetType={activity.activity_type === 'pr' ? 'pr' : activity.activity_type === 'achievement' ? 'achievement' : 'workout' as TargetType}
+              targetId={activity.reference_id}
+            />
+          </div>
         </div>
       </div>
     </Card>
