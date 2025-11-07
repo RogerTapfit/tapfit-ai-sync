@@ -48,6 +48,7 @@ export const useUserWorkoutHistory = (userId?: string) => {
             )
           `)
           .eq('user_id', userId)
+          .not('completed_at', 'is', null)
           .order('completed_at', { ascending: false })
           .limit(10);
 
