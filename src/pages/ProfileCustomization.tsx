@@ -160,12 +160,20 @@ export default function ProfileCustomization() {
                 <CardContent>
                   <CharacterSelector 
                     selectedCharacter={avatarData?.character_type}
-                    onCharacterSelect={(characterId) => {
-                      console.log('Coach avatar selected:', characterId);
-                      updateAvatar({ character_type: characterId });
+                    onCharacterSelect={async (characterId) => {
+                      console.log('🎯 Coach avatar selected:', characterId);
+                      const success = await updateAvatar({ character_type: characterId });
+                      if (success) {
+                        console.log('✅ Coach selection saved');
+                        toast.success('Coach selected!');
+                      } else {
+                        console.error('❌ Failed to save coach selection');
+                        toast.error('Failed to save coach selection');
+                      }
                     }}
                     onPreview={(characterId) => {
-                      // Update live preview
+                      console.log('👁️ Previewing coach:', characterId);
+                      // Just update local state for preview, don't save yet
                       updateAvatar({ character_type: characterId });
                     }}
                   />

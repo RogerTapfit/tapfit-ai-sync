@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RobotAvatarData } from '@/hooks/useRobotAvatar';
-import { useAvatarImage } from '@/hooks/useAvatarImage';
+import { useAvatarImage, useAvatars } from '@/hooks/useAvatarImage';
 import { Loader2 } from 'lucide-react';
 
 interface CharacterAvatarDisplayProps {
@@ -22,13 +22,24 @@ export const CharacterAvatarDisplay = ({
   emotion = 'happy',
   pose = 'idle'
 }: CharacterAvatarDisplayProps) => {
-  const { data: avatar, isLoading } = useAvatarImage(avatarData.character_type);
+  // Use character_type if available, otherwise use avatar_id for backward compatibility
+  const characterId = avatarData?.character_type || avatarData?.avatar_id;
+  const { data: avatar, isLoading } = useAvatarImage(characterId);
+  const { data: allAvatars } = useAvatars(); // Fetch all avatars to get default
 
   const sizeClasses = {
     small: 'w-16 h-16 min-w-16 min-h-16',
     medium: 'w-24 h-24 min-w-24 min-h-24 sm:w-32 sm:h-32',
     large: 'w-full h-full max-w-full max-h-full min-w-32 min-h-32'
   };
+
+  console.log('CharacterAvatarDisplay:', { 
+    characterId, 
+    avatarData, 
+    avatar, 
+    isLoading,
+    allAvatars
+  });
 
   const getCurrentPose = (pose: string) => {
     switch (pose) {
@@ -44,6 +55,9 @@ export const CharacterAvatarDisplay = ({
 
   const currentPose = getCurrentPose(pose);
 
+  // Use default avatar if none is set
+  const displayAvatar = avatar || (allAvatars && allAvatars.length > 0 ? allAvatars[0] : null);
+
   if (isLoading) {
     return (
       <Card className={`${sizeClasses[size]} ${className} flex items-center justify-center`}>
@@ -52,7 +66,7 @@ export const CharacterAvatarDisplay = ({
     );
   }
 
-  if (!avatar) {
+  if (!displayAvatar) {
     return (
       <Card className={`${sizeClasses[size]} ${className} flex flex-col items-center justify-center p-4 text-center`}>
         <div className="text-4xl mb-2">🤖</div>
@@ -67,18 +81,18 @@ export const CharacterAvatarDisplay = ({
       {/* Character Header */}
       <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          {avatar.name}
+          {displayAvatar.name}
         </Badge>
         <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          ⚡{avatarData.power_level || 100}%
+          ⚡{avatarData?.power_level || 100}%
         </Badge>
       </div>
 
       {/* Coach Image Display */}
       <div className={`absolute inset-0 flex items-center justify-center p-2 ${currentPose} transition-transform duration-300`}>
         <img 
-          src={avatar.image_url}
-          alt={`${avatar.name} coach avatar`}
+          src={displayAvatar.image_url}
+          alt={`${displayAvatar.name} coach avatar`}
           className="w-full h-full object-cover rounded-lg"
           onError={(e) => {
             const target = e.target as HTMLImageElement;

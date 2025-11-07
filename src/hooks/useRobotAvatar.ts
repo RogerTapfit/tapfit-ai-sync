@@ -4,7 +4,8 @@ import { useTapCoins } from './useTapCoins';
 
 export interface RobotAvatarData {
   // Character selection - now accepts avatar ID from database
-  character_type: string;
+  character_type?: string; // Made optional for backward compatibility
+  avatar_id?: string; // Alternative field for backward compatibility
   
   // Character customization
   base_hue: number; // 0-360 degree hue for color shifting
@@ -152,18 +153,27 @@ export const useRobotAvatar = () => {
 
   const updateAvatar = async (newAvatarData: Partial<RobotAvatarData>) => {
     try {
+      console.log('🔄 Updating avatar with:', newAvatarData);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !avatarData) return false;
+      if (!user || !avatarData) {
+        console.error('❌ Cannot update: no user or avatarData');
+        return false;
+      }
 
       const updatedData = { ...avatarData, ...newAvatarData };
+      console.log('📦 Full updated data:', updatedData);
 
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_data: updatedData })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
 
+      console.log('✅ Avatar updated successfully in database');
       setAvatarData(updatedData);
       return true;
     } catch (error) {
