@@ -6,6 +6,7 @@ import { Users, Trophy, Settings, Smartphone, Apple, Ruler } from "lucide-react"
 import { useAuth } from "./AuthGuard";
 import LoadingSpinner from "./LoadingSpinner";
 import { VersionDisplay } from "./VersionDisplay";
+import { NotificationBell } from "./social/NotificationBell";
 
 // Lazy load with retry helper to mitigate Safari's "Importing a module script failed" on chunk fetch
 const lazyWithRetry = (factory: () => Promise<any>) => {
@@ -233,7 +234,10 @@ const TapFitApp = () => {
         isGuest={isGuest}
         onSignOut={signOut}
       />
-      <div className="flex-1 md:ml-0 pt-20 md:pt-0">
+      <div className="flex-1 md:ml-0 pt-20 md:pt-0 relative">
+        <div className="absolute top-4 right-4 z-50">
+          <NotificationBell />
+        </div>
         {renderContent()}
       </div>
     </div>
