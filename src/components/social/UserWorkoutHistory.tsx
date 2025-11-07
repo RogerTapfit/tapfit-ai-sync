@@ -309,6 +309,11 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                           Abandoned
                         </Badge>
                       )}
+                      {workout.totalSets === 0 && (
+                        <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20">
+                          Incomplete Data
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="capitalize">
                         {workout.type}
                       </Badge>
@@ -408,64 +413,87 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                   <Dumbbell className="h-4 w-4" />
                   Exercises Performed
                 </h4>
-                {workout.exercises.map((exercise, idx) => (
-                  <div key={idx} className="rounded-lg border border-border overflow-hidden">
-                    {/* Exercise Header */}
-                    <div className="p-4 bg-muted/30 border-b border-border">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-semibold text-base">{exercise.exercise_name}</h5>
-                            {exercise.is_pr && <PRBadge variant="full" />}
+                {workout.exercises.map((exercise, idx) => {
+                  const hasSetData = exercise.sets && exercise.sets.length > 0;
+                  
+                  return (
+                    <div key={idx} className="rounded-lg border border-border overflow-hidden">
+                      {/* Exercise Header */}
+                      <div className="p-4 bg-muted/30 border-b border-border">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className="font-semibold text-base">{exercise.exercise_name}</h5>
+                              {exercise.is_pr && <PRBadge variant="full" />}
+                              {!hasSetData && (
+                                <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20">
+                                  Incomplete
+                                </Badge>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {exercise.machine_name}
+                            </Badge>
                           </div>
-                          <Badge variant="outline" className="text-xs">
-                            {exercise.machine_name}
-                          </Badge>
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground mb-1">Total Volume</p>
+                            <p className="text-lg font-bold text-primary">
+                              {hasSetData ? `${exercise.total_volume.toLocaleString()} lbs` : 'N/A'}
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground mb-1">Total Volume</p>
-                          <p className="text-lg font-bold text-primary">
-                            {exercise.total_volume.toLocaleString()} lbs
-                          </p>
-                        </div>
-                      </div>
                       
-                      {/* Exercise Stats */}
-                      <div className="mt-3 flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-muted-foreground">Sets:</span>
-                          <span className="font-semibold">{exercise.sets_completed}</span>
-                        </div>
-                        <span className="text-muted-foreground">•</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-muted-foreground">Total Reps:</span>
-                          <span className="font-semibold">{exercise.reps_completed}</span>
-                        </div>
-                        {exercise.avg_rpe && (
-                          <>
+                        {/* Exercise Stats */}
+                        {hasSetData ? (
+                          <div className="mt-3 flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-muted-foreground">Sets:</span>
+                              <span className="font-semibold">{exercise.sets_completed}</span>
+                            </div>
                             <span className="text-muted-foreground">•</span>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">Avg RPE:</span>
-                              <span className="font-semibold">{exercise.avg_rpe.toFixed(1)}/10</span>
+                              <span className="text-muted-foreground">Total Reps:</span>
+                              <span className="font-semibold">{exercise.reps_completed}</span>
                             </div>
-                          </>
+                            {exercise.avg_rpe && (
+                              <>
+                                <span className="text-muted-foreground">•</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-muted-foreground">Avg RPE:</span>
+                                  <span className="font-semibold">{exercise.avg_rpe.toFixed(1)}/10</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                            <p className="text-sm text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
+                              <Activity className="h-4 w-4" />
+                              No set data recorded for this exercise
+                            </p>
+                          </div>
+                        )}
+
+                        {/* RPE Meter */}
+                        {hasSetData && exercise.avg_rpe && (
+                          <div className="mt-3">
+                            <RPEMeter rpe={exercise.avg_rpe} showLabel={true} />
+                          </div>
                         )}
                       </div>
 
-                      {/* RPE Meter */}
-                      {exercise.avg_rpe && (
-                        <div className="mt-3">
-                          <RPEMeter rpe={exercise.avg_rpe} showLabel={true} />
+                      {/* Set-by-Set Breakdown */}
+                      {hasSetData ? (
+                        <SetDetailTable sets={exercise.sets} totalVolume={exercise.total_volume} />
+                      ) : (
+                        <div className="p-4 text-center text-sm text-muted-foreground bg-muted/20">
+                          <p>Set-by-set details are not available.</p>
+                          <p className="text-xs mt-1">Complete your workout with set details to see full breakdowns.</p>
                         </div>
                       )}
                     </div>
-
-                    {/* Set-by-Set Breakdown */}
-                    {exercise.sets.length > 0 && (
-                      <SetDetailTable sets={exercise.sets} totalVolume={exercise.total_volume} />
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </CollapsibleContent>
             </Card>
           </Collapsible>
