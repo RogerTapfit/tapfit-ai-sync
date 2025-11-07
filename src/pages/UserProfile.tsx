@@ -16,6 +16,7 @@ import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
 import { AchievementBadges } from '@/components/social/AchievementBadges';
 import { ProfileChallengesStreaks } from '@/components/social/ProfileChallengesStreaks';
 import { WorkoutHeatmap } from '@/components/social/WorkoutHeatmap';
+import { RobotAvatarDisplay } from '@/components/RobotAvatarDisplay';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -88,10 +89,35 @@ export default function UserProfile() {
       <Card className="mb-6 border-border/50">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <Avatar className="h-24 w-24 ring-2 ring-red-500/10">
-              <AvatarImage src={profile.avatar_url || undefined} alt={profile.username || 'User'} />
-              <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
-            </Avatar>
+            {/* Dual Avatar Display */}
+            <div className="flex gap-4 items-start">
+              {/* User Profile Photo */}
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">You</span>
+                <Avatar className="h-24 w-24 ring-2 ring-red-500/10">
+                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.username || 'User'} />
+                  <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
+                </Avatar>
+              </div>
+
+              {/* Coach/Robot Avatar */}
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">Coach</span>
+                {profile.avatar_data ? (
+                  <div className="w-24">
+                    <RobotAvatarDisplay
+                      avatarData={profile.avatar_data}
+                      size="small"
+                      showAnimation={true}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-24 w-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/20">
+                    <span className="text-xs text-muted-foreground text-center px-2">No coach</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-2xl font-bold">{profile.full_name || profile.username}</h1>

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProfileQRCode } from './ProfileQRCode';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
+import { RobotAvatarDisplay } from '@/components/RobotAvatarDisplay';
 
 interface UserProfileCardProps {
   user: UserProfile;
@@ -77,10 +78,35 @@ export const UserProfileCard = ({ user, showFollowButton = true, onClick }: User
       <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleClick}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={user.avatar_url || undefined} alt={user.username || 'User'} />
-              <AvatarFallback>{getInitials()}</AvatarFallback>
-            </Avatar>
+            {/* Dual Avatar Display */}
+            <div className="flex gap-2 items-center">
+              {/* User Profile Photo */}
+              <div className="flex flex-col items-center gap-1">
+                <Avatar className="h-10 w-10 ring-1 ring-red-500/10">
+                  <AvatarImage src={user.avatar_url || undefined} alt={user.username || 'User'} />
+                  <AvatarFallback className="text-xs">{getInitials()}</AvatarFallback>
+                </Avatar>
+                <span className="text-[10px] text-muted-foreground">You</span>
+              </div>
+              
+              {/* Coach Avatar */}
+              <div className="flex flex-col items-center gap-1">
+                {user.avatar_data ? (
+                  <div className="w-10">
+                    <RobotAvatarDisplay
+                      avatarData={user.avatar_data}
+                      size="small"
+                      showAnimation={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-10 w-10 rounded border border-dashed border-muted-foreground/20 flex items-center justify-center bg-muted/10">
+                    <span className="text-[8px] text-muted-foreground">?</span>
+                  </div>
+                )}
+                <span className="text-[10px] text-muted-foreground">Coach</span>
+              </div>
+            </div>
             
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-sm truncate">

@@ -6,6 +6,7 @@ export interface UserProfile {
   full_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  avatar_data?: any;
   is_profile_public: boolean;
   share_workout_stats: boolean;
   workout_visibility?: 'private' | 'followers' | 'public';
@@ -47,7 +48,7 @@ class SocialService {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, full_name, bio, avatar_url, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance')
+      .select('id, username, full_name, bio, avatar_url, avatar_data, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance')
       .ilike('username', `%${query}%`)
       .eq('is_profile_public', true)
       .not('username', 'is', null)
@@ -67,7 +68,7 @@ class SocialService {
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, full_name, bio, avatar_url, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance')
+      .select('id, username, full_name, bio, avatar_url, avatar_data, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance')
       .eq('id', userId)
       .single();
 
@@ -85,7 +86,7 @@ class SocialService {
   async getUserByUsername(username: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, full_name, bio, avatar_url, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance')
+      .select('id, username, full_name, bio, avatar_url, avatar_data, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance')
       .eq('username', username)
       .single();
 
@@ -253,7 +254,7 @@ class SocialService {
         follower_id,
         created_at,
         profiles!user_follows_follower_id_fkey(
-          id, username, full_name, avatar_url, bio, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance
+          id, username, full_name, avatar_url, avatar_data, bio, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance
         )
       `)
       .eq('following_id', userId)
@@ -306,7 +307,7 @@ class SocialService {
         following_id,
         created_at,
         profiles!user_follows_following_id_fkey(
-          id, username, full_name, avatar_url, bio, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance
+          id, username, full_name, avatar_url, avatar_data, bio, is_profile_public, share_workout_stats, workout_visibility, tap_coins_balance
         )
       `)
       .eq('follower_id', userId)
