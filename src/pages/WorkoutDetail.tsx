@@ -697,6 +697,29 @@ const WorkoutDetail = () => {
     setSets(updatedSets);
   };
 
+  const handleAddSet = () => {
+    setSets(prev => {
+      const last = prev[prev.length - 1];
+      const defaultReps = typeof workout?.reps === 'string' ? parseInt((workout.reps as string).split('-')[0]) : (workout?.reps as number) || 10;
+      const extractWeight = (weightStr: string | undefined): number => {
+        if (!weightStr || typeof weightStr !== 'string') return 0;
+        const match = weightStr.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      };
+      const defaultWeight = extractWeight(workout?.weight);
+      const newSet: WorkoutSet = {
+        id: prev.length + 1,
+        reps: last?.reps ?? defaultReps,
+        weight: last?.weight ?? defaultWeight,
+        completed: false,
+        actualReps: last?.actualReps ?? defaultReps,
+        actualWeight: last?.actualWeight ?? defaultWeight,
+      };
+      return [...prev, newSet];
+    });
+    toast.success('Added set');
+  };
+
   const saveProgress = async () => {
     if (!currentWorkoutLog || !workout) return;
 
@@ -1184,8 +1207,14 @@ const WorkoutDetail = () => {
         ))}
       </div>
 
+      {/* Dedicated Add Set Button */}
+      <div className="py-3">
+        <Button onClick={handleAddSet} variant="destructive" size="lg" className="w-full" aria-label="Add Set">
+          Add Set
+        </Button>
+      </div>
+
       {/* Notes */}
-      <Card className="glow-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Edit3 className="h-4 w-4" />
           <label className="text-sm font-medium">Exercise Notes</label>
