@@ -32,7 +32,8 @@ const mealTypes = [
   { value: 'breakfast', label: 'Breakfast' },
   { value: 'lunch', label: 'Lunch' },
   { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' }
+  { value: 'snack', label: 'Snack' },
+  { value: 'beverage', label: 'Beverage' }
 ];
 
 export const FoodGraderAI = () => {

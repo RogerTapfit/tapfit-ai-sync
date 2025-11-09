@@ -309,7 +309,39 @@ Enhanced Analysis Guidelines:
 - Use nutrition label data when available for exact macro calculations
 - Pay special attention to meat products, protein sources, and their preparation methods
 - BE HYPER-CONSISTENT: Identical visual food = Identical numbers
-- Always round to maintain consistency across analyses`;
+- Always round to maintain consistency across analyses
+
+BEVERAGE DETECTION & CLARIFYING QUESTIONS:
+- If you detect a DRINK WITH ICE (clear liquid, colored liquid, or dark liquid in a glass/cup with visible ice):
+  * ALWAYS ask: "Is this an alcoholic beverage?" in clarifying_questions
+  * If it looks like a cocktail/mixed drink: "What type of drink is this? (e.g., vodka soda, rum and coke)"
+  
+- If you detect what looks like SODA/SOFT DRINK (colored carbonated beverage):
+  * Use COLOR-BASED PREDICTIONS to suggest likely brands:
+    - Dark brown/cola color → "Is this Coca-Cola, Pepsi, Dr Pepper, or another cola?"
+    - Clear/transparent → "Is this Sprite, 7UP, Sierra Mist, or sparkling water?"
+    - Highlighter yellow/neon yellow → "Is this Mountain Dew, Mellow Yellow, or another citrus soda?"
+    - Orange → "Is this Fanta, Sunkist, Crush, or another orange soda?"
+    - Red/pink → "Is this fruit punch, strawberry soda, or another red drink?"
+    - Purple → "Is this grape soda or another purple drink?"
+  * ALWAYS ask brand in clarifying_questions: "What brand/type of soda is this?"
+  
+- If beverage is CLEARLY LABELED (bottle/can with visible branding):
+  * Read the label and identify the exact product
+  * Use nutrition facts if visible on label
+  
+- For UNLABELED DRINKS in glasses:
+  * Default to generic estimates but ALWAYS ask clarifying questions
+  * Mention: "I see a [color] beverage - please specify the exact drink for accurate nutrition"
+
+BEVERAGE NUTRITION DEFAULTS (if brand unknown):
+- Regular Soda (12 oz): 140 calories, 39g carbs, 0g protein, 0g fat
+- Diet Soda: 0 calories
+- Orange Juice (8 oz): 110 calories, 26g carbs, 2g protein
+- Beer (12 oz): 150 calories, 13g carbs, 2g protein
+- Wine (5 oz): 125 calories, 4g carbs, 0g protein
+- Vodka Soda: 100 calories, 0g carbs (if vodka visible/mentioned)
+- Water: 0 calories`;
 
     console.log('Sending request to OpenAI with', photos.length, 'photos');
 

@@ -87,6 +87,7 @@ const mealTypeIcons = {
   lunch: Sun,
   dinner: Sunset,
   snack: Moon,
+  beverage: Utensils, // Using Utensils icon as placeholder for beverage
 };
 
 export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({

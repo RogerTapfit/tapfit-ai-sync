@@ -89,6 +89,7 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
       lunch: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
       dinner: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
       snack: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      beverage: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300',
       // Alcohol types
       beer: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
       wine: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-300',

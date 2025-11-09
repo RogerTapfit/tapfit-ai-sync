@@ -98,6 +98,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
       lunch: '☀️',
       dinner: '🌙',
       snack: '🍎',
+      beverage: '🥤',
     };
     return emojis[mealType.toLowerCase()] || '🍽️';
   };

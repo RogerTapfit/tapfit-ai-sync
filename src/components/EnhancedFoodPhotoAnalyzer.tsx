@@ -61,7 +61,8 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
     { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
     { value: 'lunch', label: 'Lunch', icon: '☀️' },
     { value: 'dinner', label: 'Dinner', icon: '🌙' },
-    { value: 'snack', label: 'Snack', icon: '🍎' }
+    { value: 'snack', label: 'Snack', icon: '🍎' },
+    { value: 'beverage', label: 'Beverage', icon: '🥤' }
   ];
 
   const generateId = () => crypto.randomUUID();
