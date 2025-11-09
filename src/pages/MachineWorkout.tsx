@@ -848,8 +848,9 @@ export default function MachineWorkout() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {sets.map((set, index) => (
+              <>
+                <div className="space-y-4 relative">
+                  {sets.map((set, index) => (
                   <Card key={set.id} className={`${set.completed ? 'bg-green-500/10 border-green-500' : 'bg-card'}`}>
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
@@ -982,6 +983,17 @@ export default function MachineWorkout() {
                   </Card>
                 )}
               </div>
+
+              {/* Floating Action Button for Add Set */}
+              <Button
+                onClick={handleAddSet}
+                size="lg"
+                className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 p-0"
+                title="Add another set"
+              >
+                <Plus className="h-6 w-6" />
+              </Button>
+              </>
             )}
           </div>
         </div>
