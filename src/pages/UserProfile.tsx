@@ -145,7 +145,7 @@ export default function UserProfile() {
                   <div className="h-24 w-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/20">
                     <span className="text-xs text-muted-foreground text-center px-2">No coach</span>
                   </div>
-                )
+                )}
               </div>
             </div>
 
