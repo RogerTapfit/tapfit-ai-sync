@@ -914,15 +914,13 @@ export default function MachineWorkout() {
                 ))}
 
                 {/* Add Set Button - prominently displayed */}
-                <div className="flex justify-center py-4">
+                <div className="w-full py-4">
                   <Button
                     onClick={handleAddSet}
                     size="lg"
-                    variant="outline"
-                    className="w-full max-w-md h-14 text-lg font-semibold border-2 border-dashed hover:border-solid hover:bg-accent transition-all"
+                    className="w-full h-14 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
                   >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Add Another Set ({sets.length} total)
+                    Add Set
                   </Button>
                 </div>
 
