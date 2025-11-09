@@ -913,23 +913,18 @@ export default function MachineWorkout() {
                   </Card>
                 ))}
 
-                {/* Add Set Button - always visible during workout */}
-                <Card className="border-dashed border-2">
-                  <CardContent className="p-4">
-                    <Button
-                      onClick={handleAddSet}
-                      variant="outline"
-                      className="w-full"
-                      size="lg"
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Add Another Set (Currently: {sets.length})
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Track extra sets to build volume over time
-                    </p>
-                  </CardContent>
-                </Card>
+                {/* Add Set Button - prominently displayed */}
+                <div className="flex justify-center py-4">
+                  <Button
+                    onClick={handleAddSet}
+                    size="lg"
+                    variant="outline"
+                    className="w-full max-w-md h-14 text-lg font-semibold border-2 border-dashed hover:border-solid hover:bg-accent transition-all"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Another Set ({sets.length} total)
+                  </Button>
+                </div>
 
                 {/* Notes Section */}
                 <Card>
