@@ -10,6 +10,7 @@ import { useWeightRecommendation } from '@/hooks/useWeightRecommendation';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useMachineHistory } from '@/hooks/useMachineHistory';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
+import { useRestTimerLearning } from '@/hooks/useRestTimerLearning';
 import { PRCelebration } from '@/components/PRCelebration';
 import { toast } from "sonner";
 import { 
@@ -25,7 +26,9 @@ import {
   Play,
   TrendingUp,
   Trophy,
-  Plus
+  Plus,
+  Brain,
+  Timer
 } from 'lucide-react';
 
 interface WorkoutSet {
@@ -55,12 +58,22 @@ export default function MachineWorkout() {
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
   const [showPRCelebration, setShowPRCelebration] = useState(false);
   const [prData, setPRData] = useState<{ oldPR: number; newPR: number; improvement: number; coins: number } | null>(null);
+  const [restStartTime, setRestStartTime] = useState<Date | null>(null);
+  const [currentSetNumber, setCurrentSetNumber] = useState(0);
   
   // Get machine history for weight recommendations
   const { history: machineHistory, loading: historyLoading } = useMachineHistory(machine?.name || '');
   
   // Get personal records tracking
   const { currentPR, checkForNewPR } = usePersonalRecords(machine?.name || '');
+  
+  // Get rest timer learning
+  const { 
+    restPreference, 
+    calculateSuggestedRest, 
+    updateRestPreference,
+    manuallySetPreference
+  } = useRestTimerLearning(machine?.name || '', machine?.name || '');
   
   // Get personalized weight recommendations
   const { 
@@ -151,6 +164,12 @@ export default function MachineWorkout() {
   };
 
   const handleSetComplete = async (setIndex: number) => {
+    // Track actual rest time taken if there was a previous rest period
+    if (restStartTime && isResting) {
+      const actualRestSeconds = Math.round((new Date().getTime() - restStartTime.getTime()) / 1000);
+      await updateRestPreference(actualRestSeconds);
+    }
+    
     // Clear any active rest timer if user continues early  
     if (isResting) {
       setIsResting(false);
@@ -182,13 +201,29 @@ export default function MachineWorkout() {
       return;
     }
 
-    // Start rest timer if not the last set
+    // Calculate smart rest time based on intensity
     if (newCompletedSets < totalSets) {
-      setRestTime(recommendation?.rest_seconds || 60);
+      const maxWeight = Math.max(...sets.map(s => s.actualWeight || 0));
+      const currentWeight = sets[setIndex].actualWeight || 0;
+      const suggestion = calculateSuggestedRest(
+        currentWeight,
+        maxWeight || currentPR?.weightLbs || currentWeight,
+        setIndex + 1,
+        totalSets
+      );
+      
+      setRestTime(suggestion.suggestedRestSeconds);
       setIsResting(true);
+      setRestStartTime(new Date());
+      setCurrentSetNumber(setIndex + 1);
+      
+      // Show intelligent rest suggestion
+      toast.success(`Set ${setIndex + 1} completed! Rest: ${suggestion.suggestedRestSeconds}s`, {
+        description: suggestion.reason
+      });
+    } else {
+      toast.success(`Set ${setIndex + 1} completed!`);
     }
-
-    toast.success(`Set ${setIndex + 1} completed!`);
   };
 
   const handleSetEdit = (setIndex: number, field: 'actualReps' | 'actualWeight', value: number) => {
@@ -491,23 +526,51 @@ export default function MachineWorkout() {
       </div>
 
       <div className="container max-w-4xl mx-auto p-4 space-y-6">
-        {/* Rest Timer - Non-blocking */}
+        {/* Smart Rest Timer - Non-blocking */}
         {isResting && (
-          <div className="fixed top-4 right-4 z-50 w-64">
-            <Card className="bg-background/95 backdrop-blur border-muted">
+          <div className="fixed top-4 right-4 z-50 w-72">
+            <Card className="bg-background/95 backdrop-blur border-primary/20 shadow-lg">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Suggested Rest</span>
+                  <div className="flex items-center gap-2 flex-1">
+                    <Brain className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Smart Rest Timer</span>
+                  </div>
+                  {restPreference && restPreference.total_samples > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {restPreference.total_samples} sessions learned
+                    </span>
+                  )}
                 </div>
-                <div className="text-2xl font-bold text-primary mb-3">
+                <div className="text-3xl font-bold text-primary mb-1">
                   {formatTime(restTime)}
                 </div>
+                {(() => {
+                  const maxWeight = Math.max(...sets.map(s => s.actualWeight || 0));
+                  const currentSet = sets[currentSetNumber - 1];
+                  const suggestion = currentSet ? calculateSuggestedRest(
+                    currentSet.actualWeight || 0,
+                    maxWeight || currentPR?.weightLbs || currentSet.actualWeight || 0,
+                    currentSetNumber,
+                    sets.length
+                  ) : null;
+                  
+                  return suggestion && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {suggestion.reason}
+                    </p>
+                  );
+                })()}
                 <div className="flex gap-2">
                   <Button 
                     size="sm"
                     variant="outline" 
                     onClick={() => {
+                      // Track actual rest taken
+                      if (restStartTime) {
+                        const actualRest = Math.round((new Date().getTime() - restStartTime.getTime()) / 1000);
+                        updateRestPreference(actualRest);
+                      }
                       setIsResting(false);
                       setRestTime(0);
                     }}
@@ -672,6 +735,23 @@ export default function MachineWorkout() {
                         </div>
                         <div className="text-xs mt-1 opacity-70">
                           {new Date(machineHistory.lastWorkoutDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {restPreference && restPreference.total_samples > 0 && (
+                      <div className="text-xs text-center text-muted-foreground mt-2 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Timer className="h-4 w-4 text-purple-500" />
+                          <span className="font-semibold text-purple-600 dark:text-purple-400">
+                            Your Rest Pattern
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          Avg rest: {restPreference.avg_actual_rest_seconds}s
+                        </div>
+                        <div className="text-xs mt-1 opacity-70">
+                          Learned from {restPreference.total_samples} workouts
                         </div>
                       </div>
                     )}

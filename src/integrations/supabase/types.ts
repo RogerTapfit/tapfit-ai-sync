@@ -841,6 +841,7 @@ export type Database = {
       }
       exercise_logs: {
         Row: {
+          actual_rest_seconds: number | null
           completed_at: string
           created_at: string
           exercise_name: string
@@ -854,6 +855,7 @@ export type Database = {
           workout_log_id: string
         }
         Insert: {
+          actual_rest_seconds?: number | null
           completed_at?: string
           created_at?: string
           exercise_name: string
@@ -867,6 +869,7 @@ export type Database = {
           workout_log_id: string
         }
         Update: {
+          actual_rest_seconds?: number | null
           completed_at?: string
           created_at?: string
           exercise_name?: string
@@ -888,6 +891,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exercise_rest_preferences: {
+        Row: {
+          avg_actual_rest_seconds: number
+          created_at: string
+          exercise_name: string
+          id: string
+          last_updated: string
+          machine_name: string
+          preferred_rest_seconds: number
+          total_samples: number
+          user_id: string
+        }
+        Insert: {
+          avg_actual_rest_seconds?: number
+          created_at?: string
+          exercise_name: string
+          id?: string
+          last_updated?: string
+          machine_name: string
+          preferred_rest_seconds?: number
+          total_samples?: number
+          user_id: string
+        }
+        Update: {
+          avg_actual_rest_seconds?: number
+          created_at?: string
+          exercise_name?: string
+          id?: string
+          last_updated?: string
+          machine_name?: string
+          preferred_rest_seconds?: number
+          total_samples?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       exercise_sets: {
         Row: {
