@@ -24,7 +24,8 @@ import {
   Edit3,
   Play,
   TrendingUp,
-  Trophy
+  Trophy,
+  Plus
 } from 'lucide-react';
 
 interface WorkoutSet {
@@ -109,13 +110,16 @@ export default function MachineWorkout() {
   const initializeSets = () => {
     if (!machine || !recommendation) return;
     
+    // Prioritize last used set count over recommendation
+    const setCount = machineHistory?.lastSets || recommendation.sets || 3;
+    
     // Prioritize last used weight over calculated recommendation
     const startingWeight = machineHistory?.lastWeight || 
                            recommendation.recommended_weight || 
                            80;
     
     const newSets: WorkoutSet[] = [];
-    for (let i = 0; i < (recommendation.sets || 3); i++) {
+    for (let i = 0; i < setCount; i++) {
       newSets.push({
         id: i + 1,
         reps: recommendation.reps || 12,
@@ -174,10 +178,7 @@ export default function MachineWorkout() {
       setTimeout(async () => {
         await audioManager.playWorkoutComplete();
       }, 300);
-      // Auto-complete workout after short delay
-      setTimeout(() => {
-        handleWorkoutComplete();
-      }, 2000);
+      // Don't auto-complete - let user add more sets or finish manually
       return;
     }
 
@@ -211,6 +212,27 @@ export default function MachineWorkout() {
     }
     
     setSets(updatedSets);
+  };
+
+  const handleAddSet = () => {
+    const lastSet = sets[sets.length - 1];
+    const newSet: WorkoutSet = {
+      id: sets.length + 1,
+      reps: lastSet.reps,
+      weight: lastSet.weight,
+      completed: false,
+      actualReps: lastSet.actualReps || recommendation?.reps || 12,
+      actualWeight: lastSet.actualWeight || recommendation?.recommended_weight || 80
+    };
+    
+    setSets([...sets, newSet]);
+    
+    // Play feedback sound
+    import('@/utils/audioUtils').then(({ audioManager }) => {
+      audioManager.playButtonClick();
+    });
+    
+    toast.success(`Set ${newSet.id} added! Total sets: ${sets.length + 1}`);
   };
 
   const saveProgress = async () => {
@@ -637,9 +659,20 @@ export default function MachineWorkout() {
                       </div>
                     )}
                     
-                    {machineHistory && !machineHistory.shouldProgressWeight && (
-                      <div className="text-xs text-center text-muted-foreground mt-2 p-2 bg-secondary/20 rounded">
-                        💪 Last time: {machineHistory.lastWeight} lbs × {machineHistory.lastReps} reps
+                    {machineHistory && (
+                      <div className="text-xs text-center text-muted-foreground mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <Target className="h-4 w-4 text-blue-500" />
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">
+                            Last Workout
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          {machineHistory.lastSets} sets × {machineHistory.lastReps} reps @ {machineHistory.lastWeight} lbs
+                        </div>
+                        <div className="text-xs mt-1 opacity-70">
+                          {new Date(machineHistory.lastWorkoutDate).toLocaleDateString()}
+                        </div>
                       </div>
                     )}
                     
@@ -710,16 +743,27 @@ export default function MachineWorkout() {
                 <CardContent className="space-y-4">
                   <div className="text-center space-y-4">
                     <p className="text-muted-foreground">
-                      Get ready to perform {recommendation?.sets || 3} sets of {recommendation?.reps || 12} reps.
+                      Get ready to perform {sets.length} sets of {recommendation?.reps || 12} reps.
                     </p>
-                    <Button 
-                      onClick={handleStartWorkout}
-                      size="lg"
-                      className="w-full"
-                    >
-                      <Play className="h-5 w-5 mr-2" />
-                      Start Workout
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        onClick={handleStartWorkout}
+                        size="lg"
+                        className="w-full"
+                      >
+                        <Play className="h-5 w-5 mr-2" />
+                        Start Workout
+                      </Button>
+                      <Button
+                        onClick={handleAddSet}
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Another Set ({sets.length} → {sets.length + 1})
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -788,6 +832,24 @@ export default function MachineWorkout() {
                   </Card>
                 ))}
 
+                {/* Add Set Button - always visible during workout */}
+                <Card className="border-dashed border-2">
+                  <CardContent className="p-4">
+                    <Button
+                      onClick={handleAddSet}
+                      variant="outline"
+                      className="w-full"
+                      size="lg"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Add Another Set (Currently: {sets.length})
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Track extra sets to build volume over time
+                    </p>
+                  </CardContent>
+                </Card>
+
                 {/* Notes Section */}
                 <Card>
                   <CardHeader>
@@ -809,19 +871,33 @@ export default function MachineWorkout() {
                 {/* Complete Workout Button */}
                 {completedSets === totalSets && totalSets > 0 && (
                   <Card className="border-green-500 bg-green-500/10">
-                    <CardContent className="p-6 text-center">
-                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Excellent Work!</h3>
-                      <p className="text-muted-foreground mb-4">
-                        You've completed all sets. Great job!
+                    <CardContent className="p-6 text-center space-y-4">
+                      <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+                      <h3 className="text-lg font-semibold">Excellent Work!</h3>
+                      <p className="text-muted-foreground">
+                        You've completed all {sets.length} sets. Great job!
                       </p>
-                      <Button 
-                        onClick={handleWorkoutComplete}
-                        size="lg"
-                        className="w-full"
-                      >
-                        Complete Workout
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button 
+                          onClick={handleWorkoutComplete}
+                          size="lg"
+                          className="w-full"
+                        >
+                          Complete Workout
+                        </Button>
+                        <Button
+                          onClick={handleAddSet}
+                          variant="outline"
+                          size="default"
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add One More Set
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        💪 Feeling strong? Add an extra set to increase volume!
+                      </p>
                     </CardContent>
                   </Card>
                 )}
