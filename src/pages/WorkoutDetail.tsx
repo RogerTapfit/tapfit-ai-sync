@@ -1215,6 +1215,7 @@ const WorkoutDetail = () => {
       </div>
 
       {/* Notes */}
+      <Card className="glow-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Edit3 className="h-4 w-4" />
           <label className="text-sm font-medium">Exercise Notes</label>
