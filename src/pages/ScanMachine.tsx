@@ -1,11 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MachineScanner } from '@/components/MachineScanner';
 import { MachineRegistryService } from '@/services/machineRegistryService';
 import { toast } from 'sonner';
 
 export const ScanMachine: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleMachineSelected = async (machineId: string, confidence: number, aiSelectedImageUrl?: string) => {
     // Don't navigate if machine is not recognized
@@ -25,16 +26,30 @@ export const ScanMachine: React.FC = () => {
 
     toast.success(`${machine.name} identified! (${Math.round(confidence * 100)}% confidence)`);
 
-    // Navigate to machine workout detail
-    navigate(`/machine-workout/${workoutId}`, { 
-      state: { 
-        fromScan: true, 
-        confidence,
-        machineId: machine.id,
-        machineName: machine.name,
-        aiSelectedImageUrl: aiSelectedImageUrl || machine.imageUrl
-      }
-    });
+    // Check if we're in custom mode
+    const workoutMode = (location.state as any)?.workoutMode;
+    
+    if (workoutMode === 'custom') {
+      // In custom mode, return to workout list with machine details
+      navigate('/workout-list?mode=custom', { 
+        state: { 
+          fromScan: true,
+          machineId: machine.id,
+          machineName: machine.name
+        }
+      });
+    } else {
+      // In scheduled mode, navigate to machine workout detail
+      navigate(`/machine-workout/${workoutId}`, { 
+        state: { 
+          fromScan: true, 
+          confidence,
+          machineId: machine.id,
+          machineName: machine.name,
+          aiSelectedImageUrl: aiSelectedImageUrl || machine.imageUrl
+        }
+      });
+    }
   };
 
   const handleClose = () => {

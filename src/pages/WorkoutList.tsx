@@ -36,6 +36,10 @@ const WorkoutList = () => {
   const location = useLocation();
   const { startWorkout, logExercise, completeWorkout, getTodaysCompletedExercises, calculateActualWorkoutTotals, todaysProgress, currentWorkoutLog, refreshProgress } = useWorkoutLogger();
   
+  // Detect workout mode from URL
+  const searchParams = new URLSearchParams(location.search);
+  const workoutMode = searchParams.get('mode') === 'custom' ? 'custom' : 'scheduled';
+  
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([]);
   const [completedExtraExercises, setCompletedExtraExercises] = useState<WorkoutMachine[]>([]);
   const [currentMuscleGroup, setCurrentMuscleGroup] = useState<string>('chest');
@@ -56,6 +60,14 @@ const WorkoutList = () => {
   // Initialize dynamic workout plan - run once on mount only
   const initializeWorkoutPlan = useCallback(async () => {
     console.log("🔄 Initializing dynamic workout plan...");
+    console.log("🎯 Workout mode:", workoutMode);
+    
+    // If custom mode, start with empty array
+    if (workoutMode === 'custom') {
+      console.log("✨ Custom mode: Starting with empty workout list");
+      setTodaysWorkouts([]);
+      return;
+    }
     
     // Check for scheduled workout first
     const { data: { user } } = await supabase.auth.getUser();
@@ -153,7 +165,7 @@ const WorkoutList = () => {
 
     console.log("Generated workout plan:", workoutPlan);
     setTodaysWorkouts(workoutPlan);
-  }, [currentMuscleGroup]); // Re-run when muscle group changes
+  }, [currentMuscleGroup, workoutMode]); // Re-run when muscle group or mode changes
 
   // Load completed exercises and merge with plan
   const loadCompletedExercises = useCallback(async () => {
@@ -338,7 +350,41 @@ const WorkoutList = () => {
       // Clear the flag
       navigate(location.pathname, { replace: true });
     }
-  }, [location.state, loadCompletedExercises, refreshProgress, navigate]);
+    
+    // Handle adding scanned machine in custom mode
+    if (location.state?.fromScan && workoutMode === 'custom') {
+      const { machineId, machineName } = location.state;
+      console.log('✨ Adding scanned machine in custom mode:', machineName);
+      
+      setTodaysWorkouts(workouts => {
+        // Check if machine already exists
+        const alreadyExists = workouts.some(w => 
+          w.id === machineId || 
+          w.name.toLowerCase() === machineName.toLowerCase()
+        );
+        
+        if (alreadyExists) {
+          toast.info(`${machineName} is already in your workout`);
+          return workouts;
+        }
+        
+        // Find machine details
+        const machine = MachineRegistryService.getMachineById(machineId);
+        const newWorkout: WorkoutMachine = {
+          id: machineId,
+          name: machineName,
+          muscleGroup: machine?.muscleGroup || 'other',
+          completed: false
+        };
+        
+        toast.success(`Added ${machineName} to your workout`);
+        return [...workouts, newWorkout];
+      });
+      
+      // Clear the state
+      navigate(location.pathname + location.search, { replace: true, state: {} });
+    }
+  }, [location.state, loadCompletedExercises, refreshProgress, navigate, workoutMode]);
 
   // Set up realtime subscription for exercise logs (stable, subscribe once)
   useEffect(() => {
@@ -510,7 +556,9 @@ const WorkoutList = () => {
   const handleScanMachine = async () => {
     const { audioManager } = await import('@/utils/audioUtils');
     await audioManager.playButtonClick();
-    navigate('/scan-machine');
+    navigate('/scan-machine', { 
+      state: { workoutMode } 
+    });
   };
 
   const handleFinishEarly = async () => {
@@ -585,7 +633,11 @@ const WorkoutList = () => {
           onClick={async () => {
             const { audioManager } = await import('@/utils/audioUtils');
             await audioManager.playButtonClick();
-            navigate(-1);
+            if (workoutMode === 'custom') {
+              navigate('/workout-mode-select');
+            } else {
+              navigate(-1);
+            }
           }}
           className="border-primary/30 hover:border-primary/60 hover:bg-primary/10"
         >
@@ -593,43 +645,78 @@ const WorkoutList = () => {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-primary">
-            Today's Workout
+            {workoutMode === 'custom' ? 'Custom Workout' : "Today's Workout"}
           </h1>
           <p className="text-foreground/70">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+            {workoutMode === 'custom' 
+              ? 'Build your workout by scanning machines'
+              : new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })
+            }
           </p>
         </div>
       </div>
 
       {/* Muscle Group Selector and Scan Machine Button */}
       <div className="space-y-4">
-        <div className="flex gap-3">
-          <Select value={currentMuscleGroup} onValueChange={setCurrentMuscleGroup}>
-            <SelectTrigger className="flex-1 border-primary/30 hover:border-primary/60">
-              <SelectValue placeholder="Select muscle group" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="chest">Chest</SelectItem>
-              <SelectItem value="back">Back</SelectItem>
-              <SelectItem value="shoulders">Shoulders</SelectItem>
-              <SelectItem value="legs">Legs</SelectItem>
-              <SelectItem value="arms">Arms</SelectItem>
-              <SelectItem value="cardio">Cardio</SelectItem>
-              <SelectItem value="core">Core</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Muscle Group Selector - Only show in scheduled mode */}
+        {workoutMode === 'scheduled' && (
+          <div className="flex gap-3">
+            <Select value={currentMuscleGroup} onValueChange={setCurrentMuscleGroup}>
+              <SelectTrigger className="flex-1 border-primary/30 hover:border-primary/60">
+                <SelectValue placeholder="Select muscle group" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="chest">Chest</SelectItem>
+                <SelectItem value="back">Back</SelectItem>
+                <SelectItem value="shoulders">Shoulders</SelectItem>
+                <SelectItem value="legs">Legs</SelectItem>
+                <SelectItem value="arms">Arms</SelectItem>
+                <SelectItem value="cardio">Cardio</SelectItem>
+                <SelectItem value="core">Core</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* Custom Mode Empty State */}
+        {workoutMode === 'custom' && todaysWorkouts.length === 0 && (
+          <Card className="bg-muted/50 border-dashed">
+            <div className="p-8 text-center">
+              <Camera className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Ready to Build Your Workout</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Scan machines as you go to add exercises to your custom workout
+              </p>
+            </div>
+          </Card>
+        )}
+        
+        {/* Custom Mode Exercise Count */}
+        {workoutMode === 'custom' && todaysWorkouts.length > 0 && (
+          <Card className="border-primary/30">
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Scanned Exercises</span>
+                <Badge variant="secondary">{todaysWorkouts.length} exercises</Badge>
+              </div>
+            </div>
+          </Card>
+        )}
+        
         <Button 
           onClick={handleScanMachine}
           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg transition-all duration-300 hover:shadow-xl"
           size="lg"
         >
           <Camera className="h-5 w-5 mr-2" />
-          Scan Machine
+          {workoutMode === 'custom' 
+            ? 'Scan Machine to Add Exercise' 
+            : 'Scan Machine'
+          }
         </Button>
       </div>
       <Card className="glow-card p-6 border-l-4 border-l-primary/50">

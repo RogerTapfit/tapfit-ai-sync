@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import WorkoutList from "./pages/WorkoutList";
+import WorkoutModeSelect from "./pages/WorkoutModeSelect";
 import WorkoutDetail from "./pages/WorkoutDetail";
 import WorkoutSummary from "./pages/WorkoutSummary";
 import WorkoutHistory from "./pages/WorkoutHistory";
@@ -115,6 +116,11 @@ const App = () => {
             <Route path="/" element={
               <AuthGuard fallback={<Auth />}>
                 <Index />
+              </AuthGuard>
+            } />
+            <Route path="/workout-mode-select" element={
+              <AuthGuard fallback={<Auth />}>
+                <WorkoutModeSelect />
               </AuthGuard>
             } />
             <Route path="/workout-list" element={

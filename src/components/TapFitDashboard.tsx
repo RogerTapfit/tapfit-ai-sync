@@ -118,8 +118,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const handleStartWorkout = async () => {
     // No coins for just starting - coins are earned per rep completed
     
-    // Navigate to workout list
-    navigate('/workout-list');
+    // Navigate to workout mode selection
+    navigate('/workout-mode-select');
   };
 
   const handleStartRun = () => {
