@@ -918,7 +918,9 @@ export default function MachineWorkout() {
                   <Button
                     onClick={handleAddSet}
                     size="lg"
-                    className="w-full h-14 text-lg font-semibold bg-red-600 hover:bg-red-700 text-white"
+                    variant="destructive"
+                    className="w-full h-14 text-lg font-semibold"
+                    aria-label="Add Set"
                   >
                     Add Set
                   </Button>
