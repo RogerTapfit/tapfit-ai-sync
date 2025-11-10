@@ -45,6 +45,7 @@ import Social from "./pages/Social";
 import UserProfile from "./pages/UserProfile";
 import ProfileCustomization from "./pages/ProfileCustomization";
 import Leaderboard from "./pages/Leaderboard";
+import SharedMenuItem from "./pages/SharedMenuItem";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -232,6 +233,7 @@ const App = () => {
             <Route path="/social" element={<AuthGuard fallback={<Auth />}><Social /></AuthGuard>} />
             <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
             <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
+            <Route path="/shared/:type/:token" element={<SharedMenuItem />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
               <AuthGuard fallback={<Auth />}>

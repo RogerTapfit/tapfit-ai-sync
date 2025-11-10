@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ShareMenuItemModal } from "@/components/ShareMenuItemModal";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +86,8 @@ export const MenuAnalyzer = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showItemDetails, setShowItemDetails] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareType, setShareType] = useState<'item' | 'comparison'>('item');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
@@ -928,30 +931,40 @@ export const MenuAnalyzer = () => {
               </div>
             )}
             
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button 
-                className="flex-1"
-                onClick={() => {
-                  if (selectedItem) handleSaveItem(selectedItem);
-                }}
-                disabled={isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName)}
-              >
-                <Heart className="h-4 w-4 mr-2" />
-                {isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName) ? 'Saved' : 'Save to Favorites'}
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  if (selectedItem) handleAddToCompare(selectedItem);
-                  setShowItemDetails(false);
-                }}
-                disabled={comparisonItems.length >= 2}
-              >
-                <Scale className="h-4 w-4 mr-2" />
-                Compare
-              </Button>
-            </div>
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    if (selectedItem) handleSaveItem(selectedItem);
+                  }}
+                  disabled={isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName)}
+                >
+                  <Heart className="h-4 w-4 mr-2" />
+                  {isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName) ? 'Saved' : 'Save'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (selectedItem) handleAddToCompare(selectedItem);
+                    setShowItemDetails(false);
+                  }}
+                  disabled={comparisonItems.length >= 2}
+                >
+                  <Scale className="h-4 w-4 mr-2" />
+                  Compare
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShareType('item');
+                    setShowShareModal(true);
+                  }}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1248,8 +1261,18 @@ export const MenuAnalyzer = () => {
               )}
 
               <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShareType('comparison');
+                    setShowShareModal(true);
+                  }}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
                 <Button variant="outline" onClick={handleClearComparison}>
-                  Clear Comparison
+                  Clear
                 </Button>
                 <Button onClick={() => setShowComparison(false)}>
                   Close
@@ -1259,6 +1282,16 @@ export const MenuAnalyzer = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Share Modal */}
+      <ShareMenuItemModal
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
+        item={shareType === 'item' ? selectedItem : undefined}
+        comparisonItems={shareType === 'comparison' ? comparisonItems : undefined}
+        restaurantName={analysisResult?.restaurantName}
+        type={shareType}
+      />
     </Tabs>
   );
 };
