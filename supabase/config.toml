@@ -69,3 +69,8 @@ memory = "auto"
 verify_jwt = false
 cpu = "auto"
 memory = "auto"
+
+[functions.analyzeMenu]
+verify_jwt = false
+cpu = "auto"
+memory = "auto"
