@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,6 +80,11 @@ export const MenuAnalyzer = () => {
   const [activeTab, setActiveTab] = useState<'menu' | 'favorites'>('menu');
   const [comparisonItems, setComparisonItems] = useState<MenuItem[]>([]);
   const [showComparison, setShowComparison] = useState(false);
+  const [showMenuPhotos, setShowMenuPhotos] = useState(true);
+  const [selectedMenuImage, setSelectedMenuImage] = useState<string>('');
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showItemDetails, setShowItemDetails] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
@@ -449,131 +455,62 @@ export const MenuAnalyzer = () => {
 
       {/* Analysis Results */}
       {analysisResult && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Menu Items */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>{analysisResult.restaurantName || 'Menu Items'}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setMenuImages([]);
-                      setCurrentImageIndex(0);
-                      setAnalysisResult(null);
-                      setChatMessages([]);
-                    }}
-                  >
-                    New Menu
-                  </Button>
-                </CardTitle>
-                <CardDescription>
-                  {analysisResult.menuItems.length} items found
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px] pr-4">
-                  <div className="space-y-3">
-                    {analysisResult.menuItems.map((item, idx) => (
-                      <Card key={idx} className="border-l-4 border-l-primary/50">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start gap-3 mb-2">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-base">{item.name}</h3>
-                              {item.description && (
-                                <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {item.healthScore && (
-                                <Badge className={getHealthScoreColor(item.healthScore)}>
-                                  {item.healthScore}/100
-                                </Badge>
-                              )}
-                              <Button
-                                size="icon"
-                                variant={comparisonItems.find(i => i.name === item.name) ? "default" : "outline"}
-                                onClick={() => handleAddToCompare(item)}
-                                disabled={comparisonItems.length >= 2 && !comparisonItems.find(i => i.name === item.name)}
-                                className="h-8 w-8"
-                                title="Add to compare"
-                              >
-                                <Scale className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant={isItemSaved(item.name, analysisResult?.restaurantName) ? "default" : "ghost"}
-                                onClick={() => handleSaveItem(item)}
-                                disabled={savingItemId === item.name || isItemSaved(item.name, analysisResult?.restaurantName)}
-                                className="h-8 w-8"
-                              >
-                                <Heart className={`h-4 w-4 ${isItemSaved(item.name, analysisResult?.restaurantName) ? 'fill-current' : ''}`} />
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {item.calories && (
-                              <Badge variant="outline">🔥 {item.calories} cal</Badge>
-                            )}
-                            {item.price && (
-                              <Badge variant="outline">💰 ${item.price.toFixed(2)}</Badge>
-                            )}
-                            {item.macros?.protein && (
-                              <Badge variant="outline">💪 {item.macros.protein}g protein</Badge>
-                            )}
-                            {item.confidence && (
-                              <Badge variant="secondary" className="text-xs">{item.confidence}</Badge>
-                            )}
-                            {item.dietaryTags?.map((tag, i) => (
-                              <Badge key={i} variant="secondary">{tag}</Badge>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Chatbot Panel */}
-          <div className="space-y-4">
-            <Card className="border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-base">Ask About Menu</CardTitle>
-                <CardDescription className="text-xs">
-                  Get personalized recommendations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-2">
-                  {QUICK_ACTIONS.map((action, idx) => (
-                    <Button
-                      key={idx}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleQuickAction(action.prompt)}
-                      disabled={chatLoading}
-                      className="h-auto py-3 flex flex-col items-center gap-1 text-xs"
-                    >
-                      <span className="text-lg">{action.icon}</span>
-                      <span className="text-center leading-tight">{action.label}</span>
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Recommendation Cards */}
-                {recommendations.length > 0 && (
-                  <div className="space-y-3">
+        <div className="space-y-6">
+          {/* Menu Photos (Collapsible) */}
+          {menuImages.length > 0 && (
+            <Card className="overflow-hidden">
+              <Collapsible open={showMenuPhotos} onOpenChange={setShowMenuPhotos}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-muted-foreground">
-                        {recommendationType}
-                      </h3>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Camera className="h-4 w-4" />
+                        Menu Photos ({menuImages.length})
+                      </CardTitle>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${showMenuPhotos ? 'rotate-180' : ''}`} />
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {menuImages.map((img, idx) => (
+                        <img 
+                          key={idx}
+                          src={img} 
+                          alt={`Menu ${idx + 1}`}
+                          className="h-32 w-auto rounded cursor-pointer border-2 hover:border-primary transition-colors"
+                          onClick={() => {
+                            setSelectedMenuImage(img);
+                            setShowImageModal(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          )}
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Menu Items Column */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Recommended Items Section */}
+              {recommendations.length > 0 && (
+                <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-primary" />
+                          {recommendationType || 'Recommended For You'}
+                        </CardTitle>
+                        <CardDescription className="mt-1">
+                          Based on your preferences
+                        </CardDescription>
+                      </div>
                       <Button 
                         size="sm" 
                         variant="ghost"
@@ -582,29 +519,46 @@ export const MenuAnalyzer = () => {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    
-                    <div className="space-y-3">
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3">
                       {recommendations.map((rec, idx) => (
-                        <Card key={idx} className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
+                        <Card 
+                          key={idx} 
+                          className="cursor-pointer hover:shadow-md transition-all border-primary/20 bg-card"
+                          onClick={() => {
+                            const item = analysisResult.menuItems.find(i => i.name === rec.itemName);
+                            if (item) {
+                              setSelectedItem(item);
+                              setShowItemDetails(true);
+                            }
+                          }}
+                        >
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2 flex-1">
                                 <span className="text-2xl">{rec.emoji || '✨'}</span>
                                 <h4 className="text-base font-bold leading-tight">{rec.itemName}</h4>
                               </div>
-                              <Button 
-                                size="icon" 
-                                variant="ghost"
-                                className="h-8 w-8 flex-shrink-0"
-                                onClick={() => handleSaveItem({
-                                  name: rec.itemName,
-                                  calories: rec.calories,
-                                  price: rec.price,
-                                  dietaryTags: rec.dietaryTags
-                                })}
-                              >
-                                <Heart className="h-4 w-4" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost"
+                                  className="h-8 w-8 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSaveItem({
+                                      name: rec.itemName,
+                                      calories: rec.calories,
+                                      price: rec.price,
+                                      macros: rec.macros,
+                                      dietaryTags: rec.dietaryTags
+                                    });
+                                  }}
+                                >
+                                  <Heart className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                             
                             {rec.calories && (
@@ -638,8 +592,145 @@ export const MenuAnalyzer = () => {
                         </Card>
                       ))}
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* All Menu Items */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{analysisResult.restaurantName || 'All Menu Items'}</CardTitle>
+                      <CardDescription className="mt-1">
+                        {analysisResult.menuItems.length} items found • Click any item for details
+                      </CardDescription>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setMenuImages([]);
+                        setCurrentImageIndex(0);
+                        setAnalysisResult(null);
+                        setChatMessages([]);
+                        setRecommendations([]);
+                      }}
+                    >
+                      New Menu
+                    </Button>
                   </div>
-                )}
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="space-y-3">
+                      {analysisResult.menuItems.map((item, idx) => (
+                        <Card 
+                          key={idx} 
+                          className="cursor-pointer hover:shadow-lg transition-all border-l-4 border-l-primary/50 hover:border-l-primary"
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setShowItemDetails(true);
+                          }}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start gap-3 mb-2">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-base">{item.name}</h3>
+                                {item.description && (
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {item.healthScore && (
+                                  <Badge className={getHealthScoreColor(item.healthScore)}>
+                                    {item.healthScore}/100
+                                  </Badge>
+                                )}
+                                <Button
+                                  size="icon"
+                                  variant={comparisonItems.find(i => i.name === item.name) ? "default" : "outline"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddToCompare(item);
+                                  }}
+                                  disabled={comparisonItems.length >= 2 && !comparisonItems.find(i => i.name === item.name)}
+                                  className="h-8 w-8"
+                                  title="Add to compare"
+                                >
+                                  <Scale className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant={isItemSaved(item.name, analysisResult?.restaurantName) ? "default" : "ghost"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSaveItem(item);
+                                  }}
+                                  disabled={savingItemId === item.name || isItemSaved(item.name, analysisResult?.restaurantName)}
+                                  className="h-8 w-8"
+                                >
+                                  <Heart className={`h-4 w-4 ${isItemSaved(item.name, analysisResult?.restaurantName) ? 'fill-current' : ''}`} />
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {item.calories && (
+                                <Badge variant="outline">🔥 {item.calories} cal</Badge>
+                              )}
+                              {item.price && (
+                                <Badge variant="outline">💰 ${item.price.toFixed(2)}</Badge>
+                              )}
+                              {item.macros?.protein && (
+                                <Badge variant="outline">💪 {item.macros.protein}g protein</Badge>
+                              )}
+                              {item.confidence && (
+                                <Badge variant="secondary" className="text-xs">{item.confidence}</Badge>
+                              )}
+                              {item.dietaryTags?.map((tag, i) => (
+                                <Badge key={i} variant="secondary">{tag}</Badge>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                              <Info className="h-3 w-3" />
+                              Click for full details
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right: Chatbot Panel */}
+            <div className="space-y-4">
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-base">Ask About Menu</CardTitle>
+                  <CardDescription className="text-xs">
+                    Get personalized recommendations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {QUICK_ACTIONS.map((action, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleQuickAction(action.prompt)}
+                        disabled={chatLoading}
+                        className="h-auto py-3 flex flex-col items-center gap-1 text-xs"
+                      >
+                        <span className="text-lg">{action.icon}</span>
+                        <span className="text-center leading-tight">{action.label}</span>
+                      </Button>
+                    ))}
+                  </div>
 
                 {/* Chat Messages */}
                 <ScrollArea className="h-[250px] border rounded-lg p-3 bg-muted/20">
@@ -719,9 +810,151 @@ export const MenuAnalyzer = () => {
                 </CardContent>
               </Card>
             )}
+            </div>
           </div>
         </div>
       )}
+
+      {/* Menu Image Full Screen Modal */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className="max-w-4xl">
+          <img src={selectedMenuImage} alt="Menu" className="w-full h-auto" />
+        </DialogContent>
+      </Dialog>
+
+      {/* Item Details Dialog */}
+      <Dialog open={showItemDetails} onOpenChange={setShowItemDetails}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              {selectedItem?.name}
+              {selectedItem?.healthScore && (
+                <Badge className={getHealthScoreColor(selectedItem.healthScore)}>
+                  {selectedItem.healthScore}/100
+                </Badge>
+              )}
+            </DialogTitle>
+            {selectedItem?.description && (
+              <DialogDescription className="text-base mt-2">
+                {selectedItem.description}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            {/* Nutrition Facts Card */}
+            {selectedItem?.calories && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Nutrition Facts</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Calories</span>
+                      <span className="font-bold text-lg">{selectedItem.calories}</span>
+                    </div>
+                    {selectedItem.macros?.protein && (
+                      <div className="flex justify-between">
+                        <span className="text-sm">Protein</span>
+                        <span className="font-medium">{selectedItem.macros.protein}g</span>
+                      </div>
+                    )}
+                    {selectedItem.macros?.carbs && (
+                      <div className="flex justify-between">
+                        <span className="text-sm">Carbs</span>
+                        <span className="font-medium">{selectedItem.macros.carbs}g</span>
+                      </div>
+                    )}
+                    {selectedItem.macros?.fat && (
+                      <div className="flex justify-between">
+                        <span className="text-sm">Fat</span>
+                        <span className="font-medium">{selectedItem.macros.fat}g</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Visual macros chart */}
+                  {selectedItem.macros && (
+                    <div className="flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height={120}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Protein', value: selectedItem.macros.protein || 0 },
+                              { name: 'Carbs', value: selectedItem.macros.carbs || 0 },
+                              { name: 'Fat', value: selectedItem.macros.fat || 0 }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={30}
+                            outerRadius={50}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            <Cell fill="#10b981" />
+                            <Cell fill="#f59e0b" />
+                            <Cell fill="#ef4444" />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Dietary Tags */}
+            {selectedItem?.dietaryTags && selectedItem.dietaryTags.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Dietary Information</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedItem.dietaryTags.map((tag, i) => (
+                    <Badge key={i} variant="secondary" className="text-sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Price */}
+            {selectedItem?.price && (
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <span className="font-semibold">Price</span>
+                <span className="text-2xl font-bold text-primary">
+                  ${selectedItem.price.toFixed(2)}
+                </span>
+              </div>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  if (selectedItem) handleSaveItem(selectedItem);
+                }}
+                disabled={isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName)}
+              >
+                <Heart className="h-4 w-4 mr-2" />
+                {isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName) ? 'Saved' : 'Save to Favorites'}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (selectedItem) handleAddToCompare(selectedItem);
+                  setShowItemDetails(false);
+                }}
+                disabled={comparisonItems.length >= 2}
+              >
+                <Scale className="h-4 w-4 mr-2" />
+                Compare
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </TabsContent>
 
       {/* Saved Favorites Tab */}
