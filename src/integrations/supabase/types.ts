@@ -2210,6 +2210,81 @@ export type Database = {
           },
         ]
       }
+      shared_comparisons: {
+        Row: {
+          comparison_data: Json
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          restaurant_name: string | null
+          share_token: string
+          updated_at: string | null
+          user_id: string | null
+          view_count: number | null
+        }
+        Insert: {
+          comparison_data: Json
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          restaurant_name?: string | null
+          share_token: string
+          updated_at?: string | null
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          comparison_data?: Json
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          restaurant_name?: string | null
+          share_token?: string
+          updated_at?: string | null
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      shared_menu_items: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          item_data: Json
+          item_name: string
+          restaurant_name: string | null
+          share_token: string
+          updated_at: string | null
+          user_id: string | null
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          item_data: Json
+          item_name: string
+          restaurant_name?: string | null
+          share_token: string
+          updated_at?: string | null
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          item_data?: Json
+          item_name?: string
+          restaurant_name?: string | null
+          share_token?: string
+          updated_at?: string | null
+          user_id?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       smart_pin_data: {
         Row: {
           created_at: string
@@ -3286,6 +3361,7 @@ export type Database = {
       }
       clean_base64_photo_urls: { Args: never; Returns: undefined }
       cleanup_expired_food_cache: { Args: never; Returns: undefined }
+      cleanup_expired_shares: { Args: never; Returns: undefined }
       cleanup_old_data: { Args: never; Returns: undefined }
       cleanup_old_food_entries: {
         Args: { _days_to_keep?: number }
