@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2 } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShareMenuItemModal } from "@/components/ShareMenuItemModal";
@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSavedMenuItems } from "@/hooks/useSavedMenuItems";
+import { AddToFoodLogModal } from "@/components/AddToFoodLogModal";
 
 interface MenuItem {
   name: string;
@@ -88,6 +89,8 @@ export const MenuAnalyzer = () => {
   const [showItemDetails, setShowItemDetails] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareType, setShareType] = useState<'item' | 'comparison'>('item');
+  const [showAddToLog, setShowAddToLog] = useState(false);
+  const [selectedItemForLog, setSelectedItemForLog] = useState<MenuItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
@@ -278,6 +281,63 @@ export const MenuAnalyzer = () => {
   const handleClearComparison = () => {
     setComparisonItems([]);
     setShowComparison(false);
+  };
+
+  // Convert MenuItem to ProductAnalysis format for AddToFoodLogModal
+  const convertMenuItemToProductAnalysis = (item: MenuItem) => {
+    const healthGrade = item.healthScore 
+      ? item.healthScore >= 90 ? 'A'
+        : item.healthScore >= 80 ? 'B'
+        : item.healthScore >= 70 ? 'C'
+        : item.healthScore >= 60 ? 'D'
+        : 'F'
+      : 'C';
+
+    return {
+      product: {
+        name: item.name,
+        brand: analysisResult?.restaurantName,
+        size: '1 serving',
+        confidence: item.confidence === 'high' ? 0.95 : item.confidence === 'medium' ? 0.75 : 0.60,
+      },
+      nutrition: {
+        serving_size: '1 serving',
+        per_serving: {
+          calories: item.calories || 0,
+          protein_g: item.macros?.protein || 0,
+          carbs_g: item.macros?.carbs || 0,
+          fat_g: item.macros?.fat || 0,
+        },
+      },
+      health_grade: {
+        letter: healthGrade,
+        score: item.healthScore || 70,
+        breakdown: {
+          nutritional_quality: item.healthScore || 70,
+          ingredient_quality: item.healthScore || 70,
+          safety_score: 85,
+          processing_level: 60,
+        },
+      },
+      analysis: {
+        pros: item.dietaryTags || [],
+        cons: [],
+        concerns: [],
+        alternatives: [],
+      },
+      safety: {
+        forever_chemicals: false,
+        concerning_additives: [],
+        allergens: [],
+        processing_level: 'moderate',
+      },
+    };
+  };
+
+  const handleLogFood = (item: MenuItem) => {
+    setSelectedItemForLog(item);
+    setShowAddToLog(true);
+    setShowItemDetails(false);
   };
 
   return (
@@ -969,38 +1029,51 @@ export const MenuAnalyzer = () => {
             )}
             
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="space-y-3 pt-4 border-t">
                 <Button 
-                  className="flex-1"
+                  className="w-full bg-gradient-to-r from-primary to-primary/80"
+                  size="lg"
                   onClick={() => {
-                    if (selectedItem) handleSaveItem(selectedItem);
-                  }}
-                  disabled={isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName)}
-                >
-                  <Heart className="h-4 w-4 mr-2" />
-                  {isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName) ? 'Saved' : 'Save'}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedItem) handleAddToCompare(selectedItem);
-                    setShowItemDetails(false);
-                  }}
-                  disabled={comparisonItems.length >= 2}
-                >
-                  <Scale className="h-4 w-4 mr-2" />
-                  Compare
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setShareType('item');
-                    setShowShareModal(true);
+                    if (selectedItem) handleLogFood(selectedItem);
                   }}
                 >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
+                  <Utensils className="h-4 w-4 mr-2" />
+                  Add to Food Log
                 </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    className="flex-1"
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedItem) handleSaveItem(selectedItem);
+                    }}
+                    disabled={isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName)}
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    {isItemSaved(selectedItem?.name || '', analysisResult?.restaurantName) ? 'Saved' : 'Save'}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedItem) handleAddToCompare(selectedItem);
+                      setShowItemDetails(false);
+                    }}
+                    disabled={comparisonItems.length >= 2}
+                  >
+                    <Scale className="h-4 w-4 mr-2" />
+                    Compare
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setShareType('item');
+                      setShowShareModal(true);
+                    }}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                </div>
               </div>
           </div>
         </DialogContent>
@@ -1329,6 +1402,22 @@ export const MenuAnalyzer = () => {
         restaurantName={analysisResult?.restaurantName}
         type={shareType}
       />
+
+      {/* Add to Food Log Modal */}
+      {selectedItemForLog && (
+        <AddToFoodLogModal
+          isOpen={showAddToLog}
+          onClose={() => {
+            setShowAddToLog(false);
+            setSelectedItemForLog(null);
+          }}
+          productAnalysis={convertMenuItemToProductAnalysis(selectedItemForLog)}
+          onSuccess={() => {
+            setShowAddToLog(false);
+            setSelectedItemForLog(null);
+          }}
+        />
+      )}
     </Tabs>
   );
 };
