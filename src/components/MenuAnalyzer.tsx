@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +77,8 @@ export const MenuAnalyzer = () => {
   const [recommendations, setRecommendations] = useState<RecommendationCard[]>([]);
   const [recommendationType, setRecommendationType] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'menu' | 'favorites'>('menu');
+  const [comparisonItems, setComparisonItems] = useState<MenuItem[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   
@@ -204,6 +208,32 @@ export const MenuAnalyzer = () => {
     );
   };
 
+  const handleAddToCompare = (item: MenuItem) => {
+    if (comparisonItems.length >= 2) {
+      toast.error('You can only compare 2 items at a time');
+      return;
+    }
+    if (comparisonItems.find(i => i.name === item.name)) {
+      toast.error('This item is already selected for comparison');
+      return;
+    }
+    setComparisonItems(prev => [...prev, item]);
+    toast.success(`Added ${item.name} to comparison`);
+    
+    if (comparisonItems.length === 1) {
+      setShowComparison(true);
+    }
+  };
+
+  const handleRemoveFromCompare = (itemName: string) => {
+    setComparisonItems(prev => prev.filter(i => i.name !== itemName));
+  };
+
+  const handleClearComparison = () => {
+    setComparisonItems([]);
+    setShowComparison(false);
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'menu' | 'favorites')} className="space-y-6">
       <TabsList className="grid w-full grid-cols-2">
@@ -218,6 +248,49 @@ export const MenuAnalyzer = () => {
       </TabsList>
 
       <TabsContent value="menu" className="space-y-6">
+        {/* Comparison Bar */}
+        {comparisonItems.length > 0 && (
+          <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <Scale className="h-5 w-5 text-primary" />
+                  <div className="flex gap-2 flex-1 flex-wrap">
+                    {comparisonItems.map((item) => (
+                      <Badge key={item.name} variant="secondary" className="text-sm py-1.5 px-3">
+                        {item.name}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-4 w-4 ml-2 p-0"
+                          onClick={() => handleRemoveFromCompare(item.name)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                    {comparisonItems.length === 1 && (
+                      <Badge variant="outline" className="text-sm py-1.5 px-3 border-dashed">
+                        Select 1 more item
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {comparisonItems.length === 2 && (
+                    <Button onClick={() => setShowComparison(true)} size="sm">
+                      Compare
+                    </Button>
+                  )}
+                  <Button onClick={handleClearComparison} variant="ghost" size="sm">
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Upload Section */}
         {menuImages.length === 0 && (
         <Card className="border-dashed border-2 bg-gradient-to-br from-card to-card/50">
@@ -419,6 +492,16 @@ export const MenuAnalyzer = () => {
                                   {item.healthScore}/100
                                 </Badge>
                               )}
+                              <Button
+                                size="icon"
+                                variant={comparisonItems.find(i => i.name === item.name) ? "default" : "outline"}
+                                onClick={() => handleAddToCompare(item)}
+                                disabled={comparisonItems.length >= 2 && !comparisonItems.find(i => i.name === item.name)}
+                                className="h-8 w-8"
+                                title="Add to compare"
+                              >
+                                <Scale className="h-4 w-4" />
+                              </Button>
                               <Button
                                 size="icon"
                                 variant={isItemSaved(item.name, analysisResult?.restaurantName) ? "default" : "ghost"}
@@ -719,6 +802,230 @@ export const MenuAnalyzer = () => {
           </CardContent>
         </Card>
       </TabsContent>
+
+      {/* Comparison Dialog */}
+      <Dialog open={showComparison} onOpenChange={setShowComparison}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5" />
+              Nutrition Comparison
+            </DialogTitle>
+            <DialogDescription>
+              Side-by-side comparison of nutritional values and health metrics
+            </DialogDescription>
+          </DialogHeader>
+
+          {comparisonItems.length === 2 && (
+            <div className="space-y-6 mt-4">
+              {/* Item Names */}
+              <div className="grid grid-cols-2 gap-4">
+                {comparisonItems.map((item, idx) => (
+                  <Card key={idx} className="border-2 border-primary/20">
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-lg mb-2">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Calories Comparison */}
+              {comparisonItems.every(i => i.calories) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Calorie Comparison</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={comparisonItems.map(item => ({
+                        name: item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name,
+                        calories: item.calories || 0
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="calories" fill="hsl(var(--primary))" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      {comparisonItems.map((item, idx) => (
+                        <div key={idx} className="text-center">
+                          <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                            {item.calories} cal
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Health Score Comparison */}
+              {comparisonItems.every(i => i.healthScore) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Health Score Comparison</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-6">
+                      {comparisonItems.map((item, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <div className="text-center">
+                            <div className={`inline-flex items-center justify-center w-24 h-24 rounded-full text-2xl font-bold ${getHealthScoreColor(item.healthScore)}`}>
+                              {item.healthScore}
+                            </div>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-3">
+                            <div 
+                              className={`h-3 rounded-full transition-all ${item.healthScore && item.healthScore >= 80 ? 'bg-green-500' : item.healthScore && item.healthScore >= 60 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                              style={{ width: `${item.healthScore}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Macros Comparison */}
+              {comparisonItems.every(i => i.macros?.protein && i.macros?.carbs && i.macros?.fat) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Macronutrients Comparison</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-6">
+                      {comparisonItems.map((item, idx) => {
+                        const macroData = [
+                          { name: 'Protein', value: item.macros?.protein || 0, color: '#10b981' },
+                          { name: 'Carbs', value: item.macros?.carbs || 0, color: '#f59e0b' },
+                          { name: 'Fat', value: item.macros?.fat || 0, color: '#ef4444' }
+                        ];
+                        
+                        return (
+                          <div key={idx} className="space-y-3">
+                            <h4 className="font-semibold text-center text-sm">{item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name}</h4>
+                            <ResponsiveContainer width="100%" height={180}>
+                              <PieChart>
+                                <Pie
+                                  data={macroData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={40}
+                                  outerRadius={70}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                  label={(entry) => `${entry.name}: ${entry.value}g`}
+                                >
+                                  {macroData.map((entry, i) => (
+                                    <Cell key={`cell-${i}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="flex items-center gap-1">
+                                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                                  Protein
+                                </span>
+                                <span className="font-semibold">{item.macros?.protein}g</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="flex items-center gap-1">
+                                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                                  Carbs
+                                </span>
+                                <span className="font-semibold">{item.macros?.carbs}g</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="flex items-center gap-1">
+                                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                                  Fat
+                                </span>
+                                <span className="font-semibold">{item.macros?.fat}g</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Price Comparison */}
+              {comparisonItems.every(i => i.price) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Price Comparison</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      {comparisonItems.map((item, idx) => (
+                        <div key={idx} className="text-center p-4 bg-muted/50 rounded-lg">
+                          <Badge variant="outline" className="text-lg px-4 py-2">
+                            💰 ${item.price?.toFixed(2)}
+                          </Badge>
+                          {item.calories && item.price && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {(item.calories / item.price).toFixed(0)} cal/$
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Dietary Tags Comparison */}
+              {comparisonItems.some(i => i.dietaryTags && i.dietaryTags.length > 0) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Dietary Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      {comparisonItems.map((item, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <h4 className="font-semibold text-sm">{item.name.length > 25 ? item.name.substring(0, 25) + '...' : item.name}</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {item.dietaryTags && item.dietaryTags.length > 0 ? (
+                              item.dietaryTags.map((tag, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">No dietary tags</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={handleClearComparison}>
+                  Clear Comparison
+                </Button>
+                <Button onClick={() => setShowComparison(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 };
