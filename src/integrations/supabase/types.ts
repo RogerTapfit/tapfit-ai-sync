@@ -1545,6 +1545,107 @@ export type Database = {
         }
         Relationships: []
       }
+      nutrition_challenge_participants: {
+        Row: {
+          average_grade_score: number | null
+          challenge_id: string
+          coins_earned: number | null
+          current_streak: number | null
+          id: string
+          joined_at: string
+          last_updated: string
+          meals_above_target: number | null
+          rank: number | null
+          total_health_score: number | null
+          total_meals: number | null
+          user_id: string
+        }
+        Insert: {
+          average_grade_score?: number | null
+          challenge_id: string
+          coins_earned?: number | null
+          current_streak?: number | null
+          id?: string
+          joined_at?: string
+          last_updated?: string
+          meals_above_target?: number | null
+          rank?: number | null
+          total_health_score?: number | null
+          total_meals?: number | null
+          user_id: string
+        }
+        Update: {
+          average_grade_score?: number | null
+          challenge_id?: string
+          coins_earned?: number | null
+          current_streak?: number | null
+          id?: string
+          joined_at?: string
+          last_updated?: string
+          meals_above_target?: number | null
+          rank?: number | null
+          total_health_score?: number | null
+          total_meals?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutrition_challenges: {
+        Row: {
+          challenge_type: string
+          coin_reward: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean
+          min_meals_required: number | null
+          name: string
+          start_date: string
+          target_metric: string
+          updated_at: string
+        }
+        Insert: {
+          challenge_type: string
+          coin_reward?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean
+          min_meals_required?: number | null
+          name: string
+          start_date: string
+          target_metric: string
+          updated_at?: string
+        }
+        Update: {
+          challenge_type?: string
+          coin_reward?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          min_meals_required?: number | null
+          name?: string
+          start_date?: string
+          target_metric?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       nutrition_goals: {
         Row: {
           carbs_grams: number

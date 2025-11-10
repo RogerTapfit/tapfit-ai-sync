@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { ActivityFeedItem } from '@/components/social/ActivityFeedItem';
+import { NutritionChallenges } from '@/components/NutritionChallenges';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Filter, UtensilsCrossed, Users } from 'lucide-react';
+import { ArrowLeft, Filter, UtensilsCrossed, Users, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import { motion } from 'framer-motion';
@@ -97,13 +99,27 @@ export default function MealFeed() {
             </div>
           </motion.div>
 
-          {/* Filters */}
+          {/* Tabs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="mb-6">
+            <Tabs defaultValue="feed" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="feed" className="flex items-center gap-2">
+                  <UtensilsCrossed className="h-4 w-4" />
+                  Meal Feed
+                </TabsTrigger>
+                <TabsTrigger value="challenges" className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Challenges
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="feed" className="space-y-6">
+                {/* Filters */}
+                <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -170,14 +186,9 @@ export default function MealFeed() {
                 )}
               </CardContent>
             </Card>
-          </motion.div>
 
-          {/* Feed */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+                {/* Feed */}
+                <div>
             {loading && filteredActivities.length === 0 ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -225,6 +236,13 @@ export default function MealFeed() {
                 ))}
               </div>
             )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="challenges">
+                <NutritionChallenges />
+              </TabsContent>
+            </Tabs>
           </motion.div>
         </div>
       </div>
