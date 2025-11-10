@@ -228,7 +228,7 @@ Return 2-3 top recommendations as cards.`;
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: messages,
-        max_tokens: 2500,
+        max_tokens: 5000,
         temperature: 0.7
       })
     });
@@ -241,6 +241,15 @@ Return 2-3 top recommendations as cards.`;
 
     const data = await response.json();
     const content = data.choices[0].message.content;
+    
+    // Log response metadata for debugging
+    console.log('OpenAI response length:', content.length, 'chars');
+    console.log('Finish reason:', data.choices[0].finish_reason);
+    
+    // Check for truncated response
+    if (data.choices[0].finish_reason === 'length') {
+      console.warn('Response was truncated due to max_tokens limit');
+    }
 
     if (mode === 'chat') {
       // Try to parse as structured recommendation
@@ -310,22 +319,51 @@ Return 2-3 top recommendations as cards.`;
             }
           }
         } catch (e) {
-          console.error('All parsing strategies failed. Raw response:', content.substring(0, 500));
+          console.error('All parsing strategies failed.');
+          console.error('Response length:', content.length);
+          console.error('Raw response preview:', content.substring(0, 500));
+          console.error('Raw response end:', content.substring(Math.max(0, content.length - 200)));
         }
       }
 
+      // Validate and handle responses
       if (!analysis || !analysis.menuItems) {
-        console.error('Failed to extract menu analysis. Raw response:', content.substring(0, 500));
+        const isTruncated = data.choices[0].finish_reason === 'length';
+        const errorMessage = isTruncated 
+          ? 'The menu is too large and the response was truncated. Try analyzing smaller sections of the menu separately.'
+          : 'Could not extract menu items from the analysis. The image may need better lighting or focus.';
+        
+        console.error('Failed to extract menu analysis.');
+        console.error('Truncated:', isTruncated);
+        console.error('Response length:', content.length);
+        console.error('Raw response preview:', content.substring(0, 500));
+        
         return new Response(
           JSON.stringify({
             restaurantName: null,
             menuItems: [],
             recommendations: { healthiest: [], bestValue: [] },
-            insights: ['Could not extract menu items from the analysis. The image may need better lighting or focus.']
+            insights: [errorMessage]
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      
+      // Validate menuItems array has content
+      if (!Array.isArray(analysis.menuItems) || analysis.menuItems.length === 0) {
+        console.warn('Menu analysis returned empty menuItems array');
+        return new Response(
+          JSON.stringify({
+            restaurantName: analysis.restaurantName || null,
+            menuItems: [],
+            recommendations: { healthiest: [], bestValue: [] },
+            insights: ['No menu items could be extracted from this image. Please try a clearer photo.']
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log(`Successfully extracted ${analysis.menuItems.length} menu items`);
 
       return new Response(
         JSON.stringify(analysis),
