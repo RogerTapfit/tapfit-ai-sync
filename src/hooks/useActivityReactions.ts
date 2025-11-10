@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export type ReactionType = 'like' | 'fire' | 'muscle' | 'celebrate';
-export type TargetType = 'workout' | 'achievement' | 'pr';
+export type TargetType = 'workout' | 'achievement' | 'pr' | 'meal' | 'activity_feed';
 
 export interface Reaction {
   id: string;

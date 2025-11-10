@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Utensils, Coffee, Sun, Sunset, Moon, Plus, Minus, Mic } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ import FitnessChatbot from './FitnessChatbot';
 import { useAvatar } from '@/lib/avatarState';
 import { FoodPhotoUploadService } from '@/services/foodPhotoUploadService';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
+import { mealSharingService } from '@/services/mealSharingService';
 
 interface ProductAnalysis {
   product: {
@@ -105,6 +107,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'saving'>('idle');
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [shareToFeed, setShareToFeed] = useState(false);
   const { saveFoodEntry, saveAlcoholEntry } = useNutrition();
   const { avatar } = useAvatar();
 
@@ -360,6 +363,16 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         const savedAlcoholEntry = await saveAlcoholEntry(alcoholEntry);
         console.log('🍺 Alcohol entry saved successfully:', savedAlcoholEntry);
         
+        // Share to feed if requested
+        if (shareToFeed && savedAlcoholEntry?.id) {
+          await mealSharingService.shareMealToFeed({
+            entryId: savedAlcoholEntry.id,
+            entryType: 'alcohol',
+            caption: notes
+          });
+          toast.success('Alcohol entry shared to your feed!');
+        }
+        
         toast.success('Alcohol entry saved successfully!', {
           description: `${productAnalysis.product.name} (${estimatedABV}% ABV) logged as ${alcoholType || detectedAlcoholType}`,
         });
@@ -431,6 +444,16 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
         
         console.log('Food entry saved successfully:', savedEntry);
         
+        // Share to feed if requested
+        if (shareToFeed && savedEntry?.id) {
+          await mealSharingService.shareMealToFeed({
+            entryId: savedEntry.id,
+            entryType: 'food',
+            caption: notes
+          });
+          toast.success('Meal shared to your feed!');
+        }
+        
         toast.success('Added to food log successfully!', {
           description: `${foodItem.name} has been logged for ${mealType}`,
         });
@@ -466,6 +489,7 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
       setAlcoholType(getAlcoholType() || 'beer');
       setNotes('');
       setUploadStatus('idle');
+      setShareToFeed(false);
     }
   }, [isOpen]);
 

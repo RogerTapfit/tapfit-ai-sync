@@ -17,6 +17,8 @@ import {
   Filter,
   History
 } from 'lucide-react';
+import { MealShareButton } from '@/components/social/MealShareButton';
+import { mealSharingService } from '@/services/mealSharingService';
 import { FoodEntry, AlcoholEntry, useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { calculateHealthGrade, getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
@@ -36,13 +38,37 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
   const [allAlcoholEntries, setAllAlcoholEntries] = useState<AlcoholEntry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [viewMode, setViewMode] = useState<'today' | 'history'>('today');
+  const [sharedEntries, setSharedEntries] = useState<Map<string, string>>(new Map());
 
   // Load all entries when modal opens
   useEffect(() => {
     if (isOpen) {
       loadAllEntries();
+      checkSharedEntries();
     }
   }, [isOpen]);
+
+  const checkSharedEntries = async () => {
+    const shared = new Map<string, string>();
+    
+    // Check all food entries
+    for (const entry of allFoodEntries) {
+      const activityId = await mealSharingService.isEntryShared(entry.id, 'food');
+      if (activityId) {
+        shared.set(`food-${entry.id}`, activityId);
+      }
+    }
+    
+    // Check all alcohol entries
+    for (const entry of allAlcoholEntries) {
+      const activityId = await mealSharingService.isEntryShared(entry.id, 'alcohol');
+      if (activityId) {
+        shared.set(`alcohol-${entry.id}`, activityId);
+      }
+    }
+    
+    setSharedEntries(shared);
+  };
 
   const loadAllEntries = async () => {
     setIsLoadingEntries(true);
@@ -442,6 +468,14 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
 
                             {/* Action Buttons */}
                             <div className="flex items-center gap-1 self-end sm:self-auto">
+                              <MealShareButton
+                                entryId={entry.id}
+                                entryType="food"
+                                entryData={entry}
+                                isShared={sharedEntries.has(`food-${entry.id}`)}
+                                activityId={sharedEntries.get(`food-${entry.id}`)}
+                                onShareChange={checkSharedEntries}
+                              />
                               <Button 
                                 variant="ghost" 
                                 size="sm"

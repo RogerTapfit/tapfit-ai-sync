@@ -1358,6 +1358,58 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_shares: {
+        Row: {
+          activity_feed_id: string
+          alcohol_entry_id: string | null
+          created_at: string
+          food_entry_id: string | null
+          id: string
+          is_public: boolean
+          user_id: string
+        }
+        Insert: {
+          activity_feed_id: string
+          alcohol_entry_id?: string | null
+          created_at?: string
+          food_entry_id?: string | null
+          id?: string
+          is_public?: boolean
+          user_id: string
+        }
+        Update: {
+          activity_feed_id?: string
+          alcohol_entry_id?: string | null
+          created_at?: string
+          food_entry_id?: string | null
+          id?: string
+          is_public?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_shares_activity_feed_id_fkey"
+            columns: ["activity_feed_id"]
+            isOneToOne: false
+            referencedRelation: "activity_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_shares_alcohol_entry_id_fkey"
+            columns: ["alcohol_entry_id"]
+            isOneToOne: false
+            referencedRelation: "alcohol_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_shares_food_entry_id_fkey"
+            columns: ["food_entry_id"]
+            isOneToOne: false
+            referencedRelation: "food_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metabolism_readings: {
         Row: {
           created_at: string
