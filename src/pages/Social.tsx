@@ -7,7 +7,7 @@ import { UsernameSetupDialog } from '@/components/social/UsernameSetupDialog';
 import { ProfilePhotoUpload } from '@/components/social/ProfilePhotoUpload';
 import { NetworkList } from '@/components/social/NetworkList';
 import { WorkoutVisibilitySettings } from '@/components/social/WorkoutVisibilitySettings';
-import { Search, Home, Trophy, Settings } from 'lucide-react';
+import { Search, Home, Trophy, Settings, UtensilsCrossed } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -122,6 +122,25 @@ export default function Social() {
             <UserSearchBar />
 
             <WorkoutVisibilitySettings />
+
+            <Card 
+              className="cursor-pointer hover:border-primary/20 transition-all duration-300 group"
+              onClick={() => navigate('/meal-feed')}
+            >
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-accent group-hover:bg-primary/10 transition-colors">
+                    <UtensilsCrossed className="h-5 w-5 text-primary" />
+                  </div>
+                  Meal Feed
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative">
+                <p className="text-sm text-muted-foreground">
+                  See what your network is eating and discover healthy meal ideas
+                </p>
+              </CardContent>
+            </Card>
 
             <Card 
               className="cursor-pointer hover:border-red-500/20 transition-all duration-300 group"

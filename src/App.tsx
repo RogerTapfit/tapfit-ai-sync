@@ -46,6 +46,7 @@ import UserProfile from "./pages/UserProfile";
 import ProfileCustomization from "./pages/ProfileCustomization";
 import Leaderboard from "./pages/Leaderboard";
 import SharedMenuItem from "./pages/SharedMenuItem";
+import MealFeed from "./pages/MealFeed";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -231,6 +232,7 @@ const App = () => {
             <Route path="/pr-leaderboard" element={<AuthGuard fallback={<Auth />}><PRLeaderboard /></AuthGuard>} />
             <Route path="/leaderboard" element={<AuthGuard fallback={<Auth />}><Leaderboard /></AuthGuard>} />
             <Route path="/social" element={<AuthGuard fallback={<Auth />}><Social /></AuthGuard>} />
+            <Route path="/meal-feed" element={<AuthGuard fallback={<Auth />}><MealFeed /></AuthGuard>} />
             <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
             <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
             <Route path="/shared/:type/:token" element={<SharedMenuItem />} />

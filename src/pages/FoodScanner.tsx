@@ -1,7 +1,7 @@
-import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils } from "lucide-react";
+import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { EnhancedFoodPhotoAnalyzer } from "@/components/EnhancedFoodPhotoAnalyzer";
 import { FoodRecipeBuilder } from "@/components/FoodRecipeBuilder";
@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 const FoodScanner = () => {
+  const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState('analyzer');
 
   return (
@@ -81,6 +82,34 @@ const FoodScanner = () => {
               >
                 Analyze nutrition, discover recipes, and transform your cooking with AI magic ✨
               </motion.p>
+            </div>
+          </motion.div>
+
+          {/* Meal Feed CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mb-6"
+          >
+            <div 
+              onClick={() => navigate('/meal-feed')}
+              className="bg-gradient-to-r from-primary/10 via-purple-500/5 to-primary/10 border border-primary/20 rounded-xl p-4 cursor-pointer hover:border-primary/40 transition-all duration-300 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary/30 transition-colors">
+                    <UtensilsCrossed className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Meal Feed</h3>
+                    <p className="text-sm text-muted-foreground">See what your network is eating</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" className="group-hover:bg-primary/10">
+                  View Feed →
+                </Button>
+              </div>
             </div>
           </motion.div>
 
