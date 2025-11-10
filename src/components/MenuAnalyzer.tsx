@@ -101,13 +101,50 @@ export const MenuAnalyzer = () => {
   } = useSavedMenuItems();
 
   const handleImageCapture = async (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      setMenuImages(prev => [...prev, base64]);
-      setCurrentImageIndex(menuImages.length);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const imgUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1600; // downscale large photos to reduce payload
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const targetW = Math.round(img.width * scale);
+        const targetH = Math.round(img.height * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas not supported');
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        const base64 = canvas.toDataURL('image/jpeg', 0.82); // compress to JPEG
+        URL.revokeObjectURL(imgUrl);
+
+        setMenuImages(prev => [...prev, base64]);
+        setCurrentImageIndex(menuImages.length);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(imgUrl);
+        // fallback: read as-is
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          setMenuImages(prev => [...prev, base64]);
+          setCurrentImageIndex(menuImages.length);
+        };
+        reader.readAsDataURL(file);
+      };
+      img.src = imgUrl;
+    } catch (e) {
+      // final fallback
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setMenuImages(prev => [...prev, base64]);
+        setCurrentImageIndex(menuImages.length);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleRemoveImage = (index: number) => {

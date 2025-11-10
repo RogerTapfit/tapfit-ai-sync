@@ -205,8 +205,8 @@ Return 2-3 top recommendations as cards.`;
     } else {
       // Analysis mode - analyze the menu
       const analysisText = images.length > 1 
-        ? `Analyze these ${images.length} restaurant menu photos. They are parts of the same menu. Combine all items from all images into a single comprehensive analysis. Avoid duplicates - if the same item appears in multiple photos, list it once. Return the response in the specified JSON format.`
-        : 'Analyze this restaurant menu and extract all items with their details. Return the response in the specified JSON format.';
+        ? `Analyze these ${images.length} restaurant menu photos. They are parts of the same menu. Combine all items from all images into a single comprehensive analysis. Avoid duplicates - if the same item appears in multiple photos, list it once. Return the response in the specified JSON format. Keep JSON compact: no markdown or code fences. Limit descriptions to 12 words. Include calories and price if visible. Include macros only when explicitly listed; otherwise omit. Do not include null or unknown fields.`
+        : 'Analyze this restaurant menu and extract all items with their details. Return the response in the specified JSON format. Keep JSON compact: no markdown or code fences. Limit descriptions to 12 words. Include calories and price if visible. Include macros only when explicitly listed; otherwise omit. Do not include null or unknown fields.';
       
       messages.push({
         role: 'user',
@@ -229,7 +229,8 @@ Return 2-3 top recommendations as cards.`;
         model: 'gpt-4o',
         messages: messages,
         max_tokens: 5000,
-        temperature: 0.7
+        temperature: 0.7,
+        ...(mode !== 'chat' || isQuickAction ? { response_format: { type: 'json_object' } } : {})
       })
     });
 
