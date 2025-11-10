@@ -31,6 +31,12 @@ Deno.serve(async (req) => {
     
     // Support both single image and multiple images
     const images = Array.isArray(imageBase64) ? imageBase64 : [imageBase64];
+    
+    // Detect quick action prompts
+    const quickActionMatch = message?.toLowerCase().match(
+      /healthiest|lowest calorie|vegan|gluten-free|high protein|low sugar|best value/
+    );
+    const isQuickAction = quickActionMatch && mode === 'chat';
 
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY not configured');
@@ -141,13 +147,61 @@ QUICK ACTION RESPONSES:
     if (mode === 'chat') {
       // Chatbot mode - include conversation history
       messages.push(...conversationHistory);
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: message },
-          ...images.map(img => ({ type: 'image_url', image_url: { url: img } }))
-        ]
-      });
+      
+      if (isQuickAction) {
+        // Structured response for quick actions
+        const recommendationType = message.toLowerCase().includes('healthiest') ? 'Healthiest Options' :
+                                  message.toLowerCase().includes('lowest calorie') ? 'Lowest Calorie Options' :
+                                  message.toLowerCase().includes('vegan') ? 'Vegan Options' :
+                                  message.toLowerCase().includes('gluten-free') ? 'Gluten-Free Options' :
+                                  message.toLowerCase().includes('high protein') ? 'High Protein Options' :
+                                  message.toLowerCase().includes('low sugar') ? 'Low Sugar Options' :
+                                  message.toLowerCase().includes('best value') ? 'Best Value Options' : 'Recommendations';
+        
+        const structuredPrompt = `${message}
+
+IMPORTANT: Return a JSON response in this exact format:
+{
+  "type": "recommendation",
+  "recommendationType": "${recommendationType}",
+  "cards": [
+    {
+      "itemName": "Item Name",
+      "calories": 420,
+      "price": 11.99,
+      "reason": "Packed with 35g protein and fresh veggies for a balanced meal!",
+      "emoji": "💪",
+      "macros": { "protein": 35, "carbs": 25, "fat": 12 },
+      "dietaryTags": ["High-Protein"]
+    }
+  ]
+}
+
+REASON GUIDELINES:
+- Keep it exciting and motivational (15-20 words max)
+- Focus on benefits, not technical details
+- Use words like: packed, loaded, perfect, amazing, great, fuels, powers
+- Example: "Packed with 35g protein and fresh veggies for a balanced meal!"
+- NOT: "Here's why: - Preparation Method: Grilled..."
+
+Return 2-3 top recommendations as cards.`;
+
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: structuredPrompt },
+            ...images.map(img => ({ type: 'image_url', image_url: { url: img } }))
+          ]
+        });
+      } else {
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: message },
+            ...images.map(img => ({ type: 'image_url', image_url: { url: img } }))
+          ]
+        });
+      }
     } else {
       // Analysis mode - analyze the menu
       const analysisText = images.length > 1 
@@ -189,7 +243,37 @@ QUICK ACTION RESPONSES:
     const content = data.choices[0].message.content;
 
     if (mode === 'chat') {
-      // Return chat response
+      // Try to parse as structured recommendation
+      if (isQuickAction) {
+        try {
+          // Try direct parse
+          let structuredData = JSON.parse(content);
+          if (structuredData.type === 'recommendation') {
+            return new Response(
+              JSON.stringify(structuredData),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } catch {
+          // Try extracting from code blocks
+          try {
+            const codeBlockMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+            if (codeBlockMatch) {
+              const structuredData = JSON.parse(codeBlockMatch[1]);
+              if (structuredData.type === 'recommendation') {
+                return new Response(
+                  JSON.stringify(structuredData),
+                  { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse structured recommendation:', e);
+          }
+        }
+      }
+      
+      // Fall back to regular chat response
       return new Response(
         JSON.stringify({ response: content }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

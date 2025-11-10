@@ -40,14 +40,28 @@ interface ChatMessage {
   content: string;
 }
 
+interface RecommendationCard {
+  itemName: string;
+  calories?: number;
+  price?: number;
+  reason: string;
+  emoji?: string;
+  macros?: {
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  };
+  dietaryTags?: string[];
+}
+
 const QUICK_ACTIONS = [
-  { label: 'Healthiest option', icon: '🥗', prompt: 'What is the healthiest item on this menu? Consider calories, nutritional balance, and preparation method.' },
-  { label: 'Lowest calorie', icon: '🔥', prompt: 'Which menu item has the lowest calories? Show me the top 3 lowest calorie options.' },
-  { label: 'Vegan options', icon: '🥑', prompt: 'Show me all vegan or plant-based options on this menu.' },
-  { label: 'Gluten-free', icon: '🌾', prompt: 'Which items are gluten-free or can be made gluten-free?' },
-  { label: 'High protein', icon: '💪', prompt: 'What are the highest protein options? I\'m looking to maximize protein.' },
-  { label: 'Low sugar drinks', icon: '🥤', prompt: 'Show me all beverage options with low or no sugar.' },
-  { label: 'Best value', icon: '💰', prompt: 'Considering both health and price, what offers the best value?' },
+  { id: 'healthiest', label: 'Healthiest option', icon: '🥗', emoji: '💚', prompt: 'Show me the top 3 healthiest items on this menu.' },
+  { id: 'low-calorie', label: 'Lowest calorie', icon: '🔥', emoji: '🔥', prompt: 'What are the 3 lowest calorie options?' },
+  { id: 'vegan', label: 'Vegan options', icon: '🥑', emoji: '🌱', prompt: 'Show me all the vegan options available.' },
+  { id: 'gluten-free', label: 'Gluten-free', icon: '🌾', emoji: '✨', prompt: 'Which items are gluten-free?' },
+  { id: 'high-protein', label: 'High protein', icon: '💪', emoji: '💪', prompt: 'What are the highest protein items?' },
+  { id: 'low-sugar', label: 'Low sugar', icon: '🥤', emoji: '🎯', prompt: 'Show me low sugar options.' },
+  { id: 'best-value', label: 'Best value', icon: '💰', emoji: '💰', prompt: 'What items give the best value for money?' }
 ];
 
 export const MenuAnalyzer = () => {
@@ -58,6 +72,8 @@ export const MenuAnalyzer = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState<RecommendationCard[]>([]);
+  const [recommendationType, setRecommendationType] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'menu' | 'favorites'>('menu');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -148,8 +164,15 @@ export const MenuAnalyzer = () => {
 
       if (error) throw error;
 
-      const assistantMessage: ChatMessage = { role: 'assistant', content: data.response };
-      setChatMessages(prev => [...prev, assistantMessage]);
+      // Check if response is structured recommendation
+      if (data.type === 'recommendation') {
+        setRecommendations(data.cards || []);
+        setRecommendationType(data.recommendationType || 'Recommendations');
+      } else {
+        // Regular chat response
+        const assistantMessage: ChatMessage = { role: 'assistant', content: data.response };
+        setChatMessages(prev => [...prev, assistantMessage]);
+      }
       
       setTimeout(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -460,6 +483,80 @@ export const MenuAnalyzer = () => {
                     </Button>
                   ))}
                 </div>
+
+                {/* Recommendation Cards */}
+                {recommendations.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-muted-foreground">
+                        {recommendationType}
+                      </h3>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setRecommendations([])}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {recommendations.map((rec, idx) => (
+                        <Card key={idx} className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2 flex-1">
+                                <span className="text-2xl">{rec.emoji || '✨'}</span>
+                                <h4 className="text-base font-bold leading-tight">{rec.itemName}</h4>
+                              </div>
+                              <Button 
+                                size="icon" 
+                                variant="ghost"
+                                className="h-8 w-8 flex-shrink-0"
+                                onClick={() => handleSaveItem({
+                                  name: rec.itemName,
+                                  calories: rec.calories,
+                                  price: rec.price,
+                                  dietaryTags: rec.dietaryTags
+                                })}
+                              >
+                                <Heart className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            {rec.calories && (
+                              <Badge className="mb-3 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
+                                🔥 {rec.calories} cal
+                              </Badge>
+                            )}
+                            
+                            <p className="text-sm text-foreground/80 leading-relaxed mb-3 font-medium">
+                              {rec.reason}
+                            </p>
+                            
+                            <div className="flex flex-wrap gap-2">
+                              {rec.macros?.protein && (
+                                <Badge variant="outline" className="text-xs">
+                                  💪 {rec.macros.protein}g protein
+                                </Badge>
+                              )}
+                              {rec.price && (
+                                <Badge variant="outline" className="text-xs">
+                                  💰 ${rec.price.toFixed(2)}
+                                </Badge>
+                              )}
+                              {rec.dietaryTags?.map((tag, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Chat Messages */}
                 <ScrollArea className="h-[250px] border rounded-lg p-3 bg-muted/20">
