@@ -28,6 +28,9 @@ Deno.serve(async (req) => {
   try {
     const { imageBase64, mode = 'analyze', message, conversationHistory = [] } = await req.json();
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    
+    // Support both single image and multiple images
+    const images = Array.isArray(imageBase64) ? imageBase64 : [imageBase64];
 
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY not configured');
@@ -68,6 +71,12 @@ Factors:
 - Portion size (reasonable +10, excessive -10)
 - Macronutrient balance (balanced +15, imbalanced -10)
 - Added sugars/sodium (minimal +10, high -15)
+
+MULTI-IMAGE HANDLING:
+- When multiple images provided, they are parts of the same menu
+- Combine all items from all images into a single menuItems array
+- Avoid duplicates - if same item appears in multiple photos, list it once
+- Use the clearest image for extracting each item's details
 
 VALUE SCORE (when prices available):
 - Formula: (Health Score / Price) * 10
@@ -136,16 +145,20 @@ QUICK ACTION RESPONSES:
         role: 'user',
         content: [
           { type: 'text', text: message },
-          { type: 'image_url', image_url: { url: imageBase64 } }
+          ...images.map(img => ({ type: 'image_url', image_url: { url: img } }))
         ]
       });
     } else {
       // Analysis mode - analyze the menu
+      const analysisText = images.length > 1 
+        ? `Analyze these ${images.length} restaurant menu photos. They are parts of the same menu. Combine all items from all images into a single comprehensive analysis. Avoid duplicates - if the same item appears in multiple photos, list it once. Return the response in the specified JSON format.`
+        : 'Analyze this restaurant menu and extract all items with their details. Return the response in the specified JSON format.';
+      
       messages.push({
         role: 'user',
         content: [
-          { type: 'text', text: 'Analyze this restaurant menu and extract all items with their details. Return the response in the specified JSON format.' },
-          { type: 'image_url', image_url: { url: imageBase64 } }
+          { type: 'text', text: analysisText },
+          ...images.map(img => ({ type: 'image_url', image_url: { url: img } }))
         ]
       });
     }
@@ -182,33 +195,58 @@ QUICK ACTION RESPONSES:
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else {
-      // Parse and return menu analysis
+      // Parse and return menu analysis with multiple parsing strategies
+      let analysis;
+      
       try {
-        // Try to parse JSON from the response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const analysis = JSON.parse(jsonMatch[0]);
-          return new Response(
-            JSON.stringify(analysis),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        } else {
-          // If no JSON found, return a structured error
-          throw new Error('No valid JSON found in response');
+        // Strategy 1: Direct JSON parse
+        analysis = JSON.parse(content);
+      } catch {
+        try {
+          // Strategy 2: Extract from markdown code blocks
+          const codeBlockMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+          if (codeBlockMatch) {
+            analysis = JSON.parse(codeBlockMatch[1]);
+          } else {
+            // Strategy 3: Find JSON objects and try parsing each
+            const jsonMatches = content.match(/\{[\s\S]*?\}/g);
+            if (jsonMatches) {
+              // Try each match, starting from the last (most complete)
+              for (let i = jsonMatches.length - 1; i >= 0; i--) {
+                try {
+                  const parsed = JSON.parse(jsonMatches[i]);
+                  if (parsed.menuItems) {
+                    analysis = parsed;
+                    break;
+                  }
+                } catch {
+                  continue;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('All parsing strategies failed. Raw response:', content.substring(0, 500));
         }
-      } catch (parseError) {
-        console.error('Error parsing menu analysis:', parseError);
-        // Return a fallback structure
+      }
+
+      if (!analysis || !analysis.menuItems) {
+        console.error('Failed to extract menu analysis. Raw response:', content.substring(0, 500));
         return new Response(
           JSON.stringify({
             restaurantName: null,
             menuItems: [],
             recommendations: { healthiest: [], bestValue: [] },
-            insights: ['Unable to parse menu. Please try a clearer image.']
+            insights: ['Could not extract menu items from the analysis. The image may need better lighting or focus.']
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      return new Response(
+        JSON.stringify(analysis),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
   } catch (error) {

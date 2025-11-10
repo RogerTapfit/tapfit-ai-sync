@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +51,8 @@ const QUICK_ACTIONS = [
 ];
 
 export const MenuAnalyzer = () => {
-  const [menuImage, setMenuImage] = useState<string | null>(null);
+  const [menuImages, setMenuImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<MenuAnalysisResult | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -74,9 +75,17 @@ export const MenuAnalyzer = () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
-      setMenuImage(base64);
+      setMenuImages(prev => [...prev, base64]);
+      setCurrentImageIndex(menuImages.length);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setMenuImages(prev => prev.filter((_, i) => i !== index));
+    if (currentImageIndex >= menuImages.length - 1) {
+      setCurrentImageIndex(Math.max(0, menuImages.length - 2));
+    }
   };
 
   const handleCameraClick = () => {
@@ -96,13 +105,13 @@ export const MenuAnalyzer = () => {
   };
 
   const analyzeMenu = async () => {
-    if (!menuImage) return;
+    if (menuImages.length === 0) return;
 
     setAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke('analyzeMenu', {
         body: { 
-          imageBase64: menuImage,
+          imageBase64: menuImages.length === 1 ? menuImages[0] : menuImages,
           mode: 'analyze'
         }
       });
@@ -110,7 +119,7 @@ export const MenuAnalyzer = () => {
       if (error) throw error;
 
       setAnalysisResult(data);
-      toast.success('Menu analyzed successfully!');
+      toast.success(`Menu analyzed successfully! Found ${data.menuItems?.length || 0} items.`);
     } catch (error) {
       console.error('Error analyzing menu:', error);
       toast.error('Failed to analyze menu. Please try again.');
@@ -120,7 +129,7 @@ export const MenuAnalyzer = () => {
   };
 
   const sendChatMessage = async (message: string) => {
-    if (!menuImage || !message.trim()) return;
+    if (menuImages.length === 0 || !message.trim()) return;
 
     const userMessage: ChatMessage = { role: 'user', content: message };
     setChatMessages(prev => [...prev, userMessage]);
@@ -130,7 +139,7 @@ export const MenuAnalyzer = () => {
     try {
       const { data, error } = await supabase.functions.invoke('analyzeMenu', {
         body: { 
-          imageBase64: menuImage,
+          imageBase64: menuImages.length === 1 ? menuImages[0] : menuImages,
           mode: 'chat',
           message: message,
           conversationHistory: chatMessages
@@ -187,7 +196,7 @@ export const MenuAnalyzer = () => {
 
       <TabsContent value="menu" className="space-y-6">
         {/* Upload Section */}
-        {!menuImage && (
+        {menuImages.length === 0 && (
         <Card className="border-dashed border-2 bg-gradient-to-br from-card to-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -195,7 +204,7 @@ export const MenuAnalyzer = () => {
               Menu Scanner
             </CardTitle>
             <CardDescription>
-              Take a photo of any restaurant menu, menu board, or drive-thru display
+              Take photos of any restaurant menu, menu board, or drive-thru display
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -232,18 +241,73 @@ export const MenuAnalyzer = () => {
         </Card>
       )}
 
-      {/* Image Preview & Analysis */}
-      {menuImage && !analysisResult && (
+      {/* Image Gallery & Preview */}
+      {menuImages.length > 0 && !analysisResult && (
         <Card>
           <CardHeader>
-            <CardTitle>Menu Image</CardTitle>
+            <CardTitle>Menu Images ({menuImages.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <img 
-              src={menuImage} 
-              alt="Menu" 
-              className="w-full h-auto rounded-lg border"
-            />
+            {/* Main image display */}
+            <div className="relative">
+              <img 
+                src={menuImages[currentImageIndex]} 
+                alt={`Menu photo ${currentImageIndex + 1}`}
+                className="w-full h-auto rounded-lg border"
+              />
+              {menuImages.length > 1 && (
+                <>
+                  <div className="absolute bottom-3 right-3 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium">
+                    Photo {currentImageIndex + 1} of {menuImages.length}
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                    onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))}
+                    disabled={currentImageIndex === 0}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    onClick={() => setCurrentImageIndex(Math.min(menuImages.length - 1, currentImageIndex + 1))}
+                    disabled={currentImageIndex === menuImages.length - 1}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+            
+            {/* Thumbnail strip */}
+            {menuImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {menuImages.map((img, idx) => (
+                  <div key={idx} className="relative flex-shrink-0">
+                    <img 
+                      src={img} 
+                      alt={`Thumbnail ${idx + 1}`}
+                      className={`h-16 w-16 object-cover rounded cursor-pointer border-2 transition-all ${
+                        idx === currentImageIndex ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => setCurrentImageIndex(idx)}
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0"
+                      onClick={() => handleRemoveImage(idx)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="flex gap-3">
               <Button 
                 onClick={analyzeMenu} 
@@ -253,22 +317,32 @@ export const MenuAnalyzer = () => {
                 {analyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Analyzing Menu...
+                    Analyzing {menuImages.length > 1 ? `${menuImages.length} photos` : 'menu'}...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Analyze Menu
+                    Analyze {menuImages.length > 1 ? 'All Photos' : 'Menu'}
                   </>
                 )}
               </Button>
               <Button 
                 variant="outline" 
+                onClick={handleFileSelect}
+                disabled={analyzing}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Photo
+              </Button>
+              <Button 
+                variant="outline" 
                 onClick={() => {
-                  setMenuImage(null);
+                  setMenuImages([]);
+                  setCurrentImageIndex(0);
                   setAnalysisResult(null);
                   setChatMessages([]);
                 }}
+                disabled={analyzing}
               >
                 Reset
               </Button>
@@ -290,7 +364,8 @@ export const MenuAnalyzer = () => {
                     variant="ghost" 
                     size="sm"
                     onClick={() => {
-                      setMenuImage(null);
+                      setMenuImages([]);
+                      setCurrentImageIndex(0);
                       setAnalysisResult(null);
                       setChatMessages([]);
                     }}
@@ -469,28 +544,26 @@ export const MenuAnalyzer = () => {
       )}
       </TabsContent>
 
+      {/* Saved Favorites Tab */}
       <TabsContent value="favorites" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Saved Favorites
-            </CardTitle>
+            <CardTitle>Saved Menu Favorites</CardTitle>
             <CardDescription>
-              Quick reference to your favorite menu items from different restaurants
+              Your collection of favorite menu items from various restaurants
             </CardDescription>
           </CardHeader>
           <CardContent>
             {favoritesLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : savedItems.length === 0 ? (
               <div className="text-center py-12">
                 <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No saved items yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Scan a menu and save your favorites!
+                  Start scanning menus and save your favorites!
                 </p>
               </div>
             ) : (
@@ -503,15 +576,10 @@ export const MenuAnalyzer = () => {
                           <div className="flex-1">
                             <h3 className="font-semibold text-base">{item.item_name}</h3>
                             {item.restaurant_name && (
-                              <p className="text-sm text-primary font-medium">{item.restaurant_name}</p>
+                              <p className="text-sm text-muted-foreground">{item.restaurant_name}</p>
                             )}
                             {item.description && (
                               <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                            )}
-                            {item.notes && (
-                              <p className="text-sm italic text-muted-foreground mt-2 border-l-2 border-muted pl-2">
-                                "{item.notes}"
-                              </p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
@@ -536,7 +604,7 @@ export const MenuAnalyzer = () => {
                             <Badge variant="outline">🔥 {item.calories} cal</Badge>
                           )}
                           {item.price && (
-                            <Badge variant="outline">💰 ${Number(item.price).toFixed(2)}</Badge>
+                            <Badge variant="outline">💰 ${item.price.toFixed(2)}</Badge>
                           )}
                           {item.macros?.protein && (
                             <Badge variant="outline">💪 {item.macros.protein}g protein</Badge>
@@ -557,3 +625,5 @@ export const MenuAnalyzer = () => {
     </Tabs>
   );
 };
+
+export default MenuAnalyzer;
