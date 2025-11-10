@@ -2005,6 +2005,54 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_menu_items: {
+        Row: {
+          calories: number | null
+          created_at: string
+          description: string | null
+          dietary_tags: string[] | null
+          health_score: number | null
+          id: string
+          item_name: string
+          macros: Json | null
+          notes: string | null
+          price: number | null
+          restaurant_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calories?: number | null
+          created_at?: string
+          description?: string | null
+          dietary_tags?: string[] | null
+          health_score?: number | null
+          id?: string
+          item_name: string
+          macros?: Json | null
+          notes?: string | null
+          price?: number | null
+          restaurant_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calories?: number | null
+          created_at?: string
+          description?: string | null
+          dietary_tags?: string[] | null
+          health_score?: number | null
+          id?: string
+          item_name?: string
+          macros?: Json | null
+          notes?: string | null
+          price?: number | null
+          restaurant_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_workouts: {
         Row: {
           completed_at: string | null
