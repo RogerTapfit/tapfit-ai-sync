@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSavedMenuItems } from "@/hooks/useSavedMenuItems";
 
 interface MenuItem {
   name: string;
@@ -55,8 +57,18 @@ export const MenuAnalyzer = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'menu' | 'favorites'>('menu');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  const { 
+    savedItems, 
+    loading: favoritesLoading,
+    savingItemId,
+    isItemSaved, 
+    saveMenuItem, 
+    deleteSavedMenuItem 
+  } = useSavedMenuItems();
 
   const handleImageCapture = async (file: File) => {
     const reader = new FileReader();
@@ -152,10 +164,30 @@ export const MenuAnalyzer = () => {
     return 'bg-orange-500 text-white';
   };
 
+  const handleSaveItem = async (item: MenuItem) => {
+    await saveMenuItem(
+      item,
+      analysisResult?.restaurantName,
+      undefined
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Upload Section */}
-      {!menuImage && (
+    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'menu' | 'favorites')} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="menu" className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4" />
+          Menu Scanner
+        </TabsTrigger>
+        <TabsTrigger value="favorites" className="flex items-center gap-2">
+          <BookOpen className="h-4 w-4" />
+          Saved Favorites ({savedItems.length})
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="menu" className="space-y-6">
+        {/* Upload Section */}
+        {!menuImage && (
         <Card className="border-dashed border-2 bg-gradient-to-br from-card to-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -276,18 +308,29 @@ export const MenuAnalyzer = () => {
                     {analysisResult.menuItems.map((item, idx) => (
                       <Card key={idx} className="border-l-4 border-l-primary/50">
                         <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex justify-between items-start gap-3 mb-2">
                             <div className="flex-1">
                               <h3 className="font-semibold text-base">{item.name}</h3>
                               {item.description && (
                                 <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                               )}
                             </div>
-                            {item.healthScore && (
-                              <Badge className={getHealthScoreColor(item.healthScore)}>
-                                {item.healthScore}/100
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {item.healthScore && (
+                                <Badge className={getHealthScoreColor(item.healthScore)}>
+                                  {item.healthScore}/100
+                                </Badge>
+                              )}
+                              <Button
+                                size="icon"
+                                variant={isItemSaved(item.name, analysisResult?.restaurantName) ? "default" : "ghost"}
+                                onClick={() => handleSaveItem(item)}
+                                disabled={savingItemId === item.name || isItemSaved(item.name, analysisResult?.restaurantName)}
+                                className="h-8 w-8"
+                              >
+                                <Heart className={`h-4 w-4 ${isItemSaved(item.name, analysisResult?.restaurantName) ? 'fill-current' : ''}`} />
+                              </Button>
+                            </div>
                           </div>
                           
                           <div className="flex flex-wrap gap-2 mt-3">
@@ -424,6 +467,93 @@ export const MenuAnalyzer = () => {
           </div>
         </div>
       )}
-    </div>
+      </TabsContent>
+
+      <TabsContent value="favorites" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Saved Favorites
+            </CardTitle>
+            <CardDescription>
+              Quick reference to your favorite menu items from different restaurants
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {favoritesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : savedItems.length === 0 ? (
+              <div className="text-center py-12">
+                <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No saved items yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Scan a menu and save your favorites!
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-3">
+                  {savedItems.map((item) => (
+                    <Card key={item.id} className="border-l-4 border-l-primary/50">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start gap-3 mb-2">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base">{item.item_name}</h3>
+                            {item.restaurant_name && (
+                              <p className="text-sm text-primary font-medium">{item.restaurant_name}</p>
+                            )}
+                            {item.description && (
+                              <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
+                            )}
+                            {item.notes && (
+                              <p className="text-sm italic text-muted-foreground mt-2 border-l-2 border-muted pl-2">
+                                "{item.notes}"
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {item.health_score && (
+                              <Badge className={getHealthScoreColor(item.health_score)}>
+                                {item.health_score}/100
+                              </Badge>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => deleteSavedMenuItem(item.id)}
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {item.calories && (
+                            <Badge variant="outline">🔥 {item.calories} cal</Badge>
+                          )}
+                          {item.price && (
+                            <Badge variant="outline">💰 ${Number(item.price).toFixed(2)}</Badge>
+                          )}
+                          {item.macros?.protein && (
+                            <Badge variant="outline">💪 {item.macros.protein}g protein</Badge>
+                          )}
+                          {item.dietary_tags?.map((tag, i) => (
+                            <Badge key={i} variant="secondary">{tag}</Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 };
