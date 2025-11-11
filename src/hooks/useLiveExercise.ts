@@ -52,6 +52,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [misalignedJoints, setMisalignedJoints] = useState<number[]>([]);
   const [isRepFlashing, setIsRepFlashing] = useState(false);
   
+  // Recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  
   // Debug states for angle tracking
   const [currentElbowAngle, setCurrentElbowAngle] = useState<number>(0);
   
@@ -919,15 +924,91 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     }
   }, [stopCamera, onComplete, reps, currentSet, duration, clearQueue]);
 
+  // Start recording
+  const startRecording = useCallback(() => {
+    if (!streamRef.current) {
+      toast.error('Camera not available for recording');
+      return;
+    }
+
+    try {
+      const options = { mimeType: 'video/webm;codecs=vp9' };
+      let mediaRecorder: MediaRecorder;
+      
+      // Try VP9 first, fall back to VP8, then default
+      try {
+        mediaRecorder = new MediaRecorder(streamRef.current, options);
+      } catch (e) {
+        try {
+          mediaRecorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm;codecs=vp8' });
+        } catch (e2) {
+          mediaRecorder = new MediaRecorder(streamRef.current);
+        }
+      }
+
+      const chunks: Blob[] = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        setRecordedChunks(chunks);
+      };
+
+      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      toast.success('Recording started!');
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      toast.error('Failed to start recording');
+    }
+  }, []);
+
+  // Stop recording
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+      setIsRecording(false);
+      toast.success('Recording stopped!');
+    }
+  }, [isRecording]);
+
+  // Download recorded video
+  const downloadRecording = useCallback(() => {
+    if (recordedChunks.length === 0) {
+      toast.error('No recording available');
+      return;
+    }
+
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `workout-${new Date().toISOString()}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Recording downloaded!');
+  }, [recordedChunks]);
+
   // Cleanup
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop();
+      }
       stopCamera();
     };
-  }, [stopCamera]);
+  }, [stopCamera, isRecording]);
 
   return {
     videoRef,
@@ -969,6 +1050,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     isSpeaking,
     isVoiceEnabled,
     toggleVoice,
+    isRecording,
+    recordedChunks,
+    startRecording,
+    stopRecording,
+    downloadRecording,
     updateRestDuration,
     skipRest,
     completeWorkout,

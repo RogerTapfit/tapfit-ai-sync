@@ -30,12 +30,17 @@ import {
   Target,
   Volume2,
   VolumeX,
-  FlipHorizontal
+  FlipHorizontal,
+  Video,
+  StopCircle,
+  Download,
+  Share2
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 import { toast } from 'sonner';
+import { shareVideo, saveVideoLocally } from '@/utils/shareVideo';
 
 const EXERCISES = [
   { id: 'pushups' as ExerciseType, name: 'Push-ups', icon: '💪', coins: 10 },
@@ -144,6 +149,11 @@ export function LiveExerciseTracker({
     isSpeaking,
     isVoiceEnabled,
     toggleVoice,
+    isRecording,
+    recordedChunks,
+    startRecording,
+    stopRecording,
+    downloadRecording,
     updateRestDuration,
     skipRest,
     completeWorkout,
@@ -765,6 +775,29 @@ export function LiveExerciseTracker({
           
           {/* Camera Controls */}
           <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto z-20">
+            {/* Recording Button */}
+            {!isRecording ? (
+              <Button
+                onClick={startRecording}
+                size="icon"
+                variant="secondary"
+                className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                title="Start Recording"
+              >
+                <Video className="w-4 h-4 text-white" />
+              </Button>
+            ) : (
+              <Button
+                onClick={stopRecording}
+                size="icon"
+                variant="secondary"
+                className="rounded-full w-10 h-10 bg-red-500/80 hover:bg-red-600/80 backdrop-blur-sm border border-red-400/50 animate-pulse"
+                title="Stop Recording"
+              >
+                <StopCircle className="w-4 h-4 text-white" />
+              </Button>
+            )}
+            
             <Button
               onClick={switchCamera}
               size="icon"
@@ -815,6 +848,16 @@ export function LiveExerciseTracker({
               {isVoiceEnabled ? <Volume2 className="w-4 h-4 text-white" /> : <VolumeX className="w-4 h-4 text-white" />}
             </Button>
           </div>
+
+          {/* Recording Indicator */}
+          {isRecording && (
+            <div className="absolute top-4 left-4 z-20 pointer-events-none">
+              <Badge className="bg-red-500/90 text-white backdrop-blur-sm px-3 py-1.5 text-sm animate-pulse">
+                <div className="w-3 h-3 bg-white rounded-full mr-2 inline-block" />
+                Recording
+              </Badge>
+            </div>
+          )}
 
           {/* Guide Info Banner */}
           {showIdealPose && (
@@ -1057,6 +1100,41 @@ export function LiveExerciseTracker({
           End Workout
         </Button>
       </div>
+      
+      {/* Recorded Video Options */}
+      {recordedChunks.length > 0 && !isRecording && (
+        <Card className="p-6 bg-gradient-to-br from-primary/10 to-background border-primary/20">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/20 rounded-full">
+              <Video className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">Workout Recorded!</h3>
+              <p className="text-sm text-muted-foreground">
+                Save your workout video or share it with friends
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <Button 
+              onClick={() => saveVideoLocally(recordedChunks)}
+              variant="default"
+              className="flex-1"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Save Locally
+            </Button>
+            <Button 
+              onClick={() => shareVideo(recordedChunks)}
+              variant="secondary"
+              className="flex-1"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
