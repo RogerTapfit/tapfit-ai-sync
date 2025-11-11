@@ -718,6 +718,19 @@ const WorkoutList = () => {
             : 'Scan Machine'
           }
         </Button>
+        
+        {/* Pose Detection Test Button - Only in custom mode */}
+        {workoutMode === 'custom' && (
+          <Button 
+            onClick={() => navigate('/live-workout')}
+            variant="outline"
+            className="w-full border-primary/30 hover:border-primary/60 hover:bg-primary/10"
+            size="lg"
+          >
+            <Smartphone className="h-5 w-5 mr-2" />
+            Test AI Pose Detection
+          </Button>
+        )}
       </div>
       <Card className="glow-card p-6 border-l-4 border-l-primary/50">
         <div className="flex items-center justify-between mb-4">
