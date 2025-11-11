@@ -15,6 +15,7 @@ export const useWorkoutAudio = () => {
   const audioContext = useRef<AudioContext | null>(null);
   const currentSource = useRef<AudioBufferSourceNode | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<ElevenLabsVoice>('Aria');
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Load voice preference from localStorage
   useEffect(() => {
@@ -72,6 +73,7 @@ export const useWorkoutAudio = () => {
     while (audioQueue.current.length > 0) {
       const item = audioQueue.current.shift()!;
       isPlaying.current = true;
+      setIsSpeaking(true);
 
       try {
         const { data, error } = await supabase.functions.invoke('text-to-speech', {
@@ -97,6 +99,7 @@ export const useWorkoutAudio = () => {
     }
 
     isProcessing.current = false;
+    setIsSpeaking(false);
   }, [playAudio, selectedVoice]);
 
   const speak = useCallback((text: string, priority: 'high' | 'normal' = 'normal') => {
@@ -137,5 +140,6 @@ export const useWorkoutAudio = () => {
     clearQueue,
     selectedVoice,
     changeVoice,
+    isSpeaking,
   };
 };

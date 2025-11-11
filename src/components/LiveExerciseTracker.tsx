@@ -137,6 +137,7 @@ export function LiveExerciseTracker({
     currentSet,
     currentElbowAngle,
     isRepFlashing,
+    isSpeaking,
     updateRestDuration,
     skipRest,
     completeWorkout,
@@ -159,6 +160,7 @@ export function LiveExerciseTracker({
     isSupported: isVoiceSupported,
     toggleListening: toggleVoiceCommands
   } = useVoiceCommands({
+    isTTSSpeaking: isSpeaking,
     onStart: () => {
       if (!isActive && isInitialized) {
         start();

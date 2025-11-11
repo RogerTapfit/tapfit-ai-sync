@@ -8,6 +8,10 @@ interface VoiceCommandCallbacks {
   onStop?: () => void;
 }
 
+interface VoiceCommandsOptions extends VoiceCommandCallbacks {
+  isTTSSpeaking?: boolean;
+}
+
 interface VoiceCommand {
   patterns: string[];
   action: keyof VoiceCommandCallbacks;
@@ -37,7 +41,7 @@ const COMMANDS: VoiceCommand[] = [
   }
 ];
 
-export const useVoiceCommands = (callbacks: VoiceCommandCallbacks) => {
+export const useVoiceCommands = (options: VoiceCommandsOptions) => {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [lastCommand, setLastCommand] = useState<string>('');
@@ -66,18 +70,25 @@ export const useVoiceCommands = (callbacks: VoiceCommandCallbacks) => {
 
   const processTranscript = useCallback((transcript: string) => {
     console.log('Voice command heard:', transcript);
+    
+    // Ignore commands while TTS is speaking to prevent feedback loop
+    if (options.isTTSSpeaking) {
+      console.log('Ignoring voice command - TTS is speaking');
+      return;
+    }
+    
     const command = matchCommand(transcript);
     
     if (command) {
       setLastCommand(transcript);
-      const callback = callbacks[command.action];
+      const callback = options[command.action];
       
-      if (callback) {
+      if (callback && typeof callback === 'function') {
         toast.success(`Voice command: "${transcript}"`, { duration: 2000 });
         callback();
       }
     }
-  }, [matchCommand, callbacks]);
+  }, [matchCommand, options]);
 
   const startListening = useCallback(() => {
     if (!isSupported) {
