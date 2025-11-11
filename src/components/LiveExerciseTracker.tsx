@@ -29,7 +29,8 @@ import {
   EyeOff,
   Target,
   Volume2,
-  VolumeX
+  VolumeX,
+  FlipHorizontal2
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -60,6 +61,11 @@ export function LiveExerciseTracker({
   const [showResults, setShowResults] = useState(false);
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
   const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
+  const [isMirrored, setIsMirrored] = useState(() => {
+    // Load mirror preference from localStorage, default to true (mirrored)
+    const saved = localStorage.getItem('videoMirrored');
+    return saved !== null ? saved === 'true' : true;
+  });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
@@ -100,6 +106,15 @@ export function LiveExerciseTracker({
     } catch (error) {
       console.error('Error saving workout:', error);
     }
+  };
+
+  // Toggle mirror view
+  const toggleMirror = () => {
+    setIsMirrored(prev => {
+      const newValue = !prev;
+      localStorage.setItem('videoMirrored', String(newValue));
+      return newValue;
+    });
   };
 
   const {
@@ -371,6 +386,7 @@ export function LiveExerciseTracker({
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
+                  style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
                   playsInline
                   muted
                   autoPlay
@@ -378,7 +394,7 @@ export function LiveExerciseTracker({
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ mixBlendMode: 'normal' }}
+                  style={{ mixBlendMode: 'normal', transform: isMirrored ? 'scaleX(-1)' : 'none' }}
                 />
                 
 
@@ -402,6 +418,20 @@ export function LiveExerciseTracker({
                     title={showIdealPose ? "Hide Guide" : "Show Guide"}
                   >
                     {showIdealPose ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
+                  </Button>
+                  
+                  {/* Mirror Toggle */}
+                  <Button
+                    onClick={() => {
+                      toggleMirror();
+                      toast.success(isMirrored ? 'Mirror view disabled' : 'Mirror view enabled', { duration: 2000 });
+                    }}
+                    size="icon"
+                    variant="secondary"
+                    className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                    title={isMirrored ? "Disable Mirror View" : "Enable Mirror View"}
+                  >
+                    <FlipHorizontal2 className={cn("w-5 h-5 text-white", isMirrored && "text-blue-400")} />
                   </Button>
                 </div>
 
@@ -682,7 +712,7 @@ export function LiveExerciseTracker({
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
-            style={{ transform: 'scaleX(-1)' }}
+            style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
             playsInline
             muted
             autoPlay
@@ -690,7 +720,7 @@ export function LiveExerciseTracker({
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{ mixBlendMode: 'normal', transform: 'scaleX(-1)' }}
+            style={{ mixBlendMode: 'normal', transform: isMirrored ? 'scaleX(-1)' : 'none' }}
           />
           
           {/* Phase Position Indicator */}
@@ -790,6 +820,20 @@ export function LiveExerciseTracker({
               title={isVoiceEnabled ? "Turn Off Coach Voice" : "Turn On Coach Voice"}
             >
               {isVoiceEnabled ? <Volume2 className="w-4 h-4 text-white" /> : <VolumeX className="w-4 h-4 text-white" />}
+            </Button>
+            
+            {/* Mirror Toggle */}
+            <Button
+              onClick={() => {
+                toggleMirror();
+                toast.success(isMirrored ? 'Mirror view disabled' : 'Mirror view enabled', { duration: 2000 });
+              }}
+              size="icon"
+              variant="secondary"
+              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+              title={isMirrored ? "Disable Mirror View" : "Enable Mirror View"}
+            >
+              <FlipHorizontal2 className={cn("w-4 h-4 text-white", isMirrored && "text-blue-400")} />
             </Button>
           </div>
 
