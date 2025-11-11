@@ -26,7 +26,8 @@ import {
   Gauge,
   Zap,
   Eye,
-  EyeOff
+  EyeOff,
+  Target
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -122,6 +123,8 @@ export function LiveExerciseTracker({
     showIdealPose,
     idealPoseLandmarks,
     toggleIdealPose,
+    alignmentScore,
+    misalignedJoints,
     start,
     pause,
     resume,
@@ -217,7 +220,7 @@ export function LiveExerciseTracker({
 
     // Draw real-time pose on top (foreground layer)
     if (landmarks.length > 0) {
-      drawPose(ctx, landmarks, canvas.width, canvas.height, formIssues);
+      drawPose(ctx, landmarks, canvas.width, canvas.height, formIssues, misalignedJoints);
     }
   }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks]);
 
@@ -669,11 +672,26 @@ export function LiveExerciseTracker({
           {/* Feedback Overlay */}
           <div className="absolute top-4 left-4 right-4 space-y-2 z-10">
             {/* Active Tracking Status */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className="text-sm px-3 py-1 bg-green-500/90 backdrop-blur-sm">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse mr-2" />
                 Rep Tracking Active
               </Badge>
+              
+              {/* Alignment Score */}
+              {showIdealPose && alignmentScore > 0 && (
+                <Badge 
+                  className={cn(
+                    "text-sm px-3 py-1 backdrop-blur-sm font-semibold",
+                    alignmentScore >= 80 && "bg-green-500/90 text-white",
+                    alignmentScore >= 60 && alignmentScore < 80 && "bg-yellow-500/90 text-white",
+                    alignmentScore < 60 && "bg-red-500/90 text-white"
+                  )}
+                >
+                  <Target className="w-3 h-3 mr-1" />
+                  {alignmentScore}% Aligned
+                </Badge>
+              )}
               
               {/* Voice Command Status */}
               {isVoiceActive && (

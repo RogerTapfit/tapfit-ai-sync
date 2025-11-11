@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { initializePoseVideo, detectPoseVideo, type Keypoint } from '@/features/bodyScan/ml/poseVideo';
+import {
+  initializePoseVideo,
+  detectPoseVideo,
+  calculateAlignment,
+  type Keypoint,
+  type AlignmentResult,
+} from "@/features/bodyScan/ml/poseVideo";
 import { detectExercise, type ExerciseType, type FormIssue } from '@/utils/exerciseDetection';
 import { idealPoseTemplates, type IdealPoseKeypoint } from '@/features/bodyScan/ml/idealPoseTemplates';
 import { toast } from 'sonner';
@@ -37,6 +43,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [lastRepDuration, setLastRepDuration] = useState<number>(0);
   const [showIdealPose, setShowIdealPose] = useState(true); // Enabled by default
   const [idealPoseLandmarks, setIdealPoseLandmarks] = useState<IdealPoseKeypoint[]>([]);
+  const [alignmentScore, setAlignmentScore] = useState<number>(0);
+  const [misalignedJoints, setMisalignedJoints] = useState<number[]>([]);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -229,6 +237,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         if (showIdealPose && detection.phase !== 'transition') {
           const idealPose = getIdealPoseForPhase(detection.phase);
           setIdealPoseLandmarks(idealPose);
+          
+          // Calculate alignment score
+          if (idealPose.length > 0) {
+            const alignment = calculateAlignment(result.landmarks, idealPose);
+            setAlignmentScore(alignment.score);
+            setMisalignedJoints(alignment.misalignedJoints);
+          }
         }
 
         // Track rep start time (beginning of down phase)
@@ -492,6 +507,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     showIdealPose,
     idealPoseLandmarks,
     toggleIdealPose,
+    alignmentScore,
+    misalignedJoints,
     start,
     pause,
     resume,

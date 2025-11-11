@@ -7,6 +7,11 @@ import {
 
 export type Keypoint = { x: number; y: number; z?: number; visibility?: number };
 
+export type AlignmentResult = {
+  score: number; // 0-100 percentage
+  misalignedJoints: number[]; // indices of joints that are off
+};
+
 let landmarker: PoseLandmarker | null = null;
 let initPromise: Promise<void> | null = null;
 
@@ -66,6 +71,50 @@ export async function detectPoseVideo(
     console.warn("detectPoseVideo failed", e);
     return { landmarks: [], worldLandmarks: [], ok: false };
   }
+}
+
+/**
+ * Calculate alignment score between user pose and ideal pose
+ * Returns a score (0-100) and list of misaligned joint indices
+ */
+export function calculateAlignment(
+  userLandmarks: Keypoint[],
+  idealLandmarks: Keypoint[],
+  threshold: number = 0.08 // Distance threshold for "aligned"
+): AlignmentResult {
+  if (userLandmarks.length < 33 || idealLandmarks.length < 33) {
+    return { score: 0, misalignedJoints: [] };
+  }
+
+  // Key joints to evaluate (focusing on major body parts, excluding face/hands)
+  const keyJoints = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28];
+  
+  let totalScore = 0;
+  const misaligned: number[] = [];
+
+  keyJoints.forEach(idx => {
+    const user = userLandmarks[idx];
+    const ideal = idealLandmarks[idx];
+    
+    if (!user || !ideal || (user.visibility || 0) < 0.5) return;
+    
+    // Calculate Euclidean distance (normalized coordinates)
+    const dx = user.x - ideal.x;
+    const dy = user.y - ideal.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Convert distance to score (closer = better)
+    const jointScore = Math.max(0, 1 - (distance / threshold));
+    totalScore += jointScore;
+    
+    // Mark as misaligned if distance exceeds threshold
+    if (distance > threshold) {
+      misaligned.push(idx);
+    }
+  });
+
+  const score = Math.round((totalScore / keyJoints.length) * 100);
+  return { score, misalignedJoints: misaligned };
 }
 
 /**
@@ -145,7 +194,8 @@ export function drawPose(
     landmarkIndices: number[];
     severity: 'error' | 'warning' | 'perfect';
     message: string;
-  }>
+  }>,
+  misalignedJoints?: number[]
 ): void {
   if (landmarks.length < 33) return;
 
@@ -235,13 +285,19 @@ export function drawPose(
     const x = point.x * width;
     const y = point.y * height;
     
-    // Determine color based on form issues
+    // Determine color based on form issues and alignment
     let outerColor = '#ff8800'; // Default orange
     let innerColor = '#ffffff';
     let glowColor = 'rgba(255, 136, 0, 0.5)';
     let radius = 8;
     
-    if (errorLandmarks.has(idx)) {
+    // Misaligned joints take priority over default styling
+    if (misalignedJoints?.includes(idx) && !errorLandmarks.has(idx) && !perfectLandmarks.has(idx)) {
+      outerColor = '#f59e0b'; // Amber for misalignment
+      innerColor = '#fef3c7';
+      glowColor = 'rgba(245, 158, 11, 0.7)';
+      radius = 11;
+    } else if (errorLandmarks.has(idx)) {
       // Red for errors - more prominent
       outerColor = '#ef4444';
       innerColor = '#ffc9c9';
