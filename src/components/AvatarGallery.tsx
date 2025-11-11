@@ -16,6 +16,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAvatar } from '@/lib/avatarState';
 import { toast } from '@/hooks/use-toast';
+import { useVoiceIntroduction } from '@/hooks/useVoiceIntroduction';
 
 type DBAvatar = {
   id: string;
@@ -23,10 +24,12 @@ type DBAvatar = {
   image_url: string;
   mini_image_url: string;
   accent_hex?: string;
+  gender?: string;
 };
 
 export const AvatarGallery: React.FC = () => {
   const { avatar: selected, selectAvatar, loading: avatarLoading } = useAvatar();
+  const { playIntroduction } = useVoiceIntroduction();
   const [avatars, setAvatars] = useState<DBAvatar[]>([]);
   const [loading, setLoading] = useState(true);
   const [accents, setAccents] = useState<Record<string, string>>({});
@@ -57,7 +60,7 @@ export const AvatarGallery: React.FC = () => {
     (async () => {
       const { data, error } = await supabase
         .from('avatars')
-        .select('id, name, image_url, mini_image_url, accent_hex')
+        .select('id, name, image_url, mini_image_url, accent_hex, gender')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
 
@@ -88,6 +91,13 @@ export const AvatarGallery: React.FC = () => {
       title: 'Avatar updated',
       description: `You selected ${selectedForConfirmation.name}.`,
     });
+    
+    // Play voice introduction (non-blocking)
+    playIntroduction(
+      selectedForConfirmation.name, 
+      selectedForConfirmation.gender || 'neutral'
+    );
+    
     setSelectedForConfirmation(null);
   };
 

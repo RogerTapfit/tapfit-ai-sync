@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice = 'Aria' } = await req.json();
+    const { text, voice, gender } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
@@ -26,11 +26,20 @@ serve(async (req) => {
     const voiceIds: Record<string, string> = {
       'Aria': '9BWtsMINqrJLrRacOk9x',
       'Roger': 'CwhRBWXzGAHq8TQ4Fs17',
+      'River': 'SAz9YHcvj6GT2YYXdXww',
       'Sarah': 'EXAVITQu4vr4xnSDxMaL',
       'Laura': 'FGY2WhTYpPnrIDTdsKH5',
     };
 
-    const voiceId = voiceIds[voice] || voiceIds['Aria'];
+    // Map gender to voice if provided
+    const genderVoiceMap: Record<string, string> = {
+      'female': 'Aria',
+      'male': 'Roger',
+      'neutral': 'River'
+    };
+
+    const selectedVoice = gender ? (genderVoiceMap[gender] || 'River') : (voice || 'Aria');
+    const voiceId = voiceIds[selectedVoice] || voiceIds['Aria'];
 
     console.log(`Generating speech for text: "${text}" with voice: ${voice}`);
 
