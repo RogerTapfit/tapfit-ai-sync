@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { initializePoseVideo, detectPoseVideo, type Keypoint } from '@/features/bodyScan/ml/poseVideo';
 import { detectExercise, type ExerciseType, type FormIssue } from '@/utils/exerciseDetection';
+import { idealPoseTemplates, type IdealPoseKeypoint } from '@/features/bodyScan/ml/idealPoseTemplates';
 import { toast } from 'sonner';
 import { useWorkoutAudio } from './useWorkoutAudio';
 
@@ -34,6 +35,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [poseConfidence, setPoseConfidence] = useState<number>(0);
   const [repSpeed, setRepSpeed] = useState<'too-fast' | 'too-slow' | 'perfect' | null>(null);
   const [lastRepDuration, setLastRepDuration] = useState<number>(0);
+  const [showIdealPose, setShowIdealPose] = useState(true); // Enabled by default
+  const [idealPoseLandmarks, setIdealPoseLandmarks] = useState<IdealPoseKeypoint[]>([]);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -66,6 +69,18 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     if (duration > range.max) return 'too-slow';
     return 'perfect';
   }, [exerciseType, getOptimalRepRange]);
+
+  // Get ideal pose template based on current phase
+  const getIdealPoseForPhase = useCallback((phase: 'up' | 'down'): IdealPoseKeypoint[] => {
+    if (!exerciseType) return [];
+    const template = idealPoseTemplates[exerciseType];
+    return template ? template[phase] : [];
+  }, [exerciseType]);
+
+  // Toggle ideal pose guide
+  const toggleIdealPose = useCallback(() => {
+    setShowIdealPose(prev => !prev);
+  }, []);
 
   // Calculate pose confidence from landmarks
   const calculatePoseConfidence = useCallback((landmarks: Keypoint[]): number => {
@@ -209,6 +224,12 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         setFeedback(detection.feedback);
         setFormIssues(detection.formIssues || []);
         formScoresRef.current.push(detection.formScore);
+
+        // Update ideal pose template based on phase
+        if (showIdealPose && detection.phase !== 'transition') {
+          const idealPose = getIdealPoseForPhase(detection.phase);
+          setIdealPoseLandmarks(idealPose);
+        }
 
         // Track rep start time (beginning of down phase)
         if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
@@ -391,10 +412,16 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     lastRepTimeRef.current = 0;
     lastAnnouncedRep.current = 0;
     
+    // Set initial ideal pose
+    if (showIdealPose) {
+      const initialPose = getIdealPoseForPhase('up');
+      setIdealPoseLandmarks(initialPose);
+    }
+    
     speak('Starting workout', 'high');
     animationFrameRef.current = requestAnimationFrame(processFrame);
     toast.success('Workout started! Get ready...');
-  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview]);
+  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview, showIdealPose, getIdealPoseForPhase]);
 
   // Pause workout
   const pause = useCallback(() => {
@@ -462,6 +489,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     poseConfidence,
     repSpeed,
     lastRepDuration,
+    showIdealPose,
+    idealPoseLandmarks,
+    toggleIdealPose,
     start,
     pause,
     resume,

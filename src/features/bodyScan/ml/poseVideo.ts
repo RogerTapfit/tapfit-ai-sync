@@ -69,6 +69,70 @@ export async function detectPoseVideo(
 }
 
 /**
+ * Draws the ideal pose guide (semi-transparent, background layer)
+ */
+export function drawIdealPose(
+  ctx: CanvasRenderingContext2D,
+  landmarks: Keypoint[],
+  width: number,
+  height: number
+): void {
+  if (!landmarks || landmarks.length === 0) return;
+
+  // Define connections between landmarks (same as MediaPipe Pose)
+  const connections = [
+    [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21],
+    [12, 14], [14, 16], [16, 18], [16, 20], [16, 22],
+    [11, 23], [12, 24], [23, 24],
+    [23, 25], [25, 27], [27, 29], [27, 31],
+    [24, 26], [26, 28], [28, 30], [28, 32],
+  ];
+
+  // Draw connections with a distinct style
+  ctx.strokeStyle = 'rgba(96, 165, 250, 0.35)'; // Light blue with transparency
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = 'rgba(96, 165, 250, 0.5)';
+
+  connections.forEach(([start, end]) => {
+    const startPoint = landmarks[start];
+    const endPoint = landmarks[end];
+    
+    if (startPoint && endPoint) {
+      ctx.beginPath();
+      ctx.moveTo(startPoint.x * width, startPoint.y * height);
+      ctx.lineTo(endPoint.x * width, endPoint.y * height);
+      ctx.stroke();
+    }
+  });
+
+  // Draw joints
+  ctx.shadowBlur = 10;
+  landmarks.forEach((landmark) => {
+    if (landmark) {
+      const x = landmark.x * width;
+      const y = landmark.y * height;
+      
+      // Outer glow
+      ctx.fillStyle = 'rgba(96, 165, 250, 0.3)';
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Inner circle
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  });
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
+}
+
+/**
  * Draws the detected pose skeleton on a canvas with form correction highlights
  */
 export function drawPose(

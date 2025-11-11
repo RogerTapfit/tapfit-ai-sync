@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useLiveExercise, type WorkoutStats } from '@/hooks/useLiveExercise';
 import { type ExerciseType } from '@/utils/exerciseDetection';
-import { drawPose } from '@/features/bodyScan/ml/poseVideo';
+import { drawPose, drawIdealPose } from '@/features/bodyScan/ml/poseVideo';
 import { cn } from '@/lib/utils';
 import {
   Play, 
@@ -24,7 +24,9 @@ import {
   Mic,
   MicOff,
   Gauge,
-  Zap
+  Zap,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -117,6 +119,9 @@ export function LiveExerciseTracker({
     poseConfidence,
     repSpeed,
     lastRepDuration,
+    showIdealPose,
+    idealPoseLandmarks,
+    toggleIdealPose,
     start,
     pause,
     resume,
@@ -196,14 +201,25 @@ export function LiveExerciseTracker({
 
   // Draw landmarks whenever they update
   useEffect(() => {
-    if (!canvasRef.current || landmarks.length === 0) return;
+    if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx || !canvas.width || !canvas.height) return;
 
-    drawPose(ctx, landmarks, canvas.width, canvas.height, formIssues);
-  }, [landmarks, formIssues]);
+    // Clear canvas first
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw ideal pose first (background layer)
+    if (showIdealPose && idealPoseLandmarks.length > 0) {
+      drawIdealPose(ctx, idealPoseLandmarks, canvas.width, canvas.height);
+    }
+
+    // Draw real-time pose on top (foreground layer)
+    if (landmarks.length > 0) {
+      drawPose(ctx, landmarks, canvas.width, canvas.height, formIssues);
+    }
+  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -388,7 +404,7 @@ export function LiveExerciseTracker({
                 </div>
 
                 {/* Flip Camera Button */}
-                <div className="absolute top-4 right-4 pointer-events-auto">
+                <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                   <Button
                     onClick={switchCamera}
                     size="icon"
@@ -397,7 +413,28 @@ export function LiveExerciseTracker({
                   >
                     <SwitchCamera className="w-5 h-5 text-white" />
                   </Button>
+                  
+                  {/* Ideal Pose Toggle */}
+                  <Button
+                    onClick={toggleIdealPose}
+                    size="icon"
+                    variant="secondary"
+                    className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                    title={showIdealPose ? "Hide Guide" : "Show Guide"}
+                  >
+                    {showIdealPose ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
+                  </Button>
                 </div>
+
+                {/* Guide Info Banner */}
+                {showIdealPose && (
+                  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                    <Badge className="bg-blue-500/90 text-white backdrop-blur-sm px-4 py-2 text-sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Match the blue guide pose
+                    </Badge>
+                  </div>
+                )}
               </div>
             </Card>
           )}
@@ -595,6 +632,39 @@ export function LiveExerciseTracker({
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{ mixBlendMode: 'normal' }}
           />
+          
+          {/* Camera Controls */}
+          <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto z-20">
+            <Button
+              onClick={switchCamera}
+              size="icon"
+              variant="secondary"
+              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+            >
+              <SwitchCamera className="w-4 h-4 text-white" />
+            </Button>
+            
+            {/* Ideal Pose Toggle */}
+            <Button
+              onClick={toggleIdealPose}
+              size="icon"
+              variant="secondary"
+              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+              title={showIdealPose ? "Hide Guide" : "Show Guide"}
+            >
+              {showIdealPose ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
+            </Button>
+          </div>
+
+          {/* Guide Info Banner */}
+          {showIdealPose && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+              <Badge className="bg-blue-500/90 text-white backdrop-blur-sm px-3 py-1.5 text-xs">
+                <Eye className="h-3 w-3 mr-1.5" />
+                Match the blue guide
+              </Badge>
+            </div>
+          )}
           
           {/* Feedback Overlay */}
           <div className="absolute top-4 left-4 right-4 space-y-2 z-10">
