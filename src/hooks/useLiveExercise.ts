@@ -612,10 +612,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
             const currentAngle = detection.avgElbowAngle;
             
-            // Angle-driven hysteresis: Count if back at up threshold AND either:
-            // 1. Bottom was achieved (within tolerance), OR
-            // 2. Total angle drop from baseline is significant (≥25°)
-            if (currentAngle >= upThresholdRef.current && confidence > 60) {
+            // Align with phase detection: Count when returning to up position (140°+)
+            // Require either bottom achieved OR significant movement to prevent false counts
+            if (currentAngle >= 140 && confidence > 60) {
               const totalDrop = upBaselineRef.current !== null 
                 ? upBaselineRef.current - minAngleInRepRef.current 
                 : 0;
