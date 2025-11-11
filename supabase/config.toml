@@ -79,3 +79,14 @@ memory = "auto"
 verify_jwt = false
 cpu = "auto"
 memory = "auto"
+
+[functions.elevenlabs-session]
+verify_jwt = false
+cpu = "auto"
+memory = "auto"
+
+[functions.adminUpsertAvatar]
+verify_jwt = true
+cpu = "auto"
+memory = "auto"
+

@@ -50,6 +50,8 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const { avatar } = useSelectedAvatar();
   const miniUrl = avatar?.mini_image_url;
   const avatarName = avatar?.name || 'FitBot';
+  const avatarId = avatar?.id;
+  const avatarGender = avatar?.gender;
 
   // Voice chat integration
   const {
@@ -109,7 +111,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
 
         // Wait for WebSocket connection to fully establish
         console.log("Connecting to voice chat...");
-        await connectVoice(avatarName);
+        await connectVoice(avatarName, avatarId);
         console.log("Voice connection established, starting microphone...");
 
         // Only start recording after connection is established
@@ -274,10 +276,22 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
               )}
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold">{avatarName}</CardTitle>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                {avatarName}
+                {avatarGender && (
+                  <span className="text-xs text-muted-foreground">
+                    {avatarGender === 'male' ? '♂' : avatarGender === 'female' ? '♀' : '⚪'}
+                  </span>
+                )}
+              </CardTitle>
               {voiceMode && (
                 <p className="text-xs text-muted-foreground">
-                  {voiceState.isConnected ? (voiceState.isRecording ? '🎤 Listening...' : '🔌 Connected') : '⏳ Connecting...'}
+                  {voiceState.isConnected ? (
+                    <>
+                      {voiceState.voiceName && `Voice: ${voiceState.voiceName} • `}
+                      {voiceState.isRecording ? '🎤 Listening...' : '🔌 Connected'}
+                    </>
+                  ) : '⏳ Connecting...'}
                 </p>
               )}
             </div>

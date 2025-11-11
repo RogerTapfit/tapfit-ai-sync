@@ -12,6 +12,7 @@ type AvatarRow = {
   mini_image_url: string;
   name?: string;
   accent_hex?: string;
+  gender?: string;
 };
 
 export function useAvatar() {
@@ -46,7 +47,7 @@ export function useAvatar() {
       // signed-in: join profiles -> avatars
       const { data, error } = await supabase
         .from('profiles')
-        .select('avatar_id, avatars:avatar_id(id, image_url, mini_image_url, name, accent_hex)')
+        .select('avatar_id, avatars:avatar_id(id, image_url, mini_image_url, name, accent_hex, gender)')
         .eq('id', user.id)
         .single();
 
@@ -61,7 +62,8 @@ export function useAvatar() {
           image_url: data.avatars.image_url,
           mini_image_url: data.avatars.mini_image_url,
           name: data.avatars.name,
-          accent_hex: (data.avatars as any).accent_hex
+          accent_hex: (data.avatars as any).accent_hex,
+          gender: (data.avatars as any).gender
         };
         setAvatar(dbAvatar);
         

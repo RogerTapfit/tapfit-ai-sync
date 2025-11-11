@@ -338,6 +338,7 @@ export type Database = {
       avatars: {
         Row: {
           accent_hex: string | null
+          gender: string | null
           id: string
           image_url: string
           is_active: boolean
@@ -347,6 +348,7 @@ export type Database = {
         }
         Insert: {
           accent_hex?: string | null
+          gender?: string | null
           id?: string
           image_url: string
           is_active?: boolean
@@ -356,6 +358,7 @@ export type Database = {
         }
         Update: {
           accent_hex?: string | null
+          gender?: string | null
           id?: string
           image_url?: string
           is_active?: boolean

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, ImagePlus, ShieldAlert } from 'lucide-react';
@@ -14,6 +14,7 @@ interface DBAvatar {
   image_url: string;
   mini_image_url: string;
   sort_order: number;
+  gender?: string;
 }
 
 interface Slot {
@@ -21,6 +22,7 @@ interface Slot {
   name?: string;
   image_url?: string;
   mini_image_url?: string;
+  gender?: string;
 }
 
 const MAX_SLOTS = 9;
@@ -66,13 +68,14 @@ export const AvatarDropInGrid: React.FC = () => {
   const [granting, setGranting] = useState(false);
   const [savingAll, setSavingAll] = useState(false);
   const [editingNames, setEditingNames] = useState(false);
+  const [editingGender, setEditingGender] = useState(false);
   const [savingIdx, setSavingIdx] = useState<number | null>(null);
 
   const fetchAvatars = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('avatars')
-      .select('id, name, image_url, mini_image_url, sort_order')
+      .select('id, name, image_url, mini_image_url, sort_order, gender')
       .order('sort_order', { ascending: true });
     if (error) {
       toast({ title: 'Failed to load avatars', description: error.message, variant: 'destructive' });
@@ -81,7 +84,7 @@ export const AvatarDropInGrid: React.FC = () => {
     }
     const filled: Slot[] = Array.from({ length: MAX_SLOTS }, () => ({}) );
     (data ?? []).slice(0, MAX_SLOTS).forEach((a, i) => {
-      filled[i] = { id: a.id, name: a.name, image_url: a.image_url, mini_image_url: a.mini_image_url };
+      filled[i] = { id: a.id, name: a.name, image_url: a.image_url, mini_image_url: a.mini_image_url, gender: a.gender };
     });
     setSlots(filled);
     setLoading(false);
@@ -165,6 +168,14 @@ export const AvatarDropInGrid: React.FC = () => {
     });
   }, []);
 
+  const handleGenderChange = useCallback((index: number, value: string) => {
+    setSlots(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], gender: value };
+      return next;
+    });
+  }, []);
+
   const handleSaveNameAt = useCallback(async (index: number) => {
     if (!isAdmin) return;
     const slot = slots[index];
@@ -173,16 +184,16 @@ export const AvatarDropInGrid: React.FC = () => {
     try {
       setSavingIdx(index);
       const { data, error } = await supabase.functions.invoke('adminUpsertAvatar', {
-        body: { id: slot.id, name, sort_order: index }
+        body: { id: slot.id, name, sort_order: index, gender: slot.gender }
       });
       if (error) throw error;
       const avatar: DBAvatar = data.avatar;
       setSlots(prev => {
         const next = [...prev];
-        next[index] = { ...next[index], name: avatar.name };
+        next[index] = { ...next[index], name: avatar.name, gender: avatar.gender };
         return next;
       });
-      toast({ title: 'Name saved', description: `${avatar.name}` });
+      toast({ title: 'Saved', description: `${avatar.name}` });
       await fetchAvatars();
     } catch (e: any) {
       toast({ title: 'Save failed', description: e?.message ?? String(e), variant: 'destructive' });
@@ -311,27 +322,53 @@ export const AvatarDropInGrid: React.FC = () => {
                         style={slot.name?.trim().toLowerCase() === 'reptile' ? { transform: 'scale(1.2)', transformOrigin: 'center' } : undefined}
                         loading="lazy"
                       />
-                      {editingNames && isAdmin ? (
-                        <div className="absolute top-2 right-2 w-2/3 max-w-[180px]">
-                          <Input
-                            value={slot.name ?? ''}
-                            placeholder={`Avatar ${i + 1}`}
-                            onChange={(e) => handleNameChange(i, e.target.value)}
-                            onBlur={() => handleSaveNameAt(i)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                (e.currentTarget as HTMLInputElement).blur();
-                              }
-                            }}
-                            disabled={savingIdx === i}
-                            className="h-8 text-xs"
-                          />
+                      {(editingNames || editingGender) && isAdmin ? (
+                        <div className="absolute top-2 right-2 w-2/3 max-w-[180px] space-y-1">
+                          {editingNames && (
+                            <Input
+                              value={slot.name ?? ''}
+                              placeholder={`Avatar ${i + 1}`}
+                              onChange={(e) => handleNameChange(i, e.target.value)}
+                              onBlur={() => handleSaveNameAt(i)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  (e.currentTarget as HTMLInputElement).blur();
+                                }
+                              }}
+                              disabled={savingIdx === i}
+                              className="h-8 text-xs"
+                            />
+                          )}
+                          {editingGender && (
+                            <Select
+                              value={slot.gender || 'neutral'}
+                              onValueChange={(value) => {
+                                handleGenderChange(i, value);
+                                handleSaveNameAt(i);
+                              }}
+                              disabled={savingIdx === i}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Gender" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                                <SelectItem value="neutral">Neutral</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                       ) : (
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-2 right-2 space-y-1">
                           {slot.name && (
                             <div className="text-xs text-foreground bg-background/90 px-2 py-1 rounded shadow-lg">
                               {slot.name}
+                            </div>
+                          )}
+                          {slot.gender && (
+                            <div className="text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded shadow-lg">
+                              {slot.gender === 'male' ? '♂' : slot.gender === 'female' ? '♀' : '⚪'}
                             </div>
                           )}
                         </div>
@@ -380,10 +417,13 @@ export const AvatarDropInGrid: React.FC = () => {
             {isAdmin && (
               <>
                 <Button variant="outline" onClick={() => setEditingNames(v => !v)}>
-                  {editingNames ? 'Done editing' : 'Edit names'}
+                  {editingNames ? 'Done editing names' : 'Edit names'}
+                </Button>
+                <Button variant="outline" onClick={() => setEditingGender(v => !v)}>
+                  {editingGender ? 'Done editing gender' : 'Edit gender'}
                 </Button>
                 <Button onClick={handleSaveAllNames} disabled={savingAll}>
-                  {savingAll ? 'Saving…' : 'Save all names'}
+                  {savingAll ? 'Saving…' : 'Save all'}
                 </Button>
               </>
             )}
