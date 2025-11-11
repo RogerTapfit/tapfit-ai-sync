@@ -702,6 +702,19 @@ export function LiveExerciseTracker({
             </Badge>
           </div>
           
+          {/* Debug Badge for Push-ups - Shows angle, baseline, and thresholds */}
+          {selectedExercise === 'pushups' && isActive && currentElbowAngle > 0 && (
+            <div className="absolute left-4 top-20 z-30 pointer-events-none">
+              <Badge className="text-xs px-3 py-2 backdrop-blur-md bg-black/70 border border-white/30 text-white font-mono space-y-0.5">
+                <div className="font-bold text-sm">Angle: {Math.round(currentElbowAngle)}°</div>
+                <div className="text-[10px] opacity-80 space-y-0.5">
+                  <div>State: {currentPhase.toUpperCase()}</div>
+                  <div>Confidence: {Math.round(poseConfidence)}%</div>
+                </div>
+              </Badge>
+            </div>
+          )}
+          
           {/* Animated Rep Counter - Right Side Display */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none z-20">
             <div className="flex flex-col items-center gap-2">

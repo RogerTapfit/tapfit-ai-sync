@@ -55,6 +55,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   // Debug states for angle tracking
   const [currentElbowAngle, setCurrentElbowAngle] = useState<number>(0);
   
+  // Adaptive baseline and hysteresis for robust push-up detection
+  const upBaselineRef = useRef<number | null>(null);
+  const downThresholdRef = useRef<number>(95);
+  const upThresholdRef = useRef<number>(145);
+  const minAngleInRepRef = useRef<number>(Infinity);
+  const bottomAchievedRef = useRef<boolean>(false);
+  
   // Velocity tracking states
   const [concentricVelocity, setConcentricVelocity] = useState<number>(0); // Time for up phase (ms)
   const [eccentricVelocity, setEccentricVelocity] = useState<number>(0); // Time for down phase (ms)
@@ -495,21 +502,54 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         setFormIssues(detection.formIssues || []);
         formScoresRef.current.push(detection.formScore);
         
-        // Update elbow angle for pushups
+        // Update elbow angle for pushups with adaptive baseline learning
         if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
-          setCurrentElbowAngle(detection.avgElbowAngle);
+          const currentAngle = detection.avgElbowAngle;
+          const now = Date.now(); // Declare here for use in debug logging
+          setCurrentElbowAngle(currentAngle);
           
           // Trigger haptic feedback when crossing angle thresholds
-          triggerAngleHaptic(detection.avgElbowAngle, detection.phase);
+          triggerAngleHaptic(currentAngle, detection.phase);
+          
+          // Learn baseline when in "up" position with good confidence
+          if (confidence > 60 && detection.phase === 'up') {
+            if (upBaselineRef.current === null) {
+              // Initialize baseline
+              upBaselineRef.current = currentAngle;
+            } else {
+              // Exponentially weighted moving average (EWMA) for stable baseline
+              upBaselineRef.current = 0.8 * upBaselineRef.current + 0.2 * currentAngle;
+            }
+            
+            // Compute dynamic thresholds from baseline
+            upThresholdRef.current = upBaselineRef.current - 5;
+            downThresholdRef.current = Math.max(95, upBaselineRef.current - 35);
+          }
+          
+          // Track minimum angle during non-up phases
+          if (detection.phase !== 'up') {
+            minAngleInRepRef.current = Math.min(minAngleInRepRef.current, currentAngle);
+          }
+          
+          // Check if bottom achieved (within tolerance)
+          const tolerance = 8; // 8° tolerance for "close enough"
+          if (currentAngle <= downThresholdRef.current + tolerance) {
+            bottomAchievedRef.current = true;
+          }
           
           // Debug logging for pushups
-          if (Date.now() - lastCoachingTimeRef.current > 2000) {
+          if (now - lastCoachingTimeRef.current > 2000) {
             console.log('[Pushup Debug]', {
-              angle: Math.round(detection.avgElbowAngle),
+              angle: Math.round(currentAngle),
+              baseline: upBaselineRef.current ? Math.round(upBaselineRef.current) : null,
+              upThreshold: Math.round(upThresholdRef.current),
+              downThreshold: Math.round(downThresholdRef.current),
+              minInRep: minAngleInRepRef.current === Infinity ? null : Math.round(minAngleInRepRef.current),
+              bottomAchieved: bottomAchievedRef.current,
               phase: detection.phase,
-              previousPhase: lastPhaseRef.current,
-              willCountRep: lastPhaseRef.current === 'down' && detection.phase === 'up'
+              confidence: Math.round(confidence)
             });
+            lastCoachingTimeRef.current = now;
           }
         }
 
@@ -565,8 +605,35 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           // Start timing up phase
           upPhaseStartRef.current = now;
           
-          // Debounce reps (minimum 400ms between reps) - reduced for faster response
-          if (now - lastRepTimeRef.current > 400) {
+          // For push-ups, use angle-based hysteresis counting; otherwise use traditional phase-based
+          let shouldCountRep = false;
+          
+          if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
+            const currentAngle = detection.avgElbowAngle;
+            
+            // Angle-driven hysteresis: Count if back at up threshold AND either:
+            // 1. Bottom was achieved (within tolerance), OR
+            // 2. Total angle drop from baseline is significant (≥25°)
+            if (currentAngle >= upThresholdRef.current && confidence > 60) {
+              const totalDrop = upBaselineRef.current !== null 
+                ? upBaselineRef.current - minAngleInRepRef.current 
+                : 0;
+              
+              if (bottomAchievedRef.current || (totalDrop >= 25 && minAngleInRepRef.current !== Infinity)) {
+                shouldCountRep = true;
+                
+                // Reset hysteresis state for next rep
+                bottomAchievedRef.current = false;
+                minAngleInRepRef.current = Infinity;
+              }
+            }
+          } else {
+            // Traditional phase-based counting for other exercises
+            shouldCountRep = true;
+          }
+          
+          // Debounce reps (minimum 350ms between reps) - responsive but stable
+          if (shouldCountRep && now - lastRepTimeRef.current > 350) {
             // Calculate rep duration (from start of down phase to end of up phase)
             const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
             
@@ -575,9 +642,6 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               const speed = analyzeRepSpeed(repDuration);
               setRepSpeed(speed);
               setLastRepDuration(repDuration);
-              
-              // Voice feedback for rep speed issues (removed - too distracting)
-              // Speed feedback is now visual only via badges
             }
             
             setReps(prev => {

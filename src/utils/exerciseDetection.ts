@@ -18,8 +18,36 @@ export interface ExerciseState {
   formIssues?: FormIssue[]; // Detailed visual feedback
 }
 
-// Calculate angle between three points
+// Calculate angle between three points (uses 3D when available for better accuracy)
 function calculateAngle(a: Keypoint, b: Keypoint, c: Keypoint): number {
+  // Check if we have 3D coordinates (z-axis)
+  const has3D = a.z !== undefined && b.z !== undefined && c.z !== undefined;
+  
+  if (has3D) {
+    // Use 3D vector math for more accurate angles (handles perspective distortion)
+    const bax = a.x - b.x;
+    const bay = a.y - b.y;
+    const baz = (a.z || 0) - (b.z || 0);
+    
+    const bcx = c.x - b.x;
+    const bcy = c.y - b.y;
+    const bcz = (c.z || 0) - (b.z || 0);
+    
+    // Dot product
+    const dot = bax * bcx + bay * bcy + baz * bcz;
+    
+    // Magnitudes
+    const magBA = Math.sqrt(bax * bax + bay * bay + baz * baz);
+    const magBC = Math.sqrt(bcx * bcx + bcy * bcy + bcz * bcz);
+    
+    if (magBA === 0 || magBC === 0) return 180;
+    
+    // Angle in radians
+    const cosAngle = Math.min(1, Math.max(-1, dot / (magBA * magBC)));
+    return Math.abs((Math.acos(cosAngle) * 180) / Math.PI);
+  }
+  
+  // Fallback to 2D calculation
   const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
   let angle = Math.abs(radians * 180.0 / Math.PI);
   if (angle > 180.0) angle = 360 - angle;
@@ -50,10 +78,30 @@ export function detectPushup(
   const leftHip = landmarks[23];
   const rightHip = landmarks[24];
 
-  // Calculate elbow angles
+  // Calculate elbow angles - use the better-visible arm for more reliable detection
+  const leftArmVisibility = (leftShoulder.visibility || 0) + (leftElbow.visibility || 0) + (leftWrist.visibility || 0);
+  const rightArmVisibility = (rightShoulder.visibility || 0) + (rightElbow.visibility || 0) + (rightWrist.visibility || 0);
+  
   const leftElbowAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
   const rightElbowAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
-  const avgElbowAngle = (leftElbowAngle + rightElbowAngle) / 2;
+  
+  // Use the better-visible arm, or average if both are reliable
+  let avgElbowAngle: number;
+  const minVisibility = 1.5; // Sum of 3 landmarks, each >= 0.5
+  
+  if (leftArmVisibility >= minVisibility && rightArmVisibility >= minVisibility) {
+    // Both arms visible - average them
+    avgElbowAngle = (leftElbowAngle + rightElbowAngle) / 2;
+  } else if (leftArmVisibility >= minVisibility) {
+    // Only left arm reliable
+    avgElbowAngle = leftElbowAngle;
+  } else if (rightArmVisibility >= minVisibility) {
+    // Only right arm reliable
+    avgElbowAngle = rightElbowAngle;
+  } else {
+    // Neither arm is reliable - use average as fallback
+    avgElbowAngle = (leftElbowAngle + rightElbowAngle) / 2;
+  }
 
   // Check body alignment (plank position)
   const shoulderMid = { x: (leftShoulder.x + rightShoulder.x) / 2, y: (leftShoulder.y + rightShoulder.y) / 2 };
