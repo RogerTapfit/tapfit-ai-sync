@@ -774,7 +774,15 @@ export function LiveExerciseTracker({
             
             {/* Coach Voice Toggle */}
             <Button
-              onClick={toggleVoice}
+              onClick={() => {
+                toggleVoice();
+                // Show feedback toast
+                if (isVoiceEnabled) {
+                  toast.info('Coach voice turned off', { duration: 2000 });
+                } else {
+                  toast.success('Coach voice turned on', { duration: 2000 });
+                }
+              }}
               size="icon"
               variant="secondary"
               className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"

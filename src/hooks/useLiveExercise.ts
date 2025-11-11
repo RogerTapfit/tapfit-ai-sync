@@ -98,6 +98,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const lastHapticAngleRef = useRef<number>(0);
   const autoStartTimerRef = useRef<number | null>(null);
   const readyPositionStartTimeRef = useRef<number | null>(null);
+  const prevVoiceEnabledRef = useRef<boolean>(false); // Track voice state for context-aware resume
   
   const { speak, clearQueue, isSpeaking, isVoiceEnabled, toggleVoice } = useWorkoutAudio();
 
@@ -737,6 +738,22 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       }
     }
   }, [reps, isActive, targetReps, speak]);
+
+  // Context-aware voice resume - announce current rep when voice is turned back on
+  useEffect(() => {
+    // Detect when voice is turned ON (false -> true)
+    if (isVoiceEnabled && !prevVoiceEnabledRef.current && isActive && reps > 0) {
+      // Announce current progress when voice is re-enabled
+      const progressPhrase = reps === targetReps 
+        ? `You've completed all ${targetReps} reps!`
+        : `You're at ${reps} out of ${targetReps} reps. Keep going!`;
+      
+      speak(progressPhrase, 'high');
+    }
+    
+    // Update previous state
+    prevVoiceEnabledRef.current = isVoiceEnabled;
+  }, [isVoiceEnabled, isActive, reps, targetReps, speak]);
 
   // Update duration timer
   useEffect(() => {
