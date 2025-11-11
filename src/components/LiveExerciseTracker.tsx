@@ -18,7 +18,9 @@ import {
   TrendingUp,
   Camera,
   ArrowLeft,
-  SwitchCamera
+  SwitchCamera,
+  AlertTriangle,
+  Lightbulb
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -107,6 +109,7 @@ export function LiveExerciseTracker({
     progress,
     facingMode,
     distanceStatus,
+    poseConfidence,
     start,
     pause,
     resume,
@@ -303,6 +306,44 @@ export function LiveExerciseTracker({
                     </div>
                   </div>
                 )}
+
+                {/* Pose Confidence Indicator */}
+                <div className="absolute bottom-4 left-4 pointer-events-none">
+                  <div className={cn(
+                    "px-4 py-2 rounded-lg backdrop-blur-md border-2 shadow-lg transition-all",
+                    poseConfidence >= 70 && "bg-green-500/20 border-green-400",
+                    poseConfidence >= 50 && poseConfidence < 70 && "bg-yellow-500/20 border-yellow-400",
+                    poseConfidence < 50 && "bg-red-500/20 border-red-400"
+                  )}>
+                    <div className="flex items-center gap-2">
+                      {poseConfidence < 70 && (
+                        <AlertTriangle className="w-4 h-4" />
+                      )}
+                      <span className={cn(
+                        "font-semibold text-sm",
+                        poseConfidence >= 70 && "text-green-400",
+                        poseConfidence >= 50 && poseConfidence < 70 && "text-yellow-400",
+                        poseConfidence < 50 && "text-red-400"
+                      )}>
+                        Tracking: {Math.round(poseConfidence)}%
+                      </span>
+                    </div>
+                    {poseConfidence < 70 && (
+                      <div className="mt-1 flex items-start gap-2 text-xs opacity-90">
+                        <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span className={cn(
+                          poseConfidence >= 50 && poseConfidence < 70 && "text-yellow-300",
+                          poseConfidence < 50 && "text-red-300"
+                        )}>
+                          {poseConfidence < 50 
+                            ? "Low tracking. Improve lighting or move to better position"
+                            : "Tracking ok. Consider better lighting for optimal results"
+                          }
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {/* Flip Camera Button */}
                 <div className="absolute top-4 right-4 pointer-events-auto">

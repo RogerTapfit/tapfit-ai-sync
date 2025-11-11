@@ -31,6 +31,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [isInitialized, setIsInitialized] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [distanceStatus, setDistanceStatus] = useState<'too-close' | 'too-far' | 'perfect' | null>(null);
+  const [poseConfidence, setPoseConfidence] = useState<number>(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -42,6 +43,26 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const lastAnnouncedRep = useRef<number>(0);
   
   const { speak, clearQueue } = useWorkoutAudio();
+
+  // Calculate pose confidence from landmarks
+  const calculatePoseConfidence = useCallback((landmarks: Keypoint[]): number => {
+    if (landmarks.length === 0) return 0;
+    
+    // Calculate average confidence from all landmarks
+    // Focus on key body landmarks (shoulders, hips, knees, elbows)
+    const keyLandmarkIndices = [11, 12, 13, 14, 23, 24, 25, 26]; // shoulders, elbows, hips, knees
+    let totalConfidence = 0;
+    let count = 0;
+    
+    keyLandmarkIndices.forEach(idx => {
+      if (landmarks[idx]) {
+        totalConfidence += landmarks[idx].visibility || 0;
+        count++;
+      }
+    });
+    
+    return count > 0 ? (totalConfidence / count) * 100 : 0;
+  }, []);
 
   // Calculate distance status based on pose size
   const calculateDistanceStatus = useCallback((landmarks: Keypoint[]): 'too-close' | 'too-far' | 'perfect' => {
@@ -129,6 +150,10 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     
     if (result.ok && result.landmarks.length > 0) {
       setLandmarks(result.landmarks);
+      
+      // Calculate and update pose confidence
+      const confidence = calculatePoseConfidence(result.landmarks);
+      setPoseConfidence(confidence);
 
       // Preview mode: only show landmarks and distance feedback
       if (isPreviewMode) {
@@ -375,6 +400,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     progress: (reps / targetReps) * 100,
     facingMode,
     distanceStatus,
+    poseConfidence,
     start,
     pause,
     resume,
