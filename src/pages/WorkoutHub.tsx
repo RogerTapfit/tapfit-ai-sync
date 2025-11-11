@@ -632,6 +632,14 @@ const WorkoutHub = () => {
             <Activity className="h-4 w-4 mr-2" />
             Start Today's Workout Plan
           </Button>
+          <Button 
+            onClick={() => navigate('/live-workout')}
+            variant="outline"
+            className="w-full h-12 border-primary/30 hover:border-primary/60 hover:bg-primary/10"
+          >
+            <Smartphone className="h-4 w-4 mr-2" />
+            AI Live Exercise Tracker
+          </Button>
           <p className="text-sm text-muted-foreground text-center">
             Jump into your scheduled workout or explore individual exercises below
           </p>

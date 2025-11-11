@@ -41,6 +41,7 @@ import SwimActive from "./pages/SwimActive";
 import SwimHistory from "./pages/SwimHistory";
 import SwimSummary from "./pages/SwimSummary";
 import PRLeaderboard from "./pages/PRLeaderboard";
+import LiveWorkout from "./pages/LiveWorkout";
 import Social from "./pages/Social";
 import UserProfile from "./pages/UserProfile";
 import ProfileCustomization from "./pages/ProfileCustomization";
@@ -235,6 +236,7 @@ const App = () => {
             <Route path="/meal-feed" element={<AuthGuard fallback={<Auth />}><MealFeed /></AuthGuard>} />
             <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
             <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
+            <Route path="/live-workout" element={<AuthGuard fallback={<Auth />}><LiveWorkout /></AuthGuard>} />
             <Route path="/shared/:type/:token" element={<SharedMenuItem />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
