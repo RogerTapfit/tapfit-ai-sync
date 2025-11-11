@@ -50,6 +50,16 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       });
   }, []);
 
+  // Ensure video element always has the stream attached
+  useEffect(() => {
+    if (videoRef.current && streamRef.current && !videoRef.current.srcObject) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(err => {
+        console.error('Error playing video:', err);
+      });
+    }
+  }, [isActive, isPreviewMode]);
+
   // Start camera
   const startCamera = useCallback(async () => {
     try {
