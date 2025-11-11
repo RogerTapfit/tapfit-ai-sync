@@ -35,7 +35,7 @@ function distance(a: Keypoint, b: Keypoint): number {
 export function detectPushup(
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[]; avgElbowAngle: number } {
   const feedback: string[] = [];
   const formIssues: FormIssue[] = [];
   let formScore = 100;
@@ -91,12 +91,12 @@ export function detectPushup(
     }
   }
 
-  // Determine phase based on elbow angle
+  // Determine phase based on elbow angle (more lenient thresholds)
   let phase: 'up' | 'down' | 'transition' = previousPhase;
   
-  if (avgElbowAngle < 90) {
+  if (avgElbowAngle < 105) {
     phase = 'down';
-  } else if (avgElbowAngle > 160) {
+  } else if (avgElbowAngle > 150) {
     phase = 'up';
   } else {
     phase = 'transition';
@@ -146,7 +146,7 @@ export function detectPushup(
     feedback.push("Good form");
   }
 
-  return { phase, formScore: Math.max(0, formScore), feedback, formIssues };
+  return { phase, formScore: Math.max(0, formScore), feedback, formIssues, avgElbowAngle };
 }
 
 // Squat detection
@@ -405,7 +405,7 @@ export function detectExercise(
   exerciseType: ExerciseType,
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[]; avgElbowAngle?: number } {
   switch (exerciseType) {
     case 'pushups':
       return detectPushup(landmarks, previousPhase);

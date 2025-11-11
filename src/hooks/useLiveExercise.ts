@@ -48,6 +48,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [alignmentScore, setAlignmentScore] = useState<number>(0);
   const [misalignedJoints, setMisalignedJoints] = useState<number[]>([]);
   
+  // Debug states for angle tracking
+  const [currentElbowAngle, setCurrentElbowAngle] = useState<number>(0);
+  
   // Velocity tracking states
   const [concentricVelocity, setConcentricVelocity] = useState<number>(0); // Time for up phase (ms)
   const [eccentricVelocity, setEccentricVelocity] = useState<number>(0); // Time for down phase (ms)
@@ -404,6 +407,21 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         setFeedback(detection.feedback);
         setFormIssues(detection.formIssues || []);
         formScoresRef.current.push(detection.formScore);
+        
+        // Update elbow angle for pushups
+        if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
+          setCurrentElbowAngle(detection.avgElbowAngle);
+          
+          // Debug logging for pushups
+          if (Date.now() - lastCoachingTimeRef.current > 2000) {
+            console.log('[Pushup Debug]', {
+              angle: Math.round(detection.avgElbowAngle),
+              phase: detection.phase,
+              previousPhase: lastPhaseRef.current,
+              willCountRep: lastPhaseRef.current === 'down' && detection.phase === 'up'
+            });
+          }
+        }
 
         // Update ideal pose template based on phase - start animation on phase change
         if (showIdealPose && detection.phase !== 'transition') {
@@ -779,6 +797,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     restTimer,
     restDuration,
     currentSet,
+    currentElbowAngle,
     updateRestDuration,
     skipRest,
     completeWorkout,

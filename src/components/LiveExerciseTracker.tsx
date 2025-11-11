@@ -133,6 +133,7 @@ export function LiveExerciseTracker({
     restTimer,
     restDuration,
     currentSet,
+    currentElbowAngle,
     updateRestDuration,
     skipRest,
     completeWorkout,
@@ -630,6 +631,63 @@ export function LiveExerciseTracker({
           </div>
         </Card>
       </div>
+
+      {/* Angle Feedback for Pushups */}
+      {selectedExercise === 'pushups' && isActive && (
+        <Card className="p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                <span className="font-semibold">Elbow Angle</span>
+              </div>
+              <div className={cn(
+                "text-2xl font-bold tabular-nums",
+                currentElbowAngle > 0 && currentElbowAngle < 105 && "text-green-500",
+                currentElbowAngle >= 105 && currentElbowAngle < 115 && "text-yellow-500",
+                currentElbowAngle >= 150 && "text-green-500",
+                currentElbowAngle >= 140 && currentElbowAngle < 150 && "text-yellow-500"
+              )}>
+                {currentElbowAngle > 0 ? `${Math.round(currentElbowAngle)}°` : '--'}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className={cn(
+                "p-2 rounded border-2 transition-all",
+                currentElbowAngle > 0 && currentElbowAngle < 105 ? "bg-green-500/20 border-green-500" :
+                currentElbowAngle >= 105 && currentElbowAngle < 115 ? "bg-yellow-500/20 border-yellow-400" :
+                "bg-muted border-muted"
+              )}>
+                <div className="font-semibold">Down Position</div>
+                <div className="text-muted-foreground">Target: &lt;105°</div>
+              </div>
+              
+              <div className={cn(
+                "p-2 rounded border-2 transition-all",
+                currentElbowAngle >= 150 ? "bg-green-500/20 border-green-500" :
+                currentElbowAngle >= 140 && currentElbowAngle < 150 ? "bg-yellow-500/20 border-yellow-400" :
+                "bg-muted border-muted"
+              )}>
+                <div className="font-semibold">Up Position</div>
+                <div className="text-muted-foreground">Target: &gt;150°</div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
+              <span>
+                {currentElbowAngle > 0 && currentElbowAngle < 105 && "✓ Great depth!"}
+                {currentElbowAngle >= 105 && currentElbowAngle < 115 && "Almost there - go a bit lower"}
+                {currentElbowAngle >= 150 && "✓ Fully extended!"}
+                {currentElbowAngle >= 140 && currentElbowAngle < 150 && "Almost there - extend arms fully"}
+                {currentElbowAngle >= 115 && currentElbowAngle < 140 && "In transition"}
+                {currentElbowAngle === 0 && "Start your first rep"}
+              </span>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Video Feed */}
       <Card className="relative overflow-hidden bg-black">
