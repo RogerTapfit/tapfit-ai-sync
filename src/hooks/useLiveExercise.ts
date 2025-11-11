@@ -46,6 +46,12 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [alignmentScore, setAlignmentScore] = useState<number>(0);
   const [misalignedJoints, setMisalignedJoints] = useState<number[]>([]);
   
+  // Velocity tracking states
+  const [concentricVelocity, setConcentricVelocity] = useState<number>(0); // Time for up phase (ms)
+  const [eccentricVelocity, setEccentricVelocity] = useState<number>(0); // Time for down phase (ms)
+  const [concentricZone, setConcentricZone] = useState<'explosive' | 'moderate' | 'slow' | null>(null);
+  const [eccentricZone, setEccentricZone] = useState<'explosive' | 'moderate' | 'slow' | null>(null);
+  
   // Animation states for smooth pose transitions
   const [currentIdealPose, setCurrentIdealPose] = useState<IdealPoseKeypoint[]>([]);
   const [targetIdealPose, setTargetIdealPose] = useState<IdealPoseKeypoint[]>([]);
@@ -62,6 +68,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const lastRepTimeRef = useRef<number>(0);
   const lastAnnouncedRep = useRef<number>(0);
   const repStartTimeRef = useRef<number>(0);
+  const downPhaseStartRef = useRef<number>(0);
+  const upPhaseStartRef = useRef<number>(0);
   
   const { speak, clearQueue } = useWorkoutAudio();
 
@@ -84,6 +92,24 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     if (duration > range.max) return 'too-slow';
     return 'perfect';
   }, [exerciseType, getOptimalRepRange]);
+
+  // Classify velocity zone for phase duration
+  const classifyVelocityZone = useCallback((phaseDuration: number, exerciseType: ExerciseType): 'explosive' | 'moderate' | 'slow' => {
+    // Define velocity zones based on phase duration (ms)
+    // Explosive: <1s, Moderate: 1-2s, Slow: >2s for most exercises
+    // Adjust for high-intensity exercises
+    const isHighIntensity = exerciseType === 'jumping_jacks' || exerciseType === 'high_knees';
+    
+    if (isHighIntensity) {
+      if (phaseDuration < 200) return 'explosive';
+      if (phaseDuration < 500) return 'moderate';
+      return 'slow';
+    } else {
+      if (phaseDuration < 1000) return 'explosive';
+      if (phaseDuration < 2000) return 'moderate';
+      return 'slow';
+    }
+  }, []);
 
   // Get ideal pose template based on current phase
   const getIdealPoseForPhase = useCallback((phase: 'up' | 'down'): IdealPoseKeypoint[] => {
@@ -290,14 +316,38 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           }
         }
 
-        // Track rep start time (beginning of down phase)
+        // Track phase transitions and calculate velocities
+        const now = Date.now();
+        
+        // Transition from up to down - calculate concentric (up) phase velocity
         if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
-          repStartTimeRef.current = Date.now();
+          repStartTimeRef.current = now;
+          
+          // Calculate concentric velocity if we have a start time
+          if (upPhaseStartRef.current > 0) {
+            const upDuration = now - upPhaseStartRef.current;
+            setConcentricVelocity(upDuration);
+            const zone = classifyVelocityZone(upDuration, exerciseType);
+            setConcentricZone(zone);
+          }
+          
+          // Start timing down phase
+          downPhaseStartRef.current = now;
         }
 
-        // Count reps on phase transition and analyze speed
+        // Transition from down to up - calculate eccentric (down) phase velocity and count rep
         if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
-          const now = Date.now();
+          // Calculate eccentric velocity if we have a start time
+          if (downPhaseStartRef.current > 0) {
+            const downDuration = now - downPhaseStartRef.current;
+            setEccentricVelocity(downDuration);
+            const zone = classifyVelocityZone(downDuration, exerciseType);
+            setEccentricZone(zone);
+          }
+          
+          // Start timing up phase
+          upPhaseStartRef.current = now;
+          
           // Debounce reps (minimum 500ms between reps)
           if (now - lastRepTimeRef.current > 500) {
             // Calculate rep duration (from start of down phase to end of up phase)
@@ -586,6 +636,10 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     toggleIdealPose,
     alignmentScore,
     misalignedJoints,
+    concentricVelocity,
+    eccentricVelocity,
+    concentricZone,
+    eccentricZone,
     start,
     pause,
     resume,

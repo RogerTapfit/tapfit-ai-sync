@@ -125,6 +125,10 @@ export function LiveExerciseTracker({
     toggleIdealPose,
     alignmentScore,
     misalignedJoints,
+    concentricVelocity,
+    eccentricVelocity,
+    concentricZone,
+    eccentricZone,
     start,
     pause,
     resume,
@@ -691,6 +695,47 @@ export function LiveExerciseTracker({
                   <Target className="w-3 h-3 mr-1" />
                   {alignmentScore}% Aligned
                 </Badge>
+              )}
+              
+              {/* Velocity Tracking */}
+              {(concentricZone || eccentricZone) && (
+                <>
+                  {/* Concentric (Up) Velocity */}
+                  {concentricVelocity > 0 && concentricZone && (
+                    <Badge 
+                      className={cn(
+                        "text-xs px-2.5 py-1 backdrop-blur-sm font-semibold",
+                        concentricZone === 'explosive' && "bg-purple-500/90 text-white",
+                        concentricZone === 'moderate' && "bg-green-500/90 text-white",
+                        concentricZone === 'slow' && "bg-blue-500/90 text-white"
+                      )}
+                    >
+                      <Zap className="w-3 h-3 mr-1" />
+                      ↑ {(concentricVelocity / 1000).toFixed(2)}s
+                      <span className="ml-1 opacity-75 text-[10px]">
+                        ({concentricZone === 'explosive' ? 'Explosive' : concentricZone === 'moderate' ? 'Moderate' : 'Controlled'})
+                      </span>
+                    </Badge>
+                  )}
+                  
+                  {/* Eccentric (Down) Velocity */}
+                  {eccentricVelocity > 0 && eccentricZone && (
+                    <Badge 
+                      className={cn(
+                        "text-xs px-2.5 py-1 backdrop-blur-sm font-semibold",
+                        eccentricZone === 'explosive' && "bg-purple-500/90 text-white",
+                        eccentricZone === 'moderate' && "bg-green-500/90 text-white",
+                        eccentricZone === 'slow' && "bg-blue-500/90 text-white"
+                      )}
+                    >
+                      <Zap className="w-3 h-3 mr-1" />
+                      ↓ {(eccentricVelocity / 1000).toFixed(2)}s
+                      <span className="ml-1 opacity-75 text-[10px]">
+                        ({eccentricZone === 'explosive' ? 'Explosive' : eccentricZone === 'moderate' ? 'Moderate' : 'Controlled'})
+                      </span>
+                    </Badge>
+                  )}
+                </>
               )}
               
               {/* Voice Command Status */}
