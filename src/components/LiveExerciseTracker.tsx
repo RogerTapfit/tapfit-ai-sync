@@ -302,9 +302,22 @@ export function LiveExerciseTracker({
                   style={{ mixBlendMode: 'normal' }}
                 />
                 
-                {/* Preview Status Overlay */}
+                {/* Preview Mode Banner */}
+                <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
+                  <Card className="bg-yellow-500/90 backdrop-blur-sm border-yellow-400">
+                    <div className="p-3 flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-yellow-900" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-yellow-900">Preview Mode - Rep Counting Disabled</p>
+                        <p className="text-xs text-yellow-900/80">Position yourself, then click "Start Workout" to begin counting</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Body Detection Status */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  {landmarks.length === 0 ? (
+                  {landmarks.length === 0 && (
                     <div className="bg-black/70 px-6 py-4 rounded-lg space-y-2">
                       <Badge variant="secondary" className="text-lg px-6 py-3">
                         👤 Position yourself in frame
@@ -312,12 +325,6 @@ export function LiveExerciseTracker({
                       <p className="text-sm text-white/70 text-center">
                         Step back so your full body is visible
                       </p>
-                    </div>
-                  ) : (
-                    <div className="absolute top-4 left-4">
-                      <Badge className="text-sm px-4 py-2 bg-green-500">
-                        ✓ Ready to start
-                      </Badge>
                     </div>
                   )}
                 </div>
@@ -567,23 +574,31 @@ export function LiveExerciseTracker({
           />
           
           {/* Feedback Overlay */}
-          <div className="absolute top-4 left-4 right-4 space-y-2">
-            {/* Voice Command Status */}
-            {isVoiceActive && (
-              <Badge 
-                variant="default"
-                className="text-sm px-3 py-1 bg-green-500/90 backdrop-blur-sm animate-pulse"
-              >
-                <Mic className="w-3 h-3 mr-1" />
-                Voice Commands Active
+          <div className="absolute top-4 left-4 right-4 space-y-2 z-10">
+            {/* Active Tracking Status */}
+            <div className="flex items-center gap-2">
+              <Badge className="text-sm px-3 py-1 bg-green-500/90 backdrop-blur-sm">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse mr-2" />
+                Rep Tracking Active
               </Badge>
-            )}
+              
+              {/* Voice Command Status */}
+              {isVoiceActive && (
+                <Badge 
+                  variant="default"
+                  className="text-sm px-3 py-1 bg-blue-500/90 backdrop-blur-sm animate-pulse"
+                >
+                  <Mic className="w-3 h-3 mr-1" />
+                  Voice Active
+                </Badge>
+              )}
+            </div>
             
             {feedback.map((msg, idx) => (
               <Badge 
                 key={idx} 
                 variant={msg.includes('Perfect') || msg.includes('Great') ? 'default' : 'secondary'}
-                className="text-sm px-3 py-1"
+                className="text-sm px-3 py-1 backdrop-blur-sm"
               >
                 {msg}
               </Badge>

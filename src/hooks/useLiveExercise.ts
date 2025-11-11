@@ -146,7 +146,21 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     if (!isPreviewMode && !isActive) return;
     if (isActive && isPaused) return;
 
-    const result = await detectPoseVideo(videoRef.current, timestamp);
+    const video = videoRef.current;
+
+    // Validate video is ready with valid dimensions before processing
+    if (
+      video.readyState < 2 || // HAVE_CURRENT_DATA
+      video.videoWidth <= 0 ||
+      video.videoHeight <= 0 ||
+      video.currentTime <= 0
+    ) {
+      // Video not ready yet, skip this frame gracefully
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+      return;
+    }
+
+    const result = await detectPoseVideo(video, timestamp);
     
     if (result.ok && result.landmarks.length > 0) {
       setLandmarks(result.landmarks);
