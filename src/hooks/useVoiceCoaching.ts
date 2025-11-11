@@ -4,6 +4,7 @@ import { playBase64Audio } from '@/lib/audioPlayer';
 import { getDisplayName } from '@/lib/userDisplay';
 import { useAvatar } from '@/lib/avatarState';
 import { useAvatarSpeaking } from './useAvatarSpeaking';
+import { useVoiceVolume } from './useVoiceVolume';
 
 type CoachingContext = 
   | { type: 'set_complete'; data: { currentSet: number; totalSets: number; reps: number } }
@@ -101,6 +102,7 @@ const AVATAR_COACHING_STYLES = {
 export const useVoiceCoaching = () => {
   const { avatar } = useAvatar();
   const { setIsSpeaking } = useAvatarSpeaking();
+  const { volume } = useVoiceVolume();
   const [isPlaying, setIsPlaying] = useState(false);
   const [userName, setUserName] = useState<string>('there');
   const [avatarName, setAvatarName] = useState<string>('Coach');
@@ -209,6 +211,7 @@ export const useVoiceCoaching = () => {
       await playBase64Audio(data.audioContent, {
         onStart: () => setIsSpeaking(true, avatarName),
         onEnd: () => setIsSpeaking(false),
+        volume,
       });
 
     } catch (error) {

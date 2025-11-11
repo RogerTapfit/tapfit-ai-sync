@@ -19,6 +19,7 @@ import { toast } from '@/hooks/use-toast';
 import { useVoiceIntroduction } from '@/hooks/useVoiceIntroduction';
 import { useAvatarSpeaking } from '@/hooks/useAvatarSpeaking';
 import { SpeakingIndicator } from './SpeakingIndicator';
+import { VoiceVolumeControl } from './VoiceVolumeControl';
 
 type DBAvatar = {
   id: string;
@@ -115,8 +116,12 @@ export const AvatarGallery: React.FC = () => {
       <SpeakingIndicator />
       <div className="space-y-4">
         <Card>
-          <CardHeader>
+          <CardHeader className="space-y-4">
             <CardTitle>Choose Your Coach</CardTitle>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">Voice Volume:</span>
+              <VoiceVolumeControl />
+            </div>
           </CardHeader>
           <CardContent>
           {loading || avatarLoading ? (

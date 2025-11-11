@@ -4,6 +4,7 @@ import { playBase64Audio } from '@/lib/audioPlayer';
 import { toast } from '@/hooks/use-toast';
 import { getDisplayName } from '@/lib/userDisplay';
 import { useAvatarSpeaking } from './useAvatarSpeaking';
+import { useVoiceVolume } from './useVoiceVolume';
 
 const AVATAR_PERSONALITIES: Record<string, string> = {
   'Stark': "Hope you're ready to work because I don't do excuses—only results. Let's turn that sweat into strength!",
@@ -20,6 +21,7 @@ const AVATAR_PERSONALITIES: Record<string, string> = {
 export const useVoiceIntroduction = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const { setIsSpeaking } = useAvatarSpeaking();
+  const { volume } = useVoiceVolume();
 
   const playIntroduction = async (avatarName: string, gender: string = 'neutral') => {
     try {
@@ -69,6 +71,7 @@ export const useVoiceIntroduction = () => {
       await playBase64Audio(data.audioContent, {
         onStart: () => setIsSpeaking(true, avatarName),
         onEnd: () => setIsSpeaking(false),
+        volume,
       });
       
       console.log(`✅ Introduction played successfully for ${avatarName}`);

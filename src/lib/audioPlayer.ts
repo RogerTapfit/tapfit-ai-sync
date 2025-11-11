@@ -6,11 +6,17 @@ export const playBase64Audio = (
   callbacks?: {
     onStart?: () => void;
     onEnd?: () => void;
+    volume?: number;
   }
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     try {
       const audio = new Audio(`data:audio/mpeg;base64,${base64Audio}`);
+      
+      // Set volume (0.0 to 1.0)
+      if (callbacks?.volume !== undefined) {
+        audio.volume = Math.max(0, Math.min(1, callbacks.volume));
+      }
       
       audio.onplay = () => {
         callbacks?.onStart?.();
