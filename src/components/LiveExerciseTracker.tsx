@@ -20,10 +20,13 @@ import {
   ArrowLeft,
   SwitchCamera,
   AlertTriangle,
-  Lightbulb
+  Lightbulb,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
+import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 import { toast } from 'sonner';
 
 const EXERCISES = [
@@ -121,6 +124,34 @@ export function LiveExerciseTracker({
     exerciseType: selectedExercise,
     targetReps,
     onComplete: handleComplete
+  });
+
+  // Voice commands integration
+  const {
+    isListening: isVoiceActive,
+    isSupported: isVoiceSupported,
+    toggleListening: toggleVoiceCommands
+  } = useVoiceCommands({
+    onStart: () => {
+      if (!isActive && isInitialized) {
+        start();
+      }
+    },
+    onPause: () => {
+      if (isActive && !isPaused) {
+        pause();
+      }
+    },
+    onResume: () => {
+      if (isActive && isPaused) {
+        resume();
+      }
+    },
+    onStop: () => {
+      if (isActive) {
+        stop();
+      }
+    }
   });
 
   // Auto-start preview when initialized
@@ -413,6 +444,45 @@ export function LiveExerciseTracker({
               {isInitialized ? 'Start Workout' : 'Initializing AI...'}
             </Button>
 
+            {/* Voice Commands Toggle */}
+            {isVoiceSupported && (
+              <>
+                <Button
+                  onClick={toggleVoiceCommands}
+                  variant={isVoiceActive ? 'default' : 'outline'}
+                  size="lg"
+                  className="w-full"
+                >
+                  {isVoiceActive ? (
+                    <>
+                      <Mic className="w-5 h-5 mr-2 animate-pulse" />
+                      Voice Commands Active
+                    </>
+                  ) : (
+                    <>
+                      <MicOff className="w-5 h-5 mr-2" />
+                      Enable Voice Commands
+                    </>
+                  )}
+                </Button>
+                
+                {isVoiceActive && (
+                  <Card className="p-4 bg-muted/50">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Mic className="w-4 h-4" />
+                      Available Voice Commands
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <Badge variant="secondary">"Start workout"</Badge>
+                      <Badge variant="secondary">"Pause"</Badge>
+                      <Badge variant="secondary">"Resume"</Badge>
+                      <Badge variant="secondary">"Stop"</Badge>
+                    </div>
+                  </Card>
+                )}
+              </>
+            )}
+
             {!isInitialized && (
               <p className="text-sm text-muted-foreground text-center">
                 Loading AI pose detection model...
@@ -498,6 +568,17 @@ export function LiveExerciseTracker({
           
           {/* Feedback Overlay */}
           <div className="absolute top-4 left-4 right-4 space-y-2">
+            {/* Voice Command Status */}
+            {isVoiceActive && (
+              <Badge 
+                variant="default"
+                className="text-sm px-3 py-1 bg-green-500/90 backdrop-blur-sm animate-pulse"
+              >
+                <Mic className="w-3 h-3 mr-1" />
+                Voice Commands Active
+              </Badge>
+            )}
+            
             {feedback.map((msg, idx) => (
               <Badge 
                 key={idx} 
@@ -517,7 +598,7 @@ export function LiveExerciseTracker({
       </Card>
 
       {/* Controls */}
-      <div className="flex gap-4 justify-center">
+      <div className="flex gap-4 justify-center flex-wrap">
         {!isPaused ? (
           <Button onClick={pause} size="lg" variant="secondary">
             <Pause className="w-5 h-5 mr-2" />
@@ -527,6 +608,26 @@ export function LiveExerciseTracker({
           <Button onClick={resume} size="lg">
             <Play className="w-5 h-5 mr-2" />
             Resume
+          </Button>
+        )}
+        
+        {isVoiceSupported && (
+          <Button 
+            onClick={toggleVoiceCommands}
+            size="lg"
+            variant={isVoiceActive ? 'default' : 'outline'}
+          >
+            {isVoiceActive ? (
+              <>
+                <Mic className="w-5 h-5 mr-2" />
+                Voice On
+              </>
+            ) : (
+              <>
+                <MicOff className="w-5 h-5 mr-2" />
+                Voice Off
+              </>
+            )}
           </Button>
         )}
         
