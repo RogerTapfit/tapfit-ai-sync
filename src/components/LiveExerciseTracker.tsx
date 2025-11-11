@@ -92,6 +92,7 @@ export function LiveExerciseTracker({
     videoRef,
     isActive,
     isPaused,
+    isPreviewMode,
     isInitialized,
     reps,
     targetReps: currentTarget,
@@ -105,16 +106,31 @@ export function LiveExerciseTracker({
     start,
     pause,
     resume,
-    stop
+    stop,
+    startPreview,
+    stopPreview
   } = useLiveExercise({
     exerciseType: selectedExercise,
     targetReps,
     onComplete: handleComplete
   });
 
-  // Draw pose overlay on canvas - continuously update
+  // Auto-start preview when initialized
   useEffect(() => {
-    if (!canvasRef.current || !videoRef.current || !isActive) return;
+    if (isInitialized && !isActive && !showResults && !skipSetup) {
+      startPreview();
+    }
+    return () => {
+      if (isPreviewMode) {
+        stopPreview();
+      }
+    };
+  }, [isInitialized, isActive, showResults, skipSetup]);
+
+  // Draw pose overlay on canvas - continuously update (for both preview and active modes)
+  useEffect(() => {
+    if (!canvasRef.current || !videoRef.current) return;
+    if (!isPreviewMode && !isActive) return;
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -133,7 +149,7 @@ export function LiveExerciseTracker({
     return () => {
       video.removeEventListener('loadedmetadata', updateCanvasSize);
     };
-  }, [isActive]);
+  }, [isActive, isPreviewMode]);
 
   // Draw landmarks whenever they update
   useEffect(() => {
@@ -214,88 +230,135 @@ export function LiveExerciseTracker({
     }
 
     return (
-      <Card className="w-full max-w-4xl mx-auto p-6 space-y-6">
-        <div className="text-center space-y-4">
-          <Activity className="w-16 h-16 mx-auto text-primary" />
-          <h2 className="text-3xl font-bold">Live Exercise Tracker</h2>
-          <p className="text-muted-foreground">
-            Track your bodyweight exercises with real-time form feedback using AI
-          </p>
-          
-          {machineName && (
-            <Badge variant="secondary" className="mt-2">
-              Warming up for {machineName}
-            </Badge>
-          )}
-        </div>
+      <div className="w-full max-w-6xl mx-auto space-y-4">
+        <Card className="p-6 space-y-4">
+          <div className="text-center space-y-4">
+            <Activity className="w-16 h-16 mx-auto text-primary" />
+            <h2 className="text-3xl font-bold">Live Exercise Tracker</h2>
+            <p className="text-muted-foreground">
+              Track your bodyweight exercises with real-time form feedback using AI
+            </p>
+            
+            {machineName && (
+              <Badge variant="secondary" className="mt-2">
+                Warming up for {machineName}
+              </Badge>
+            )}
+          </div>
 
-        <div className="space-y-4">
-          {!preSelectedExercise && (
+          {/* Camera Preview during Setup */}
+          {isPreviewMode && (
+            <Card className="relative overflow-hidden bg-black">
+              <div className="relative aspect-video bg-black">
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  playsInline
+                  muted
+                  autoPlay
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{ mixBlendMode: 'normal' }}
+                />
+                
+                {/* Preview Status Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  {landmarks.length === 0 ? (
+                    <div className="bg-black/70 px-6 py-4 rounded-lg space-y-2">
+                      <Badge variant="secondary" className="text-lg px-6 py-3">
+                        👤 Position yourself in frame
+                      </Badge>
+                      <p className="text-sm text-white/70 text-center">
+                        Step back so your full body is visible
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="absolute top-4 left-4">
+                      <Badge className="text-sm px-4 py-2 bg-green-500">
+                        ✓ Ready to start
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <div className="space-y-4">
+            {!preSelectedExercise && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Select Exercise</label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {EXERCISES.map((exercise) => (
+                    <Button
+                      key={exercise.id}
+                      variant={selectedExercise === exercise.id ? 'default' : 'outline'}
+                      className="h-20 flex flex-col items-center justify-center gap-2"
+                      onClick={() => setSelectedExercise(exercise.id)}
+                    >
+                      <span className="text-2xl">{exercise.icon}</span>
+                      <span className="text-xs">{exercise.name}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {exercise.coins} coins
+                      </Badge>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="text-sm font-medium mb-2 block">Select Exercise</label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {EXERCISES.map((exercise) => (
+              <label className="text-sm font-medium mb-2 block">Target Reps</label>
+              <div className="flex gap-2">
+                {[5, 10, 15, 20, 30].map((count) => (
                   <Button
-                    key={exercise.id}
-                    variant={selectedExercise === exercise.id ? 'default' : 'outline'}
-                    className="h-20 flex flex-col items-center justify-center gap-2"
-                    onClick={() => setSelectedExercise(exercise.id)}
+                    key={count}
+                    variant={targetReps === count ? 'default' : 'outline'}
+                    onClick={() => setTargetReps(count)}
                   >
-                    <span className="text-2xl">{exercise.icon}</span>
-                    <span className="text-xs">{exercise.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {exercise.coins} coins
-                    </Badge>
+                    {count}
                   </Button>
                 ))}
               </div>
             </div>
-          )}
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Target Reps</label>
-            <div className="flex gap-2">
-              {[5, 10, 15, 20, 30].map((count) => (
-                <Button
-                  key={count}
-                  variant={targetReps === count ? 'default' : 'outline'}
-                  onClick={() => setTargetReps(count)}
-                >
-                  {count}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <Button 
-            onClick={start} 
-            size="lg" 
-            className="w-full"
-            disabled={!isInitialized}
-          >
-            <Camera className="w-5 h-5 mr-2" />
-            {isInitialized ? 'Start Workout' : 'Initializing AI...'}
-          </Button>
-
-          {!isInitialized && (
-            <p className="text-sm text-muted-foreground text-center">
-              Loading AI pose detection model...
-            </p>
-          )}
-          
-          {onBackToMachine && (
             <Button 
-              onClick={onBackToMachine}
-              variant="outline"
-              size="lg"
+              onClick={() => {
+                if (isPreviewMode) {
+                  stopPreview();
+                }
+                start();
+              }}
+              size="lg" 
               className="w-full"
+              disabled={!isInitialized}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Skip to {machineName}
+              <Play className="w-5 h-5 mr-2" />
+              {isInitialized ? 'Start Workout' : 'Initializing AI...'}
             </Button>
-          )}
-        </div>
-      </Card>
+
+            {!isInitialized && (
+              <p className="text-sm text-muted-foreground text-center">
+                Loading AI pose detection model...
+              </p>
+            )}
+            
+            {onBackToMachine && (
+              <Button 
+                onClick={onBackToMachine}
+                variant="outline"
+                size="lg"
+                className="w-full"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Skip to {machineName}
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
     );
   }
 

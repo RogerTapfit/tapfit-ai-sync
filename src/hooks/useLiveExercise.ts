@@ -19,6 +19,7 @@ export interface WorkoutStats {
 export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: UseLiveExerciseProps) {
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [reps, setReps] = useState(0);
   const [currentPhase, setCurrentPhase] = useState<'up' | 'down' | 'transition'>('up');
   const [formScore, setFormScore] = useState(100);
@@ -85,56 +86,67 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
   // Process video frame
   const processFrame = useCallback(async (timestamp: number) => {
-    if (!videoRef.current || !isActive || isPaused || !isInitialized) return;
+    if (!videoRef.current || !isInitialized) return;
+    if (!isPreviewMode && !isActive) return;
+    if (isActive && isPaused) return;
 
     const result = await detectPoseVideo(videoRef.current, timestamp);
     
     if (result.ok && result.landmarks.length > 0) {
       setLandmarks(result.landmarks);
 
-      // Detect exercise
-      const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
-      
-      setFormScore(detection.formScore);
-      setFeedback(detection.feedback);
-      setFormIssues(detection.formIssues || []);
-      formScoresRef.current.push(detection.formScore);
-
-      // Count reps on phase transition
-      if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
-        const now = Date.now();
-        // Debounce reps (minimum 500ms between reps)
-        if (now - lastRepTimeRef.current > 500) {
-          setReps(prev => {
-            const newReps = prev + 1;
-            if (newReps >= targetReps && onComplete) {
-              // Workout complete
-              const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
-              const stats: WorkoutStats = {
-                reps: newReps,
-                duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
-                avgFormScore: Math.round(avgFormScore),
-                caloriesBurned: Math.round(newReps * 0.5) // Rough estimate
-              };
-              setTimeout(() => {
-                setIsActive(false);
-                onComplete(stats);
-              }, 500);
-            } else {
-              toast.success(`Rep ${newReps}!`, { duration: 1000 });
-            }
-            return newReps;
-          });
-          lastRepTimeRef.current = now;
-        }
+      // Preview mode: only show landmarks, no tracking
+      if (isPreviewMode) {
+        animationFrameRef.current = requestAnimationFrame(processFrame);
+        return;
       }
 
-      lastPhaseRef.current = detection.phase;
-      setCurrentPhase(detection.phase);
+      // Active workout mode: full tracking
+      if (isActive) {
+        // Detect exercise
+        const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
+        
+        setFormScore(detection.formScore);
+        setFeedback(detection.feedback);
+        setFormIssues(detection.formIssues || []);
+        formScoresRef.current.push(detection.formScore);
+
+        // Count reps on phase transition
+        if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
+          const now = Date.now();
+          // Debounce reps (minimum 500ms between reps)
+          if (now - lastRepTimeRef.current > 500) {
+            setReps(prev => {
+              const newReps = prev + 1;
+              if (newReps >= targetReps && onComplete) {
+                // Workout complete
+                const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
+                const stats: WorkoutStats = {
+                  reps: newReps,
+                  duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
+                  avgFormScore: Math.round(avgFormScore),
+                  caloriesBurned: Math.round(newReps * 0.5) // Rough estimate
+                };
+                setTimeout(() => {
+                  setIsActive(false);
+                  onComplete(stats);
+                }, 500);
+              } else {
+                toast.success(`Rep ${newReps}!`, { duration: 1000 });
+              }
+              return newReps;
+            });
+            lastRepTimeRef.current = now;
+          }
+        }
+
+        lastPhaseRef.current = detection.phase;
+        setCurrentPhase(detection.phase);
+      }
     }
 
     animationFrameRef.current = requestAnimationFrame(processFrame);
-  }, [isActive, isPaused, exerciseType, targetReps, onComplete, isInitialized]);
+  }, [isActive, isPaused, isPreviewMode, exerciseType, targetReps, onComplete, isInitialized]);
 
   // Update duration timer
   useEffect(() => {
@@ -147,13 +159,10 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     return () => clearInterval(interval);
   }, [isActive, isPaused]);
 
-  // Start workout
-  const start = useCallback(async () => {
-    if (!isInitialized) {
-      toast.error('Still initializing. Please wait...');
-      return;
-    }
-
+  // Start preview mode
+  const startPreview = useCallback(async () => {
+    if (!isInitialized) return;
+    
     const cameraStarted = await startCamera();
     if (!cameraStarted) return;
 
@@ -164,6 +173,47 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           videoRef.current.onloadedmetadata = resolve;
         }
       });
+    }
+
+    setIsPreviewMode(true);
+    setLandmarks([]);
+    animationFrameRef.current = requestAnimationFrame(processFrame);
+  }, [startCamera, processFrame, isInitialized]);
+
+  // Stop preview mode
+  const stopPreview = useCallback(() => {
+    setIsPreviewMode(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    // Keep camera running for smooth transition
+  }, []);
+
+  // Start workout
+  const start = useCallback(async () => {
+    if (!isInitialized) {
+      toast.error('Still initializing. Please wait...');
+      return;
+    }
+
+    // If preview is running, stop it first
+    if (isPreviewMode) {
+      stopPreview();
+    }
+
+    // Start camera if not already running
+    if (!streamRef.current) {
+      const cameraStarted = await startCamera();
+      if (!cameraStarted) return;
+
+      // Wait for video to be ready
+      if (videoRef.current) {
+        await new Promise(resolve => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = resolve;
+          }
+        });
+      }
     }
 
     setIsActive(true);
@@ -177,7 +227,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     
     animationFrameRef.current = requestAnimationFrame(processFrame);
     toast.success('Workout started! Get ready...');
-  }, [startCamera, processFrame, isInitialized]);
+  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview]);
 
   // Pause workout
   const pause = useCallback(() => {
@@ -228,6 +278,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     videoRef,
     isActive,
     isPaused,
+    isPreviewMode,
     isInitialized,
     reps,
     targetReps,
@@ -241,6 +292,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     start,
     pause,
     resume,
-    stop
+    stop,
+    startPreview,
+    stopPreview
   };
 }
