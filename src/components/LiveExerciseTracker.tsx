@@ -200,17 +200,23 @@ export function LiveExerciseTracker({
     const canvas = canvasRef.current;
     const video = videoRef.current;
 
-    // Match canvas size to video's displayed dimensions (not intrinsic)
+    // Match canvas size to video's displayed dimensions with device pixel ratio
     const updateCanvasSize = () => {
       const rect = video.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
       if (rect.width && rect.height) {
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        // CSS size stays in CSS pixels
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        // Internal bitmap scaled for crisp rendering
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
       }
     };
 
     updateCanvasSize();
     video.addEventListener('loadedmetadata', updateCanvasSize);
+    window.addEventListener('orientationchange', updateCanvasSize);
 
     // Add resize observer to update canvas when video display size changes
     const resizeObserver = new ResizeObserver(() => {
@@ -220,31 +226,52 @@ export function LiveExerciseTracker({
 
     return () => {
       video.removeEventListener('loadedmetadata', updateCanvasSize);
+      window.removeEventListener('orientationchange', updateCanvasSize);
       resizeObserver.disconnect();
     };
   }, [isActive, isPreviewMode]);
 
-  // Draw landmarks whenever they update
+  // Draw landmarks whenever they update with proper scaling for object-fit: cover
   useEffect(() => {
-    if (!canvasRef.current) return;
-
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx || !canvas.width || !canvas.height) return;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
 
-    // Clear canvas first
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth;
+    const cssH = canvas.clientHeight;
+
+    // Clear entire canvas in device pixels
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw ideal pose first (background layer)
+    // Source (intrinsic) video size
+    const srcW = video.videoWidth || cssW;
+    const srcH = video.videoHeight || cssH;
+
+    // object-cover math: scale to fill and center
+    const scale = Math.max(cssW / srcW, cssH / srcH);
+    const dx = (cssW - srcW * scale) / 2;
+    const dy = (cssH - srcH * scale) / 2;
+
+    // Apply DPR and mapping transform (in CSS px)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.translate(dx, dy);
+    ctx.scale(scale, scale);
+
+    // Draw ideal pose if enabled (using source dimensions)
     if (showIdealPose && idealPoseLandmarks.length > 0) {
-      drawIdealPose(ctx, idealPoseLandmarks, canvas.width, canvas.height);
+      drawIdealPose(ctx, idealPoseLandmarks, srcW, srcH);
     }
 
-    // Draw real-time pose on top (foreground layer)
+    // Draw current pose (using source dimensions)
     if (landmarks.length > 0) {
-      drawPose(ctx, landmarks, canvas.width, canvas.height, formIssues, misalignedJoints);
+      drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints);
     }
-  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks]);
+  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
