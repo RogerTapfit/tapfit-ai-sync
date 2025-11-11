@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { playBase64Audio } from '@/lib/audioPlayer';
 import { getDisplayName } from '@/lib/userDisplay';
 import { useAvatar } from '@/lib/avatarState';
+import { useAvatarSpeaking } from './useAvatarSpeaking';
 
 type CoachingContext = 
   | { type: 'set_complete'; data: { currentSet: number; totalSets: number; reps: number } }
@@ -99,6 +100,7 @@ const AVATAR_COACHING_STYLES = {
 
 export const useVoiceCoaching = () => {
   const { avatar } = useAvatar();
+  const { setIsSpeaking } = useAvatarSpeaking();
   const [isPlaying, setIsPlaying] = useState(false);
   const [userName, setUserName] = useState<string>('there');
   const [avatarName, setAvatarName] = useState<string>('Coach');
@@ -204,10 +206,14 @@ export const useVoiceCoaching = () => {
       if (!data?.audioContent) throw new Error('No audio data received');
 
       // Play the audio
-      await playBase64Audio(data.audioContent);
+      await playBase64Audio(data.audioContent, {
+        onStart: () => setIsSpeaking(true, avatarName),
+        onEnd: () => setIsSpeaking(false),
+      });
 
     } catch (error) {
       console.error('Voice coaching failed:', error);
+      setIsSpeaking(false);
       // Silently fail - don't disrupt workout
     } finally {
       setIsPlaying(false);

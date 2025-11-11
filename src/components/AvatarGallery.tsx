@@ -17,6 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAvatar } from '@/lib/avatarState';
 import { toast } from '@/hooks/use-toast';
 import { useVoiceIntroduction } from '@/hooks/useVoiceIntroduction';
+import { useAvatarSpeaking } from '@/hooks/useAvatarSpeaking';
+import { SpeakingIndicator } from './SpeakingIndicator';
 
 type DBAvatar = {
   id: string;
@@ -30,6 +32,7 @@ type DBAvatar = {
 export const AvatarGallery: React.FC = () => {
   const { avatar: selected, selectAvatar, loading: avatarLoading } = useAvatar();
   const { playIntroduction } = useVoiceIntroduction();
+  const { isSpeaking } = useAvatarSpeaking();
   const [avatars, setAvatars] = useState<DBAvatar[]>([]);
   const [loading, setLoading] = useState(true);
   const [accents, setAccents] = useState<Record<string, string>>({});
@@ -108,12 +111,14 @@ export const AvatarGallery: React.FC = () => {
   const isSelected = (id: string) => selected?.id === id;
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Choose Your Coach</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <>
+      <SpeakingIndicator />
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Choose Your Coach</CardTitle>
+          </CardHeader>
+          <CardContent>
           {loading || avatarLoading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               Loading avatars...
@@ -135,23 +140,33 @@ export const AvatarGallery: React.FC = () => {
               {avatars.map((a) => {
                 const accent = a.accent_hex || accents[a.id] || '#ff4d4d';
                 return (
-                  <div
-                    key={a.id}
-                    onClick={() => handleAvatarClick(a)}
-                    className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${isSelected(a.id) ? 'border-primary ring-2 ring-primary' : 'border-border hover:border-primary/50'} bg-card shadow-sm hover:shadow-lg transition-all duration-200 h-64`}
-                    aria-pressed={isSelected(a.id)}
-                    aria-label={`Choose avatar ${a.name}`}
-                  >
-                    {/* Glow layer */}
                     <div
-                      className="absolute -inset-[10%] pointer-events-none opacity-65 group-hover:opacity-90 transition-opacity duration-200"
-                      style={{
-                        background: `radial-gradient(60% 60% at 50% 60%, ${accent} 0%, transparent 60%)`,
-                        filter: 'blur(28px) saturate(1.2)'
-                      }}
-                    />
-                    {/* Main image */}
-                    <img
+                      key={a.id}
+                      onClick={() => handleAvatarClick(a)}
+                      className={`group relative overflow-hidden rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary ${
+                        isSelected(a.id) 
+                          ? 'border-primary ring-2 ring-primary' 
+                          : 'border-border hover:border-primary/50'
+                      } ${
+                        isSpeaking && isSelected(a.id) 
+                          ? 'ring-4 ring-primary animate-pulse' 
+                          : ''
+                      } bg-card shadow-sm hover:shadow-lg transition-all duration-200 h-64`}
+                      aria-pressed={isSelected(a.id)}
+                      aria-label={`Choose avatar ${a.name}`}
+                    >
+                      {/* Glow layer */}
+                      <div
+                        className={`absolute -inset-[10%] pointer-events-none opacity-65 group-hover:opacity-90 transition-opacity duration-200 ${
+                          isSpeaking && isSelected(a.id) ? 'animate-pulse' : ''
+                        }`}
+                        style={{
+                          background: `radial-gradient(60% 60% at 50% 60%, ${accent} 0%, transparent 60%)`,
+                          filter: 'blur(28px) saturate(1.2)'
+                        }}
+                      />
+                      {/* Main image */}
+                      <img
                       src={a.image_url}
                       alt={a.name}
                       loading="lazy"
@@ -223,7 +238,8 @@ export const AvatarGallery: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </>
   );
 };
 

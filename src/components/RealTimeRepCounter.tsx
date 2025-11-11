@@ -9,6 +9,7 @@ import { Activity, Bluetooth, Battery, Timer, Target } from 'lucide-react';
 import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
 import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
 import { useVoiceCoaching } from '@/hooks/useVoiceCoaching';
+import { SpeakingIndicator } from './SpeakingIndicator';
 
 interface RealTimeRepCounterProps {
   targetReps?: number;
@@ -238,9 +239,11 @@ export function RealTimeRepCounter({
   const overallProgress = ((currentSet - 1) * targetReps + repCount) / (targetSets * targetReps) * 100;
 
   return (
-    <div className="space-y-4">
-      {/* Connection Status Card */}
-      <Card>
+    <>
+      <SpeakingIndicator />
+      <div className="space-y-4">
+        {/* Connection Status Card */}
+        <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bluetooth className="h-5 w-5" />
@@ -388,6 +391,7 @@ export function RealTimeRepCounter({
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </>
   );
 }

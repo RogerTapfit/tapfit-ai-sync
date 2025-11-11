@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { playBase64Audio } from '@/lib/audioPlayer';
 import { toast } from '@/hooks/use-toast';
 import { getDisplayName } from '@/lib/userDisplay';
+import { useAvatarSpeaking } from './useAvatarSpeaking';
 
 const AVATAR_PERSONALITIES: Record<string, string> = {
   'Stark': "Hope you're ready to work because I don't do excuses—only results. Let's turn that sweat into strength!",
@@ -18,6 +19,7 @@ const AVATAR_PERSONALITIES: Record<string, string> = {
 
 export const useVoiceIntroduction = () => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const { setIsSpeaking } = useAvatarSpeaking();
 
   const playIntroduction = async (avatarName: string, gender: string = 'neutral') => {
     try {
@@ -64,12 +66,16 @@ export const useVoiceIntroduction = () => {
       if (!data?.audioContent) throw new Error('No audio data received');
 
       // Play the audio
-      await playBase64Audio(data.audioContent);
+      await playBase64Audio(data.audioContent, {
+        onStart: () => setIsSpeaking(true, avatarName),
+        onEnd: () => setIsSpeaking(false),
+      });
       
       console.log(`✅ Introduction played successfully for ${avatarName}`);
       
     } catch (error) {
       console.error('Failed to play voice introduction:', error);
+      setIsSpeaking(false);
       toast({
         title: "Voice introduction unavailable",
         description: "Continuing with silent selection",
