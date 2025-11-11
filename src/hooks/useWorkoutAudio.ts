@@ -11,6 +11,7 @@ export type ElevenLabsVoice = 'Aria' | 'Roger' | 'Sarah' | 'Laura' | 'Charlie' |
 export const useWorkoutAudio = () => {
   const audioQueue = useRef<AudioQueueItem[]>([]);
   const isPlaying = useRef(false);
+  const isProcessing = useRef(false);
   const audioContext = useRef<AudioContext | null>(null);
   const currentSource = useRef<AudioBufferSourceNode | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<ElevenLabsVoice>('Aria');
@@ -59,28 +60,41 @@ export const useWorkoutAudio = () => {
   }, [initAudioContext]);
 
   const processQueue = useCallback(async () => {
-    if (isPlaying.current || audioQueue.current.length === 0) {
+    // Prevent concurrent processing
+    if (isProcessing.current || audioQueue.current.length === 0) {
       return;
     }
 
-    isPlaying.current = true;
-    const item = audioQueue.current.shift()!;
+    isProcessing.current = true;
 
-    try {
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: item.text, voice: selectedVoice }
-      });
+    while (audioQueue.current.length > 0) {
+      const item = audioQueue.current.shift()!;
+      isPlaying.current = true;
 
-      if (error) throw error;
-      if (data?.audioContent) {
-        await playAudio(data.audioContent);
+      try {
+        const { data, error } = await supabase.functions.invoke('text-to-speech', {
+          body: { text: item.text, voice: selectedVoice }
+        });
+
+        if (error) {
+          console.error('TTS API error:', error);
+          continue; // Skip to next item on error
+        }
+        
+        if (data?.audioContent) {
+          await playAudio(data.audioContent);
+        }
+        
+        // Small delay between items to prevent API rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        console.error('Error processing audio queue:', error);
+      } finally {
+        isPlaying.current = false;
       }
-    } catch (error) {
-      console.error('Error processing audio queue:', error);
-    } finally {
-      isPlaying.current = false;
-      processQueue();
     }
+
+    isProcessing.current = false;
   }, [playAudio, selectedVoice]);
 
   const speak = useCallback((text: string, priority: 'high' | 'normal' = 'normal') => {
@@ -108,6 +122,7 @@ export const useWorkoutAudio = () => {
       currentSource.current = null;
     }
     isPlaying.current = false;
+    isProcessing.current = false;
   }, []);
 
   const changeVoice = useCallback((voice: ElevenLabsVoice) => {
