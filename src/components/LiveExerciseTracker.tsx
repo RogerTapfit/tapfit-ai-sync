@@ -98,6 +98,7 @@ export function LiveExerciseTracker({
     currentPhase,
     formScore,
     feedback,
+    formIssues,
     duration,
     landmarks,
     progress,
@@ -142,8 +143,8 @@ export function LiveExerciseTracker({
     const ctx = canvas.getContext('2d');
     if (!ctx || !canvas.width || !canvas.height) return;
 
-    drawPose(ctx, landmarks, canvas.width, canvas.height);
-  }, [landmarks]);
+    drawPose(ctx, landmarks, canvas.width, canvas.height, formIssues);
+  }, [landmarks, formIssues]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);

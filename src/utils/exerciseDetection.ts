@@ -3,11 +3,19 @@ import type { Keypoint } from '@/features/bodyScan/ml/poseVideo';
 
 export type ExerciseType = 'pushups' | 'squats' | 'lunges' | 'jumping_jacks' | 'high_knees';
 
+export interface FormIssue {
+  type: 'joint' | 'connection' | 'alignment';
+  landmarkIndices: number[]; // Which landmarks to highlight
+  severity: 'error' | 'warning' | 'perfect'; // red, yellow, green
+  message: string;
+}
+
 export interface ExerciseState {
   repCount: number;
   phase: 'up' | 'down' | 'transition';
   formScore: number;
   feedback: string[];
+  formIssues?: FormIssue[]; // Detailed visual feedback
 }
 
 // Calculate angle between three points
@@ -27,8 +35,9 @@ function distance(a: Keypoint, b: Keypoint): number {
 export function detectPushup(
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
   const feedback: string[] = [];
+  const formIssues: FormIssue[] = [];
   let formScore = 100;
 
   // Key landmarks
@@ -56,9 +65,29 @@ export function detectPushup(
     if (hipMid.y > shoulderMid.y + 0.1) {
       feedback.push("Lower your hips");
       formScore -= 15;
+      // Highlight sagging hips
+      formIssues.push({
+        type: 'joint',
+        landmarkIndices: [23, 24], // Left and right hips
+        severity: 'error',
+        message: 'Hips sagging - engage core'
+      });
+      formIssues.push({
+        type: 'alignment',
+        landmarkIndices: [11, 12, 23, 24], // Shoulders to hips
+        severity: 'error',
+        message: 'Body alignment off'
+      });
     } else if (hipMid.y < shoulderMid.y - 0.1) {
       feedback.push("Raise your hips");
       formScore -= 15;
+      // Highlight raised hips
+      formIssues.push({
+        type: 'joint',
+        landmarkIndices: [23, 24],
+        severity: 'error',
+        message: 'Hips too high'
+      });
     }
   }
 
@@ -78,23 +107,55 @@ export function detectPushup(
   if (elbowDiff > 15) {
     feedback.push("Keep elbows even");
     formScore -= 10;
+    // Highlight uneven elbows
+    if (leftElbowAngle < rightElbowAngle) {
+      formIssues.push({
+        type: 'connection',
+        landmarkIndices: [11, 13, 15], // Left arm
+        severity: 'warning',
+        message: 'Left elbow lower'
+      });
+    } else {
+      formIssues.push({
+        type: 'connection',
+        landmarkIndices: [12, 14, 16], // Right arm
+        severity: 'warning',
+        message: 'Right elbow lower'
+      });
+    }
   }
 
+  // Show perfect form indicators
   if (formScore >= 90) {
     feedback.push("Perfect form!");
+    // Highlight good body alignment in green
+    formIssues.push({
+      type: 'alignment',
+      landmarkIndices: [11, 12, 23, 24, 27, 28], // Shoulders, hips, ankles
+      severity: 'perfect',
+      message: 'Perfect alignment'
+    });
+    // Highlight good elbow position
+    formIssues.push({
+      type: 'connection',
+      landmarkIndices: [11, 13, 15, 12, 14, 16], // Both arms
+      severity: 'perfect',
+      message: 'Great arm position'
+    });
   } else if (formScore >= 75) {
     feedback.push("Good form");
   }
 
-  return { phase, formScore: Math.max(0, formScore), feedback };
+  return { phase, formScore: Math.max(0, formScore), feedback, formIssues };
 }
 
 // Squat detection
 export function detectSquat(
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
   const feedback: string[] = [];
+  const formIssues: FormIssue[] = [];
   let formScore = 100;
 
   // Key landmarks
@@ -136,29 +197,49 @@ export function detectSquat(
   if (kneeDiff > 15) {
     feedback.push("Balance your knees");
     formScore -= 10;
+    formIssues.push({
+      type: 'joint',
+      landmarkIndices: [25, 26], // Both knees
+      severity: 'warning',
+      message: 'Uneven knee angles'
+    });
   }
 
   // Check if knees go past toes
   if (leftKnee.x > leftAnkle.x + 0.05 || rightKnee.x > rightAnkle.x + 0.05) {
     feedback.push("Keep knees behind toes");
     formScore -= 10;
+    formIssues.push({
+      type: 'connection',
+      landmarkIndices: [25, 27, 26, 28], // Knees to ankles
+      severity: 'error',
+      message: 'Knees past toes'
+    });
   }
 
   if (formScore >= 90) {
     feedback.push("Perfect squat!");
+    // Highlight perfect leg alignment
+    formIssues.push({
+      type: 'connection',
+      landmarkIndices: [23, 25, 27, 24, 26, 28], // Both legs
+      severity: 'perfect',
+      message: 'Perfect leg alignment'
+    });
   } else if (formScore >= 75) {
     feedback.push("Good form");
   }
 
-  return { phase, formScore: Math.max(0, formScore), feedback };
+  return { phase, formScore: Math.max(0, formScore), feedback, formIssues };
 }
 
 // Lunge detection
 export function detectLunge(
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
   const feedback: string[] = [];
+  const formIssues: FormIssue[] = [];
   let formScore = 100;
 
   const leftHip = landmarks[23];
@@ -192,23 +273,36 @@ export function detectLunge(
   if (leftKnee.y > leftAnkle.y + 0.2 || rightKnee.y > rightAnkle.y + 0.2) {
     feedback.push("Don't let back knee touch ground");
     formScore -= 10;
+    formIssues.push({
+      type: 'joint',
+      landmarkIndices: leftKnee.y > rightKnee.y ? [25] : [26],
+      severity: 'warning',
+      message: 'Back knee too low'
+    });
   }
 
   if (formScore >= 90) {
     feedback.push("Perfect lunge!");
+    formIssues.push({
+      type: 'connection',
+      landmarkIndices: [23, 25, 27, 24, 26, 28],
+      severity: 'perfect',
+      message: 'Perfect lunge form'
+    });
   } else if (formScore >= 75) {
     feedback.push("Good form");
   }
 
-  return { phase, formScore: Math.max(0, formScore), feedback };
+  return { phase, formScore: Math.max(0, formScore), feedback, formIssues };
 }
 
 // Jumping jack detection
 export function detectJumpingJack(
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
   const feedback: string[] = [];
+  const formIssues: FormIssue[] = [];
   let formScore = 100;
 
   const leftShoulder = landmarks[11];
@@ -239,17 +333,26 @@ export function detectJumpingJack(
 
   if (formScore >= 90) {
     feedback.push("Great jumping jacks!");
+    if (phase === 'up') {
+      formIssues.push({
+        type: 'connection',
+        landmarkIndices: [11, 15, 12, 16, 27, 28], // Arms and legs
+        severity: 'perfect',
+        message: 'Perfect extension'
+      });
+    }
   }
 
-  return { phase, formScore: Math.max(0, formScore), feedback };
+  return { phase, formScore: Math.max(0, formScore), feedback, formIssues };
 }
 
 // High knees detection
 export function detectHighKnees(
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
   const feedback: string[] = [];
+  const formIssues: FormIssue[] = [];
   let formScore = 100;
 
   const leftHip = landmarks[23];
@@ -277,16 +380,32 @@ export function detectHighKnees(
 
   if (formScore >= 90) {
     feedback.push("Perfect high knees!");
+    if (leftKneeRaised) {
+      formIssues.push({
+        type: 'joint',
+        landmarkIndices: [25], // Left knee
+        severity: 'perfect',
+        message: 'Perfect knee height'
+      });
+    }
+    if (rightKneeRaised) {
+      formIssues.push({
+        type: 'joint',
+        landmarkIndices: [26], // Right knee
+        severity: 'perfect',
+        message: 'Perfect knee height'
+      });
+    }
   }
 
-  return { phase, formScore: Math.max(0, formScore), feedback };
+  return { phase, formScore: Math.max(0, formScore), feedback, formIssues };
 }
 
 export function detectExercise(
   exerciseType: ExerciseType,
   landmarks: Keypoint[],
   previousPhase: 'up' | 'down' | 'transition'
-): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[] } {
+): { phase: 'up' | 'down' | 'transition'; formScore: number; feedback: string[]; formIssues: FormIssue[] } {
   switch (exerciseType) {
     case 'pushups':
       return detectPushup(landmarks, previousPhase);
@@ -299,6 +418,6 @@ export function detectExercise(
     case 'high_knees':
       return detectHighKnees(landmarks, previousPhase);
     default:
-      return { phase: previousPhase, formScore: 0, feedback: [] };
+      return { phase: previousPhase, formScore: 0, feedback: [], formIssues: [] };
   }
 }

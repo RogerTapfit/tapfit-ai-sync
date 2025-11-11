@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { initializePoseVideo, detectPoseVideo, type Keypoint } from '@/features/bodyScan/ml/poseVideo';
-import { detectExercise, type ExerciseType } from '@/utils/exerciseDetection';
+import { detectExercise, type ExerciseType, type FormIssue } from '@/utils/exerciseDetection';
 import { toast } from 'sonner';
 
 interface UseLiveExerciseProps {
@@ -23,6 +23,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [currentPhase, setCurrentPhase] = useState<'up' | 'down' | 'transition'>('up');
   const [formScore, setFormScore] = useState(100);
   const [feedback, setFeedback] = useState<string[]>([]);
+  const [formIssues, setFormIssues] = useState<FormIssue[]>([]);
   const [duration, setDuration] = useState(0);
   const [landmarks, setLandmarks] = useState<Keypoint[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -96,6 +97,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       
       setFormScore(detection.formScore);
       setFeedback(detection.feedback);
+      setFormIssues(detection.formIssues || []);
       formScoresRef.current.push(detection.formScore);
 
       // Count reps on phase transition
@@ -232,6 +234,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     currentPhase,
     formScore,
     feedback,
+    formIssues,
     duration,
     landmarks,
     progress: (reps / targetReps) * 100,

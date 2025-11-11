@@ -68,19 +68,54 @@ export async function detectPoseVideo(
   }
 }
 
+/**
+ * Draws the detected pose skeleton on a canvas with form correction highlights
+ */
 export function drawPose(
   ctx: CanvasRenderingContext2D,
   landmarks: Keypoint[],
   width: number,
-  height: number
+  height: number,
+  formIssues?: Array<{
+    type: 'joint' | 'connection' | 'alignment';
+    landmarkIndices: number[];
+    severity: 'error' | 'warning' | 'perfect';
+    message: string;
+  }>
 ): void {
   if (landmarks.length < 33) return;
 
   // Clear canvas
   ctx.clearRect(0, 0, width, height);
+  
+  // Create sets of landmarks for each severity level for efficient lookup
+  const errorLandmarks = new Set<number>();
+  const warningLandmarks = new Set<number>();
+  const perfectLandmarks = new Set<number>();
+  const errorConnections = new Set<string>();
+  const perfectConnections = new Set<string>();
+  
+  if (formIssues) {
+    formIssues.forEach(issue => {
+      if (issue.type === 'joint') {
+        issue.landmarkIndices.forEach(idx => {
+          if (issue.severity === 'error') errorLandmarks.add(idx);
+          else if (issue.severity === 'warning') warningLandmarks.add(idx);
+          else if (issue.severity === 'perfect') perfectLandmarks.add(idx);
+        });
+      } else if (issue.type === 'connection' || issue.type === 'alignment') {
+        // Store connections for special rendering
+        for (let i = 0; i < issue.landmarkIndices.length - 1; i++) {
+          const key = `${issue.landmarkIndices[i]}-${issue.landmarkIndices[i + 1]}`;
+          if (issue.severity === 'error') errorConnections.add(key);
+          else if (issue.severity === 'perfect') perfectConnections.add(key);
+        }
+      }
+    });
+  }
 
-  // Connections for pose skeleton
-  const connections = [
+  // Connections for pose skeleton (renamed from connections)
+  const POSE_CONNECTIONS = [
     [11, 12], [11, 13], [13, 15], [12, 14], [14, 16], // Arms
     [15, 17], [15, 19], [15, 21], [16, 18], [16, 20], [16, 22], // Hands
     [11, 23], [12, 24], [23, 24], // Torso
@@ -90,44 +125,92 @@ export function drawPose(
     [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], // Face
   ];
 
-  // Draw connections with orange color
-  ctx.strokeStyle = '#ff8800';
+  // Draw connections with color-coded feedback
   ctx.lineWidth = 4;
   ctx.lineCap = 'round';
   ctx.shadowBlur = 10;
-  ctx.shadowColor = 'rgba(255, 136, 0, 0.5)';
 
-  connections.forEach(([start, end]) => {
-    const startPoint = landmarks[start];
-    const endPoint = landmarks[end];
-    if (startPoint && endPoint && 
-        (startPoint.visibility || 0) > 0.5 && 
-        (endPoint.visibility || 0) > 0.5) {
-      ctx.beginPath();
-      ctx.moveTo(startPoint.x * width, startPoint.y * height);
-      ctx.lineTo(endPoint.x * width, endPoint.y * height);
-      ctx.stroke();
+  POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
+    const start = landmarks[startIdx];
+    const end = landmarks[endIdx];
+    if (!start || !end) return;
+    if ((start.visibility || 0) < 0.5 || (end.visibility || 0) < 0.5) return;
+    
+    const connKey = `${startIdx}-${endIdx}`;
+    const connKeyReverse = `${endIdx}-${startIdx}`;
+    
+    // Determine connection color based on form issues
+    let strokeColor = '#ff8800'; // Default orange
+    let shadowColor = 'rgba(255, 136, 0, 0.5)';
+    
+    if (errorConnections.has(connKey) || errorConnections.has(connKeyReverse)) {
+      strokeColor = '#ef4444'; // Red for errors
+      shadowColor = 'rgba(239, 68, 68, 0.7)';
+      ctx.lineWidth = 6;
+    } else if (perfectConnections.has(connKey) || perfectConnections.has(connKeyReverse)) {
+      strokeColor = '#22c55e'; // Green for perfect
+      shadowColor = 'rgba(34, 197, 94, 0.7)';
+      ctx.lineWidth = 6;
     }
+    
+    ctx.strokeStyle = strokeColor;
+    ctx.shadowColor = shadowColor;
+    ctx.beginPath();
+    ctx.moveTo(start.x * width, start.y * height);
+    ctx.lineTo(end.x * width, end.y * height);
+    ctx.stroke();
+    
+    // Reset line width
+    ctx.lineWidth = 4;
   });
 
-  // Draw landmarks with white centers and orange glow
-  ctx.shadowBlur = 8;
-  landmarks.forEach((point) => {
-    if ((point.visibility || 0) > 0.5) {
-      // Outer orange glow
-      ctx.fillStyle = '#ff8800';
-      ctx.beginPath();
-      ctx.arc(point.x * width, point.y * height, 8, 0, 2 * Math.PI);
-      ctx.fill();
-      
-      // Inner white center
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowBlur = 0;
-      ctx.beginPath();
-      ctx.arc(point.x * width, point.y * height, 5, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.shadowBlur = 8;
+  // Draw keypoints with color-coded form feedback
+  ctx.shadowBlur = 12;
+  landmarks.forEach((point, idx) => {
+    if ((point.visibility || 0) < 0.5) return;
+    const x = point.x * width;
+    const y = point.y * height;
+    
+    // Determine color based on form issues
+    let outerColor = '#ff8800'; // Default orange
+    let innerColor = '#ffffff';
+    let glowColor = 'rgba(255, 136, 0, 0.5)';
+    let radius = 8;
+    
+    if (errorLandmarks.has(idx)) {
+      // Red for errors - more prominent
+      outerColor = '#ef4444';
+      innerColor = '#ffc9c9';
+      glowColor = 'rgba(239, 68, 68, 0.7)';
+      radius = 12;
+    } else if (warningLandmarks.has(idx)) {
+      // Yellow for warnings
+      outerColor = '#facc15';
+      innerColor = '#ffffc9';
+      glowColor = 'rgba(250, 204, 21, 0.7)';
+      radius = 10;
+    } else if (perfectLandmarks.has(idx)) {
+      // Green for perfect form
+      outerColor = '#22c55e';
+      innerColor = '#c9ffc9';
+      glowColor = 'rgba(34, 197, 94, 0.7)';
+      radius = 10;
     }
+    
+    // Outer glow circle
+    ctx.fillStyle = outerColor;
+    ctx.shadowColor = glowColor;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Inner white/colored center
+    ctx.fillStyle = innerColor;
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 0.6, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.shadowBlur = 12;
   });
 
   // Reset shadow
