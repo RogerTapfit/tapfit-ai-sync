@@ -29,8 +29,7 @@ import {
   EyeOff,
   Target,
   Volume2,
-  VolumeX,
-  FlipHorizontal2
+  VolumeX
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -61,11 +60,6 @@ export function LiveExerciseTracker({
   const [showResults, setShowResults] = useState(false);
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
   const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
-  const [isMirrored, setIsMirrored] = useState(() => {
-    // Load mirror preference from localStorage, default to true (mirrored)
-    const saved = localStorage.getItem('videoMirrored');
-    return saved !== null ? saved === 'true' : true;
-  });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
@@ -108,22 +102,12 @@ export function LiveExerciseTracker({
     }
   };
 
-  // Toggle mirror view
-  const toggleMirror = () => {
-    setIsMirrored(prev => {
-      const newValue = !prev;
-      localStorage.setItem('videoMirrored', String(newValue));
-      return newValue;
-    });
-  };
-
   const {
     videoRef,
     isActive,
     isPaused,
     isPreviewMode,
     isInitialized,
-    isStarting,
     isReadyForAutoStart,
     readyCountdown,
     reps,
@@ -203,25 +187,17 @@ export function LiveExerciseTracker({
     }
   });
 
-  // Auto-start preview when initialized (with delay to ensure everything is ready)
+  // Auto-start preview when initialized
   useEffect(() => {
     if (isInitialized && !isActive && !showResults && !skipSetup) {
-      // Add small delay to ensure MediaPipe is fully ready
-      const timer = setTimeout(() => {
-        startPreview().catch((err) => {
-          console.error('Failed to start preview:', err);
-          toast.error('Camera preview failed. Please click Start Workout to try again.');
-        });
-      }, 500);
-      
-      return () => clearTimeout(timer);
+      startPreview();
     }
     return () => {
       if (isPreviewMode) {
         stopPreview();
       }
     };
-  }, [isInitialized, isActive, showResults, skipSetup, startPreview, stopPreview, isPreviewMode]);
+  }, [isInitialized, isActive, showResults, skipSetup]);
 
   // Draw pose overlay on canvas - continuously update (for both preview and active modes)
   useEffect(() => {
@@ -388,43 +364,13 @@ export function LiveExerciseTracker({
             )}
           </div>
 
-          {/* Loading State */}
-          {!isInitialized && (
-            <Card className="relative overflow-hidden bg-black/5 max-w-2xl mx-auto">
-              <div className="relative aspect-[9/16] flex flex-col items-center justify-center space-y-4">
-                <div className="relative">
-                  <Camera className="w-16 h-16 text-primary animate-pulse" />
-                  <div className="absolute -inset-2 border-2 border-primary/30 rounded-full animate-ping" />
-                </div>
-                <div className="text-center space-y-2">
-                  <p className="text-lg font-medium">Initializing AI Pose Detection...</p>
-                  <p className="text-sm text-muted-foreground">Loading motion tracking system</p>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Camera Preview Error State */}
-          {isInitialized && !isPreviewMode && !isActive && (
-            <Card className="relative overflow-hidden bg-black/5 max-w-2xl mx-auto">
-              <div className="relative aspect-[9/16] flex flex-col items-center justify-center space-y-4 p-6">
-                <Camera className="w-16 h-16 text-muted-foreground" />
-                <div className="text-center space-y-2">
-                  <p className="text-lg font-medium">Camera Preview Unavailable</p>
-                  <p className="text-sm text-muted-foreground">Click Start Workout to activate your camera</p>
-                </div>
-              </div>
-            </Card>
-          )}
-
           {/* Camera Preview during Setup */}
-          {isInitialized && isPreviewMode && (
+          {isPreviewMode && (
             <Card className="relative overflow-hidden bg-black max-w-2xl mx-auto">
               <div className="relative aspect-[9/16] bg-black">
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
-                  style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
                   playsInline
                   muted
                   autoPlay
@@ -432,7 +378,7 @@ export function LiveExerciseTracker({
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ mixBlendMode: 'normal', transform: isMirrored ? 'scaleX(-1)' : 'none' }}
+                  style={{ mixBlendMode: 'normal' }}
                 />
                 
 
@@ -456,20 +402,6 @@ export function LiveExerciseTracker({
                     title={showIdealPose ? "Hide Guide" : "Show Guide"}
                   >
                     {showIdealPose ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
-                  </Button>
-                  
-                  {/* Mirror Toggle */}
-                  <Button
-                    onClick={() => {
-                      toggleMirror();
-                      toast.success(isMirrored ? 'Mirror view disabled' : 'Mirror view enabled', { duration: 2000 });
-                    }}
-                    size="icon"
-                    variant="secondary"
-                    className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
-                    title={isMirrored ? "Disable Mirror View" : "Enable Mirror View"}
-                  >
-                    <FlipHorizontal2 className={cn("w-5 h-5 text-white", isMirrored && "text-blue-400")} />
                   </Button>
                 </div>
 
@@ -550,19 +482,10 @@ export function LiveExerciseTracker({
               }}
               size="lg" 
               className="w-full"
-              disabled={!isInitialized || isStarting}
+              disabled={!isInitialized}
             >
-              {isStarting ? (
-                <>
-                  <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Starting Camera...
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5 mr-2" />
-                  {isInitialized ? 'Start Workout' : 'Initializing AI...'}
-                </>
-              )}
+              <Play className="w-5 h-5 mr-2" />
+              {isInitialized ? 'Start Workout' : 'Initializing AI...'}
             </Button>
 
             {/* Voice Commands Toggle */}
@@ -759,7 +682,6 @@ export function LiveExerciseTracker({
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
-            style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
             playsInline
             muted
             autoPlay
@@ -767,7 +689,7 @@ export function LiveExerciseTracker({
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{ mixBlendMode: 'normal', transform: isMirrored ? 'scaleX(-1)' : 'none' }}
+            style={{ mixBlendMode: 'normal' }}
           />
           
           {/* Phase Position Indicator */}
@@ -867,20 +789,6 @@ export function LiveExerciseTracker({
               title={isVoiceEnabled ? "Turn Off Coach Voice" : "Turn On Coach Voice"}
             >
               {isVoiceEnabled ? <Volume2 className="w-4 h-4 text-white" /> : <VolumeX className="w-4 h-4 text-white" />}
-            </Button>
-            
-            {/* Mirror Toggle */}
-            <Button
-              onClick={() => {
-                toggleMirror();
-                toast.success(isMirrored ? 'Mirror view disabled' : 'Mirror view enabled', { duration: 2000 });
-              }}
-              size="icon"
-              variant="secondary"
-              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
-              title={isMirrored ? "Disable Mirror View" : "Enable Mirror View"}
-            >
-              <FlipHorizontal2 className={cn("w-4 h-4 text-white", isMirrored && "text-blue-400")} />
             </Button>
           </div>
 

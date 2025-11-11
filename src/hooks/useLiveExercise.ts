@@ -41,7 +41,6 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [duration, setDuration] = useState(0);
   const [landmarks, setLandmarks] = useState<Keypoint[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [distanceStatus, setDistanceStatus] = useState<'too-close' | 'too-far' | 'perfect' | null>(null);
   const [poseConfidence, setPoseConfidence] = useState<number>(0);
@@ -274,7 +273,6 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   // Start camera
   const startCamera = useCallback(async () => {
     try {
-      console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           width: 1280, 
@@ -282,25 +280,15 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           facingMode
         }
       });
-      console.log('Camera access granted');
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        console.log('Video playing');
       }
       return true;
     } catch (error) {
       console.error('Camera access error:', error);
-      if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          toast.error('Camera permission denied. Please allow camera access and try again.');
-        } else if (error.name === 'NotFoundError') {
-          toast.error('No camera found. Please connect a camera and try again.');
-        } else {
-          toast.error('Could not access camera. Please check your camera settings.');
-        }
-      }
+      toast.error('Could not access camera. Please grant permission.');
       return false;
     }
   }, [facingMode]);
@@ -416,267 +404,287 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
   // Process video frame
   const processFrame = useCallback(async (timestamp: number) => {
-    // Always ensure the loop continues, even if errors occur
-    try {
-      if (!videoRef.current || !isInitialized) {
-        animationFrameRef.current = requestAnimationFrame(processFrame);
-        return;
-      }
-      if (!isPreviewMode && !isActive) {
-        animationFrameRef.current = requestAnimationFrame(processFrame);
-        return;
-      }
-      if (isActive && isPaused) {
-        animationFrameRef.current = requestAnimationFrame(processFrame);
-        return;
-      }
+    if (!videoRef.current || !isInitialized) return;
+    if (!isPreviewMode && !isActive) return;
+    if (isActive && isPaused) return;
 
-      const video = videoRef.current;
+    const video = videoRef.current;
 
-      // Validate video is ready with valid dimensions before processing
-      if (
-        video.readyState < 2 || // HAVE_CURRENT_DATA
-        video.videoWidth <= 0 ||
-        video.videoHeight <= 0 ||
-        video.currentTime <= 0
-      ) {
-        // Video not ready yet, skip this frame gracefully
-        animationFrameRef.current = requestAnimationFrame(processFrame);
-        return;
-      }
+    // Validate video is ready with valid dimensions before processing
+    if (
+      video.readyState < 2 || // HAVE_CURRENT_DATA
+      video.videoWidth <= 0 ||
+      video.videoHeight <= 0 ||
+      video.currentTime <= 0
+    ) {
+      // Video not ready yet, skip this frame gracefully
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+      return;
+    }
 
-      const result = await detectPoseVideo(video, timestamp);
+    const result = await detectPoseVideo(video, timestamp);
     
-      if (result.ok && result.landmarks.length > 0) {
-        setLandmarks(result.landmarks);
-        
-        // Calculate and update pose confidence
-        const confidence = calculatePoseConfidence(result.landmarks);
-        setPoseConfidence(confidence);
+    if (result.ok && result.landmarks.length > 0) {
+      setLandmarks(result.landmarks);
+      
+      // Calculate and update pose confidence
+      const confidence = calculatePoseConfidence(result.landmarks);
+      setPoseConfidence(confidence);
 
-        // Preview mode: only show landmarks and distance feedback
-        if (isPreviewMode) {
-          const distance = calculateDistanceStatus(result.landmarks);
-          setDistanceStatus(distance);
+      // Preview mode: only show landmarks and distance feedback
+      if (isPreviewMode) {
+        const distance = calculateDistanceStatus(result.landmarks);
+        setDistanceStatus(distance);
+        
+        // Auto-start detection: Check if user is in starting position
+        const detection = detectExercise(exerciseType, result.landmarks, 'up');
+        const isInStartPosition = detection.phase === 'up';
+        const hasGoodForm = detection.formScore > 60;
+        const hasGoodConfidence = confidence > 70;
+        
+        if (isInStartPosition && hasGoodForm && hasGoodConfidence) {
+          const now = Date.now();
           
-          // Auto-start detection: Check if user is in starting position
-          const detection = detectExercise(exerciseType, result.landmarks, 'up');
-          const isInStartPosition = detection.phase === 'up';
-          const hasGoodForm = detection.formScore > 60;
-          const hasGoodConfidence = confidence > 70;
-          
-          if (isInStartPosition && hasGoodForm && hasGoodConfidence) {
-            const now = Date.now();
+          if (!readyPositionStartTimeRef.current) {
+            // First time in ready position
+            readyPositionStartTimeRef.current = now;
+            setIsReadyForAutoStart(true);
+            speak("Get ready", 'high');
+          } else {
+            // Calculate countdown
+            const timeInPosition = (now - readyPositionStartTimeRef.current) / 1000;
+            const countdown = Math.max(0, 3 - Math.floor(timeInPosition));
             
-            if (!readyPositionStartTimeRef.current) {
-              // First time in ready position
-              readyPositionStartTimeRef.current = now;
-              setIsReadyForAutoStart(true);
-              speak("Get ready", 'high');
-            } else {
-              // Calculate countdown
-              const timeInPosition = (now - readyPositionStartTimeRef.current) / 1000;
-              const countdown = Math.max(0, 3 - Math.floor(timeInPosition));
+            if (countdown > 0 && countdown !== readyCountdown) {
+              setReadyCountdown(countdown);
+              speak(countdown.toString(), 'high');
+            } else if (countdown === 0 && readyCountdown !== 0) {
+              setReadyCountdown(0);
+              speak("Let's start!", 'high');
               
-              if (countdown > 0 && countdown !== readyCountdown) {
-                setReadyCountdown(countdown);
-                speak(countdown.toString(), 'high');
-              } else if (countdown === 0 && readyCountdown !== 0) {
-                setReadyCountdown(0);
-                speak("Let's start!", 'high');
+              // Auto-start the workout after a brief delay
+              if (autoStartTimerRef.current) {
+                clearTimeout(autoStartTimerRef.current);
+              }
+              autoStartTimerRef.current = window.setTimeout(() => {
+                setIsPreviewMode(false);
+                setIsActive(true);
+                startTimeRef.current = Date.now();
+                readyPositionStartTimeRef.current = null;
+                setIsReadyForAutoStart(false);
+                setReadyCountdown(null);
+              }, 800); // Small delay after "Let's start!"
+            }
+          }
+        } else {
+          // Reset if user moves out of position
+          if (readyPositionStartTimeRef.current) {
+            readyPositionStartTimeRef.current = null;
+            setIsReadyForAutoStart(false);
+            setReadyCountdown(null);
+            if (autoStartTimerRef.current) {
+              clearTimeout(autoStartTimerRef.current);
+              autoStartTimerRef.current = null;
+            }
+          }
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      // Active workout mode: full tracking
+      if (isActive) {
+        // Detect exercise
+        const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
+        
+        setFormScore(detection.formScore);
+        setFeedback(detection.feedback);
+        setFormIssues(detection.formIssues || []);
+        formScoresRef.current.push(detection.formScore);
+        
+        // Update elbow angle for pushups with adaptive baseline learning
+        if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
+          const currentAngle = detection.avgElbowAngle;
+          const now = Date.now(); // Declare here for use in debug logging
+          setCurrentElbowAngle(currentAngle);
+          
+          // Trigger haptic feedback when crossing angle thresholds
+          triggerAngleHaptic(currentAngle, detection.phase);
+          
+          // Learn baseline when in "up" position with good confidence
+          if (confidence > 60 && detection.phase === 'up') {
+            if (upBaselineRef.current === null) {
+              // Initialize baseline
+              upBaselineRef.current = currentAngle;
+            } else {
+              // Exponentially weighted moving average (EWMA) for stable baseline
+              upBaselineRef.current = 0.8 * upBaselineRef.current + 0.2 * currentAngle;
+            }
+            
+            // Compute dynamic thresholds from baseline
+            upThresholdRef.current = upBaselineRef.current - 5;
+            downThresholdRef.current = Math.max(95, upBaselineRef.current - 35);
+          }
+          
+          // Track minimum angle during non-up phases
+          if (detection.phase !== 'up') {
+            minAngleInRepRef.current = Math.min(minAngleInRepRef.current, currentAngle);
+          }
+          
+          // Check if bottom achieved (within tolerance)
+          const tolerance = 8; // 8° tolerance for "close enough"
+          if (currentAngle <= downThresholdRef.current + tolerance) {
+            bottomAchievedRef.current = true;
+          }
+          
+          // Debug logging for pushups
+          if (now - lastCoachingTimeRef.current > 2000) {
+            console.log('[Pushup Debug]', {
+              angle: Math.round(currentAngle),
+              baseline: upBaselineRef.current ? Math.round(upBaselineRef.current) : null,
+              upThreshold: Math.round(upThresholdRef.current),
+              downThreshold: Math.round(downThresholdRef.current),
+              minInRep: minAngleInRepRef.current === Infinity ? null : Math.round(minAngleInRepRef.current),
+              bottomAchieved: bottomAchievedRef.current,
+              phase: detection.phase,
+              confidence: Math.round(confidence)
+            });
+            lastCoachingTimeRef.current = now;
+          }
+        }
+
+        // Update ideal pose template based on phase - start animation on phase change
+        if (showIdealPose && detection.phase !== 'transition') {
+          const newIdealPose = getIdealPoseForPhase(detection.phase);
+          
+          // Only start animation if phase actually changed
+          if (detection.phase !== lastPhaseRef.current && lastPhaseRef.current !== 'transition') {
+            startPoseAnimation(newIdealPose);
+          } else if (animationProgress >= 1 && newIdealPose.length > 0) {
+            // If no animation in progress and we have a pose, just set it
+            setIdealPoseLandmarks(newIdealPose);
+          }
+          
+          // Calculate alignment score with current displayed pose
+          if (idealPoseLandmarks.length > 0) {
+            const alignment = calculateAlignment(result.landmarks, idealPoseLandmarks);
+            setAlignmentScore(alignment.score);
+            setMisalignedJoints(alignment.misalignedJoints);
+          }
+        }
+
+        // Track phase transitions and calculate velocities
+        const now = Date.now();
+        
+        // Transition from up to down - calculate concentric (up) phase velocity
+        if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
+          repStartTimeRef.current = now;
+          
+          // Calculate concentric velocity if we have a start time
+          if (upPhaseStartRef.current > 0) {
+            const upDuration = now - upPhaseStartRef.current;
+            setConcentricVelocity(upDuration);
+            const zone = classifyVelocityZone(upDuration, exerciseType);
+            setConcentricZone(zone);
+          }
+          
+          // Start timing down phase
+          downPhaseStartRef.current = now;
+        }
+
+        // Transition from down to up - calculate eccentric (down) phase velocity and count rep
+        if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
+          // Calculate eccentric velocity if we have a start time
+          if (downPhaseStartRef.current > 0) {
+            const downDuration = now - downPhaseStartRef.current;
+            setEccentricVelocity(downDuration);
+            const zone = classifyVelocityZone(downDuration, exerciseType);
+            setEccentricZone(zone);
+          }
+          
+          // Start timing up phase
+          upPhaseStartRef.current = now;
+          
+          // For push-ups, use angle-based hysteresis counting; otherwise use traditional phase-based
+          let shouldCountRep = false;
+          
+          if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
+            const currentAngle = detection.avgElbowAngle;
+            
+            // Angle-driven hysteresis: Count if back at up threshold AND either:
+            // 1. Bottom was achieved (within tolerance), OR
+            // 2. Total angle drop from baseline is significant (≥25°)
+            if (currentAngle >= upThresholdRef.current && confidence > 60) {
+              const totalDrop = upBaselineRef.current !== null 
+                ? upBaselineRef.current - minAngleInRepRef.current 
+                : 0;
+              
+              if (bottomAchievedRef.current || (totalDrop >= 25 && minAngleInRepRef.current !== Infinity)) {
+                shouldCountRep = true;
                 
-                // Auto-start the workout after a brief delay
-                if (autoStartTimerRef.current) {
-                  clearTimeout(autoStartTimerRef.current);
-                }
-                autoStartTimerRef.current = window.setTimeout(() => {
-                  setIsPreviewMode(false);
-                  setIsActive(true);
-                  startTimeRef.current = Date.now();
-                  readyPositionStartTimeRef.current = null;
-                  setIsReadyForAutoStart(false);
-                  setReadyCountdown(null);
-                }, 800); // Small delay after "Let's start!"
+                // Reset hysteresis state for next rep
+                bottomAchievedRef.current = false;
+                minAngleInRepRef.current = Infinity;
               }
             }
           } else {
-            // Reset if user moves out of position
-            if (readyPositionStartTimeRef.current) {
-              readyPositionStartTimeRef.current = null;
-              setIsReadyForAutoStart(false);
-              setReadyCountdown(null);
-              if (autoStartTimerRef.current) {
-                clearTimeout(autoStartTimerRef.current);
-                autoStartTimerRef.current = null;
-              }
-            }
+            // Traditional phase-based counting for other exercises
+            shouldCountRep = true;
           }
           
-          animationFrameRef.current = requestAnimationFrame(processFrame);
-          return;
-        }
-
-        // Active workout mode: full tracking
-        if (isActive) {
-          // Detect exercise
-          const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
-          
-          setFormScore(detection.formScore);
-          setFeedback(detection.feedback);
-          setFormIssues(detection.formIssues || []);
-          formScoresRef.current.push(detection.formScore);
-          
-          // Update elbow angle for pushups with adaptive baseline learning
-          if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
-            const currentAngle = detection.avgElbowAngle;
-            const now = Date.now();
-            setCurrentElbowAngle(currentAngle);
+          // Debounce reps (minimum 350ms between reps) - responsive but stable
+          if (shouldCountRep && now - lastRepTimeRef.current > 350) {
+            // Calculate rep duration (from start of down phase to end of up phase)
+            const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
             
-            // Trigger haptic feedback when crossing angle thresholds
-            triggerAngleHaptic(currentAngle, detection.phase);
+            // Analyze rep speed
+            if (repDuration > 0) {
+              const speed = analyzeRepSpeed(repDuration);
+              setRepSpeed(speed);
+              setLastRepDuration(repDuration);
+            }
             
-            // Learn baseline when in "up" position with good confidence
-            if (confidence > 60 && detection.phase === 'up') {
-              if (upBaselineRef.current === null) {
-                upBaselineRef.current = currentAngle;
+            setReps(prev => {
+              const newReps = prev + 1;
+              
+              // 🟢 TRIGGER GREEN FLASH
+              setIsRepFlashing(true);
+              setTimeout(() => setIsRepFlashing(false), 400);
+              
+              // 📳 HAPTIC FEEDBACK - double pulse for rep completion
+              if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100]);
+              }
+              
+              // Completion feedback
+              if (newReps >= targetReps) {
+                const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
+                speak(setCompletePhrase || 'Set complete! Rest time.', 'high');
+                setCurrentSet(prev => prev + 1);
+                startRestTimer();
+                toast.success(`Set ${currentSet + 1} complete! Rest for ${restDuration}s`, { duration: 2000 });
+              } else if (newReps === targetReps - 2) {
+                const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
+                if (nearTargetPhrase) {
+                  speak(nearTargetPhrase, 'normal');
+                }
               } else {
-                upBaselineRef.current = 0.8 * upBaselineRef.current + 0.2 * currentAngle;
+                toast.success(`Rep ${newReps}!`, { duration: 1000 });
               }
               
-              upThresholdRef.current = upBaselineRef.current - 5;
-              downThresholdRef.current = Math.max(95, upBaselineRef.current - 35);
-            }
-            
-            // Track minimum angle during non-up phases
-            if (detection.phase !== 'up') {
-              minAngleInRepRef.current = Math.min(minAngleInRepRef.current, currentAngle);
-            }
-            
-            // Check if bottom achieved
-            const tolerance = 8;
-            if (currentAngle <= downThresholdRef.current + tolerance) {
-              bottomAchievedRef.current = true;
-            }
+              return newReps;
+            });
+            lastRepTimeRef.current = now;
           }
-
-          // Update ideal pose template based on phase
-          if (showIdealPose && detection.phase !== 'transition') {
-            const newIdealPose = getIdealPoseForPhase(detection.phase);
-            
-            if (detection.phase !== lastPhaseRef.current && lastPhaseRef.current !== 'transition') {
-              startPoseAnimation(newIdealPose);
-            } else if (animationProgress >= 1 && newIdealPose.length > 0) {
-              setIdealPoseLandmarks(newIdealPose);
-            }
-            
-            if (idealPoseLandmarks.length > 0) {
-              const alignment = calculateAlignment(result.landmarks, idealPoseLandmarks);
-              setAlignmentScore(alignment.score);
-              setMisalignedJoints(alignment.misalignedJoints);
-            }
-          }
-
-          // Track phase transitions
-          const now = Date.now();
-          
-          // Transition from up to down
-          if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
-            repStartTimeRef.current = now;
-            
-            if (upPhaseStartRef.current > 0) {
-              const upDuration = now - upPhaseStartRef.current;
-              setConcentricVelocity(upDuration);
-              const zone = classifyVelocityZone(upDuration, exerciseType);
-              setConcentricZone(zone);
-            }
-            
-            downPhaseStartRef.current = now;
-          }
-
-          // Transition from down to up - count rep
-          if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
-            if (downPhaseStartRef.current > 0) {
-              const downDuration = now - downPhaseStartRef.current;
-              setEccentricVelocity(downDuration);
-              const zone = classifyVelocityZone(downDuration, exerciseType);
-              setEccentricZone(zone);
-            }
-            
-            upPhaseStartRef.current = now;
-            
-            // Determine if rep should count
-            let shouldCountRep = false;
-            
-            if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
-              const currentAngle = detection.avgElbowAngle;
-              
-              if (currentAngle >= upThresholdRef.current && confidence > 60) {
-                const totalDrop = upBaselineRef.current !== null 
-                  ? upBaselineRef.current - minAngleInRepRef.current 
-                  : 0;
-                
-                if (bottomAchievedRef.current || (totalDrop >= 25 && minAngleInRepRef.current !== Infinity)) {
-                  shouldCountRep = true;
-                  bottomAchievedRef.current = false;
-                  minAngleInRepRef.current = Infinity;
-                }
-              }
-            } else {
-              shouldCountRep = true;
-            }
-            
-            // Debounce reps
-            if (shouldCountRep && now - lastRepTimeRef.current > 350) {
-              const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
-              
-              if (repDuration > 0) {
-                const speed = analyzeRepSpeed(repDuration);
-                setRepSpeed(speed);
-                setLastRepDuration(repDuration);
-              }
-              
-              setReps(prev => {
-                const newReps = prev + 1;
-                
-                setIsRepFlashing(true);
-                setTimeout(() => setIsRepFlashing(false), 400);
-                
-                if ('vibrate' in navigator) {
-                  navigator.vibrate([100, 50, 100]);
-                }
-                
-                if (newReps >= targetReps) {
-                  const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
-                  speak(setCompletePhrase || 'Set complete! Rest time.', 'high');
-                  setCurrentSet(prev => prev + 1);
-                  startRestTimer();
-                  toast.success(`Set ${currentSet + 1} complete! Rest for ${restDuration}s`, { duration: 2000 });
-                } else if (newReps === targetReps - 2) {
-                  const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
-                  if (nearTargetPhrase) {
-                    speak(nearTargetPhrase, 'normal');
-                  }
-                } else {
-                  toast.success(`Rep ${newReps}!`, { duration: 1000 });
-                }
-                
-                return newReps;
-              });
-              lastRepTimeRef.current = now;
-            }
-          }
-
-          lastPhaseRef.current = detection.phase;
-          setCurrentPhase(detection.phase);
         }
+
+        lastPhaseRef.current = detection.phase;
+        setCurrentPhase(detection.phase);
       }
-    } catch (error) {
-      // Log error but don't break the animation loop
-      console.error('Error in processFrame:', error);
-    } finally {
-      // Always continue the loop, even if there was an error
-      animationFrameRef.current = requestAnimationFrame(processFrame);
     }
+
+    animationFrameRef.current = requestAnimationFrame(processFrame);
   }, [isActive, isPaused, isPreviewMode, exerciseType, targetReps, onComplete, isInitialized, isResting, currentSet, restDuration]);
 
   // Animate ideal pose transitions
@@ -760,40 +768,23 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
   // Start preview mode
   const startPreview = useCallback(async () => {
-    if (!isInitialized) {
-      console.log('Cannot start preview: MediaPipe not initialized');
-      return;
-    }
+    if (!isInitialized) return;
     
-    try {
-      console.log('Starting camera for preview...');
-      const cameraStarted = await startCamera();
-      if (!cameraStarted) {
-        console.error('Camera failed to start');
-        return;
-      }
+    const cameraStarted = await startCamera();
+    if (!cameraStarted) return;
 
-      // Wait for video to be ready with timeout
-      if (videoRef.current) {
-        await Promise.race([
-          new Promise(resolve => {
-            if (videoRef.current) {
-              videoRef.current.onloadedmetadata = resolve;
-            }
-          }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Video load timeout')), 5000))
-        ]);
-      }
-
-      console.log('Preview mode starting...');
-      setIsPreviewMode(true);
-      setLandmarks([]);
-      animationFrameRef.current = requestAnimationFrame(processFrame);
-    } catch (error) {
-      console.error('Error starting preview:', error);
-      toast.error('Failed to start camera preview');
-      throw error;
+    // Wait for video to be ready
+    if (videoRef.current) {
+      await new Promise(resolve => {
+        if (videoRef.current) {
+          videoRef.current.onloadedmetadata = resolve;
+        }
+      });
     }
+
+    setIsPreviewMode(true);
+    setLandmarks([]);
+    animationFrameRef.current = requestAnimationFrame(processFrame);
   }, [startCamera, processFrame, isInitialized]);
 
   // Stop preview mode
@@ -836,76 +827,51 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       return;
     }
 
-    setIsStarting(true);
-
-    try {
-      // If preview is running, stop it first
-      if (isPreviewMode) {
-        stopPreview();
-      }
-
-      // Start camera if not already running
-      if (!streamRef.current) {
-        const cameraStarted = await startCamera();
-        if (!cameraStarted) {
-          setIsStarting(false);
-          return;
-        }
-
-        // Wait for video to be ready with timeout
-        if (videoRef.current) {
-          await Promise.race([
-            new Promise(resolve => {
-              if (videoRef.current) {
-                videoRef.current.onloadedmetadata = resolve;
-              }
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Camera timeout')), 5000))
-          ]).catch((err) => {
-            console.error('Video load timeout:', err);
-            toast.error('Camera initialization timed out. Please try again.');
-            setIsStarting(false);
-            return;
-          });
-        }
-      }
-
-      setIsActive(true);
-      setIsPaused(false);
-      setReps(0);
-      setDuration(0);
-      formScoresRef.current = [];
-      startTimeRef.current = Date.now();
-      lastPhaseRef.current = 'up';
-      lastRepTimeRef.current = 0;
-      lastAnnouncedRep.current = 0;
-      
-      // Set initial ideal pose (without animation)
-      if (showIdealPose) {
-        const initialPose = getIdealPoseForPhase('up');
-        setIdealPoseLandmarks(initialPose);
-        setCurrentIdealPose(initialPose);
-        setTargetIdealPose(initialPose);
-        setAnimationProgress(1);
-      }
-      
-      // Motivational workout start
-      const startPhrase = getCoachingPhrase({ type: 'workout_start' });
-      if (startPhrase) {
-        speak(startPhrase, 'high');
-      }
-
-      // Start processing frames
-      animationFrameRef.current = requestAnimationFrame(processFrame);
-      toast.success('Workout started! Get ready...');
-      
-      setIsStarting(false);
-    } catch (error) {
-      console.error('Error starting workout:', error);
-      toast.error('Failed to start workout. Please try again.');
-      setIsStarting(false);
+    // If preview is running, stop it first
+    if (isPreviewMode) {
+      stopPreview();
     }
-  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview, showIdealPose, getIdealPoseForPhase, speak]);
+
+    // Start camera if not already running
+    if (!streamRef.current) {
+      const cameraStarted = await startCamera();
+      if (!cameraStarted) return;
+
+      // Wait for video to be ready
+      if (videoRef.current) {
+        await new Promise(resolve => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = resolve;
+          }
+        });
+      }
+    }
+
+    setIsActive(true);
+    setIsPaused(false);
+    setReps(0);
+    setDuration(0);
+    formScoresRef.current = [];
+    startTimeRef.current = Date.now();
+    lastPhaseRef.current = 'up';
+    lastRepTimeRef.current = 0;
+    lastAnnouncedRep.current = 0;
+    
+    // Set initial ideal pose (without animation)
+    if (showIdealPose) {
+      const initialPose = getIdealPoseForPhase('up');
+    setIdealPoseLandmarks(initialPose);
+      setCurrentIdealPose(initialPose);
+      setTargetIdealPose(initialPose);
+      setAnimationProgress(1);
+    }
+    
+    // Motivational workout start
+    const startPhrase = getCoachingPhrase({ type: 'workout_start' });
+    speak(startPhrase || 'Starting workout', 'high');
+    animationFrameRef.current = requestAnimationFrame(processFrame);
+    toast.success('Workout started! Get ready...');
+  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview, showIdealPose, getIdealPoseForPhase]);
 
   // Pause workout
   const pause = useCallback(() => {
@@ -970,7 +936,6 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     isPaused,
     isPreviewMode,
     isInitialized,
-    isStarting,
     isReadyForAutoStart,
     readyCountdown,
     reps,
