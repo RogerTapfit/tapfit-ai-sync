@@ -379,8 +379,24 @@ export function LiveExerciseTracker({
             )}
           </div>
 
+          {/* Loading State */}
+          {!isInitialized && (
+            <Card className="relative overflow-hidden bg-black/5 max-w-2xl mx-auto">
+              <div className="relative aspect-[9/16] flex flex-col items-center justify-center space-y-4">
+                <div className="relative">
+                  <Camera className="w-16 h-16 text-primary animate-pulse" />
+                  <div className="absolute -inset-2 border-2 border-primary/30 rounded-full animate-ping" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-medium">Initializing AI Pose Detection...</p>
+                  <p className="text-sm text-muted-foreground">Loading motion tracking system</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Camera Preview during Setup */}
-          {isPreviewMode && (
+          {isInitialized && isPreviewMode && (
             <Card className="relative overflow-hidden bg-black max-w-2xl mx-auto">
               <div className="relative aspect-[9/16] bg-black">
                 <video
