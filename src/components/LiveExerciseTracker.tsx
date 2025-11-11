@@ -339,86 +339,6 @@ export function LiveExerciseTracker({
                   style={{ mixBlendMode: 'normal' }}
                 />
                 
-                {/* Preview Mode Banner */}
-                <div className="absolute top-4 left-4 right-4 z-10 pointer-events-none">
-                  <Card className="bg-yellow-500/90 backdrop-blur-sm border-yellow-400">
-                    <div className="p-3 flex items-center gap-2">
-                      <Camera className="w-4 h-4 text-yellow-900" />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-yellow-900">Preview Mode - Rep Counting Disabled</p>
-                        <p className="text-xs text-yellow-900/80">Position yourself, then click "Start Workout" to begin counting</p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                {/* Body Detection Status */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  {landmarks.length === 0 && (
-                    <div className="bg-black/70 px-6 py-4 rounded-lg space-y-2">
-                      <Badge variant="secondary" className="text-lg px-6 py-3">
-                        👤 Position yourself in frame
-                      </Badge>
-                      <p className="text-sm text-white/70 text-center">
-                        Step back so your full body is visible
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Distance Indicator */}
-                {distanceStatus && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <div className={cn(
-                      "px-6 py-3 rounded-full backdrop-blur-md border-2 font-semibold text-lg shadow-lg",
-                      distanceStatus === 'perfect' && "bg-green-500/20 border-green-400 text-green-400",
-                      distanceStatus === 'too-close' && "bg-orange-500/20 border-orange-400 text-orange-400",
-                      distanceStatus === 'too-far' && "bg-blue-500/20 border-blue-400 text-blue-400"
-                    )}>
-                      {distanceStatus === 'perfect' && '✓ Perfect Distance'}
-                      {distanceStatus === 'too-close' && '← Step Back'}
-                      {distanceStatus === 'too-far' && 'Step Closer →'}
-                    </div>
-                  </div>
-                )}
-
-                {/* Pose Confidence Indicator */}
-                <div className="absolute bottom-4 left-4 pointer-events-none">
-                  <div className={cn(
-                    "px-4 py-2 rounded-lg backdrop-blur-md border-2 shadow-lg transition-all",
-                    poseConfidence >= 70 && "bg-green-500/20 border-green-400",
-                    poseConfidence >= 50 && poseConfidence < 70 && "bg-yellow-500/20 border-yellow-400",
-                    poseConfidence < 50 && "bg-red-500/20 border-red-400"
-                  )}>
-                    <div className="flex items-center gap-2">
-                      {poseConfidence < 70 && (
-                        <AlertTriangle className="w-4 h-4" />
-                      )}
-                      <span className={cn(
-                        "font-semibold text-sm",
-                        poseConfidence >= 70 && "text-green-400",
-                        poseConfidence >= 50 && poseConfidence < 70 && "text-yellow-400",
-                        poseConfidence < 50 && "text-red-400"
-                      )}>
-                        Tracking: {Math.round(poseConfidence)}%
-                      </span>
-                    </div>
-                    {poseConfidence < 70 && (
-                      <div className="mt-1 flex items-start gap-2 text-xs opacity-90">
-                        <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                        <span className={cn(
-                          poseConfidence >= 50 && poseConfidence < 70 && "text-yellow-300",
-                          poseConfidence < 50 && "text-red-300"
-                        )}>
-                          {poseConfidence < 50 
-                            ? "Low tracking. Improve lighting or move to better position"
-                            : "Tracking ok. Consider better lighting for optimal results"
-                          }
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
                 {/* Flip Camera Button */}
                 <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
@@ -469,15 +389,6 @@ export function LiveExerciseTracker({
                   </div>
                 )}
 
-                {/* Guide Info Banner */}
-                {showIdealPose && (
-                  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-                    <Badge className="bg-blue-500/90 text-white backdrop-blur-sm px-4 py-2 text-sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Match the blue guide pose
-                    </Badge>
-                  </div>
-                )}
               </div>
             </Card>
           )}
