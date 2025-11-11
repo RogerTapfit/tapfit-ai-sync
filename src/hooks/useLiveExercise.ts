@@ -19,6 +19,7 @@ interface UseLiveExerciseProps {
 
 export interface WorkoutStats {
   reps: number;
+  sets: number;
   duration: number;
   avgFormScore: number;
   caloriesBurned: number;
@@ -51,6 +52,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [eccentricVelocity, setEccentricVelocity] = useState<number>(0); // Time for down phase (ms)
   const [concentricZone, setConcentricZone] = useState<'explosive' | 'moderate' | 'slow' | null>(null);
   const [eccentricZone, setEccentricZone] = useState<'explosive' | 'moderate' | 'slow' | null>(null);
+  
+  // Rest timer states
+  const [isResting, setIsResting] = useState(false);
+  const [restTimer, setRestTimer] = useState(0);
+  const [restDuration, setRestDuration] = useState(60); // Default 60 seconds
+  const [currentSet, setCurrentSet] = useState(0);
+  const restIntervalRef = useRef<number | null>(null);
   
   // Animation states for smooth pose transitions
   const [currentIdealPose, setCurrentIdealPose] = useState<IdealPoseKeypoint[]>([]);
@@ -249,6 +257,93 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     }
   }, []);
 
+  // Start rest timer
+  const startRestTimer = useCallback(() => {
+    setIsResting(true);
+    setRestTimer(restDuration);
+    setIsPaused(true); // Pause rep counting during rest
+    
+    // Clear any existing interval
+    if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+    }
+    
+    // Start countdown
+    restIntervalRef.current = window.setInterval(() => {
+      setRestTimer(prev => {
+        if (prev <= 1) {
+          // Rest complete
+          if (restIntervalRef.current) {
+            clearInterval(restIntervalRef.current);
+            restIntervalRef.current = null;
+          }
+          setIsResting(false);
+          setIsPaused(false);
+          setReps(0); // Reset reps for next set
+          lastAnnouncedRep.current = 0;
+          formScoresRef.current = [];
+          speak('Rest complete! Start your next set.', 'high');
+          toast.success('Rest complete! Begin next set', { duration: 2000 });
+          return 0;
+        }
+        
+        // Audio cues at 10s, 5s, 3s, 2s, 1s
+        if (prev === 10 || prev === 5 || prev <= 3) {
+          speak(`${prev - 1}`, 'normal');
+        }
+        
+        return prev - 1;
+      });
+    }, 1000);
+  }, [restDuration, speak]);
+
+  // Update rest duration
+  const updateRestDuration = useCallback((duration: 30 | 60 | 90) => {
+    setRestDuration(duration);
+  }, []);
+
+  // Skip rest
+  const skipRest = useCallback(() => {
+    if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+      restIntervalRef.current = null;
+    }
+    setIsResting(false);
+    setRestTimer(0);
+    setIsPaused(false);
+    setReps(0);
+    lastAnnouncedRep.current = 0;
+    formScoresRef.current = [];
+    speak('Rest skipped. Starting next set.', 'normal');
+  }, [speak]);
+
+  // Complete workout manually
+  const completeWorkout = useCallback(() => {
+    if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+      restIntervalRef.current = null;
+    }
+    
+    const avgFormScore = formScoresRef.current.length > 0 
+      ? formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length 
+      : 100;
+    
+    const stats: WorkoutStats = {
+      reps: reps,
+      sets: currentSet,
+      duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
+      avgFormScore: Math.round(avgFormScore),
+      caloriesBurned: Math.round((currentSet * targetReps) * 0.5)
+    };
+    
+    speak('Workout complete!', 'high');
+    setIsActive(false);
+    setIsResting(false);
+    if (onComplete) {
+      onComplete(stats);
+    }
+  }, [reps, currentSet, targetReps, onComplete, speak]);
+
   // Process video frame
   const processFrame = useCallback(async (timestamp: number) => {
     if (!videoRef.current || !isInitialized) return;
@@ -388,20 +483,12 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
                 }
               }
               
-              if (newReps >= targetReps && onComplete) {
-                // Workout complete
-                speak('Workout complete!', 'high');
-                const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
-                const stats: WorkoutStats = {
-                  reps: newReps,
-                  duration: Math.floor((Date.now() - startTimeRef.current) / 1000),
-                  avgFormScore: Math.round(avgFormScore),
-                  caloriesBurned: Math.round(newReps * 0.5) // Rough estimate
-                };
-                setTimeout(() => {
-                  setIsActive(false);
-                  onComplete(stats);
-                }, 500);
+              if (newReps >= targetReps) {
+                // Set complete - start rest timer
+                speak('Set complete! Rest time.', 'high');
+                setCurrentSet(prev => prev + 1);
+                startRestTimer();
+                toast.success(`Set ${currentSet + 1} complete! Rest for ${restDuration}s`, { duration: 2000 });
               } else {
                 toast.success(`Rep ${newReps}!`, { duration: 1000 });
               }
@@ -417,7 +504,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     }
 
     animationFrameRef.current = requestAnimationFrame(processFrame);
-  }, [isActive, isPaused, isPreviewMode, exerciseType, targetReps, onComplete, isInitialized]);
+  }, [isActive, isPaused, isPreviewMode, exerciseType, targetReps, onComplete, isInitialized, isResting, currentSet, restDuration]);
 
   // Animate ideal pose transitions
   useEffect(() => {
@@ -584,9 +671,14 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const stop = useCallback(() => {
     setIsActive(false);
     setIsPaused(false);
+    setIsResting(false);
     clearQueue();
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+      restIntervalRef.current = null;
     }
     stopCamera();
     
@@ -594,12 +686,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
       onComplete({
         reps,
+        sets: currentSet,
         duration,
         avgFormScore: Math.round(avgFormScore),
         caloriesBurned: Math.round(reps * 0.5)
       });
     }
-  }, [stopCamera, onComplete, reps, duration, clearQueue]);
+  }, [stopCamera, onComplete, reps, currentSet, duration, clearQueue]);
 
   // Cleanup
   useEffect(() => {
@@ -640,6 +733,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     eccentricVelocity,
     concentricZone,
     eccentricZone,
+    isResting,
+    restTimer,
+    restDuration,
+    currentSet,
+    updateRestDuration,
+    skipRest,
+    completeWorkout,
     start,
     pause,
     resume,

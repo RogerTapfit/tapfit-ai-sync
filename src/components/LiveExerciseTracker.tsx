@@ -61,7 +61,7 @@ export function LiveExerciseTracker({
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
-  const { startWorkout, logExercise, completeWorkout } = useWorkoutLogger();
+  const { startWorkout: logWorkoutStart, logExercise, completeWorkout: logWorkoutComplete } = useWorkoutLogger();
 
   const handleComplete = async (stats: WorkoutStats) => {
     setWorkoutStats(stats);
@@ -77,7 +77,7 @@ export function LiveExerciseTracker({
       await awardCoins(totalCoins, 'earn_workout', `Completed ${stats.reps} ${exercise?.name || 'reps'}`);
       
       // Log workout - create workout session and log exercise
-      const workoutLog = await startWorkout(
+      const workoutLog = await logWorkoutStart(
         `${exercise?.name || selectedExercise} Session`,
         'Bodyweight',
         1
@@ -91,7 +91,7 @@ export function LiveExerciseTracker({
           1,
           stats.reps
         );
-        await completeWorkout(workoutLog.id, Math.ceil(stats.duration / 60));
+        await logWorkoutComplete(workoutLog.id, Math.ceil(stats.duration / 60));
       }
 
       toast.success(`Earned ${totalCoins} TapCoins! 🎉`);
@@ -129,6 +129,13 @@ export function LiveExerciseTracker({
     eccentricVelocity,
     concentricZone,
     eccentricZone,
+    isResting,
+    restTimer,
+    restDuration,
+    currentSet,
+    updateRestDuration,
+    skipRest,
+    completeWorkout,
     start,
     pause,
     resume,
@@ -249,8 +256,12 @@ export function LiveExerciseTracker({
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
             <Card className="p-4">
+              <div className="text-2xl font-bold text-primary">{workoutStats.sets}</div>
+              <div className="text-sm text-muted-foreground">Sets</div>
+            </Card>
+            <Card className="p-4">
               <div className="text-2xl font-bold text-primary">{workoutStats.reps}</div>
-              <div className="text-sm text-muted-foreground">Reps</div>
+              <div className="text-sm text-muted-foreground">Last Set Reps</div>
             </Card>
             <Card className="p-4">
               <div className="text-2xl font-bold text-primary">{formatTime(workoutStats.duration)}</div>
@@ -259,10 +270,6 @@ export function LiveExerciseTracker({
             <Card className="p-4">
               <div className="text-2xl font-bold text-primary">{workoutStats.avgFormScore}%</div>
               <div className="text-sm text-muted-foreground">Avg Form</div>
-            </Card>
-            <Card className="p-4">
-              <div className="text-2xl font-bold text-primary">{workoutStats.caloriesBurned}</div>
-              <div className="text-sm text-muted-foreground">Calories</div>
             </Card>
           </div>
 
@@ -470,7 +477,7 @@ export function LiveExerciseTracker({
             )}
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Target Reps</label>
+              <label className="text-sm font-medium mb-2 block">Target Reps per Set</label>
               <div className="flex gap-2">
                 {[5, 10, 15, 20, 30].map((count) => (
                   <Button
@@ -673,6 +680,53 @@ export function LiveExerciseTracker({
             </div>
           )}
           
+          {/* Rest Timer Overlay */}
+          {isResting && (
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+              <Card className="bg-background/95 backdrop-blur-md border-2 border-primary shadow-2xl max-w-md mx-4">
+                <div className="p-8 text-center space-y-6">
+                  <div className="text-6xl mb-4">😌</div>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">Rest Time</h3>
+                    <p className="text-muted-foreground">Completed Set {currentSet}</p>
+                  </div>
+                  
+                  <div className="relative">
+                    <div className="text-7xl font-bold text-primary tabular-nums">
+                      {restTimer}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-2">seconds remaining</div>
+                  </div>
+
+                  <Progress 
+                    value={((restDuration - restTimer) / restDuration) * 100} 
+                    className="h-3"
+                  />
+
+                  <div className="flex gap-3">
+                    <Button 
+                      onClick={skipRest}
+                      variant="outline"
+                      size="lg"
+                      className="flex-1"
+                    >
+                      Skip Rest
+                    </Button>
+                    <Button 
+                      onClick={completeWorkout}
+                      variant="secondary"
+                      size="lg"
+                      className="flex-1"
+                    >
+                      <Square className="w-4 h-4 mr-2" />
+                      End Workout
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+          
           {/* Feedback Overlay */}
           <div className="absolute top-4 left-4 right-4 space-y-2 z-10">
             {/* Active Tracking Status */}
@@ -681,6 +735,14 @@ export function LiveExerciseTracker({
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse mr-2" />
                 Rep Tracking Active
               </Badge>
+              
+              {/* Set Counter */}
+              {currentSet > 0 && (
+                <Badge className="text-sm px-3 py-1 bg-primary/90 backdrop-blur-sm text-primary-foreground font-semibold">
+                  <Award className="w-3 h-3 mr-1" />
+                  Set {currentSet}
+                </Badge>
+              )}
               
               {/* Alignment Score */}
               {showIdealPose && alignmentScore > 0 && (
@@ -812,10 +874,16 @@ export function LiveExerciseTracker({
             Pause
           </Button>
         ) : (
-          <Button onClick={resume} size="lg">
-            <Play className="w-5 h-5 mr-2" />
-            Resume
-          </Button>
+          <>
+            <Button onClick={resume} size="lg" className="flex-1">
+              <Play className="w-4 h-4 mr-2" />
+              Resume
+            </Button>
+            <Button onClick={completeWorkout} variant="secondary" size="lg">
+              <Square className="w-4 h-4 mr-2" />
+              End Workout
+            </Button>
+          </>
         )}
         
         {isVoiceSupported && (
