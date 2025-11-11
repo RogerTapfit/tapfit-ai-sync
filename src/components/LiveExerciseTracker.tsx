@@ -29,7 +29,8 @@ import {
   EyeOff,
   Target,
   Volume2,
-  VolumeX
+  VolumeX,
+  FlipHorizontal
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -60,6 +61,7 @@ export function LiveExerciseTracker({
   const [showResults, setShowResults] = useState(false);
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
   const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
+  const [isMirrored, setIsMirrored] = useState(true);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
@@ -370,7 +372,7 @@ export function LiveExerciseTracker({
               <div className="relative aspect-[9/16] bg-black">
                 <video
                   ref={videoRef}
-                  className="w-full h-full object-cover"
+                  className={cn("w-full h-full object-cover", isMirrored && "scale-x-[-1]")}
                   playsInline
                   muted
                   autoPlay
@@ -382,15 +384,26 @@ export function LiveExerciseTracker({
                 />
                 
 
-                {/* Flip Camera Button */}
+                {/* Control Buttons */}
                 <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
                   <Button
                     onClick={switchCamera}
                     size="icon"
                     variant="secondary"
                     className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                    title="Switch Camera"
                   >
                     <SwitchCamera className="w-5 h-5 text-white" />
+                  </Button>
+                  
+                  <Button
+                    onClick={() => setIsMirrored(!isMirrored)}
+                    size="icon"
+                    variant="secondary"
+                    className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                    title={isMirrored ? "Disable Mirror" : "Enable Mirror"}
+                  >
+                    <FlipHorizontal className={cn("w-5 h-5 text-white", isMirrored && "text-primary")} />
                   </Button>
                   
                   {/* Ideal Pose Toggle */}
@@ -681,7 +694,7 @@ export function LiveExerciseTracker({
         <div className="relative aspect-[9/16] bg-black max-w-2xl mx-auto">
           <video
             ref={videoRef}
-            className="w-full h-full object-cover"
+            className={cn("w-full h-full object-cover", isMirrored && "scale-x-[-1]")}
             playsInline
             muted
             autoPlay
@@ -757,8 +770,19 @@ export function LiveExerciseTracker({
               size="icon"
               variant="secondary"
               className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+              title="Switch Camera"
             >
               <SwitchCamera className="w-4 h-4 text-white" />
+            </Button>
+            
+            <Button
+              onClick={() => setIsMirrored(!isMirrored)}
+              size="icon"
+              variant="secondary"
+              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+              title={isMirrored ? "Disable Mirror" : "Enable Mirror"}
+            >
+              <FlipHorizontal className={cn("w-4 h-4 text-white", isMirrored && "text-primary")} />
             </Button>
             
             {/* Ideal Pose Toggle */}
