@@ -106,6 +106,8 @@ export function LiveExerciseTracker({
     isPaused,
     isPreviewMode,
     isInitialized,
+    isReadyForAutoStart,
+    readyCountdown,
     reps,
     targetReps: currentTarget,
     currentPhase,
@@ -440,6 +442,32 @@ export function LiveExerciseTracker({
                     {showIdealPose ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
                   </Button>
                 </div>
+
+                {/* Auto-Start Countdown Overlay */}
+                {isReadyForAutoStart && readyCountdown !== null && readyCountdown > 0 && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+                    <div className="text-center space-y-4">
+                      <Badge variant="outline" className="text-lg px-6 py-2 bg-primary/20 border-primary">
+                        GET READY
+                      </Badge>
+                      <div
+                        key={readyCountdown}
+                        className="text-9xl font-bold text-primary animate-scale-in"
+                      >
+                        {readyCountdown}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* GO! Animation */}
+                {isReadyForAutoStart && readyCountdown === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-primary/20 backdrop-blur-sm z-50">
+                    <div className="text-9xl font-bold text-primary animate-scale-in">
+                      GO!
+                    </div>
+                  </div>
+                )}
 
                 {/* Guide Info Banner */}
                 {showIdealPose && (

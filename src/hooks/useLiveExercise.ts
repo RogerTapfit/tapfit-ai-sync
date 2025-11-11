@@ -31,6 +31,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isReadyForAutoStart, setIsReadyForAutoStart] = useState(false);
+  const [readyCountdown, setReadyCountdown] = useState<number | null>(null);
   const [reps, setReps] = useState(0);
   const [currentPhase, setCurrentPhase] = useState<'up' | 'down' | 'transition'>('up');
   const [formScore, setFormScore] = useState(100);
@@ -86,6 +88,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const lastCoachingTimeRef = useRef<number>(0);
   const lastFormCoachingRef = useRef<number>(0);
   const lastHapticAngleRef = useRef<number>(0);
+  const autoStartTimerRef = useRef<number | null>(null);
+  const readyPositionStartTimeRef = useRef<number | null>(null);
   
   const { speak, clearQueue } = useWorkoutAudio();
 
@@ -422,6 +426,60 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       if (isPreviewMode) {
         const distance = calculateDistanceStatus(result.landmarks);
         setDistanceStatus(distance);
+        
+        // Auto-start detection: Check if user is in starting position
+        const detection = detectExercise(exerciseType, result.landmarks, 'up');
+        const isInStartPosition = detection.phase === 'up';
+        const hasGoodForm = detection.formScore > 60;
+        const hasGoodConfidence = confidence > 70;
+        
+        if (isInStartPosition && hasGoodForm && hasGoodConfidence) {
+          const now = Date.now();
+          
+          if (!readyPositionStartTimeRef.current) {
+            // First time in ready position
+            readyPositionStartTimeRef.current = now;
+            setIsReadyForAutoStart(true);
+            speak("Get ready", 'high');
+          } else {
+            // Calculate countdown
+            const timeInPosition = (now - readyPositionStartTimeRef.current) / 1000;
+            const countdown = Math.max(0, 3 - Math.floor(timeInPosition));
+            
+            if (countdown > 0 && countdown !== readyCountdown) {
+              setReadyCountdown(countdown);
+              speak(countdown.toString(), 'high');
+            } else if (countdown === 0 && readyCountdown !== 0) {
+              setReadyCountdown(0);
+              speak("Let's start!", 'high');
+              
+              // Auto-start the workout after a brief delay
+              if (autoStartTimerRef.current) {
+                clearTimeout(autoStartTimerRef.current);
+              }
+              autoStartTimerRef.current = window.setTimeout(() => {
+                setIsPreviewMode(false);
+                setIsActive(true);
+                startTimeRef.current = Date.now();
+                readyPositionStartTimeRef.current = null;
+                setIsReadyForAutoStart(false);
+                setReadyCountdown(null);
+              }, 800); // Small delay after "Let's start!"
+            }
+          }
+        } else {
+          // Reset if user moves out of position
+          if (readyPositionStartTimeRef.current) {
+            readyPositionStartTimeRef.current = null;
+            setIsReadyForAutoStart(false);
+            setReadyCountdown(null);
+            if (autoStartTimerRef.current) {
+              clearTimeout(autoStartTimerRef.current);
+              autoStartTimerRef.current = null;
+            }
+          }
+        }
+        
         animationFrameRef.current = requestAnimationFrame(processFrame);
         return;
       }
@@ -803,6 +861,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     isPaused,
     isPreviewMode,
     isInitialized,
+    isReadyForAutoStart,
+    readyCountdown,
     reps,
     targetReps,
     currentPhase,

@@ -4,6 +4,9 @@
 export interface CoachingContext {
   type: 
     | 'workout_start'
+    | 'get_ready'
+    | 'countdown'
+    | 'lets_start'
     | 'rep_milestone'
     | 'set_complete'
     | 'rest_start'
@@ -27,6 +30,25 @@ export interface CoachingContext {
 
 // Coaching phrases for different workout moments
 const COACHING_PHRASES = {
+  get_ready: [
+    "Get ready",
+    "Position yourself",
+    "Get in position"
+  ],
+  
+  countdown: [
+    "3",
+    "2", 
+    "1"
+  ],
+  
+  lets_start: [
+    "Let's start!",
+    "Let's go!",
+    "Start now!",
+    "Begin!"
+  ],
+  
   workout_start: [
     "Let's crush this workout! You've got this!",
     "Time to shine! Focus on your form and let's go!",
@@ -138,6 +160,15 @@ export function getCoachingPhrase(context: CoachingContext): string | null {
   const { type, data } = context;
   
   switch (type) {
+    case 'get_ready':
+      return getRandomPhrase(COACHING_PHRASES.get_ready);
+    
+    case 'countdown':
+      return data?.currentReps?.toString() || '3';
+    
+    case 'lets_start':
+      return getRandomPhrase(COACHING_PHRASES.lets_start);
+    
     case 'workout_start':
       return getRandomPhrase(COACHING_PHRASES.workout_start);
     
