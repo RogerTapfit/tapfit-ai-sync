@@ -725,7 +725,7 @@ export function LiveExerciseTracker({
         currentPhase === 'down' && "ring-4 ring-blue-500/50",
         currentPhase === 'transition' && "ring-4 ring-yellow-500/50"
       )}>
-        <div className="relative aspect-video bg-black">
+        <div className="relative aspect-[9/16] bg-black max-w-2xl mx-auto">
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
@@ -740,37 +740,42 @@ export function LiveExerciseTracker({
           />
           
           {/* Phase Position Indicator */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+          <div className="absolute right-4 top-20 z-30 pointer-events-none">
             <Badge className={cn(
-              "text-lg px-6 py-3 font-bold backdrop-blur-md border-2 shadow-2xl transition-all duration-200",
+              "text-base px-4 py-2 font-bold backdrop-blur-md border-2 shadow-2xl transition-all duration-200",
               currentPhase === 'up' && "bg-green-500/90 border-green-400 text-white scale-110",
               currentPhase === 'down' && "bg-blue-500/90 border-blue-400 text-white scale-110",
               currentPhase === 'transition' && "bg-yellow-500/50 border-yellow-400 text-white scale-95"
             )}>
-              {currentPhase === 'up' && '↑ UP POSITION'}
-              {currentPhase === 'down' && '↓ DOWN POSITION'}
-              {currentPhase === 'transition' && '⟷ TRANSITION'}
+              {currentPhase === 'up' && '↑ UP'}
+              {currentPhase === 'down' && '↓ DOWN'}
+              {currentPhase === 'transition' && '⟷'}
             </Badge>
           </div>
           
-          {/* Animated Rep Counter - Large Center Display */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-            <div 
-              key={reps} // Key forces re-render on rep change
-              className={cn(
-                "text-[180px] font-black leading-none tabular-nums transition-all",
-                "animate-scale-in",
-                formScore >= 90 ? "text-green-400" : 
-                formScore >= 75 ? "text-yellow-400" : 
-                "text-orange-400",
-                "drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]"
-              )}
-              style={{
-                textShadow: '0 0 40px rgba(0,0,0,0.9), 0 0 20px currentColor',
-                animation: 'scale-in 0.3s ease-out'
-              }}
-            >
-              {reps}
+          {/* Animated Rep Counter - Right Side Display */}
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none z-20">
+            <div className="flex flex-col items-center gap-2">
+              <div 
+                key={reps} // Key forces re-render on rep change
+                className={cn(
+                  "text-8xl font-black leading-none tabular-nums transition-all",
+                  "animate-scale-in",
+                  formScore >= 90 ? "text-green-400" : 
+                  formScore >= 75 ? "text-yellow-400" : 
+                  "text-orange-400",
+                  "drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]"
+                )}
+                style={{
+                  textShadow: '0 0 40px rgba(0,0,0,0.9), 0 0 20px currentColor',
+                  animation: 'scale-in 0.3s ease-out'
+                }}
+              >
+                {reps}
+              </div>
+              <div className="text-sm text-white/80 font-semibold">
+                / {currentTarget}
+              </div>
             </div>
           </div>
           
