@@ -5,14 +5,36 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Volume2, VolumeX, TestTube, Upload } from "lucide-react";
+import { Volume2, VolumeX, TestTube, Upload, Mic } from "lucide-react";
 import { useAudioSettings } from "@/utils/audioUtils";
+import { useWorkoutAudio, type ElevenLabsVoice } from "@/hooks/useWorkoutAudio";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AudioSettings = () => {
   const { isEnabled, volume, toggleAudio, updateVolume } = useAudioSettings();
+  const { selectedVoice, changeVoice, speak } = useWorkoutAudio();
   const [customSounds, setCustomSounds] = useState<Map<string, string>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const voices: { value: ElevenLabsVoice; label: string; description: string }[] = [
+    { value: 'Aria', label: 'Aria', description: 'Energetic female voice' },
+    { value: 'Roger', label: 'Roger', description: 'Strong male voice' },
+    { value: 'Sarah', label: 'Sarah', description: 'Calm female voice' },
+    { value: 'Laura', label: 'Laura', description: 'Professional female voice' },
+    { value: 'Charlie', label: 'Charlie', description: 'Friendly male voice' },
+    { value: 'George', label: 'George', description: 'Deep male voice' },
+  ];
+
+  const testVoice = () => {
+    speak("Great work! Keep pushing through this set!", 'normal');
+  };
 
   const testSound = async () => {
     const { audioManager } = await import('@/utils/audioUtils');
@@ -110,6 +132,41 @@ const AudioSettings = () => {
             step={0.1}
             className="w-full"
           />
+        </div>
+      )}
+
+      {/* Voice Selection */}
+      {isEnabled && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Mic className="h-4 w-4 text-primary" />
+            <p className="font-medium">Text-to-Speech Voice</p>
+          </div>
+          <div className="space-y-2">
+            <Select value={selectedVoice} onValueChange={(value: ElevenLabsVoice) => changeVoice(value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a voice" />
+              </SelectTrigger>
+              <SelectContent>
+                {voices.map((voice) => (
+                  <SelectItem key={voice.value} value={voice.value}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{voice.label}</span>
+                      <span className="text-xs text-muted-foreground">{voice.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={testVoice}
+              className="w-full"
+            >
+              Test Voice
+            </Button>
+          </div>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AudioQueueItem {
@@ -6,11 +6,22 @@ interface AudioQueueItem {
   priority: 'high' | 'normal';
 }
 
+export type ElevenLabsVoice = 'Aria' | 'Roger' | 'Sarah' | 'Laura' | 'Charlie' | 'George';
+
 export const useWorkoutAudio = () => {
   const audioQueue = useRef<AudioQueueItem[]>([]);
   const isPlaying = useRef(false);
   const audioContext = useRef<AudioContext | null>(null);
   const currentSource = useRef<AudioBufferSourceNode | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<ElevenLabsVoice>('Aria');
+
+  // Load voice preference from localStorage
+  useEffect(() => {
+    const savedVoice = localStorage.getItem('ttsVoice') as ElevenLabsVoice;
+    if (savedVoice) {
+      setSelectedVoice(savedVoice);
+    }
+  }, []);
 
   const initAudioContext = useCallback(() => {
     if (!audioContext.current) {
@@ -57,7 +68,7 @@ export const useWorkoutAudio = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: item.text, voice: 'Aria' }
+        body: { text: item.text, voice: selectedVoice }
       });
 
       if (error) throw error;
@@ -70,7 +81,7 @@ export const useWorkoutAudio = () => {
       isPlaying.current = false;
       processQueue();
     }
-  }, [playAudio]);
+  }, [playAudio, selectedVoice]);
 
   const speak = useCallback((text: string, priority: 'high' | 'normal' = 'normal') => {
     // Stop current audio if high priority
@@ -99,8 +110,15 @@ export const useWorkoutAudio = () => {
     isPlaying.current = false;
   }, []);
 
+  const changeVoice = useCallback((voice: ElevenLabsVoice) => {
+    setSelectedVoice(voice);
+    localStorage.setItem('ttsVoice', voice);
+  }, []);
+
   return {
     speak,
     clearQueue,
+    selectedVoice,
+    changeVoice,
   };
 };
