@@ -592,53 +592,14 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
                 navigator.vibrate([100, 50, 100]);
               }
               
-              // Audio feedback for rep count - HIGH PRIORITY for instant voice
-              if (newReps !== lastAnnouncedRep.current) {
-                lastAnnouncedRep.current = newReps;
-                speak(`${newReps}`, 'high'); // ✅ HIGH PRIORITY - interrupts everything
-                
-                // Milestone coaching only at major points (reduce spam)
-                if (newReps === Math.ceil(targetReps / 2)) {
-                  // Only at halfway point
-                  const milestonePhrase = getCoachingPhrase({ 
-                    type: 'rep_milestone', 
-                    data: { currentReps: newReps, targetReps } 
-                  });
-                  if (milestonePhrase) {
-                    speak(milestonePhrase, 'normal');
-                  }
-                }
-                
-                // Form coaching - reduced frequency (every 30 seconds minimum)
-                const now = Date.now();
-                if (shouldCoach(lastFormCoachingRef.current, now, 30000)) { // ✅ Increased to 30s
-                  const avgFormScore = formScoresRef.current.length > 0 
-                    ? formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length 
-                    : formScore;
-                  
-                  // Only coach if form is significantly poor
-                  if (avgFormScore < 70) {
-                    const formPhrase = getCoachingPhrase({ 
-                      type: 'form_correction', 
-                      data: { formScore: avgFormScore } 
-                    });
-                    if (formPhrase) {
-                      speak(formPhrase, 'normal');
-                      lastFormCoachingRef.current = now;
-                    }
-                  }
-                }
-              }
-              
+              // Completion feedback
               if (newReps >= targetReps) {
-                // Set complete - start rest timer
                 const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
                 speak(setCompletePhrase || 'Set complete! Rest time.', 'high');
                 setCurrentSet(prev => prev + 1);
                 startRestTimer();
                 toast.success(`Set ${currentSet + 1} complete! Rest for ${restDuration}s`, { duration: 2000 });
               } else if (newReps === targetReps - 2) {
-                // Near target encouragement
                 const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
                 if (nearTargetPhrase) {
                   speak(nearTargetPhrase, 'normal');
@@ -646,6 +607,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               } else {
                 toast.success(`Rep ${newReps}!`, { duration: 1000 });
               }
+              
               return newReps;
             });
             lastRepTimeRef.current = now;
@@ -689,6 +651,28 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, [isActive, animationProgress, currentIdealPose, targetIdealPose, lerpPose, easeInOutCubic]);
+
+  // Voice announcement for rep count - separate from state update to avoid spam
+  useEffect(() => {
+    if (!isActive || reps === 0) return;
+    
+    // Only announce if this is a new rep
+    if (reps !== lastAnnouncedRep.current) {
+      lastAnnouncedRep.current = reps;
+      speak(`${reps}`, 'high');
+      
+      // Milestone coaching only at halfway point
+      if (reps === Math.ceil(targetReps / 2)) {
+        const milestonePhrase = getCoachingPhrase({ 
+          type: 'rep_milestone', 
+          data: { currentReps: reps, targetReps } 
+        });
+        if (milestonePhrase) {
+          speak(milestonePhrase, 'normal');
+        }
+      }
+    }
+  }, [reps, isActive, targetReps, speak]);
 
   // Update duration timer
   useEffect(() => {
