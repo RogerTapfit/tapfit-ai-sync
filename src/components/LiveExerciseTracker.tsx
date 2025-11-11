@@ -324,8 +324,8 @@ export function LiveExerciseTracker({
 
           {/* Camera Preview during Setup */}
           {isPreviewMode && (
-            <Card className="relative overflow-hidden bg-black">
-              <div className="relative aspect-video bg-black">
+            <Card className="relative overflow-hidden bg-black max-w-2xl mx-auto">
+              <div className="relative aspect-[9/16] bg-black">
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
