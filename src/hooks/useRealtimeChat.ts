@@ -49,6 +49,17 @@ export const useRealtimeChat = () => {
 
         console.log("ElevenLabs session created:", sessionData);
 
+        // Log voice configuration for testing
+        console.log('🎤 Voice Chat Configuration:', {
+          avatarName: sessionData.coach_name,
+          avatarId,
+          gender: sessionData.gender,
+          voiceName: sessionData.voice_name,
+          agentId: sessionData.agent_id
+        });
+        
+        console.log(`✨ Using ${sessionData.voice_name} voice (${sessionData.gender}) for ${sessionData.coach_name}`);
+
         // Update voice state with coach details
         setVoiceState(prev => ({
           ...prev,

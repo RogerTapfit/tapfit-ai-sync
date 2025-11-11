@@ -53,6 +53,26 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const avatarId = avatar?.id;
   const avatarGender = avatar?.gender;
 
+  // Voice name mapping for display
+  const voiceNameMap = {
+    'female': 'Aria',
+    'male': 'Roger',
+    'neutral': 'River'
+  };
+  const expectedVoice = voiceNameMap[avatarGender as keyof typeof voiceNameMap] || 'River';
+
+  // Log avatar configuration for testing
+  useEffect(() => {
+    if (avatar) {
+      console.log('👤 Current Avatar:', {
+        name: avatarName,
+        id: avatarId,
+        gender: avatarGender,
+        expectedVoice: expectedVoice
+      });
+    }
+  }, [avatar, avatarName, avatarId, avatarGender, expectedVoice]);
+
   // Voice chat integration
   const {
     messages: voiceMessages,
@@ -120,8 +140,8 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
 
         setVoiceMode(true);
         toast({
-          title: "Voice Mode Active!",
-          description: "Start speaking to chat with your AI coach",
+          title: `Voice Mode Active - ${expectedVoice}!`,
+          description: `Speaking with ${avatarName} using ${expectedVoice} voice`,
         });
       } catch (error) {
         console.error("Failed to activate voice mode:", error);
