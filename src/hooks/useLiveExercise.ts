@@ -41,6 +41,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [duration, setDuration] = useState(0);
   const [landmarks, setLandmarks] = useState<Keypoint[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [distanceStatus, setDistanceStatus] = useState<'too-close' | 'too-far' | 'perfect' | null>(null);
   const [poseConfidence, setPoseConfidence] = useState<number>(0);
@@ -807,51 +808,76 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       return;
     }
 
-    // If preview is running, stop it first
-    if (isPreviewMode) {
-      stopPreview();
-    }
+    setIsStarting(true);
 
-    // Start camera if not already running
-    if (!streamRef.current) {
-      const cameraStarted = await startCamera();
-      if (!cameraStarted) return;
-
-      // Wait for video to be ready
-      if (videoRef.current) {
-        await new Promise(resolve => {
-          if (videoRef.current) {
-            videoRef.current.onloadedmetadata = resolve;
-          }
-        });
+    try {
+      // If preview is running, stop it first
+      if (isPreviewMode) {
+        stopPreview();
       }
-    }
 
-    setIsActive(true);
-    setIsPaused(false);
-    setReps(0);
-    setDuration(0);
-    formScoresRef.current = [];
-    startTimeRef.current = Date.now();
-    lastPhaseRef.current = 'up';
-    lastRepTimeRef.current = 0;
-    lastAnnouncedRep.current = 0;
-    
-    // Set initial ideal pose (without animation)
-    if (showIdealPose) {
-      const initialPose = getIdealPoseForPhase('up');
-    setIdealPoseLandmarks(initialPose);
-      setCurrentIdealPose(initialPose);
-      setTargetIdealPose(initialPose);
-      setAnimationProgress(1);
+      // Start camera if not already running
+      if (!streamRef.current) {
+        const cameraStarted = await startCamera();
+        if (!cameraStarted) {
+          setIsStarting(false);
+          return;
+        }
+
+        // Wait for video to be ready with timeout
+        if (videoRef.current) {
+          await Promise.race([
+            new Promise(resolve => {
+              if (videoRef.current) {
+                videoRef.current.onloadedmetadata = resolve;
+              }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Camera timeout')), 5000))
+          ]).catch((err) => {
+            console.error('Video load timeout:', err);
+            toast.error('Camera initialization timed out. Please try again.');
+            setIsStarting(false);
+            return;
+          });
+        }
+      }
+
+      setIsActive(true);
+      setIsPaused(false);
+      setReps(0);
+      setDuration(0);
+      formScoresRef.current = [];
+      startTimeRef.current = Date.now();
+      lastPhaseRef.current = 'up';
+      lastRepTimeRef.current = 0;
+      lastAnnouncedRep.current = 0;
+      
+      // Set initial ideal pose (without animation)
+      if (showIdealPose) {
+        const initialPose = getIdealPoseForPhase('up');
+        setIdealPoseLandmarks(initialPose);
+        setCurrentIdealPose(initialPose);
+        setTargetIdealPose(initialPose);
+        setAnimationProgress(1);
+      }
+      
+      // Motivational workout start
+      const startPhrase = getCoachingPhrase({ type: 'workout_start' });
+      if (startPhrase) {
+        speak(startPhrase, 'high');
+      }
+
+      // Start processing frames
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+      toast.success('Workout started! Get ready...');
+      
+      setIsStarting(false);
+    } catch (error) {
+      console.error('Error starting workout:', error);
+      toast.error('Failed to start workout. Please try again.');
+      setIsStarting(false);
     }
-    
-    // Motivational workout start
-    const startPhrase = getCoachingPhrase({ type: 'workout_start' });
-    speak(startPhrase || 'Starting workout', 'high');
-    animationFrameRef.current = requestAnimationFrame(processFrame);
-    toast.success('Workout started! Get ready...');
-  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview, showIdealPose, getIdealPoseForPhase]);
+  }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview, showIdealPose, getIdealPoseForPhase, speak]);
 
   // Pause workout
   const pause = useCallback(() => {
@@ -916,6 +942,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     isPaused,
     isPreviewMode,
     isInitialized,
+    isStarting,
     isReadyForAutoStart,
     readyCountdown,
     reps,

@@ -123,6 +123,7 @@ export function LiveExerciseTracker({
     isPaused,
     isPreviewMode,
     isInitialized,
+    isStarting,
     isReadyForAutoStart,
     readyCountdown,
     reps,
@@ -528,10 +529,19 @@ export function LiveExerciseTracker({
               }}
               size="lg" 
               className="w-full"
-              disabled={!isInitialized}
+              disabled={!isInitialized || isStarting}
             >
-              <Play className="w-5 h-5 mr-2" />
-              {isInitialized ? 'Start Workout' : 'Initializing AI...'}
+              {isStarting ? (
+                <>
+                  <div className="w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Starting Camera...
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5 mr-2" />
+                  {isInitialized ? 'Start Workout' : 'Initializing AI...'}
+                </>
+              )}
             </Button>
 
             {/* Voice Commands Toggle */}
