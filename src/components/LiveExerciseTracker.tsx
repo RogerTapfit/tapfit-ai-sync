@@ -200,19 +200,27 @@ export function LiveExerciseTracker({
     const canvas = canvasRef.current;
     const video = videoRef.current;
 
-    // Match canvas size to video
+    // Match canvas size to video's displayed dimensions (not intrinsic)
     const updateCanvasSize = () => {
-      if (video.videoWidth && video.videoHeight) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+      const rect = video.getBoundingClientRect();
+      if (rect.width && rect.height) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
       }
     };
 
     updateCanvasSize();
     video.addEventListener('loadedmetadata', updateCanvasSize);
 
+    // Add resize observer to update canvas when video display size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updateCanvasSize();
+    });
+    resizeObserver.observe(video);
+
     return () => {
       video.removeEventListener('loadedmetadata', updateCanvasSize);
+      resizeObserver.disconnect();
     };
   }, [isActive, isPreviewMode]);
 
