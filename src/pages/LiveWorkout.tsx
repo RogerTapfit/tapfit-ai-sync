@@ -1,14 +1,51 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LiveExerciseTracker } from '@/components/LiveExerciseTracker';
 import SEO from '@/components/SEO';
+import { type ExerciseType } from '@/utils/exerciseDetection';
 
 export default function LiveWorkout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Parse URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const exerciseParam = searchParams.get('exercise') as ExerciseType | null;
+  const machineIdParam = searchParams.get('machine');
+  const sourceParam = searchParams.get('source');
+  
+  // Get state from navigation
+  const state = location.state as { 
+    machineName?: string;
+    workoutId?: string;
+    aiSelectedImageUrl?: string;
+  } | undefined;
+
+  const handleBackToMachine = () => {
+    if (state?.workoutId) {
+      navigate(`/machine-workout/${state.workoutId}`, {
+        state: {
+          fromAITracking: true,
+          machineId: machineIdParam,
+          machineName: state.machineName,
+          aiSelectedImageUrl: state.aiSelectedImageUrl
+        }
+      });
+    } else {
+      navigate('/workout-list');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <SEO 
         title="Live Exercise Tracker | AI Form Analysis"
         description="Track your bodyweight exercises in real-time with AI-powered form feedback and rep counting"
       />
-      <LiveExerciseTracker />
+      <LiveExerciseTracker 
+        preSelectedExercise={exerciseParam || undefined}
+        machineName={state?.machineName}
+        onBackToMachine={sourceParam === 'scan' && state?.workoutId ? handleBackToMachine : undefined}
+      />
     </div>
   );
 }

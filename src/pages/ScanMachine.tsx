@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MachineScanner } from '@/components/MachineScanner';
 import { MachineRegistryService } from '@/services/machineRegistryService';
+import { ExerciseTrackingDialog } from '@/components/ExerciseTrackingDialog';
+import { isMachineBodyweightCompatible, getMachineExercises } from '@/utils/machineExerciseMapping';
 import { toast } from 'sonner';
 
 export const ScanMachine: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showExerciseDialog, setShowExerciseDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{
+    machineId: string;
+    machineName: string;
+    workoutId: string;
+    confidence: number;
+    aiSelectedImageUrl?: string;
+  } | null>(null);
 
   const handleMachineSelected = async (machineId: string, confidence: number, aiSelectedImageUrl?: string) => {
     // Don't navigate if machine is not recognized
@@ -38,8 +48,22 @@ export const ScanMachine: React.FC = () => {
           machineName: machine.name
         }
       });
+      return;
+    }
+
+    // Check if machine supports bodyweight exercises (not in custom mode)
+    if (isMachineBodyweightCompatible(machineId)) {
+      // Store navigation details and show dialog
+      setPendingNavigation({
+        machineId: machine.id,
+        machineName: machine.name,
+        workoutId,
+        confidence,
+        aiSelectedImageUrl: aiSelectedImageUrl || machine.imageUrl
+      });
+      setShowExerciseDialog(true);
     } else {
-      // In scheduled mode, navigate to machine workout detail
+      // No bodyweight compatibility, go straight to machine workout
       navigate(`/machine-workout/${workoutId}`, { 
         state: { 
           fromScan: true, 
@@ -52,16 +76,65 @@ export const ScanMachine: React.FC = () => {
     }
   };
 
+  const handleAITrackingSelected = () => {
+    if (!pendingNavigation) return;
+    
+    const exerciseInfo = getMachineExercises(pendingNavigation.machineId);
+    if (!exerciseInfo) return;
+
+    // Navigate to live workout with pre-selected exercise
+    navigate(`/live-workout?exercise=${exerciseInfo.defaultExercise}&machine=${pendingNavigation.machineId}&source=scan`, {
+      state: {
+        machineName: pendingNavigation.machineName,
+        workoutId: pendingNavigation.workoutId,
+        aiSelectedImageUrl: pendingNavigation.aiSelectedImageUrl
+      }
+    });
+    setShowExerciseDialog(false);
+  };
+
+  const handleMachineWorkoutSelected = () => {
+    if (!pendingNavigation) return;
+
+    // Navigate to machine workout
+    navigate(`/machine-workout/${pendingNavigation.workoutId}`, { 
+      state: { 
+        fromScan: true, 
+        confidence: pendingNavigation.confidence,
+        machineId: pendingNavigation.machineId,
+        machineName: pendingNavigation.machineName,
+        aiSelectedImageUrl: pendingNavigation.aiSelectedImageUrl
+      }
+    });
+    setShowExerciseDialog(false);
+  };
+
   const handleClose = () => {
     navigate('/workout-list');
   };
 
+  const exerciseInfo = pendingNavigation ? getMachineExercises(pendingNavigation.machineId) : null;
+
   return (
-    <MachineScanner
-      onMachineSelected={handleMachineSelected}
-      onClose={handleClose}
-      autoNavigate={true}
-    />
+    <>
+      <MachineScanner
+        onMachineSelected={handleMachineSelected}
+        onClose={handleClose}
+        autoNavigate={true}
+      />
+      
+      {showExerciseDialog && pendingNavigation && exerciseInfo && (
+        <ExerciseTrackingDialog
+          open={showExerciseDialog}
+          onOpenChange={setShowExerciseDialog}
+          machineName={pendingNavigation.machineName}
+          exercise={exerciseInfo.defaultExercise}
+          context={exerciseInfo.context}
+          onSelectAITracking={handleAITrackingSelected}
+          onSelectMachineWorkout={handleMachineWorkoutSelected}
+        />
+      )}
+    </>
   );
 };
 

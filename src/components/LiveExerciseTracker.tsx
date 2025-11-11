@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -15,9 +15,9 @@ import {
   Timer,
   Award,
   TrendingUp,
-  Camera
+  Camera,
+  ArrowLeft
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { toast } from 'sonner';
@@ -30,11 +30,22 @@ const EXERCISES = [
   { id: 'high_knees' as ExerciseType, name: 'High Knees', icon: '🔥', coins: 12 },
 ];
 
-export function LiveExerciseTracker() {
-  const [selectedExercise, setSelectedExercise] = useState<ExerciseType>('pushups');
+interface LiveExerciseTrackerProps {
+  preSelectedExercise?: ExerciseType;
+  machineName?: string;
+  onBackToMachine?: () => void;
+}
+
+export function LiveExerciseTracker({ 
+  preSelectedExercise,
+  machineName,
+  onBackToMachine 
+}: LiveExerciseTrackerProps) {
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseType>(preSelectedExercise || 'pushups');
   const [targetReps, setTargetReps] = useState(10);
   const [showResults, setShowResults] = useState(false);
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
+  const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
@@ -147,6 +158,12 @@ export function LiveExerciseTracker() {
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-bold">Workout Complete!</h2>
           
+          {machineName && (
+            <Badge variant="secondary" className="mb-4">
+              Warm-up for {machineName}
+            </Badge>
+          )}
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8">
             <Card className="p-4">
               <div className="text-2xl font-bold text-primary">{workoutStats.reps}</div>
@@ -167,13 +184,21 @@ export function LiveExerciseTracker() {
           </div>
 
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => {
-              setShowResults(false);
-              setWorkoutStats(null);
-            }}>
-              <Dumbbell className="w-4 h-4 mr-2" />
-              New Workout
-            </Button>
+            {onBackToMachine ? (
+              <Button onClick={onBackToMachine} size="lg">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Continue to {machineName}
+              </Button>
+            ) : (
+              <Button onClick={() => {
+                setShowResults(false);
+                setWorkoutStats(null);
+                setSkipSetup(false);
+              }}>
+                <Dumbbell className="w-4 h-4 mr-2" />
+                New Workout
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -181,6 +206,12 @@ export function LiveExerciseTracker() {
   }
 
   if (!isActive) {
+    // If pre-selected and initialized, start immediately
+    if (skipSetup && isInitialized) {
+      start();
+      setSkipSetup(false);
+    }
+
     return (
       <Card className="w-full max-w-4xl mx-auto p-6 space-y-6">
         <div className="text-center space-y-4">
@@ -189,28 +220,36 @@ export function LiveExerciseTracker() {
           <p className="text-muted-foreground">
             Track your bodyweight exercises with real-time form feedback using AI
           </p>
+          
+          {machineName && (
+            <Badge variant="secondary" className="mt-2">
+              Warming up for {machineName}
+            </Badge>
+          )}
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Select Exercise</label>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {EXERCISES.map((exercise) => (
-                <Button
-                  key={exercise.id}
-                  variant={selectedExercise === exercise.id ? 'default' : 'outline'}
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => setSelectedExercise(exercise.id)}
-                >
-                  <span className="text-2xl">{exercise.icon}</span>
-                  <span className="text-xs">{exercise.name}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {exercise.coins} coins
-                  </Badge>
-                </Button>
-              ))}
+          {!preSelectedExercise && (
+            <div>
+              <label className="text-sm font-medium mb-2 block">Select Exercise</label>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {EXERCISES.map((exercise) => (
+                  <Button
+                    key={exercise.id}
+                    variant={selectedExercise === exercise.id ? 'default' : 'outline'}
+                    className="h-20 flex flex-col items-center justify-center gap-2"
+                    onClick={() => setSelectedExercise(exercise.id)}
+                  >
+                    <span className="text-2xl">{exercise.icon}</span>
+                    <span className="text-xs">{exercise.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {exercise.coins} coins
+                    </Badge>
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div>
             <label className="text-sm font-medium mb-2 block">Target Reps</label>
@@ -241,6 +280,18 @@ export function LiveExerciseTracker() {
             <p className="text-sm text-muted-foreground text-center">
               Loading AI pose detection model...
             </p>
+          )}
+          
+          {onBackToMachine && (
+            <Button 
+              onClick={onBackToMachine}
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Skip to {machineName}
+            </Button>
           )}
         </div>
       </Card>
