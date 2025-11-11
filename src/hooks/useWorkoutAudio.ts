@@ -16,12 +16,18 @@ export const useWorkoutAudio = () => {
   const currentSource = useRef<AudioBufferSourceNode | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<ElevenLabsVoice>('Aria');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false); // Voice OFF by default
 
   // Load voice preference from localStorage
   useEffect(() => {
     const savedVoice = localStorage.getItem('ttsVoice') as ElevenLabsVoice;
     if (savedVoice) {
       setSelectedVoice(savedVoice);
+    }
+    
+    const savedVoiceEnabled = localStorage.getItem('voiceEnabled');
+    if (savedVoiceEnabled !== null) {
+      setIsVoiceEnabled(savedVoiceEnabled === 'true');
     }
   }, []);
 
@@ -103,6 +109,11 @@ export const useWorkoutAudio = () => {
   }, [playAudio, selectedVoice]);
 
   const speak = useCallback((text: string, priority: 'high' | 'normal' = 'normal') => {
+    // Don't speak if voice is disabled
+    if (!isVoiceEnabled) {
+      return;
+    }
+    
     // Stop current audio if high priority
     if (priority === 'high' && currentSource.current) {
       currentSource.current.stop();
@@ -118,7 +129,7 @@ export const useWorkoutAudio = () => {
     }
 
     processQueue();
-  }, [processQueue]);
+  }, [processQueue, isVoiceEnabled]);
 
   const clearQueue = useCallback(() => {
     audioQueue.current = [];
@@ -135,11 +146,21 @@ export const useWorkoutAudio = () => {
     localStorage.setItem('ttsVoice', voice);
   }, []);
 
+  const toggleVoice = useCallback(() => {
+    setIsVoiceEnabled(prev => {
+      const newValue = !prev;
+      localStorage.setItem('voiceEnabled', String(newValue));
+      return newValue;
+    });
+  }, []);
+
   return {
     speak,
     clearQueue,
     selectedVoice,
     changeVoice,
     isSpeaking,
+    isVoiceEnabled,
+    toggleVoice,
   };
 };

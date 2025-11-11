@@ -27,7 +27,9 @@ import {
   Zap,
   Eye,
   EyeOff,
-  Target
+  Target,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -138,6 +140,8 @@ export function LiveExerciseTracker({
     currentElbowAngle,
     isRepFlashing,
     isSpeaking,
+    isVoiceEnabled,
+    toggleVoice,
     updateRestDuration,
     skipRest,
     completeWorkout,
@@ -766,6 +770,17 @@ export function LiveExerciseTracker({
               title={showIdealPose ? "Hide Guide" : "Show Guide"}
             >
               {showIdealPose ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
+            </Button>
+            
+            {/* Coach Voice Toggle */}
+            <Button
+              onClick={toggleVoice}
+              size="icon"
+              variant="secondary"
+              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+              title={isVoiceEnabled ? "Turn Off Coach Voice" : "Turn On Coach Voice"}
+            >
+              {isVoiceEnabled ? <Volume2 className="w-4 h-4 text-white" /> : <VolumeX className="w-4 h-4 text-white" />}
             </Button>
           </div>
 

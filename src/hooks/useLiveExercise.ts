@@ -99,7 +99,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const autoStartTimerRef = useRef<number | null>(null);
   const readyPositionStartTimeRef = useRef<number | null>(null);
   
-  const { speak, clearQueue, isSpeaking } = useWorkoutAudio();
+  const { speak, clearQueue, isSpeaking, isVoiceEnabled, toggleVoice } = useWorkoutAudio();
 
   // Haptic feedback for angle thresholds
   const triggerAngleHaptic = useCallback(async (angle: number, phase: 'up' | 'down' | 'transition') => {
@@ -951,6 +951,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     currentElbowAngle,
     isRepFlashing,
     isSpeaking,
+    isVoiceEnabled,
+    toggleVoice,
     updateRestDuration,
     skipRest,
     completeWorkout,
