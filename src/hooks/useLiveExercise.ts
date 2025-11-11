@@ -45,6 +45,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [idealPoseLandmarks, setIdealPoseLandmarks] = useState<IdealPoseKeypoint[]>([]);
   const [alignmentScore, setAlignmentScore] = useState<number>(0);
   const [misalignedJoints, setMisalignedJoints] = useState<number[]>([]);
+  
+  // Animation states for smooth pose transitions
+  const [currentIdealPose, setCurrentIdealPose] = useState<IdealPoseKeypoint[]>([]);
+  const [targetIdealPose, setTargetIdealPose] = useState<IdealPoseKeypoint[]>([]);
+  const [animationProgress, setAnimationProgress] = useState<number>(1); // 0-1, 1 means complete
+  const animationStartTimeRef = useRef<number>(0);
+  const animationDurationRef = useRef<number>(800); // 800ms transition
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -85,10 +92,40 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     return template ? template[phase] : [];
   }, [exerciseType]);
 
+  // Linear interpolation between two keypoints
+  const lerpKeypoint = useCallback((a: IdealPoseKeypoint, b: IdealPoseKeypoint, t: number): IdealPoseKeypoint => {
+    return {
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t,
+    };
+  }, []);
+
+  // Interpolate between two poses
+  const lerpPose = useCallback((pose1: IdealPoseKeypoint[], pose2: IdealPoseKeypoint[], t: number): IdealPoseKeypoint[] => {
+    if (pose1.length !== pose2.length || pose1.length === 0) return pose1;
+    return pose1.map((kp, idx) => lerpKeypoint(kp, pose2[idx], t));
+  }, [lerpKeypoint]);
+
+  // Easing function for smooth animation (ease-in-out)
+  const easeInOutCubic = useCallback((t: number): number => {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }, []);
+
   // Toggle ideal pose guide
   const toggleIdealPose = useCallback(() => {
     setShowIdealPose(prev => !prev);
   }, []);
+
+  // Start pose animation
+  const startPoseAnimation = useCallback((newTargetPose: IdealPoseKeypoint[]) => {
+    if (newTargetPose.length === 0) return;
+    
+    // Set current pose as starting point
+    setCurrentIdealPose(idealPoseLandmarks.length > 0 ? idealPoseLandmarks : newTargetPose);
+    setTargetIdealPose(newTargetPose);
+    setAnimationProgress(0);
+    animationStartTimeRef.current = Date.now();
+  }, [idealPoseLandmarks]);
 
   // Calculate pose confidence from landmarks
   const calculatePoseConfidence = useCallback((landmarks: Keypoint[]): number => {
@@ -233,14 +270,21 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         setFormIssues(detection.formIssues || []);
         formScoresRef.current.push(detection.formScore);
 
-        // Update ideal pose template based on phase
+        // Update ideal pose template based on phase - start animation on phase change
         if (showIdealPose && detection.phase !== 'transition') {
-          const idealPose = getIdealPoseForPhase(detection.phase);
-          setIdealPoseLandmarks(idealPose);
+          const newIdealPose = getIdealPoseForPhase(detection.phase);
           
-          // Calculate alignment score
-          if (idealPose.length > 0) {
-            const alignment = calculateAlignment(result.landmarks, idealPose);
+          // Only start animation if phase actually changed
+          if (detection.phase !== lastPhaseRef.current && lastPhaseRef.current !== 'transition') {
+            startPoseAnimation(newIdealPose);
+          } else if (animationProgress >= 1 && newIdealPose.length > 0) {
+            // If no animation in progress and we have a pose, just set it
+            setIdealPoseLandmarks(newIdealPose);
+          }
+          
+          // Calculate alignment score with current displayed pose
+          if (idealPoseLandmarks.length > 0) {
+            const alignment = calculateAlignment(result.landmarks, idealPoseLandmarks);
             setAlignmentScore(alignment.score);
             setMisalignedJoints(alignment.misalignedJoints);
           }
@@ -324,6 +368,36 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
     animationFrameRef.current = requestAnimationFrame(processFrame);
   }, [isActive, isPaused, isPreviewMode, exerciseType, targetReps, onComplete, isInitialized]);
+
+  // Animate ideal pose transitions
+  useEffect(() => {
+    if (!isActive || animationProgress >= 1) return;
+    if (currentIdealPose.length === 0 || targetIdealPose.length === 0) return;
+
+    let rafId: number;
+
+    const animate = () => {
+      const elapsed = Date.now() - animationStartTimeRef.current;
+      const rawProgress = Math.min(elapsed / animationDurationRef.current, 1);
+      const easedProgress = easeInOutCubic(rawProgress);
+      
+      setAnimationProgress(rawProgress);
+      
+      // Interpolate between current and target poses
+      const interpolatedPose = lerpPose(currentIdealPose, targetIdealPose, easedProgress);
+      setIdealPoseLandmarks(interpolatedPose);
+      
+      if (rawProgress < 1) {
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+
+    rafId = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [isActive, animationProgress, currentIdealPose, targetIdealPose, lerpPose, easeInOutCubic]);
 
   // Update duration timer
   useEffect(() => {
@@ -427,10 +501,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     lastRepTimeRef.current = 0;
     lastAnnouncedRep.current = 0;
     
-    // Set initial ideal pose
+    // Set initial ideal pose (without animation)
     if (showIdealPose) {
       const initialPose = getIdealPoseForPhase('up');
       setIdealPoseLandmarks(initialPose);
+      setCurrentIdealPose(initialPose);
+      setTargetIdealPose(initialPose);
+      setAnimationProgress(1);
     }
     
     speak('Starting workout', 'high');
