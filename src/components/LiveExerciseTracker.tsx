@@ -100,19 +100,37 @@ export function LiveExerciseTracker() {
     onComplete: handleComplete
   });
 
-  // Draw pose overlay on canvas
+  // Draw pose overlay on canvas - continuously update
   useEffect(() => {
-    if (!canvasRef.current || !videoRef.current || landmarks.length === 0) return;
+    if (!canvasRef.current || !videoRef.current || !isActive) return;
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
+
+    // Match canvas size to video
+    const updateCanvasSize = () => {
+      if (video.videoWidth && video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+    };
+
+    updateCanvasSize();
+    video.addEventListener('loadedmetadata', updateCanvasSize);
+
+    return () => {
+      video.removeEventListener('loadedmetadata', updateCanvasSize);
+    };
+  }, [isActive]);
+
+  // Draw landmarks whenever they update
+  useEffect(() => {
+    if (!canvasRef.current || landmarks.length === 0) return;
+
+    const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx || !canvas.width || !canvas.height) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawPose(ctx, landmarks, canvas.width, canvas.height);
   }, [landmarks]);
 
@@ -275,16 +293,18 @@ export function LiveExerciseTracker() {
 
       {/* Video Feed */}
       <Card className="relative overflow-hidden bg-black">
-        <div className="relative aspect-video">
+        <div className="relative aspect-video bg-black">
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
             playsInline
             muted
+            autoPlay
           />
           <canvas
             ref={canvasRef}
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ mixBlendMode: 'normal' }}
           />
           
           {/* Feedback Overlay */}

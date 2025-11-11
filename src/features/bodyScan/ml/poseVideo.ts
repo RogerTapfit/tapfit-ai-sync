@@ -76,19 +76,27 @@ export function drawPose(
 ): void {
   if (landmarks.length < 33) return;
 
+  // Clear canvas
+  ctx.clearRect(0, 0, width, height);
+
   // Connections for pose skeleton
   const connections = [
     [11, 12], [11, 13], [13, 15], [12, 14], [14, 16], // Arms
+    [15, 17], [15, 19], [15, 21], [16, 18], [16, 20], [16, 22], // Hands
     [11, 23], [12, 24], [23, 24], // Torso
     [23, 25], [25, 27], [27, 29], [29, 31], // Left leg
     [24, 26], [26, 28], [28, 30], [30, 32], // Right leg
+    [27, 31], [28, 32], // Feet
+    [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], // Face
   ];
 
-  ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
-  ctx.lineWidth = 3;
-  ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+  // Draw connections with orange color
+  ctx.strokeStyle = '#ff8800';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = 'rgba(255, 136, 0, 0.5)';
 
-  // Draw connections
   connections.forEach(([start, end]) => {
     const startPoint = landmarks[start];
     const endPoint = landmarks[end];
@@ -102,12 +110,26 @@ export function drawPose(
     }
   });
 
-  // Draw landmarks
+  // Draw landmarks with white centers and orange glow
+  ctx.shadowBlur = 8;
   landmarks.forEach((point) => {
     if ((point.visibility || 0) > 0.5) {
+      // Outer orange glow
+      ctx.fillStyle = '#ff8800';
+      ctx.beginPath();
+      ctx.arc(point.x * width, point.y * height, 8, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Inner white center
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(point.x * width, point.y * height, 5, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.shadowBlur = 8;
     }
   });
+
+  // Reset shadow
+  ctx.shadowBlur = 0;
 }
