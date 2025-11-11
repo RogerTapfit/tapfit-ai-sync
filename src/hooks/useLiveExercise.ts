@@ -506,8 +506,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           // Start timing up phase
           upPhaseStartRef.current = now;
           
-          // Debounce reps (minimum 500ms between reps)
-          if (now - lastRepTimeRef.current > 500) {
+          // Debounce reps (minimum 400ms between reps) - reduced for faster response
+          if (now - lastRepTimeRef.current > 400) {
             // Calculate rep duration (from start of down phase to end of up phase)
             const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
             
@@ -517,45 +517,47 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               setRepSpeed(speed);
               setLastRepDuration(repDuration);
               
-              // Voice feedback for rep speed issues
-              if (speed === 'too-fast') {
-                speak('Slow down', 'normal');
-              } else if (speed === 'too-slow') {
-                speak('Move faster', 'normal');
-              }
+              // Voice feedback for rep speed issues (removed - too distracting)
+              // Speed feedback is now visual only via badges
             }
             
             setReps(prev => {
               const newReps = prev + 1;
               
-              // Audio feedback for rep count
+              // Audio feedback for rep count - HIGH PRIORITY for instant voice
               if (newReps !== lastAnnouncedRep.current) {
                 lastAnnouncedRep.current = newReps;
-                speak(`${newReps}`, 'normal');
+                speak(`${newReps}`, 'high'); // ✅ HIGH PRIORITY - interrupts everything
                 
-                // Milestone coaching (quarter, half, three-quarter)
-                const milestonePhrase = getCoachingPhrase({ 
-                  type: 'rep_milestone', 
-                  data: { currentReps: newReps, targetReps } 
-                });
-                if (milestonePhrase) {
-                  speak(milestonePhrase, 'normal');
+                // Milestone coaching only at major points (reduce spam)
+                if (newReps === Math.ceil(targetReps / 2)) {
+                  // Only at halfway point
+                  const milestonePhrase = getCoachingPhrase({ 
+                    type: 'rep_milestone', 
+                    data: { currentReps: newReps, targetReps } 
+                  });
+                  if (milestonePhrase) {
+                    speak(milestonePhrase, 'normal');
+                  }
                 }
                 
-                // Form coaching at key points
+                // Form coaching - reduced frequency (every 30 seconds minimum)
                 const now = Date.now();
-                if (shouldCoach(lastFormCoachingRef.current, now, 20000)) {
+                if (shouldCoach(lastFormCoachingRef.current, now, 30000)) { // ✅ Increased to 30s
                   const avgFormScore = formScoresRef.current.length > 0 
                     ? formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length 
                     : formScore;
                   
-                  const formPhrase = getCoachingPhrase({ 
-                    type: 'form_correction', 
-                    data: { formScore: avgFormScore } 
-                  });
-                  if (formPhrase) {
-                    speak(formPhrase, 'normal');
-                    lastFormCoachingRef.current = now;
+                  // Only coach if form is significantly poor
+                  if (avgFormScore < 70) {
+                    const formPhrase = getCoachingPhrase({ 
+                      type: 'form_correction', 
+                      data: { formScore: avgFormScore } 
+                    });
+                    if (formPhrase) {
+                      speak(formPhrase, 'normal');
+                      lastFormCoachingRef.current = now;
+                    }
                   }
                 }
               }
