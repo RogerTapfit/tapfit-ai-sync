@@ -29,6 +29,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [landmarks, setLandmarks] = useState<Keypoint[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [distanceStatus, setDistanceStatus] = useState<'too-close' | 'too-far' | 'perfect' | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -37,6 +38,25 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const lastPhaseRef = useRef<'up' | 'down' | 'transition'>('up');
   const formScoresRef = useRef<number[]>([]);
   const lastRepTimeRef = useRef<number>(0);
+
+  // Calculate distance status based on pose size
+  const calculateDistanceStatus = useCallback((landmarks: Keypoint[]): 'too-close' | 'too-far' | 'perfect' => {
+    if (landmarks.length < 10) return 'too-far';
+
+    // Calculate bounding box of all landmarks
+    let minY = 1, maxY = 0;
+    landmarks.forEach(lm => {
+      minY = Math.min(minY, lm.y);
+      maxY = Math.max(maxY, lm.y);
+    });
+
+    const poseHeight = maxY - minY;
+    
+    // Optimal range: pose should take up 50-70% of frame height
+    if (poseHeight > 0.70) return 'too-close';
+    if (poseHeight < 0.45) return 'too-far';
+    return 'perfect';
+  }, []);
 
   // Initialize MediaPipe
   useEffect(() => {
@@ -106,8 +126,10 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     if (result.ok && result.landmarks.length > 0) {
       setLandmarks(result.landmarks);
 
-      // Preview mode: only show landmarks, no tracking
+      // Preview mode: only show landmarks and distance feedback
       if (isPreviewMode) {
+        const distance = calculateDistanceStatus(result.landmarks);
+        setDistanceStatus(distance);
         animationFrameRef.current = requestAnimationFrame(processFrame);
         return;
       }
@@ -325,6 +347,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     landmarks,
     progress: (reps / targetReps) * 100,
     facingMode,
+    distanceStatus,
     start,
     pause,
     resume,

@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useLiveExercise, type WorkoutStats } from '@/hooks/useLiveExercise';
 import { type ExerciseType } from '@/utils/exerciseDetection';
 import { drawPose } from '@/features/bodyScan/ml/poseVideo';
-import { 
+import { cn } from '@/lib/utils';
+import {
   Play, 
   Pause, 
   Square, 
@@ -105,6 +106,7 @@ export function LiveExerciseTracker({
     landmarks,
     progress,
     facingMode,
+    distanceStatus,
     start,
     pause,
     resume,
@@ -285,6 +287,22 @@ export function LiveExerciseTracker({
                     </div>
                   )}
                 </div>
+
+                {/* Distance Indicator */}
+                {distanceStatus && (
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none">
+                    <div className={cn(
+                      "px-6 py-3 rounded-full backdrop-blur-md border-2 font-semibold text-lg shadow-lg",
+                      distanceStatus === 'perfect' && "bg-green-500/20 border-green-400 text-green-400",
+                      distanceStatus === 'too-close' && "bg-orange-500/20 border-orange-400 text-orange-400",
+                      distanceStatus === 'too-far' && "bg-blue-500/20 border-blue-400 text-blue-400"
+                    )}>
+                      {distanceStatus === 'perfect' && '✓ Perfect Distance'}
+                      {distanceStatus === 'too-close' && '← Step Back'}
+                      {distanceStatus === 'too-far' && 'Step Closer →'}
+                    </div>
+                  </div>
+                )}
 
                 {/* Flip Camera Button */}
                 <div className="absolute top-4 right-4 pointer-events-auto">
