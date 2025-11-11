@@ -254,8 +254,8 @@ export function drawPose(
     const connKeyReverse = `${endIdx}-${startIdx}`;
     
     // Determine connection color based on form issues
-    let strokeColor = '#ff8800'; // Default orange
-    let shadowColor = 'rgba(255, 136, 0, 0.5)';
+    let strokeColor = '#dc2626'; // Default red
+    let shadowColor = 'rgba(220, 38, 38, 0.5)';
     
     if (errorConnections.has(connKey) || errorConnections.has(connKeyReverse)) {
       strokeColor = '#ef4444'; // Red for errors
@@ -286,9 +286,9 @@ export function drawPose(
     const y = point.y * height;
     
     // Determine color based on form issues and alignment
-    let outerColor = '#ff8800'; // Default orange
+    let outerColor = '#dc2626'; // Default red
     let innerColor = '#ffffff';
-    let glowColor = 'rgba(255, 136, 0, 0.5)';
+    let glowColor = 'rgba(220, 38, 38, 0.5)';
     let radius = 8;
     
     // Misaligned joints take priority over default styling
