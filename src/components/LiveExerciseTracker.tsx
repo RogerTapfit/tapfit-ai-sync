@@ -203,17 +203,25 @@ export function LiveExerciseTracker({
     }
   });
 
-  // Auto-start preview when initialized
+  // Auto-start preview when initialized (with delay to ensure everything is ready)
   useEffect(() => {
     if (isInitialized && !isActive && !showResults && !skipSetup) {
-      startPreview();
+      // Add small delay to ensure MediaPipe is fully ready
+      const timer = setTimeout(() => {
+        startPreview().catch((err) => {
+          console.error('Failed to start preview:', err);
+          toast.error('Camera preview failed. Please click Start Workout to try again.');
+        });
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
     return () => {
       if (isPreviewMode) {
         stopPreview();
       }
     };
-  }, [isInitialized, isActive, showResults, skipSetup]);
+  }, [isInitialized, isActive, showResults, skipSetup, startPreview, stopPreview, isPreviewMode]);
 
   // Draw pose overlay on canvas - continuously update (for both preview and active modes)
   useEffect(() => {
@@ -391,6 +399,19 @@ export function LiveExerciseTracker({
                 <div className="text-center space-y-2">
                   <p className="text-lg font-medium">Initializing AI Pose Detection...</p>
                   <p className="text-sm text-muted-foreground">Loading motion tracking system</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Camera Preview Error State */}
+          {isInitialized && !isPreviewMode && !isActive && (
+            <Card className="relative overflow-hidden bg-black/5 max-w-2xl mx-auto">
+              <div className="relative aspect-[9/16] flex flex-col items-center justify-center space-y-4 p-6">
+                <Camera className="w-16 h-16 text-muted-foreground" />
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-medium">Camera Preview Unavailable</p>
+                  <p className="text-sm text-muted-foreground">Click Start Workout to activate your camera</p>
                 </div>
               </div>
             </Card>

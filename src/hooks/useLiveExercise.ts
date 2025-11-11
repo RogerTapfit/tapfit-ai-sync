@@ -274,6 +274,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   // Start camera
   const startCamera = useCallback(async () => {
     try {
+      console.log('Requesting camera access...');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           width: 1280, 
@@ -281,15 +282,25 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           facingMode
         }
       });
+      console.log('Camera access granted');
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+        console.log('Video playing');
       }
       return true;
     } catch (error) {
       console.error('Camera access error:', error);
-      toast.error('Could not access camera. Please grant permission.');
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          toast.error('Camera permission denied. Please allow camera access and try again.');
+        } else if (error.name === 'NotFoundError') {
+          toast.error('No camera found. Please connect a camera and try again.');
+        } else {
+          toast.error('Could not access camera. Please check your camera settings.');
+        }
+      }
       return false;
     }
   }, [facingMode]);
@@ -749,23 +760,40 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
   // Start preview mode
   const startPreview = useCallback(async () => {
-    if (!isInitialized) return;
-    
-    const cameraStarted = await startCamera();
-    if (!cameraStarted) return;
-
-    // Wait for video to be ready
-    if (videoRef.current) {
-      await new Promise(resolve => {
-        if (videoRef.current) {
-          videoRef.current.onloadedmetadata = resolve;
-        }
-      });
+    if (!isInitialized) {
+      console.log('Cannot start preview: MediaPipe not initialized');
+      return;
     }
+    
+    try {
+      console.log('Starting camera for preview...');
+      const cameraStarted = await startCamera();
+      if (!cameraStarted) {
+        console.error('Camera failed to start');
+        return;
+      }
 
-    setIsPreviewMode(true);
-    setLandmarks([]);
-    animationFrameRef.current = requestAnimationFrame(processFrame);
+      // Wait for video to be ready with timeout
+      if (videoRef.current) {
+        await Promise.race([
+          new Promise(resolve => {
+            if (videoRef.current) {
+              videoRef.current.onloadedmetadata = resolve;
+            }
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Video load timeout')), 5000))
+        ]);
+      }
+
+      console.log('Preview mode starting...');
+      setIsPreviewMode(true);
+      setLandmarks([]);
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+    } catch (error) {
+      console.error('Error starting preview:', error);
+      toast.error('Failed to start camera preview');
+      throw error;
+    }
   }, [startCamera, processFrame, isInitialized]);
 
   // Stop preview mode
