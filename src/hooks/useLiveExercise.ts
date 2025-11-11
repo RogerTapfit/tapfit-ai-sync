@@ -28,6 +28,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [duration, setDuration] = useState(0);
   const [landmarks, setLandmarks] = useState<Keypoint[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -67,7 +68,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         video: { 
           width: 1280, 
           height: 720,
-          facingMode: 'user'
+          facingMode
         }
       });
       streamRef.current = stream;
@@ -81,7 +82,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       toast.error('Could not access camera. Please grant permission.');
       return false;
     }
-  }, []);
+  }, [facingMode]);
 
   // Stop camera
   const stopCamera = useCallback(() => {
@@ -199,6 +200,30 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     // Keep camera running for smooth transition
   }, []);
 
+  // Switch camera
+  const switchCamera = useCallback(async () => {
+    // Stop current camera
+    stopCamera();
+    
+    // Toggle facing mode
+    const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newFacingMode);
+    
+    // Small delay to ensure old stream is stopped
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Restart camera with new facing mode
+    const cameraStarted = await startCamera();
+    if (!cameraStarted) {
+      // Revert if failed
+      setFacingMode(facingMode);
+      return false;
+    }
+    
+    toast.success(`Switched to ${newFacingMode === 'user' ? 'front' : 'rear'} camera`);
+    return true;
+  }, [facingMode, stopCamera, startCamera]);
+
   // Start workout
   const start = useCallback(async () => {
     if (!isInitialized) {
@@ -299,11 +324,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     duration,
     landmarks,
     progress: (reps / targetReps) * 100,
+    facingMode,
     start,
     pause,
     resume,
     stop,
     startPreview,
-    stopPreview
+    stopPreview,
+    switchCamera
   };
 }

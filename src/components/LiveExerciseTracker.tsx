@@ -16,7 +16,8 @@ import {
   Award,
   TrendingUp,
   Camera,
-  ArrowLeft
+  ArrowLeft,
+  SwitchCamera
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -103,12 +104,14 @@ export function LiveExerciseTracker({
     duration,
     landmarks,
     progress,
+    facingMode,
     start,
     pause,
     resume,
     stop,
     startPreview,
-    stopPreview
+    stopPreview,
+    switchCamera
   } = useLiveExercise({
     exerciseType: selectedExercise,
     targetReps,
@@ -281,6 +284,18 @@ export function LiveExerciseTracker({
                       </Badge>
                     </div>
                   )}
+                </div>
+
+                {/* Flip Camera Button */}
+                <div className="absolute top-4 right-4 pointer-events-auto">
+                  <Button
+                    onClick={switchCamera}
+                    size="icon"
+                    variant="secondary"
+                    className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                  >
+                    <SwitchCamera className="w-5 h-5 text-white" />
+                  </Button>
                 </div>
               </div>
             </Card>
