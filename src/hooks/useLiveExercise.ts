@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { initializePoseVideo, detectPoseVideo, type Keypoint } from '@/features/bodyScan/ml/poseVideo';
 import { detectExercise, type ExerciseType, type FormIssue } from '@/utils/exerciseDetection';
 import { toast } from 'sonner';
+import { useWorkoutAudio } from './useWorkoutAudio';
 
 interface UseLiveExerciseProps {
   exerciseType: ExerciseType;
@@ -38,6 +39,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const lastPhaseRef = useRef<'up' | 'down' | 'transition'>('up');
   const formScoresRef = useRef<number[]>([]);
   const lastRepTimeRef = useRef<number>(0);
+  const lastAnnouncedRep = useRef<number>(0);
+  
+  const { speak, clearQueue } = useWorkoutAudio();
 
   // Calculate distance status based on pose size
   const calculateDistanceStatus = useCallback((landmarks: Keypoint[]): 'too-close' | 'too-far' | 'perfect' => {
@@ -151,8 +155,28 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           if (now - lastRepTimeRef.current > 500) {
             setReps(prev => {
               const newReps = prev + 1;
+              
+              // Audio feedback for rep count
+              if (newReps !== lastAnnouncedRep.current) {
+                lastAnnouncedRep.current = newReps;
+                speak(`${newReps}`, 'normal');
+                
+                // Form feedback every 5 reps
+                if (newReps % 5 === 0) {
+                  const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
+                  if (avgFormScore > 85) {
+                    speak('Excellent form!', 'normal');
+                  } else if (avgFormScore > 70) {
+                    speak('Good job, keep it up!', 'normal');
+                  } else {
+                    speak('Focus on your form', 'normal');
+                  }
+                }
+              }
+              
               if (newReps >= targetReps && onComplete) {
                 // Workout complete
+                speak('Workout complete!', 'high');
                 const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
                 const stats: WorkoutStats = {
                   reps: newReps,
@@ -281,7 +305,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     startTimeRef.current = Date.now();
     lastPhaseRef.current = 'up';
     lastRepTimeRef.current = 0;
+    lastAnnouncedRep.current = 0;
     
+    speak('Starting workout', 'high');
     animationFrameRef.current = requestAnimationFrame(processFrame);
     toast.success('Workout started! Get ready...');
   }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview]);
@@ -305,6 +331,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const stop = useCallback(() => {
     setIsActive(false);
     setIsPaused(false);
+    clearQueue();
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -319,7 +346,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         caloriesBurned: Math.round(reps * 0.5)
       });
     }
-  }, [stopCamera, onComplete, reps, duration]);
+  }, [stopCamera, onComplete, reps, duration, clearQueue]);
 
   // Cleanup
   useEffect(() => {
