@@ -94,9 +94,10 @@ export function detectPushup(
   // Determine phase based on elbow angle (more lenient thresholds)
   let phase: 'up' | 'down' | 'transition' = previousPhase;
   
-  if (avgElbowAngle < 105) {
+  // More lenient thresholds for better rep detection
+  if (avgElbowAngle < 115) { // Was 105
     phase = 'down';
-  } else if (avgElbowAngle > 150) {
+  } else if (avgElbowAngle > 140) { // Was 150
     phase = 'up';
   } else {
     phase = 'transition';

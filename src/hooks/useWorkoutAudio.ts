@@ -49,6 +49,7 @@ export const useWorkoutAudio = () => {
 
       return new Promise<void>((resolve) => {
         source.onended = () => {
+          console.log('✅ Audio played successfully');
           currentSource.current = null;
           resolve();
         };
@@ -65,6 +66,7 @@ export const useWorkoutAudio = () => {
       return;
     }
 
+    console.log('🎵 Processing audio queue, length:', audioQueue.current.length);
     isProcessing.current = true;
 
     while (audioQueue.current.length > 0) {

@@ -50,6 +50,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [idealPoseLandmarks, setIdealPoseLandmarks] = useState<IdealPoseKeypoint[]>([]);
   const [alignmentScore, setAlignmentScore] = useState<number>(0);
   const [misalignedJoints, setMisalignedJoints] = useState<number[]>([]);
+  const [isRepFlashing, setIsRepFlashing] = useState(false);
   
   // Debug states for angle tracking
   const [currentElbowAngle, setCurrentElbowAngle] = useState<number>(0);
@@ -582,6 +583,15 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             setReps(prev => {
               const newReps = prev + 1;
               
+              // 🟢 TRIGGER GREEN FLASH
+              setIsRepFlashing(true);
+              setTimeout(() => setIsRepFlashing(false), 400);
+              
+              // 📳 HAPTIC FEEDBACK - double pulse for rep completion
+              if ('vibrate' in navigator) {
+                navigator.vibrate([100, 50, 100]);
+              }
+              
               // Audio feedback for rep count - HIGH PRIORITY for instant voice
               if (newReps !== lastAnnouncedRep.current) {
                 lastAnnouncedRep.current = newReps;
@@ -891,6 +901,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     restDuration,
     currentSet,
     currentElbowAngle,
+    isRepFlashing,
     updateRestDuration,
     skipRest,
     completeWorkout,

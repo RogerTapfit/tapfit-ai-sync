@@ -136,6 +136,7 @@ export function LiveExerciseTracker({
     restDuration,
     currentSet,
     currentElbowAngle,
+    isRepFlashing,
     updateRestDuration,
     skipRest,
     completeWorkout,
@@ -269,9 +270,9 @@ export function LiveExerciseTracker({
 
     // Draw current pose (using source dimensions)
     if (landmarks.length > 0) {
-      drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints);
+      drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
     }
-  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints]);
+  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints, isRepFlashing]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -707,14 +708,19 @@ export function LiveExerciseTracker({
                 className={cn(
                   "text-8xl font-black leading-none tabular-nums transition-all",
                   "animate-scale-in",
+                  isRepFlashing ? "text-green-400" : 
                   formScore >= 90 ? "text-green-400" : 
                   formScore >= 75 ? "text-yellow-400" : 
                   "text-orange-400",
                   "drop-shadow-[0_0_30px_rgba(0,0,0,0.8)]"
                 )}
                 style={{
-                  textShadow: '0 0 40px rgba(0,0,0,0.9), 0 0 20px currentColor',
-                  animation: 'scale-in 0.3s ease-out'
+                  textShadow: isRepFlashing 
+                    ? '0 0 50px rgba(34, 197, 94, 1), 0 0 30px rgba(34, 197, 94, 0.8)' 
+                    : '0 0 40px rgba(0,0,0,0.9), 0 0 20px currentColor',
+                  animation: 'scale-in 0.3s ease-out',
+                  transform: isRepFlashing ? 'scale(1.2)' : 'scale(1)',
+                  transition: 'all 0.3s ease-out'
                 }}
               >
                 {reps}

@@ -195,7 +195,8 @@ export function drawPose(
     severity: 'error' | 'warning' | 'perfect';
     message: string;
   }>,
-  misalignedJoints?: number[]
+  misalignedJoints?: number[],
+  isRepFlashing?: boolean
 ): void {
   if (landmarks.length < 33) return;
 
@@ -254,8 +255,8 @@ export function drawPose(
     const connKeyReverse = `${endIdx}-${startIdx}`;
     
     // Determine connection color based on form issues
-    let strokeColor = '#dc2626'; // Default red
-    let shadowColor = 'rgba(220, 38, 38, 0.5)';
+    let strokeColor = isRepFlashing ? '#22c55e' : '#dc2626'; // Green when flashing, else red
+    let shadowColor = isRepFlashing ? 'rgba(34, 197, 94, 0.8)' : 'rgba(220, 38, 38, 0.5)';
     
     if (errorConnections.has(connKey) || errorConnections.has(connKeyReverse)) {
       strokeColor = '#ef4444'; // Red for errors
@@ -286,13 +287,15 @@ export function drawPose(
     const y = point.y * height;
     
     // Determine color based on form issues and alignment
-    let outerColor = '#dc2626'; // Default red
-    let innerColor = '#ffffff';
-    let glowColor = 'rgba(220, 38, 38, 0.5)';
-    let radius = 8;
+    let outerColor = isRepFlashing ? '#22c55e' : '#dc2626'; // Green when flashing, else red
+    let innerColor = isRepFlashing ? '#c9ffc9' : '#ffffff';
+    let glowColor = isRepFlashing ? 'rgba(34, 197, 94, 0.8)' : 'rgba(220, 38, 38, 0.5)';
+    let radius = isRepFlashing ? 12 : 8; // Bigger when flashing
     
-    // Misaligned joints take priority over default styling
-    if (misalignedJoints?.includes(idx) && !errorLandmarks.has(idx) && !perfectLandmarks.has(idx)) {
+    // Only apply flash if no specific form issues - errors/warnings override
+    if (!isRepFlashing || errorLandmarks.has(idx) || warningLandmarks.has(idx) || perfectLandmarks.has(idx) || misalignedJoints?.includes(idx)) {
+      // Misaligned joints take priority over default styling
+      if (misalignedJoints?.includes(idx) && !errorLandmarks.has(idx) && !perfectLandmarks.has(idx)) {
       outerColor = '#f59e0b'; // Amber for misalignment
       innerColor = '#fef3c7';
       glowColor = 'rgba(245, 158, 11, 0.7)';
@@ -315,6 +318,7 @@ export function drawPose(
       innerColor = '#c9ffc9';
       glowColor = 'rgba(34, 197, 94, 0.7)';
       radius = 10;
+    }
     }
     
     // Outer glow circle
