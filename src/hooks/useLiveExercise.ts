@@ -11,6 +11,7 @@ import { idealPoseTemplates, type IdealPoseKeypoint } from '@/features/bodyScan/
 import { toast } from 'sonner';
 import { useWorkoutAudio } from './useWorkoutAudio';
 import { getCoachingPhrase, shouldCoach } from '@/services/workoutVoiceCoaching';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 interface UseLiveExerciseProps {
   exerciseType: ExerciseType;
@@ -84,8 +85,35 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const upPhaseStartRef = useRef<number>(0);
   const lastCoachingTimeRef = useRef<number>(0);
   const lastFormCoachingRef = useRef<number>(0);
+  const lastHapticAngleRef = useRef<number>(0);
   
   const { speak, clearQueue } = useWorkoutAudio();
+
+  // Haptic feedback for angle thresholds
+  const triggerAngleHaptic = useCallback(async (angle: number, phase: 'up' | 'down' | 'transition') => {
+    // Only for pushups
+    if (exerciseType !== 'pushups') return;
+    
+    // Avoid spamming haptics - require at least 15° change
+    const angleDiff = Math.abs(angle - lastHapticAngleRef.current);
+    if (angleDiff < 15) return;
+    
+    try {
+      // Down position achieved (< 105°)
+      if (angle < 105 && lastHapticAngleRef.current >= 105) {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+        lastHapticAngleRef.current = angle;
+      }
+      // Up position achieved (> 150°)
+      else if (angle > 150 && lastHapticAngleRef.current <= 150) {
+        await Haptics.impact({ style: ImpactStyle.Light });
+        lastHapticAngleRef.current = angle;
+      }
+    } catch (error) {
+      // Haptics not supported or failed - silently ignore
+      console.log('Haptics not available:', error);
+    }
+  }, [exerciseType]);
 
   // Optimal rep duration ranges (in milliseconds) for different exercises
   const getOptimalRepRange = useCallback((exercise: ExerciseType): { min: number; max: number } => {
@@ -411,6 +439,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         // Update elbow angle for pushups
         if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
           setCurrentElbowAngle(detection.avgElbowAngle);
+          
+          // Trigger haptic feedback when crossing angle thresholds
+          triggerAngleHaptic(detection.avgElbowAngle, detection.phase);
           
           // Debug logging for pushups
           if (Date.now() - lastCoachingTimeRef.current > 2000) {
