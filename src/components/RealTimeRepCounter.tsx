@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Activity, Bluetooth, Battery, Timer, Target } from 'lucide-react';
 import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
 import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
+import { useVoiceCoaching } from '@/hooks/useVoiceCoaching';
 
 interface RealTimeRepCounterProps {
   targetReps?: number;
@@ -31,6 +32,7 @@ export function RealTimeRepCounter({
   const [isResting, setIsResting] = useState(false);
   
   const { speak } = useWorkoutAudio();
+  const voiceCoach = useVoiceCoaching();
 
   // Timer for workout duration
   useEffect(() => {
@@ -58,14 +60,21 @@ export function RealTimeRepCounter({
           }
           
           // Voice coaching during rest
-          if ([30, 15, 10, 5].includes(prev)) {
-            const countdownPhrase = getCoachingPhrase({ 
-              type: 'rest_countdown', 
-              data: { restTimeLeft: prev } 
+          if ([30, 10].includes(prev)) {
+            voiceCoach.speak({
+              type: 'rest_countdown',
+              data: { timeLeft: prev }
             });
-            if (countdownPhrase) {
-              speak(countdownPhrase, prev === 5 ? 'high' : 'normal');
-            }
+          }
+          
+          // Halfway point motivation
+          if (prev === 30 && currentSet === Math.ceil(targetSets / 2)) {
+            setTimeout(() => {
+              voiceCoach.speak({
+                type: 'halfway_point',
+                data: { currentSet, totalSets: targetSets }
+              });
+            }, 2000);
           }
           
           return prev - 1;
@@ -88,42 +97,55 @@ export function RealTimeRepCounter({
       // Check if set is complete
       if (count >= targetReps && !isResting) {
         if (currentSet < targetSets) {
-          const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
-          speak(setCompletePhrase || 'Set complete! Take a rest', 'high');
+          // Voice coaching for set completion
+          voiceCoach.speak({
+            type: 'set_complete',
+            data: { currentSet, totalSets: targetSets, reps: targetReps }
+          });
+          
           toast.success(`Set ${currentSet} complete! Take a rest`);
           setCurrentSet(prev => prev + 1);
           setRepCount(0);
           setIsResting(true);
           setRestTime(60); // 60 second rest
           
-          const restStartPhrase = getCoachingPhrase({ type: 'rest_start' });
-          if (restStartPhrase) {
-            speak(restStartPhrase, 'normal');
-          }
+          // Voice coaching for rest start
+          voiceCoach.speak({
+            type: 'rest_start',
+            data: { restTime: 60 }
+          });
         } else {
-          const workoutCompletePhrase = getCoachingPhrase({ type: 'workout_complete' });
-          speak(workoutCompletePhrase || 'Workout complete! Great job!', 'high');
+          // Workout complete - voice coaching
+          const totalMinutes = Math.floor(workoutTime / 60);
+          voiceCoach.speak({
+            type: 'workout_complete',
+            data: { totalReps: targetSets * targetReps, duration: totalMinutes }
+          });
+          
           toast.success('Workout complete! Great job!');
           setSessionActive(false);
           onWorkoutComplete?.();
         }
       }
       
-      // Milestone coaching
-      const milestonePhrase = getCoachingPhrase({ 
-        type: 'rep_milestone', 
-        data: { currentReps: count, targetReps } 
-      });
-      if (milestonePhrase) {
-        speak(milestonePhrase, 'normal');
+      // Final push encouragement
+      if (currentSet === targetSets - 1 && count === 0) {
+        setTimeout(() => {
+          voiceCoach.speak({
+            type: 'final_push',
+            data: { setsRemaining: 1 }
+          });
+        }, 1000);
       }
       
-      // Near target encouragement
-      if (count === targetReps - 2) {
-        const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
-        if (nearTargetPhrase) {
-          speak(nearTargetPhrase, 'normal');
-        }
+      // Form tips periodically during exercise
+      if (count === Math.floor(targetReps / 2) && currentSet <= 2) {
+        setTimeout(() => {
+          voiceCoach.speak({
+            type: 'form_tip',
+            data: { exerciseName: 'this exercise' }
+          });
+        }, 500);
       }
     },
     onPuckStateUpdate: (state) => {
