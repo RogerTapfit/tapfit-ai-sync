@@ -11,6 +11,8 @@ import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useMachineHistory } from '@/hooks/useMachineHistory';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useRestTimerLearning } from '@/hooks/useRestTimerLearning';
+import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
+import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
 import { PRCelebration } from '@/components/PRCelebration';
 import { toast } from "sonner";
 import { 
@@ -64,8 +66,25 @@ export default function MachineWorkout() {
   // Get machine history for weight recommendations
   const { history: machineHistory, loading: historyLoading } = useMachineHistory(machine?.name || '');
   
-  // Get personal records tracking
-  const { currentPR, checkForNewPR } = usePersonalRecords(machine?.name || '');
+  // Voice coaching
+  const { speak } = useWorkoutAudio();
+  
+  // Handle PR voice coaching
+  const handleNewPR = (prCheckResult: any) => {
+    const prPhrase = getCoachingPhrase({ 
+      type: 'personal_record', 
+      data: { 
+        improvementPercent: prCheckResult.improvement,
+        exerciseName: prCheckResult.exerciseName || machine?.name || 'exercise'
+      } 
+    });
+    if (prPhrase) {
+      speak(prPhrase, 'high');
+    }
+  };
+  
+  // Get personal records tracking with PR callback
+  const { currentPR, checkForNewPR } = usePersonalRecords(machine?.name || '', handleNewPR);
   
   // Get rest timer learning
   const { 

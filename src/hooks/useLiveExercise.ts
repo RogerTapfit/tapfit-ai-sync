@@ -10,6 +10,7 @@ import { detectExercise, type ExerciseType, type FormIssue } from '@/utils/exerc
 import { idealPoseTemplates, type IdealPoseKeypoint } from '@/features/bodyScan/ml/idealPoseTemplates';
 import { toast } from 'sonner';
 import { useWorkoutAudio } from './useWorkoutAudio';
+import { getCoachingPhrase, shouldCoach } from '@/services/workoutVoiceCoaching';
 
 interface UseLiveExerciseProps {
   exerciseType: ExerciseType;
@@ -78,6 +79,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const repStartTimeRef = useRef<number>(0);
   const downPhaseStartRef = useRef<number>(0);
   const upPhaseStartRef = useRef<number>(0);
+  const lastCoachingTimeRef = useRef<number>(0);
+  const lastFormCoachingRef = useRef<number>(0);
   
   const { speak, clearQueue } = useWorkoutAudio();
 
@@ -282,14 +285,25 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           setReps(0); // Reset reps for next set
           lastAnnouncedRep.current = 0;
           formScoresRef.current = [];
-          speak('Rest complete! Start your next set.', 'high');
+          
+          const restCompletePhrase = getCoachingPhrase({ 
+            type: 'rest_countdown', 
+            data: { restTimeLeft: 0 } 
+          });
+          speak(restCompletePhrase || 'Rest complete! Start your next set.', 'high');
           toast.success('Rest complete! Begin next set', { duration: 2000 });
           return 0;
         }
         
-        // Audio cues at 10s, 5s, 3s, 2s, 1s
-        if (prev === 10 || prev === 5 || prev <= 3) {
-          speak(`${prev - 1}`, 'normal');
+        // Voice coaching during rest countdown
+        if ([30, 15, 10, 5].includes(prev)) {
+          const countdownPhrase = getCoachingPhrase({ 
+            type: 'rest_countdown', 
+            data: { restTimeLeft: prev } 
+          });
+          if (countdownPhrase) {
+            speak(countdownPhrase, prev === 5 ? 'high' : 'normal');
+          }
         }
         
         return prev - 1;
@@ -470,25 +484,46 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
                 lastAnnouncedRep.current = newReps;
                 speak(`${newReps}`, 'normal');
                 
-                // Form feedback every 5 reps
-                if (newReps % 5 === 0) {
-                  const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
-                  if (avgFormScore > 85) {
-                    speak('Excellent form!', 'normal');
-                  } else if (avgFormScore > 70) {
-                    speak('Good job, keep it up!', 'normal');
-                  } else {
-                    speak('Focus on your form', 'normal');
+                // Milestone coaching (quarter, half, three-quarter)
+                const milestonePhrase = getCoachingPhrase({ 
+                  type: 'rep_milestone', 
+                  data: { currentReps: newReps, targetReps } 
+                });
+                if (milestonePhrase) {
+                  speak(milestonePhrase, 'normal');
+                }
+                
+                // Form coaching at key points
+                const now = Date.now();
+                if (shouldCoach(lastFormCoachingRef.current, now, 20000)) {
+                  const avgFormScore = formScoresRef.current.length > 0 
+                    ? formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length 
+                    : formScore;
+                  
+                  const formPhrase = getCoachingPhrase({ 
+                    type: 'form_correction', 
+                    data: { formScore: avgFormScore } 
+                  });
+                  if (formPhrase) {
+                    speak(formPhrase, 'normal');
+                    lastFormCoachingRef.current = now;
                   }
                 }
               }
               
               if (newReps >= targetReps) {
                 // Set complete - start rest timer
-                speak('Set complete! Rest time.', 'high');
+                const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
+                speak(setCompletePhrase || 'Set complete! Rest time.', 'high');
                 setCurrentSet(prev => prev + 1);
                 startRestTimer();
                 toast.success(`Set ${currentSet + 1} complete! Rest for ${restDuration}s`, { duration: 2000 });
+              } else if (newReps === targetReps - 2) {
+                // Near target encouragement
+                const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
+                if (nearTargetPhrase) {
+                  speak(nearTargetPhrase, 'normal');
+                }
               } else {
                 toast.success(`Rep ${newReps}!`, { duration: 1000 });
               }
@@ -641,13 +676,15 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     // Set initial ideal pose (without animation)
     if (showIdealPose) {
       const initialPose = getIdealPoseForPhase('up');
-      setIdealPoseLandmarks(initialPose);
+    setIdealPoseLandmarks(initialPose);
       setCurrentIdealPose(initialPose);
       setTargetIdealPose(initialPose);
       setAnimationProgress(1);
     }
     
-    speak('Starting workout', 'high');
+    // Motivational workout start
+    const startPhrase = getCoachingPhrase({ type: 'workout_start' });
+    speak(startPhrase || 'Starting workout', 'high');
     animationFrameRef.current = requestAnimationFrame(processFrame);
     toast.success('Workout started! Get ready...');
   }, [startCamera, processFrame, isInitialized, isPreviewMode, stopPreview, showIdealPose, getIdealPoseForPhase]);
@@ -684,6 +721,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     
     if (onComplete && reps > 0) {
       const avgFormScore = formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length;
+      
+      // Celebrate workout completion
+      const completePhrase = getCoachingPhrase({ type: 'workout_complete' });
+      speak(completePhrase || 'Workout complete! Great job!', 'high');
+      
       onComplete({
         reps,
         sets: currentSet,

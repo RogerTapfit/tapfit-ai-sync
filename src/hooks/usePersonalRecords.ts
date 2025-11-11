@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
+
+// Note: Voice coaching requires useWorkoutAudio hook to be available in the calling component
 
 interface PersonalRecord {
   id: string;
@@ -20,7 +23,7 @@ interface PRCheckResult {
   improvement?: number;
 }
 
-export const usePersonalRecords = (machineName?: string) => {
+export const usePersonalRecords = (machineName?: string, onNewPR?: (prData: PRCheckResult & { exerciseName: string }) => void) => {
   const [currentPR, setCurrentPR] = useState<PersonalRecord | null>(null);
   const [prHistory, setPRHistory] = useState<PersonalRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,6 +185,17 @@ export const usePersonalRecords = (machineName?: string) => {
           _transaction_type: 'personal_record',
           _description: `New PR on ${machineName}: ${weightUsed} lbs (+${improvement}%)`
         });
+
+        // Trigger PR callback for voice coaching
+        if (onNewPR) {
+          onNewPR({ 
+            isNewPR: true, 
+            oldPR, 
+            newPR: weightUsed, 
+            improvement,
+            exerciseName 
+          });
+        }
 
         return { isNewPR: true, oldPR, newPR: weightUsed, improvement };
       }

@@ -6,6 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { getCurrentPuck, connectNearest, type BlePairCallbacks } from '@/lib/blePair';
 import { toast } from 'sonner';
 import { Activity, Bluetooth, Battery, Timer, Target } from 'lucide-react';
+import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
+import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
 
 interface RealTimeRepCounterProps {
   targetReps?: number;
@@ -27,6 +29,8 @@ export function RealTimeRepCounter({
   const [workoutTime, setWorkoutTime] = useState(0);
   const [restTime, setRestTime] = useState(0);
   const [isResting, setIsResting] = useState(false);
+  
+  const { speak } = useWorkoutAudio();
 
   // Timer for workout duration
   useEffect(() => {
@@ -47,9 +51,23 @@ export function RealTimeRepCounter({
         setRestTime(prev => {
           if (prev <= 1) {
             setIsResting(false);
+            const restCompletePhrase = getCoachingPhrase({ type: 'rest_countdown', data: { restTimeLeft: 0 } });
+            speak(restCompletePhrase || 'Rest complete! Start next set', 'high');
             toast.success('Rest complete! Start next set');
             return 0;
           }
+          
+          // Voice coaching during rest
+          if ([30, 15, 10, 5].includes(prev)) {
+            const countdownPhrase = getCoachingPhrase({ 
+              type: 'rest_countdown', 
+              data: { restTimeLeft: prev } 
+            });
+            if (countdownPhrase) {
+              speak(countdownPhrase, prev === 5 ? 'high' : 'normal');
+            }
+          }
+          
           return prev - 1;
         });
       }, 1000);
@@ -70,15 +88,41 @@ export function RealTimeRepCounter({
       // Check if set is complete
       if (count >= targetReps && !isResting) {
         if (currentSet < targetSets) {
+          const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
+          speak(setCompletePhrase || 'Set complete! Take a rest', 'high');
           toast.success(`Set ${currentSet} complete! Take a rest`);
           setCurrentSet(prev => prev + 1);
           setRepCount(0);
           setIsResting(true);
           setRestTime(60); // 60 second rest
+          
+          const restStartPhrase = getCoachingPhrase({ type: 'rest_start' });
+          if (restStartPhrase) {
+            speak(restStartPhrase, 'normal');
+          }
         } else {
+          const workoutCompletePhrase = getCoachingPhrase({ type: 'workout_complete' });
+          speak(workoutCompletePhrase || 'Workout complete! Great job!', 'high');
           toast.success('Workout complete! Great job!');
           setSessionActive(false);
           onWorkoutComplete?.();
+        }
+      }
+      
+      // Milestone coaching
+      const milestonePhrase = getCoachingPhrase({ 
+        type: 'rep_milestone', 
+        data: { currentReps: count, targetReps } 
+      });
+      if (milestonePhrase) {
+        speak(milestonePhrase, 'normal');
+      }
+      
+      // Near target encouragement
+      if (count === targetReps - 2) {
+        const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
+        if (nearTargetPhrase) {
+          speak(nearTargetPhrase, 'normal');
         }
       }
     },
@@ -125,6 +169,9 @@ export function RealTimeRepCounter({
         setRepCount(0);
         setCurrentSet(1);
         setWorkoutTime(0);
+        
+        const workoutStartPhrase = getCoachingPhrase({ type: 'workout_start' });
+        speak(workoutStartPhrase || 'Workout session started!', 'high');
         toast.success('Workout session started!');
       } catch (error) {
         toast.error('Failed to start session');
