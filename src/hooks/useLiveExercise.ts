@@ -32,6 +32,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [distanceStatus, setDistanceStatus] = useState<'too-close' | 'too-far' | 'perfect' | null>(null);
   const [poseConfidence, setPoseConfidence] = useState<number>(0);
+  const [repSpeed, setRepSpeed] = useState<'too-fast' | 'too-slow' | 'perfect' | null>(null);
+  const [lastRepDuration, setLastRepDuration] = useState<number>(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -41,8 +43,29 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const formScoresRef = useRef<number[]>([]);
   const lastRepTimeRef = useRef<number>(0);
   const lastAnnouncedRep = useRef<number>(0);
+  const repStartTimeRef = useRef<number>(0);
   
   const { speak, clearQueue } = useWorkoutAudio();
+
+  // Optimal rep duration ranges (in milliseconds) for different exercises
+  const getOptimalRepRange = useCallback((exercise: ExerciseType): { min: number; max: number } => {
+    const ranges: Record<ExerciseType, { min: number; max: number }> = {
+      pushups: { min: 2000, max: 4000 },      // 2-4 seconds per rep
+      squats: { min: 2500, max: 4500 },       // 2.5-4.5 seconds per rep
+      lunges: { min: 2000, max: 4000 },       // 2-4 seconds per rep
+      jumping_jacks: { min: 800, max: 1500 }, // 0.8-1.5 seconds per rep (faster exercise)
+      high_knees: { min: 400, max: 800 },     // 0.4-0.8 seconds per rep (high intensity)
+    };
+    return ranges[exercise] || { min: 2000, max: 4000 };
+  }, []);
+
+  // Analyze rep speed based on duration
+  const analyzeRepSpeed = useCallback((duration: number): 'too-fast' | 'too-slow' | 'perfect' => {
+    const range = getOptimalRepRange(exerciseType);
+    if (duration < range.min) return 'too-fast';
+    if (duration > range.max) return 'too-slow';
+    return 'perfect';
+  }, [exerciseType, getOptimalRepRange]);
 
   // Calculate pose confidence from landmarks
   const calculatePoseConfidence = useCallback((landmarks: Keypoint[]): number => {
@@ -187,11 +210,33 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         setFormIssues(detection.formIssues || []);
         formScoresRef.current.push(detection.formScore);
 
-        // Count reps on phase transition
+        // Track rep start time (beginning of down phase)
+        if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
+          repStartTimeRef.current = Date.now();
+        }
+
+        // Count reps on phase transition and analyze speed
         if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
           const now = Date.now();
           // Debounce reps (minimum 500ms between reps)
           if (now - lastRepTimeRef.current > 500) {
+            // Calculate rep duration (from start of down phase to end of up phase)
+            const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
+            
+            // Analyze rep speed
+            if (repDuration > 0) {
+              const speed = analyzeRepSpeed(repDuration);
+              setRepSpeed(speed);
+              setLastRepDuration(repDuration);
+              
+              // Voice feedback for rep speed issues
+              if (speed === 'too-fast') {
+                speak('Slow down', 'normal');
+              } else if (speed === 'too-slow') {
+                speak('Move faster', 'normal');
+              }
+            }
+            
             setReps(prev => {
               const newReps = prev + 1;
               
@@ -415,6 +460,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     facingMode,
     distanceStatus,
     poseConfidence,
+    repSpeed,
+    lastRepDuration,
     start,
     pause,
     resume,

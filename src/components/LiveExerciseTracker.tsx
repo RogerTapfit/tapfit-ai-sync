@@ -22,7 +22,9 @@ import {
   AlertTriangle,
   Lightbulb,
   Mic,
-  MicOff
+  MicOff,
+  Gauge,
+  Zap
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -113,6 +115,8 @@ export function LiveExerciseTracker({
     facingMode,
     distanceStatus,
     poseConfidence,
+    repSpeed,
+    lastRepDuration,
     start,
     pause,
     resume,
@@ -547,13 +551,32 @@ export function LiveExerciseTracker({
           </div>
         </Card>
 
-        <Card className="p-4">
-          <Badge 
-            variant={currentPhase === 'down' ? 'default' : 'secondary'}
-            className="w-full justify-center py-2"
-          >
-            {currentPhase === 'up' ? 'Up ↑' : currentPhase === 'down' ? 'Down ↓' : 'Moving'}
-          </Badge>
+        <Card className={cn(
+          "p-4 transition-all",
+          repSpeed === 'too-fast' && "bg-orange-500/10 border-orange-500",
+          repSpeed === 'too-slow' && "bg-blue-500/10 border-blue-500",
+          repSpeed === 'perfect' && "bg-green-500/10 border-green-500"
+        )}>
+          <div className="flex items-center gap-2">
+            <Gauge className={cn(
+              "w-5 h-5",
+              repSpeed === 'too-fast' && "text-orange-500",
+              repSpeed === 'too-slow' && "text-blue-500",
+              repSpeed === 'perfect' && "text-green-500",
+              !repSpeed && "text-primary"
+            )} />
+            <div>
+              <div className={cn(
+                "text-2xl font-bold",
+                repSpeed === 'too-fast' && "text-orange-500",
+                repSpeed === 'too-slow' && "text-blue-500",
+                repSpeed === 'perfect' && "text-green-500"
+              )}>
+                {lastRepDuration > 0 ? `${(lastRepDuration / 1000).toFixed(1)}s` : '--'}
+              </div>
+              <div className="text-xs text-muted-foreground">Rep Tempo</div>
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -593,6 +616,42 @@ export function LiveExerciseTracker({
                 </Badge>
               )}
             </div>
+            
+            {/* Rep Speed Warning */}
+            {repSpeed && repSpeed !== 'perfect' && (
+              <div className={cn(
+                "flex items-center gap-3 p-4 rounded-lg backdrop-blur-md border-2 shadow-lg animate-in fade-in slide-in-from-top-2",
+                repSpeed === 'too-fast' && "bg-orange-500/20 border-orange-400",
+                repSpeed === 'too-slow' && "bg-blue-500/20 border-blue-400"
+              )}>
+                <div className={cn(
+                  "p-2 rounded-full",
+                  repSpeed === 'too-fast' && "bg-orange-500",
+                  repSpeed === 'too-slow' && "bg-blue-500"
+                )}>
+                  {repSpeed === 'too-fast' ? (
+                    <Zap className="w-6 h-6 text-white" />
+                  ) : (
+                    <Gauge className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className={cn(
+                    "font-bold text-lg",
+                    repSpeed === 'too-fast' && "text-orange-400",
+                    repSpeed === 'too-slow' && "text-blue-400"
+                  )}>
+                    {repSpeed === 'too-fast' ? 'Too Fast - Slow Down!' : 'Too Slow - Speed Up!'}
+                  </div>
+                  <div className="text-sm text-white/90">
+                    {repSpeed === 'too-fast' 
+                      ? 'Control your movement for maximum muscle engagement and safety'
+                      : 'Maintain momentum for better workout effectiveness'
+                    }
+                  </div>
+                </div>
+              </div>
+            )}
             
             {feedback.map((msg, idx) => (
               <Badge 
