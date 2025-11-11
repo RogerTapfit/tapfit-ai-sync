@@ -682,6 +682,7 @@ export function LiveExerciseTracker({
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
+            style={{ transform: 'scaleX(-1)' }}
             playsInline
             muted
             autoPlay
@@ -689,7 +690,7 @@ export function LiveExerciseTracker({
           <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{ mixBlendMode: 'normal' }}
+            style={{ mixBlendMode: 'normal', transform: 'scaleX(-1)' }}
           />
           
           {/* Phase Position Indicator */}
