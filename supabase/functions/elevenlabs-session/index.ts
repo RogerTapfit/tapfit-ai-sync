@@ -24,6 +24,15 @@ serve(async (req) => {
       throw new Error('ELEVEN_LABS_API_KEY is not configured');
     }
 
+    // Agent IDs for each gender - these must be created in ElevenLabs UI
+    const AGENT_ID_FEMALE = Deno.env.get('ELEVEN_LABS_AGENT_ID_FEMALE');
+    const AGENT_ID_MALE = Deno.env.get('ELEVEN_LABS_AGENT_ID_MALE');
+    const AGENT_ID_NEUTRAL = Deno.env.get('ELEVEN_LABS_AGENT_ID_NEUTRAL');
+
+    if (!AGENT_ID_FEMALE || !AGENT_ID_MALE || !AGENT_ID_NEUTRAL) {
+      throw new Error('ElevenLabs agent IDs not configured. Please create agents in ElevenLabs UI and add ELEVEN_LABS_AGENT_ID_FEMALE, ELEVEN_LABS_AGENT_ID_MALE, and ELEVEN_LABS_AGENT_ID_NEUTRAL secrets.');
+    }
+
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     
@@ -63,65 +72,27 @@ serve(async (req) => {
       }
     }
 
-    // Get voice ID for gender
-    const voiceId = VOICE_MAP[gender] || VOICE_MAP['neutral'];
-    console.log('Selected voice ID:', voiceId, 'for gender:', gender);
-
-    // Create ElevenLabs agent configuration
-    const agentConfig = {
-      name: `${coachName} - TapFit AI Coach`,
-      first_message: `Hi! I'm ${coachName}, your AI fitness companion. Ready to help with workouts, nutrition, and motivation!`,
-      prompt: {
-        prompt: `You are ${coachName}, an expert AI fitness coach for TapFit. You're knowledgeable, motivating, and personalized.
-        
-Key traits:
-- Expert in exercise form, programming, nutrition, and injury prevention
-- Motivational but realistic tone
-- Give specific, actionable advice
-- Reference TapFit features (smart pin data, tap coins, power levels)
-- Keep responses concise but comprehensive (2-3 sentences typically)
-- Always prioritize safety
-        
-Specialties:
-- Workout programming and exercise selection
-- Form corrections and technique tips
-- Nutrition and meal planning
-- Recovery and injury prevention
-- Goal setting and progress tracking
-- Motivation and habit building
-        
-Always provide practical, evidence-based fitness advice tailored to the user's goals and experience level.`
-      },
-      language: "en",
-      model: "eleven_turbo_v2_5",
-      voice: {
-        voice_id: voiceId
-      },
-      conversation_config: {
-        asr: {
-          quality: "high",
-          user_input_audio_format: "pcm_16000"
-        },
-        tts: {
-          voice_id: voiceId,
-          model_id: "eleven_turbo_v2_5",
-          optimize_streaming_latency: 3,
-          output_format: "pcm_16000"
-        }
-      }
+    // Get agent ID for gender
+    const agentIdMap: Record<string, string> = {
+      'female': AGENT_ID_FEMALE,
+      'male': AGENT_ID_MALE,
+      'neutral': AGENT_ID_NEUTRAL
     };
-
-    console.log('Creating ElevenLabs conversation with agent config');
+    
+    const agentId = agentIdMap[gender] || AGENT_ID_NEUTRAL;
+    const voiceId = VOICE_MAP[gender] || VOICE_MAP['neutral'];
+    console.log('Selected agent ID:', agentId, 'voice ID:', voiceId, 'for gender:', gender);
 
     // Get signed URL from ElevenLabs
-    const response = await fetch('https://api.elevenlabs.io/v1/convai/conversation', {
-      method: 'POST',
-      headers: {
-        'xi-api-key': ELEVEN_LABS_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ agent: agentConfig })
-    });
+    const response = await fetch(
+      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
+      {
+        method: 'GET',
+        headers: {
+          'xi-api-key': ELEVEN_LABS_API_KEY,
+        }
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -130,11 +101,11 @@ Always provide practical, evidence-based fitness advice tailored to the user's g
     }
 
     const data = await response.json();
-    console.log('ElevenLabs conversation created successfully');
+    console.log('ElevenLabs signed URL retrieved successfully');
 
     return new Response(JSON.stringify({ 
-      conversation_id: data.conversation_id,
-      agent_id: data.agent_id,
+      signed_url: data.signed_url,
+      agent_id: agentId,
       voice_name: Object.entries(VOICE_MAP).find(([_, v]) => v === voiceId)?.[0] || 'River',
       coach_name: coachName,
       gender: gender

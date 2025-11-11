@@ -61,8 +61,8 @@ export const useRealtimeChat = () => {
           audioContextRef.current = new AudioContext({ sampleRate: 16000 });
         }
 
-        // Connect to ElevenLabs WebSocket
-        const wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation?conversation_id=${sessionData.conversation_id}`;
+        // Connect to ElevenLabs WebSocket using signed URL
+        const wsUrl = sessionData.signed_url;
         console.log("Connecting to ElevenLabs WebSocket");
         
         const timeout = setTimeout(() => {
