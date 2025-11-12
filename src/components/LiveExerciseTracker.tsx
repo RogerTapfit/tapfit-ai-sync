@@ -67,6 +67,7 @@ export function LiveExerciseTracker({
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
   const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
   const [isMirrored, setIsMirrored] = useState(true);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
@@ -145,6 +146,11 @@ export function LiveExerciseTracker({
     restDuration,
     currentSet,
     currentElbowAngle,
+    upBaseline,
+    upThreshold,
+    downThreshold,
+    bottomAchieved,
+    minAngleInRep,
     isRepFlashing,
     isSpeaking,
     isVoiceEnabled,
@@ -638,59 +644,190 @@ export function LiveExerciseTracker({
 
       {/* Angle Feedback for Pushups */}
       {selectedExercise === 'pushups' && isActive && (
-        <Card className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" />
-                <span className="font-semibold">Elbow Angle</span>
-              </div>
-              <div className={cn(
-                "text-2xl font-bold tabular-nums",
-                currentElbowAngle > 0 && currentElbowAngle < 105 && "text-green-500",
-                currentElbowAngle >= 105 && currentElbowAngle < 115 && "text-yellow-500",
-                currentElbowAngle >= 150 && "text-green-500",
-                currentElbowAngle >= 140 && currentElbowAngle < 150 && "text-yellow-500"
-              )}>
-                {currentElbowAngle > 0 ? `${Math.round(currentElbowAngle)}°` : '--'}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className={cn(
-                "p-2 rounded border-2 transition-all",
-                currentElbowAngle > 0 && currentElbowAngle < 105 ? "bg-green-500/20 border-green-500" :
-                currentElbowAngle >= 105 && currentElbowAngle < 115 ? "bg-yellow-500/20 border-yellow-400" :
-                "bg-muted border-muted"
-              )}>
-                <div className="font-semibold">Down Position</div>
-                <div className="text-muted-foreground">Target: &lt;105°</div>
+        <>
+          <Card className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  <span className="font-semibold">Elbow Angle</span>
+                </div>
+                <div className={cn(
+                  "text-2xl font-bold tabular-nums",
+                  currentElbowAngle > 0 && currentElbowAngle < 105 && "text-green-500",
+                  currentElbowAngle >= 105 && currentElbowAngle < 115 && "text-yellow-500",
+                  currentElbowAngle >= 150 && "text-green-500",
+                  currentElbowAngle >= 140 && currentElbowAngle < 150 && "text-yellow-500"
+                )}>
+                  {currentElbowAngle > 0 ? `${Math.round(currentElbowAngle)}°` : '--'}
+                </div>
               </div>
               
-              <div className={cn(
-                "p-2 rounded border-2 transition-all",
-                currentElbowAngle >= 150 ? "bg-green-500/20 border-green-500" :
-                currentElbowAngle >= 140 && currentElbowAngle < 150 ? "bg-yellow-500/20 border-yellow-400" :
-                "bg-muted border-muted"
-              )}>
-                <div className="font-semibold">Up Position</div>
-                <div className="text-muted-foreground">Target: &gt;150°</div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className={cn(
+                  "p-2 rounded border-2 transition-all",
+                  currentElbowAngle > 0 && currentElbowAngle < 105 ? "bg-green-500/20 border-green-500" :
+                  currentElbowAngle >= 105 && currentElbowAngle < 115 ? "bg-yellow-500/20 border-yellow-400" :
+                  "bg-muted border-muted"
+                )}>
+                  <div className="font-semibold">Down Position</div>
+                  <div className="text-muted-foreground">Target: &lt;105°</div>
+                </div>
+                
+                <div className={cn(
+                  "p-2 rounded border-2 transition-all",
+                  currentElbowAngle >= 150 ? "bg-green-500/20 border-green-500" :
+                  currentElbowAngle >= 140 && currentElbowAngle < 150 ? "bg-yellow-500/20 border-yellow-400" :
+                  "bg-muted border-muted"
+                )}>
+                  <div className="font-semibold">Up Position</div>
+                  <div className="text-muted-foreground">Target: &gt;150°</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span>
+                  {currentElbowAngle > 0 && currentElbowAngle < 105 && "✓ Great depth!"}
+                  {currentElbowAngle >= 105 && currentElbowAngle < 115 && "Almost there - go a bit lower"}
+                  {currentElbowAngle >= 150 && "✓ Fully extended!"}
+                  {currentElbowAngle >= 140 && currentElbowAngle < 150 && "Almost there - extend arms fully"}
+                  {currentElbowAngle >= 115 && currentElbowAngle < 140 && "In transition"}
+                  {currentElbowAngle === 0 && "Start your first rep"}
+                </span>
               </div>
             </div>
+          </Card>
 
-            <div className="flex items-start gap-2 text-xs text-muted-foreground">
-              <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
-              <span>
-                {currentElbowAngle > 0 && currentElbowAngle < 105 && "✓ Great depth!"}
-                {currentElbowAngle >= 105 && currentElbowAngle < 115 && "Almost there - go a bit lower"}
-                {currentElbowAngle >= 150 && "✓ Fully extended!"}
-                {currentElbowAngle >= 140 && currentElbowAngle < 150 && "Almost there - extend arms fully"}
-                {currentElbowAngle >= 115 && currentElbowAngle < 140 && "In transition"}
-                {currentElbowAngle === 0 && "Start your first rep"}
-              </span>
+          {/* Debug Panel for Push-ups */}
+          <Card className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-500" />
+                  <span className="font-semibold">Rep Counter Debug</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDebugPanel(!showDebugPanel)}
+                >
+                  {showDebugPanel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+              </div>
+
+              {showDebugPanel && (
+                <div className="space-y-3 pt-2 border-t">
+                  {/* Calibration Status */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">Calibration Status</span>
+                      {upBaseline !== null ? (
+                        <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/50">
+                          ✓ Calibrated
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/50">
+                          ⚠ Not Calibrated
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {upBaseline === null && (
+                      <div className="p-2 bg-orange-500/10 border border-orange-500/30 rounded text-xs">
+                        <div className="font-semibold text-orange-700 dark:text-orange-400">Get into plank position to calibrate</div>
+                        <div className="text-muted-foreground mt-1">Keep your arms straight (150°+) and hold steady for 1 second</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thresholds */}
+                  {upBaseline !== null && (
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="p-2 bg-muted/50 rounded">
+                        <div className="text-muted-foreground">Baseline</div>
+                        <div className="text-lg font-bold">{Math.round(upBaseline)}°</div>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded">
+                        <div className="text-muted-foreground">Up Threshold</div>
+                        <div className="text-lg font-bold text-green-600 dark:text-green-400">{Math.round(upThreshold)}°</div>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded">
+                        <div className="text-muted-foreground">Down Threshold</div>
+                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{Math.round(downThreshold)}°</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rep Tracking Status */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold">Rep Tracking</div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className={cn(
+                        "p-2 rounded border-2",
+                        bottomAchieved 
+                          ? "bg-green-500/20 border-green-500/50" 
+                          : "bg-muted border-muted"
+                      )}>
+                        <div className="font-semibold">Bottom Achieved</div>
+                        <div className="text-lg">{bottomAchieved ? "✓ Yes" : "✗ No"}</div>
+                      </div>
+                      
+                      <div className="p-2 bg-muted/50 rounded border">
+                        <div className="font-semibold">Min Angle</div>
+                        <div className="text-lg font-bold">
+                          {minAngleInRep !== Infinity ? `${Math.round(minAngleInRep)}°` : '--'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Why Reps Aren't Counting */}
+                  <div className="p-3 bg-muted/30 rounded border">
+                    <div className="text-sm font-semibold mb-2">Rep Counter Status</div>
+                    <div className="text-xs space-y-1">
+                      {upBaseline === null && (
+                        <div className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
+                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>Not calibrated - get in plank position (arms straight)</span>
+                        </div>
+                      )}
+                      
+                      {upBaseline !== null && !bottomAchieved && currentPhase !== 'up' && (
+                        <div className="flex items-start gap-2 text-blue-600 dark:text-blue-400">
+                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>Bottom not reached - go lower to {Math.round(downThreshold)}° or below</span>
+                        </div>
+                      )}
+                      
+                      {upBaseline !== null && bottomAchieved && currentPhase !== 'up' && (
+                        <div className="flex items-start gap-2 text-yellow-600 dark:text-yellow-400">
+                          <Zap className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>Push back up to {Math.round(upThreshold)}°+ to count rep</span>
+                        </div>
+                      )}
+                      
+                      {upBaseline !== null && currentPhase === 'up' && currentElbowAngle >= upThreshold && (
+                        <div className="flex items-start gap-2 text-green-600 dark:text-green-400">
+                          <Activity className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>✓ Ready to count next rep! Go down to start.</span>
+                        </div>
+                      )}
+                      
+                      {poseConfidence < 60 && (
+                        <div className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
+                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>Low confidence ({Math.round(poseConfidence)}%) - adjust your position in frame</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </Card>
+          </Card>
+        </>
       )}
 
       {/* Video Feed */}

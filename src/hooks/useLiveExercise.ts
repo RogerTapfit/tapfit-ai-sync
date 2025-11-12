@@ -59,6 +59,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   
   // Debug states for angle tracking
   const [currentElbowAngle, setCurrentElbowAngle] = useState<number>(0);
+  const [upBaseline, setUpBaseline] = useState<number | null>(null);
+  const [upThreshold, setUpThreshold] = useState<number>(145);
+  const [downThreshold, setDownThreshold] = useState<number>(95);
+  const [bottomAchieved, setBottomAchieved] = useState<boolean>(false);
+  const [minAngleInRep, setMinAngleInRep] = useState<number>(Infinity);
   
   // Adaptive baseline and hysteresis for robust push-up detection
   const upBaselineRef = useRef<number | null>(null);
@@ -530,17 +535,24 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             // Compute dynamic thresholds from baseline
             upThresholdRef.current = upBaselineRef.current - 5;
             downThresholdRef.current = Math.max(95, upBaselineRef.current - 35);
+            
+            // Update debug states
+            setUpBaseline(upBaselineRef.current);
+            setUpThreshold(upThresholdRef.current);
+            setDownThreshold(downThresholdRef.current);
           }
           
           // Track minimum angle during non-up phases
           if (detection.phase !== 'up') {
             minAngleInRepRef.current = Math.min(minAngleInRepRef.current, currentAngle);
+            setMinAngleInRep(minAngleInRepRef.current);
           }
           
           // Check if bottom achieved (within tolerance)
           const tolerance = 8; // 8° tolerance for "close enough"
           if (currentAngle <= downThresholdRef.current + tolerance) {
             bottomAchievedRef.current = true;
+            setBottomAchieved(true);
           }
           
           // Debug logging for pushups
@@ -630,6 +642,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
                 // Reset hysteresis state for next rep
                 bottomAchievedRef.current = false;
                 minAngleInRepRef.current = Infinity;
+                setBottomAchieved(false);
+                setMinAngleInRep(Infinity);
               }
             }
           } else {
@@ -1046,6 +1060,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     restDuration,
     currentSet,
     currentElbowAngle,
+    upBaseline,
+    upThreshold,
+    downThreshold,
+    bottomAchieved,
+    minAngleInRep,
     isRepFlashing,
     isSpeaking,
     isVoiceEnabled,
