@@ -395,7 +395,7 @@ export function LiveExerciseTracker({
                 />
                 <canvas
                   ref={canvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  className={cn("absolute inset-0 w-full h-full pointer-events-none", isMirrored && "scale-x-[-1]")}
                   style={{ mixBlendMode: 'normal' }}
                 />
                 
@@ -848,7 +848,7 @@ export function LiveExerciseTracker({
           />
           <canvas
             ref={canvasRef}
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className={cn("absolute inset-0 w-full h-full pointer-events-none", isMirrored && "scale-x-[-1]")}
             style={{ mixBlendMode: 'normal' }}
           />
           
