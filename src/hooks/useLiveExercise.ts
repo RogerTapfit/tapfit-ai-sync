@@ -503,160 +503,93 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         return;
       }
 
-      // Active workout mode: full tracking with Y-position based rep counting
+      // Active workout mode: NOSE-TRACKING rep counter (simple & reliable)
       if (isActive) {
-        // Prefer a composite torso signal that moves more in push-ups
-        const leftShoulder = result.landmarks[11];
-        const rightShoulder = result.landmarks[12];
-        const leftHip = result.landmarks[23];
-        const rightHip = result.landmarks[24];
-
-        if ((!leftHip || !rightHip) && (!leftShoulder || !rightShoulder)) {
-          // Not enough landmarks to track reliably
+        const nose = result.landmarks[0]; // Nose tip
+        
+        if (!nose) {
           animationFrameRef.current = requestAnimationFrame(processFrame);
           return;
         }
-
-        // Build signals (fallback to available ones)
-        const shoulderY = (leftShoulder && rightShoulder)
-          ? (leftShoulder.y + rightShoulder.y) / 2
-          : undefined;
-        const hipY = (leftHip && rightHip)
-          ? (leftHip.y + rightHip.y) / 2
-          : undefined;
-
-        // Composite Y: shoulders (0.6) + hips (0.4) when both available, else whichever exists
-        const currentY = (shoulderY !== undefined && hipY !== undefined)
-          ? (shoulderY * 0.6 + hipY * 0.4)
-          : (shoulderY ?? hipY ?? 0.5);
-
+        
+        const currentY = nose.y; // 0 = top, 1 = bottom
         setCurrentYPosition(currentY);
-
-        // Add to position history (rolling window of 15 samples for smoother signal)
+        
+        // Fixed threshold markers
+        const MID_MARKER = 0.50;    // Middle of screen
+        const BOTTOM_MARKER = 0.68; // Bottom threshold for push-up
+        
+        setDownThreshold(BOTTOM_MARKER);
+        setUpThreshold(MID_MARKER);
+        
+        // Add to smoothing window
         positionHistoryRef.current.push(currentY);
-        if (positionHistoryRef.current.length > 15) {
+        if (positionHistoryRef.current.length > 8) {
           positionHistoryRef.current.shift();
         }
-
-        // Calculate smoothed position (moving average)
+        
         const smoothedY = positionHistoryRef.current.reduce((a, b) => a + b, 0) / positionHistoryRef.current.length;
-
-        // Update dynamic range (expand-only). Also apply gentle decay so range can adapt.
-        const DECAY = 0.001; // very small decay per frame to avoid getting stuck
-        highestPositionRef.current = Math.min(highestPositionRef.current, smoothedY);
-        lowestPositionRef.current = Math.max(lowestPositionRef.current, smoothedY);
-        // Apply decay towards current value
-        if (isFinite(highestPositionRef.current)) {
-          highestPositionRef.current = Math.min(highestPositionRef.current + DECAY, smoothedY);
-        }
-        if (isFinite(lowestPositionRef.current)) {
-          lowestPositionRef.current = Math.max(lowestPositionRef.current - DECAY, smoothedY);
-        }
-
-        const range = Math.max(0, lowestPositionRef.current - highestPositionRef.current);
-        setPositionRange(range);
-
-        // Compute elbow angle as a robust fallback signal (push-ups specific)
-        const lS = result.landmarks[11], lE = result.landmarks[13], lW = result.landmarks[15];
-        const rS = result.landmarks[12], rE = result.landmarks[14], rW = result.landmarks[16];
-        const angle = (a: {x:number;y:number}|undefined, b: {x:number;y:number}|undefined, c: {x:number;y:number}|undefined) => {
-          if (!a || !b || !c) return NaN;
-          const abx = a.x - b.x, aby = a.y - b.y;
-          const cbx = c.x - b.x, cby = c.y - b.y;
-          const dot = abx * cbx + aby * cby;
-          const magAB = Math.hypot(abx, aby);
-          const magCB = Math.hypot(cbx, cby);
-          if (magAB === 0 || magCB === 0) return NaN;
-          const cos = Math.max(-1, Math.min(1, dot / (magAB * magCB)));
-          return (Math.acos(cos) * 180) / Math.PI;
-        };
-        const leftElbowAngle = angle(lS as any, lE as any, lW as any);
-        const rightElbowAngle = angle(rS as any, rE as any, rW as any);
-        const elbowAngle = isNaN(leftElbowAngle) && isNaN(rightElbowAngle)
-          ? NaN
-          : Math.max(isNaN(leftElbowAngle) ? -Infinity : leftElbowAngle, isNaN(rightElbowAngle) ? -Infinity : rightElbowAngle);
-
-        // Gate: allow very small camera motion by lowering min range; keep confidence gate modest
-        if (range >= 0.02 && confidence > 30) {
-          // Adaptive thresholds (slightly more permissive initially)
-          const thresholdMultiplier = reps < 3 ? 0.30 : 0.40;
-          const downThresholdValue = highestPositionRef.current + (range * thresholdMultiplier);
-          const upThresholdValue = lowestPositionRef.current - (range * thresholdMultiplier);
-
-          setDownThreshold(downThresholdValue);
-          setUpThreshold(upThresholdValue);
-
-          // Elbow angle thresholds as alternate trigger (fallback)
-          const ELBOW_DOWN = 115; // flexed/bottom
-          const ELBOW_UP = 155;   // extended/top
-
-          // State machine rep counting with OR conditions (Y-based OR elbow-based)
-          const now = Date.now();
-          const timeSinceLastStateChange = now - lastStateChangeRef.current;
-          const MIN_STATE_DURATION = 300; // ms
-          const MIN_REP_INTERVAL = 600;   // ms, to avoid double counts across methods
-
+        
+        // Update range for display
+        if (smoothedY < highestPositionRef.current) highestPositionRef.current = smoothedY;
+        if (smoothedY > lowestPositionRef.current) lowestPositionRef.current = smoothedY;
+        setPositionRange(Math.max(0, lowestPositionRef.current - highestPositionRef.current));
+        
+        // State machine with fixed markers
+        const now = Date.now();
+        const timeSinceLastStateChange = now - lastStateChangeRef.current;
+        const MIN_STATE_DURATION = 400;
+        
+        if (confidence > 30) {
           if (repStateRef.current === 'waiting_for_down') {
-            const hitDownByY = smoothedY > downThresholdValue;
-            const hitDownByAngle = !isNaN(elbowAngle) && elbowAngle < ELBOW_DOWN;
-            if ((hitDownByY || hitDownByAngle) && timeSinceLastStateChange > MIN_STATE_DURATION) {
+            // Nose dipped below BOTTOM_MARKER
+            if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'waiting_for_up';
               setRepState('waiting_for_up');
               lastStateChangeRef.current = now;
-              if (repStartTimeRef.current === 0) repStartTimeRef.current = now; // start timing first rep
-              console.log('[Rep Counter] -> DOWN phase', { smoothedY, downThresholdValue, elbowAngle });
+              if (repStartTimeRef.current === 0) repStartTimeRef.current = now;
+              console.log('[Nose Rep] -> DOWN (nose below bottom marker)', { smoothedY, BOTTOM_MARKER });
             }
           } else if (repStateRef.current === 'waiting_for_up') {
-            const hitUpByY = smoothedY < upThresholdValue;
-            const hitUpByAngle = !isNaN(elbowAngle) && elbowAngle > ELBOW_UP;
-            if ((hitUpByY || hitUpByAngle) && timeSinceLastStateChange > MIN_STATE_DURATION && (now - lastRepTimeRef.current) > MIN_REP_INTERVAL) {
-              // COUNT REP!
+            // Nose rose above MID_MARKER
+            if (smoothedY < MID_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'waiting_for_down';
               setRepState('waiting_for_down');
               lastStateChangeRef.current = now;
-
+              
               const newReps = reps + 1;
               setReps(newReps);
-
-              // Calculate rep duration
+              
               const repDuration = now - (repStartTimeRef.current || now);
               setLastRepDuration(repDuration);
               repStartTimeRef.current = now;
               lastRepTimeRef.current = now;
-
+              
               const speed = analyzeRepSpeed(repDuration);
               setRepSpeed(speed);
-
+              
               try {
                 await Haptics.impact({ style: ImpactStyle.Medium });
               } catch (error) {
                 console.log('Haptics not available:', error);
               }
-
+              
               setIsRepFlashing(true);
               setTimeout(() => setIsRepFlashing(false), 200);
-
+              
               if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
                 speak(`${newReps} reps`, 'normal');
                 lastAnnouncedRep.current = newReps;
               }
-
+              
               const detection = detectExercise(exerciseType, result.landmarks, 'up');
               setFormScore(detection.formScore);
               setFeedback(detection.feedback);
               setFormIssues(detection.formIssues);
               formScoresRef.current.push(detection.formScore);
-
-              console.log('[Rep Counter] REP COUNTED!', {
-                rep: newReps,
-                smoothedY,
-                thresholds: { downThresholdValue, upThresholdValue },
-                range,
-                elbowAngle,
-                confidence,
-                repDuration
-              });
-
+              
+              console.log('[Nose Rep] REP COUNTED!', { rep: newReps, smoothedY, MID_MARKER, confidence });
+              
               if (newReps >= targetReps) {
                 speak('Set complete!', 'high');
                 setCurrentSet(prev => prev + 1);
@@ -667,17 +600,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               }
             }
           }
-
-          // Auto-reset if no activity for 10 seconds
-          if (now - lastStateChangeRef.current > 10000 && positionHistoryRef.current.length > 0) {
-            console.log('[Rep Counter] Auto-reset due to inactivity');
-            positionHistoryRef.current = [];
-            highestPositionRef.current = Infinity;
-            lowestPositionRef.current = 0;
-          }
         }
-
-        // Still get detection for form feedback and phase display
+        
         const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
         lastPhaseRef.current = detection.phase;
         setCurrentPhase(detection.phase);

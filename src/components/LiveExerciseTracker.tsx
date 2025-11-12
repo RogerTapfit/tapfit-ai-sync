@@ -314,10 +314,54 @@ export function LiveExerciseTracker({
     if (landmarks.length > 0) {
       console.log('[Canvas Draw] Drawing actual pose with', landmarks.length, 'landmarks');
       drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
+      
+      // Draw nose-tracking markers when active
+      if (isActive && !isPaused) {
+        const MID_Y = 0.50 * srcH;
+        const BOTTOM_Y = 0.68 * srcH;
+        
+        // Mid marker (yellow dashed line)
+        ctx.save();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([15, 10]);
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(0, MID_Y);
+        ctx.lineTo(srcW, MID_Y);
+        ctx.stroke();
+        
+        // Bottom marker (red dashed line)
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([15, 10]);
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(0, BOTTOM_Y);
+        ctx.lineTo(srcW, BOTTOM_Y);
+        ctx.stroke();
+        
+        // Highlight nose with pulsing ring
+        if (landmarks[0]) {
+          const nose = landmarks[0];
+          ctx.setLineDash([]);
+          ctx.strokeStyle = isRepFlashing ? '#22c55e' : '#3b82f6';
+          ctx.fillStyle = isRepFlashing ? '#22c55e' : '#3b82f6';
+          ctx.lineWidth = 4;
+          ctx.globalAlpha = 0.6;
+          ctx.beginPath();
+          ctx.arc(nose.x * srcW, nose.y * srcH, 20, 0, 2 * Math.PI);
+          ctx.stroke();
+          ctx.globalAlpha = 0.3;
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
     } else {
       console.log('[Canvas Draw] No landmarks to draw');
     }
-  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints, isRepFlashing]);
+  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints, isRepFlashing, isActive, isPaused]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -660,12 +704,12 @@ export function LiveExerciseTracker({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-primary" />
-                  <span className="font-semibold">Position Tracking</span>
+                  <span className="font-semibold">Nose Tracking</span>
                 </div>
                 <Badge className={cn(
                   repState === 'waiting_for_down' ? "bg-blue-500" : "bg-green-500"
                 )}>
-                  {repState === 'waiting_for_down' ? 'Going Down' : 'Going Up'}
+                  {repState === 'waiting_for_down' ? 'Nose Down' : 'Nose Up'}
                 </Badge>
               </div>
               
@@ -711,7 +755,7 @@ export function LiveExerciseTracker({
               
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="p-2 rounded bg-muted/50">
-                  <div className="font-semibold text-muted-foreground">Y-Position</div>
+                  <div className="font-semibold text-muted-foreground">Nose Y</div>
                   <div className="text-base font-bold">{currentYPosition.toFixed(3)}</div>
                 </div>
                 <div className="p-2 rounded bg-muted/50">
@@ -726,7 +770,7 @@ export function LiveExerciseTracker({
 
               <div className="flex items-start gap-2 text-xs text-muted-foreground">
                 <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                <span>Move smoothly through the full range. Reps count automatically based on your vertical movement.</span>
+                <span>Your nose is being tracked. Dip below the bottom marker (red line on screen) and return above the mid marker (yellow line) to count a rep.</span>
               </div>
             </div>
           </Card>
@@ -773,8 +817,8 @@ export function LiveExerciseTracker({
           {selectedExercise === 'pushups' && isActive && (
             <div className="absolute left-4 top-20 z-30 pointer-events-none">
               <Badge className="text-xs px-3 py-2 backdrop-blur-md bg-black/70 border border-white/30 text-white font-mono">
-                <div className="font-bold text-sm">{repState === 'waiting_for_down' ? '↓ Going Down' : '↑ Going Up'}</div>
-                <div className="text-[10px] opacity-80">Y: {currentYPosition.toFixed(2)} | Conf: {Math.round(poseConfidence)}%</div>
+                <div className="font-bold text-sm">{repState === 'waiting_for_down' ? '↓ Nose Down' : '↑ Nose Up'}</div>
+                <div className="text-[10px] opacity-80">Nose Y: {currentYPosition.toFixed(2)} | Conf: {Math.round(poseConfidence)}%</div>
               </Badge>
             </div>
           )}
