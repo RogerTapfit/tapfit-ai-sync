@@ -64,6 +64,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [downThreshold, setDownThreshold] = useState<number>(95);
   const [bottomAchieved, setBottomAchieved] = useState<boolean>(false);
   const [minAngleInRep, setMinAngleInRep] = useState<number>(Infinity);
+  const [simpleRepMode, setSimpleRepMode] = useState(false);
   
   // Adaptive baseline and hysteresis for robust push-up detection
   const upBaselineRef = useRef<number | null>(null);
@@ -71,6 +72,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const upThresholdRef = useRef<number>(145);
   const minAngleInRepRef = useRef<number>(Infinity);
   const bottomAchievedRef = useRef<boolean>(false);
+  const lastUpAngleRef = useRef<number | null>(null); // Track last up angle
+  const downPhaseEnteredAtRef = useRef<number>(0); // Track when down phase started
   
   // Velocity tracking states
   const [concentricVelocity, setConcentricVelocity] = useState<number>(0); // Time for up phase (ms)
@@ -522,8 +525,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           // Trigger haptic feedback when crossing angle thresholds
           triggerAngleHaptic(currentAngle, detection.phase);
           
-          // Learn baseline when in "up" position with good confidence
-          if (confidence > 60 && detection.phase === 'up') {
+          // Learn baseline when in "up" position with good confidence (RELAXED: 45% from 60%)
+          if (confidence > 45 && detection.phase === 'up') {
+            // Track last up angle for fallback reference
+            lastUpAngleRef.current = Math.max(lastUpAngleRef.current || currentAngle, currentAngle);
+            
             if (upBaselineRef.current === null) {
               // Initialize baseline
               upBaselineRef.current = currentAngle;
@@ -532,9 +538,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               upBaselineRef.current = 0.8 * upBaselineRef.current + 0.2 * currentAngle;
             }
             
-            // Compute dynamic thresholds from baseline
-            upThresholdRef.current = upBaselineRef.current - 5;
-            downThresholdRef.current = Math.max(95, upBaselineRef.current - 35);
+            // Compute dynamic thresholds from baseline (MORE FORGIVING)
+            upThresholdRef.current = Math.max(130, upBaselineRef.current - 5); // Don't require 140+
+            downThresholdRef.current = Math.max(100, upBaselineRef.current - 30); // Raised floor
             
             // Update debug states
             setUpBaseline(upBaselineRef.current);
@@ -548,11 +554,20 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             setMinAngleInRep(minAngleInRepRef.current);
           }
           
-          // Check if bottom achieved (within tolerance)
+          // Check if bottom achieved (TIME-BASED OR ANGLE-BASED)
           const tolerance = 8; // 8° tolerance for "close enough"
           if (currentAngle <= downThresholdRef.current + tolerance) {
             bottomAchievedRef.current = true;
             setBottomAchieved(true);
+          }
+          
+          // Also track bottom by time-in-bottom (120ms in down phase)
+          if (detection.phase === 'down' && downPhaseEnteredAtRef.current > 0) {
+            const timeInBottom = now - downPhaseEnteredAtRef.current;
+            if (timeInBottom >= 120) {
+              bottomAchievedRef.current = true;
+              setBottomAchieved(true);
+            }
           }
           
           // Debug logging for pushups
@@ -598,6 +613,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
           repStartTimeRef.current = now;
           
+          // Track when down phase entered for time-based bottom detection
+          downPhaseEnteredAtRef.current = now;
+          
           // Calculate concentric velocity if we have a start time
           if (upPhaseStartRef.current > 0) {
             const upDuration = now - upPhaseStartRef.current;
@@ -627,23 +645,29 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           let shouldCountRep = false;
           
           if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
-            const currentAngle = detection.avgElbowAngle;
-            
-            // Align with phase detection: Count when returning to up position (140°+)
-            // Require either bottom achieved OR significant movement to prevent false counts
-            if (currentAngle >= 140 && confidence > 60) {
-              const totalDrop = upBaselineRef.current !== null 
-                ? upBaselineRef.current - minAngleInRepRef.current 
-                : 0;
+            // SIMPLE MODE: Count on phase transition only (fallback for difficult lighting/angles)
+            if (simpleRepMode) {
+              shouldCountRep = confidence > 40; // Just require basic detection
+            } else {
+              // STRICT MODE with relaxed gates
+              const currentAngle = detection.avgElbowAngle;
               
-              if (bottomAchievedRef.current || (totalDrop >= 25 && minAngleInRepRef.current !== Infinity)) {
-                shouldCountRep = true;
-                
-                // Reset hysteresis state for next rep
-                bottomAchievedRef.current = false;
-                minAngleInRepRef.current = Infinity;
-                setBottomAchieved(false);
-                setMinAngleInRep(Infinity);
+              // Compute total drop using fallback references
+              const referenceUp = upBaselineRef.current ?? lastUpAngleRef.current ?? currentAngle;
+              const totalDrop = referenceUp - (minAngleInRepRef.current === Infinity ? referenceUp : minAngleInRepRef.current);
+              
+              // RELAXED GATING: Confidence > 45 AND (bottom achieved OR 15° drop)
+              if (confidence > 45) {
+                if (bottomAchievedRef.current || totalDrop >= 15) {
+                  shouldCountRep = true;
+                  
+                  // Reset hysteresis state for next rep
+                  bottomAchievedRef.current = false;
+                  minAngleInRepRef.current = Infinity;
+                  downPhaseEnteredAtRef.current = 0;
+                  setBottomAchieved(false);
+                  setMinAngleInRep(Infinity);
+                }
               }
             }
           } else {
@@ -651,8 +675,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             shouldCountRep = true;
           }
           
-          // Debounce reps (minimum 350ms between reps) - responsive but stable
-          if (shouldCountRep && now - lastRepTimeRef.current > 350) {
+          // Debounce reps (minimum 600ms between reps) - prevent double-counts
+          if (shouldCountRep && now - lastRepTimeRef.current > 600) {
             // Calculate rep duration (from start of down phase to end of up phase)
             const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
             
@@ -911,6 +935,9 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     setIsActive(false);
     setIsPaused(false);
     setIsResting(false);
+    setReps(0);
+    setDuration(0);
+    setCurrentSet(0);
     clearQueue();
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -919,6 +946,25 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       clearInterval(restIntervalRef.current);
       restIntervalRef.current = null;
     }
+    
+    // Reset all tracking refs
+    lastAnnouncedRep.current = 0;
+    formScoresRef.current = [];
+    lastRepTimeRef.current = 0;
+    repStartTimeRef.current = 0;
+    downPhaseStartRef.current = 0;
+    upPhaseStartRef.current = 0;
+    upBaselineRef.current = null;
+    minAngleInRepRef.current = Infinity;
+    bottomAchievedRef.current = false;
+    lastUpAngleRef.current = null;
+    downPhaseEnteredAtRef.current = 0;
+    
+    // Reset debug states
+    setUpBaseline(null);
+    setBottomAchieved(false);
+    setMinAngleInRep(Infinity);
+    
     stopCamera();
     
     if (onComplete && reps > 0) {
@@ -1065,6 +1111,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     downThreshold,
     bottomAchieved,
     minAngleInRep,
+    simpleRepMode,
+    setSimpleRepMode,
     isRepFlashing,
     isSpeaking,
     isVoiceEnabled,

@@ -151,6 +151,8 @@ export function LiveExerciseTracker({
     downThreshold,
     bottomAchieved,
     minAngleInRep,
+    simpleRepMode,
+    setSimpleRepMode,
     isRepFlashing,
     isSpeaking,
     isVoiceEnabled,
@@ -758,10 +760,50 @@ export function LiveExerciseTracker({
                       </div>
                     </div>
                   )}
+                  
+                  {/* Pose Confidence */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold">Pose Confidence</div>
+                    <div className={cn(
+                      "p-2 rounded border-2",
+                      poseConfidence >= 60 ? "bg-green-500/20 border-green-500/50" :
+                      poseConfidence >= 45 ? "bg-yellow-500/20 border-yellow-500/50" :
+                      "bg-orange-500/20 border-orange-500/50"
+                    )}>
+                      <div className="text-2xl font-bold">{Math.round(poseConfidence)}%</div>
+                      <div className="text-xs text-muted-foreground">
+                        {poseConfidence >= 60 ? "✓ Excellent" : 
+                         poseConfidence >= 45 ? "⚠ Fair" : 
+                         "⚠ Low - adjust position"}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Simple Mode Toggle */}
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold">Simple Mode</div>
+                        <div className="text-xs text-muted-foreground">Count on phase only (no angle gates)</div>
+                      </div>
+                      <Button
+                        variant={simpleRepMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSimpleRepMode(!simpleRepMode)}
+                      >
+                        {simpleRepMode ? "ON" : "OFF"}
+                      </Button>
+                    </div>
+                    {simpleRepMode && (
+                      <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-700 dark:text-blue-400">
+                        Simple mode active - reps will count on phase transitions only (confidence &gt; 40%)
+                      </div>
+                    )}
+                  </div>
 
                   {/* Rep Tracking Status */}
                   <div className="space-y-2">
-                    <div className="text-sm font-semibold">Rep Tracking</div>
+                    <div className="text-sm font-semibold">Rep Gating Summary</div>
                     
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className={cn(
@@ -780,6 +822,18 @@ export function LiveExerciseTracker({
                           {minAngleInRep !== Infinity ? `${Math.round(minAngleInRep)}°` : '--'}
                         </div>
                       </div>
+                      
+                      <div className="p-2 bg-muted/50 rounded border col-span-2">
+                        <div className="font-semibold">Total Drop from Baseline</div>
+                        <div className="text-lg font-bold">
+                          {upBaseline && minAngleInRep !== Infinity 
+                            ? `${Math.round(upBaseline - minAngleInRep)}°` 
+                            : '--'}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          Need 15°+ drop OR bottom achieved to count
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -787,39 +841,48 @@ export function LiveExerciseTracker({
                   <div className="p-3 bg-muted/30 rounded border">
                     <div className="text-sm font-semibold mb-2">Rep Counter Status</div>
                     <div className="text-xs space-y-1">
-                      {upBaseline === null && (
-                        <div className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
-                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>Not calibrated - get in plank position (arms straight)</span>
-                        </div>
-                      )}
-                      
-                      {upBaseline !== null && !bottomAchieved && currentPhase !== 'up' && (
+                      {simpleRepMode ? (
                         <div className="flex items-start gap-2 text-blue-600 dark:text-blue-400">
-                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>Bottom not reached - go lower to {Math.round(downThreshold)}° or below</span>
-                        </div>
-                      )}
-                      
-                      {upBaseline !== null && bottomAchieved && currentPhase !== 'up' && (
-                        <div className="flex items-start gap-2 text-yellow-600 dark:text-yellow-400">
                           <Zap className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>Push back up to {Math.round(upThreshold)}°+ to count rep</span>
+                          <span>Simple mode active - counting on phase transitions (confidence &gt; 40%)</span>
                         </div>
-                      )}
-                      
-                      {upBaseline !== null && currentPhase === 'up' && currentElbowAngle >= upThreshold && (
-                        <div className="flex items-start gap-2 text-green-600 dark:text-green-400">
-                          <Activity className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>✓ Ready to count next rep! Go down to start.</span>
-                        </div>
-                      )}
-                      
-                      {poseConfidence < 60 && (
-                        <div className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
-                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>Low confidence ({Math.round(poseConfidence)}%) - adjust your position in frame</span>
-                        </div>
+                      ) : (
+                        <>
+                          {upBaseline === null && (
+                            <div className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
+                              <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>Not calibrated - get in plank position (arms straight)</span>
+                            </div>
+                          )}
+                          
+                          {upBaseline !== null && !bottomAchieved && currentPhase !== 'up' && (
+                            <div className="flex items-start gap-2 text-blue-600 dark:text-blue-400">
+                              <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>Bottom not reached - go lower (need 15°+ drop OR {Math.round(downThreshold)}° or below)</span>
+                            </div>
+                          )}
+                          
+                          {upBaseline !== null && bottomAchieved && currentPhase !== 'up' && (
+                            <div className="flex items-start gap-2 text-yellow-600 dark:text-yellow-400">
+                              <Zap className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>Push back up to count rep (confidence &gt; 45%)</span>
+                            </div>
+                          )}
+                          
+                          {upBaseline !== null && currentPhase === 'up' && (
+                            <div className="flex items-start gap-2 text-green-600 dark:text-green-400">
+                              <Activity className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>✓ Ready to count next rep! Go down to start.</span>
+                            </div>
+                          )}
+                          
+                          {poseConfidence < 45 && (
+                            <div className="flex items-start gap-2 text-orange-600 dark:text-orange-400">
+                              <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span>Low confidence ({Math.round(poseConfidence)}%) - adjust your position in frame</span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
