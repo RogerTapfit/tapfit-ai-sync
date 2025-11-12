@@ -538,8 +538,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         const range = lowestPositionRef.current - highestPositionRef.current;
         setPositionRange(range);
         
-        // Range sanity check: Ignore if too little movement
-        if (range >= 0.05) {
+        // Range sanity check: Ignore if too little movement (lowered confidence to 30%)
+        if (range >= 0.05 && confidence > 30) {
           // Calculate adaptive thresholds (start permissive, tighten after initial reps)
           const thresholdMultiplier = reps < 3 ? 0.35 : 0.45;
           const downThresholdValue = highestPositionRef.current + (range * thresholdMultiplier);
