@@ -262,14 +262,30 @@ export function LiveExerciseTracker({
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    if (!canvas || !video) return;
+    if (!canvas || !video) {
+      console.log('[Canvas Draw] Missing refs:', { canvas: !!canvas, video: !!video });
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('[Canvas Draw] No 2d context');
+      return;
+    }
 
     const dpr = window.devicePixelRatio || 1;
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
+
+    console.log('[Canvas Draw]', {
+      canvasSize: `${canvas.width}x${canvas.height}`,
+      cssSize: `${cssW}x${cssH}`,
+      videoSize: `${video.videoWidth}x${video.videoHeight}`,
+      landmarksCount: landmarks.length,
+      idealPoseCount: idealPoseLandmarks.length,
+      showIdealPose,
+      dpr
+    });
 
     // Clear entire canvas in device pixels
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -291,12 +307,16 @@ export function LiveExerciseTracker({
 
     // Draw ideal pose if enabled (using source dimensions)
     if (showIdealPose && idealPoseLandmarks.length > 0) {
+      console.log('[Canvas Draw] Drawing ideal pose with', idealPoseLandmarks.length, 'landmarks');
       drawIdealPose(ctx, idealPoseLandmarks, srcW, srcH);
     }
 
     // Draw current pose (using source dimensions)
     if (landmarks.length > 0) {
+      console.log('[Canvas Draw] Drawing actual pose with', landmarks.length, 'landmarks');
       drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
+    } else {
+      console.log('[Canvas Draw] No landmarks to draw');
     }
   }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints, isRepFlashing]);
 
