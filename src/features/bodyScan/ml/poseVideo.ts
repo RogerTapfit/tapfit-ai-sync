@@ -199,9 +199,6 @@ export function drawPose(
   isRepFlashing?: boolean
 ): void {
   if (landmarks.length < 33) return;
-
-  // Clear canvas
-  ctx.clearRect(0, 0, width, height);
   
   // Create sets of landmarks for each severity level for efficient lookup
   const errorLandmarks = new Set<number>();
