@@ -68,7 +68,6 @@ export function LiveExerciseTracker({
   const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
   const [isMirrored, setIsMirrored] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(true);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
@@ -313,13 +312,13 @@ export function LiveExerciseTracker({
     }
 
     // Draw current pose (using source dimensions)
-    if (showSkeleton && landmarks.length > 0) {
+    if (landmarks.length > 0) {
       console.log('[Canvas Draw] Drawing actual pose with', landmarks.length, 'landmarks');
       drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
     } else {
-      console.log('[Canvas Draw] No landmarks to draw or skeleton hidden');
+      console.log('[Canvas Draw] No landmarks to draw');
     }
-  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints, isRepFlashing, showSkeleton]);
+  }, [landmarks, formIssues, showIdealPose, idealPoseLandmarks, misalignedJoints, isRepFlashing]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -454,20 +453,6 @@ export function LiveExerciseTracker({
                     title={showIdealPose ? "Hide Guide" : "Show Guide"}
                   >
                     {showIdealPose ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
-                  </Button>
-                  
-                  {/* Skeleton Toggle */}
-                  <Button
-                    onClick={() => setShowSkeleton(!showSkeleton)}
-                    size="icon"
-                    variant="secondary"
-                    className={cn(
-                      "rounded-full w-12 h-12 backdrop-blur-sm border border-white/20",
-                      showSkeleton ? "bg-primary/80 hover:bg-primary" : "bg-black/50 hover:bg-black/70"
-                    )}
-                    title={showSkeleton ? "Hide Skeleton" : "Show Skeleton"}
-                  >
-                    <Activity className={cn("w-5 h-5", showSkeleton ? "text-white" : "text-white/50")} />
                   </Button>
                 </div>
 
@@ -1064,20 +1049,6 @@ export function LiveExerciseTracker({
               {showIdealPose ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
             </Button>
             
-            {/* Skeleton Toggle */}
-            <Button
-              onClick={() => setShowSkeleton(!showSkeleton)}
-              size="icon"
-              variant="secondary"
-              className={cn(
-                "rounded-full w-10 h-10 backdrop-blur-sm border border-white/20",
-                showSkeleton ? "bg-primary/80 hover:bg-primary" : "bg-black/50 hover:bg-black/70"
-              )}
-              title={showSkeleton ? "Hide Skeleton" : "Show Skeleton"}
-            >
-              <Activity className={cn("w-4 h-4", showSkeleton ? "text-white" : "text-white/50")} />
-            </Button>
-            
             {/* Coach Voice Toggle */}
             <Button
               onClick={() => {
@@ -1104,16 +1075,6 @@ export function LiveExerciseTracker({
               <Badge className="bg-red-500/90 text-white backdrop-blur-sm px-3 py-1.5 text-sm animate-pulse">
                 <div className="w-3 h-3 bg-white rounded-full mr-2 inline-block" />
                 Recording
-              </Badge>
-            </div>
-          )}
-
-          {/* Guide Info Banner */}
-          {showIdealPose && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-              <Badge className="bg-blue-500/90 text-white backdrop-blur-sm px-3 py-1.5 text-xs">
-                <Eye className="h-3 w-3 mr-1.5" />
-                Match the blue guide
               </Badge>
             </div>
           )}
