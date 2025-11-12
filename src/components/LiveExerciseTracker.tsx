@@ -443,17 +443,6 @@ export function LiveExerciseTracker({
                   >
                     <FlipHorizontal className={cn("w-5 h-5 text-white", isMirrored && "text-primary")} />
                   </Button>
-                  
-                  {/* Ideal Pose Toggle */}
-                  <Button
-                    onClick={toggleIdealPose}
-                    size="icon"
-                    variant="secondary"
-                    className="rounded-full w-12 h-12 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
-                    title={showIdealPose ? "Hide Guide" : "Show Guide"}
-                  >
-                    {showIdealPose ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white" />}
-                  </Button>
                 </div>
 
                 {/* Auto-Start Countdown Overlay */}
@@ -1036,17 +1025,6 @@ export function LiveExerciseTracker({
               title={isMirrored ? "Disable Mirror" : "Enable Mirror"}
             >
               <FlipHorizontal className={cn("w-4 h-4 text-white", isMirrored && "text-primary")} />
-            </Button>
-            
-            {/* Ideal Pose Toggle */}
-            <Button
-              onClick={toggleIdealPose}
-              size="icon"
-              variant="secondary"
-              className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
-              title={showIdealPose ? "Hide Guide" : "Show Guide"}
-            >
-              {showIdealPose ? <Eye className="w-4 h-4 text-white" /> : <EyeOff className="w-4 h-4 text-white" />}
             </Button>
             
             {/* Coach Voice Toggle */}
