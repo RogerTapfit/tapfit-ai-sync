@@ -57,23 +57,20 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   
-  // Debug states for angle tracking
-  const [currentElbowAngle, setCurrentElbowAngle] = useState<number>(0);
-  const [upBaseline, setUpBaseline] = useState<number | null>(null);
-  const [upThreshold, setUpThreshold] = useState<number>(145);
-  const [downThreshold, setDownThreshold] = useState<number>(95);
-  const [bottomAchieved, setBottomAchieved] = useState<boolean>(false);
-  const [minAngleInRep, setMinAngleInRep] = useState<number>(Infinity);
+  // Debug states for position tracking (Y-coordinate based)
+  const [currentYPosition, setCurrentYPosition] = useState<number>(0);
+  const [positionRange, setPositionRange] = useState<number>(0);
+  const [repState, setRepState] = useState<'waiting_for_down' | 'waiting_for_up'>('waiting_for_down');
+  const [downThreshold, setDownThreshold] = useState<number>(0);
+  const [upThreshold, setUpThreshold] = useState<number>(0);
   const [simpleRepMode, setSimpleRepMode] = useState(false);
   
-  // Adaptive baseline and hysteresis for robust push-up detection
-  const upBaselineRef = useRef<number | null>(null);
-  const downThresholdRef = useRef<number>(95);
-  const upThresholdRef = useRef<number>(145);
-  const minAngleInRepRef = useRef<number>(Infinity);
-  const bottomAchievedRef = useRef<boolean>(false);
-  const lastUpAngleRef = useRef<number | null>(null); // Track last up angle
-  const downPhaseEnteredAtRef = useRef<number>(0); // Track when down phase started
+  // Position tracking refs for predictive rep counting
+  const positionHistoryRef = useRef<number[]>([]);
+  const highestPositionRef = useRef<number>(Infinity); // Minimum Y value (top of movement)
+  const lowestPositionRef = useRef<number>(0); // Maximum Y value (bottom of movement)
+  const repStateRef = useRef<'waiting_for_down' | 'waiting_for_up'>('waiting_for_down');
+  const lastStateChangeRef = useRef<number>(0); // Timestamp of last state transition
   
   // Velocity tracking states
   const [concentricVelocity, setConcentricVelocity] = useState<number>(0); // Time for up phase (ms)
@@ -506,221 +503,138 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         return;
       }
 
-      // Active workout mode: full tracking
+      // Active workout mode: full tracking with Y-position based rep counting
       if (isActive) {
-        // Detect exercise
-        const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
+        // Calculate hip center Y-position (normalized 0-1, where 0 = top, 1 = bottom)
+        const leftHip = result.landmarks[23];
+        const rightHip = result.landmarks[24];
         
-        setFormScore(detection.formScore);
-        setFeedback(detection.feedback);
-        setFormIssues(detection.formIssues || []);
-        formScoresRef.current.push(detection.formScore);
+        if (!leftHip || !rightHip) {
+          animationFrameRef.current = requestAnimationFrame(processFrame);
+          return;
+        }
         
-        // Update elbow angle for pushups with adaptive baseline learning
-        if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
-          const currentAngle = detection.avgElbowAngle;
-          const now = Date.now(); // Declare here for use in debug logging
-          setCurrentElbowAngle(currentAngle);
+        // Average hip Y position (normalized)
+        const currentY = (leftHip.y + rightHip.y) / 2;
+        setCurrentYPosition(currentY);
+        
+        // Add to position history (rolling window of 10 samples)
+        positionHistoryRef.current.push(currentY);
+        if (positionHistoryRef.current.length > 10) {
+          positionHistoryRef.current.shift();
+        }
+        
+        // Calculate smoothed position (moving average)
+        const smoothedY = positionHistoryRef.current.reduce((a, b) => a + b, 0) / positionHistoryRef.current.length;
+        
+        // Update dynamic range
+        if (smoothedY < highestPositionRef.current) {
+          highestPositionRef.current = smoothedY;
+        }
+        if (smoothedY > lowestPositionRef.current) {
+          lowestPositionRef.current = smoothedY;
+        }
+        
+        const range = lowestPositionRef.current - highestPositionRef.current;
+        setPositionRange(range);
+        
+        // Range sanity check: Ignore if too little movement
+        if (range >= 0.05) {
+          // Calculate adaptive thresholds (start permissive, tighten after initial reps)
+          const thresholdMultiplier = reps < 3 ? 0.35 : 0.45;
+          const downThresholdValue = highestPositionRef.current + (range * thresholdMultiplier);
+          const upThresholdValue = lowestPositionRef.current - (range * thresholdMultiplier);
           
-          // Trigger haptic feedback when crossing angle thresholds
-          triggerAngleHaptic(currentAngle, detection.phase);
+          setDownThreshold(downThresholdValue);
+          setUpThreshold(upThresholdValue);
           
-          // Learn baseline when in "up" position with good confidence (RELAXED: 45% from 60%)
-          if (confidence > 45 && detection.phase === 'up') {
-            // Track last up angle for fallback reference
-            lastUpAngleRef.current = Math.max(lastUpAngleRef.current || currentAngle, currentAngle);
-            
-            if (upBaselineRef.current === null) {
-              // Initialize baseline
-              upBaselineRef.current = currentAngle;
-            } else {
-              // Exponentially weighted moving average (EWMA) for stable baseline
-              upBaselineRef.current = 0.8 * upBaselineRef.current + 0.2 * currentAngle;
+          // State machine rep counting
+          const now = Date.now();
+          const timeSinceLastStateChange = now - lastStateChangeRef.current;
+          const MIN_STATE_DURATION = 300; // Minimum 300ms between state changes
+          
+          if (repStateRef.current === 'waiting_for_down') {
+            // Check if position dropped below down threshold
+            if (smoothedY > downThresholdValue && timeSinceLastStateChange > MIN_STATE_DURATION) {
+              repStateRef.current = 'waiting_for_up';
+              setRepState('waiting_for_up');
+              lastStateChangeRef.current = now;
+              console.log('[Rep Counter] State: WAITING_FOR_UP', { smoothedY, downThresholdValue });
             }
-            
-            // Compute dynamic thresholds from baseline (MORE FORGIVING)
-            upThresholdRef.current = Math.max(130, upBaselineRef.current - 5); // Don't require 140+
-            downThresholdRef.current = Math.max(100, upBaselineRef.current - 30); // Raised floor
-            
-            // Update debug states
-            setUpBaseline(upBaselineRef.current);
-            setUpThreshold(upThresholdRef.current);
-            setDownThreshold(downThresholdRef.current);
-          }
-          
-          // Track minimum angle during non-up phases
-          if (detection.phase !== 'up') {
-            minAngleInRepRef.current = Math.min(minAngleInRepRef.current, currentAngle);
-            setMinAngleInRep(minAngleInRepRef.current);
-          }
-          
-          // Check if bottom achieved (TIME-BASED OR ANGLE-BASED)
-          const tolerance = 8; // 8° tolerance for "close enough"
-          if (currentAngle <= downThresholdRef.current + tolerance) {
-            bottomAchievedRef.current = true;
-            setBottomAchieved(true);
-          }
-          
-          // Also track bottom by time-in-bottom (120ms in down phase)
-          if (detection.phase === 'down' && downPhaseEnteredAtRef.current > 0) {
-            const timeInBottom = now - downPhaseEnteredAtRef.current;
-            if (timeInBottom >= 120) {
-              bottomAchievedRef.current = true;
-              setBottomAchieved(true);
-            }
-          }
-          
-          // Debug logging for pushups
-          if (now - lastCoachingTimeRef.current > 2000) {
-            console.log('[Pushup Debug]', {
-              angle: Math.round(currentAngle),
-              baseline: upBaselineRef.current ? Math.round(upBaselineRef.current) : null,
-              upThreshold: Math.round(upThresholdRef.current),
-              downThreshold: Math.round(downThresholdRef.current),
-              minInRep: minAngleInRepRef.current === Infinity ? null : Math.round(minAngleInRepRef.current),
-              bottomAchieved: bottomAchievedRef.current,
-              phase: detection.phase,
-              confidence: Math.round(confidence)
-            });
-            lastCoachingTimeRef.current = now;
-          }
-        }
-
-        // Update ideal pose template based on phase - start animation on phase change
-        if (showIdealPose && detection.phase !== 'transition') {
-          const newIdealPose = getIdealPoseForPhase(detection.phase);
-          
-          // Only start animation if phase actually changed
-          if (detection.phase !== lastPhaseRef.current && lastPhaseRef.current !== 'transition') {
-            startPoseAnimation(newIdealPose);
-          } else if (animationProgress >= 1 && newIdealPose.length > 0) {
-            // If no animation in progress and we have a pose, just set it
-            setIdealPoseLandmarks(newIdealPose);
-          }
-          
-          // Calculate alignment score with current displayed pose
-          if (idealPoseLandmarks.length > 0) {
-            const alignment = calculateAlignment(result.landmarks, idealPoseLandmarks);
-            setAlignmentScore(alignment.score);
-            setMisalignedJoints(alignment.misalignedJoints);
-          }
-        }
-
-        // Track phase transitions and calculate velocities
-        const now = Date.now();
-        
-        // Transition from up to down - calculate concentric (up) phase velocity
-        if (lastPhaseRef.current === 'up' && detection.phase === 'down') {
-          repStartTimeRef.current = now;
-          
-          // Track when down phase entered for time-based bottom detection
-          downPhaseEnteredAtRef.current = now;
-          
-          // Calculate concentric velocity if we have a start time
-          if (upPhaseStartRef.current > 0) {
-            const upDuration = now - upPhaseStartRef.current;
-            setConcentricVelocity(upDuration);
-            const zone = classifyVelocityZone(upDuration, exerciseType);
-            setConcentricZone(zone);
-          }
-          
-          // Start timing down phase
-          downPhaseStartRef.current = now;
-        }
-
-        // Transition from down to up - calculate eccentric (down) phase velocity and count rep
-        if (lastPhaseRef.current === 'down' && detection.phase === 'up') {
-          // Calculate eccentric velocity if we have a start time
-          if (downPhaseStartRef.current > 0) {
-            const downDuration = now - downPhaseStartRef.current;
-            setEccentricVelocity(downDuration);
-            const zone = classifyVelocityZone(downDuration, exerciseType);
-            setEccentricZone(zone);
-          }
-          
-          // Start timing up phase
-          upPhaseStartRef.current = now;
-          
-          // For push-ups, use angle-based hysteresis counting; otherwise use traditional phase-based
-          let shouldCountRep = false;
-          
-          if (exerciseType === 'pushups' && detection.avgElbowAngle !== undefined) {
-            // SIMPLE MODE: Count on phase transition only (fallback for difficult lighting/angles)
-            if (simpleRepMode) {
-              shouldCountRep = confidence > 40; // Just require basic detection
-            } else {
-              // STRICT MODE with relaxed gates
-              const currentAngle = detection.avgElbowAngle;
+          } else if (repStateRef.current === 'waiting_for_up') {
+            // Check if position rose above up threshold
+            if (smoothedY < upThresholdValue && timeSinceLastStateChange > MIN_STATE_DURATION) {
+              // COUNT REP!
+              repStateRef.current = 'waiting_for_down';
+              setRepState('waiting_for_down');
+              lastStateChangeRef.current = now;
               
-              // Compute total drop using fallback references
-              const referenceUp = upBaselineRef.current ?? lastUpAngleRef.current ?? currentAngle;
-              const totalDrop = referenceUp - (minAngleInRepRef.current === Infinity ? referenceUp : minAngleInRepRef.current);
+              const newReps = reps + 1;
+              setReps(newReps);
               
-              // RELAXED GATING: Confidence > 45 AND (bottom achieved OR 15° drop)
-              if (confidence > 45) {
-                if (bottomAchievedRef.current || totalDrop >= 15) {
-                  shouldCountRep = true;
-                  
-                  // Reset hysteresis state for next rep
-                  bottomAchievedRef.current = false;
-                  minAngleInRepRef.current = Infinity;
-                  downPhaseEnteredAtRef.current = 0;
-                  setBottomAchieved(false);
-                  setMinAngleInRep(Infinity);
-                }
-              }
-            }
-          } else {
-            // Traditional phase-based counting for other exercises
-            shouldCountRep = true;
-          }
-          
-          // Debounce reps (minimum 600ms between reps) - prevent double-counts
-          if (shouldCountRep && now - lastRepTimeRef.current > 600) {
-            // Calculate rep duration (from start of down phase to end of up phase)
-            const repDuration = repStartTimeRef.current > 0 ? now - repStartTimeRef.current : 0;
-            
-            // Analyze rep speed
-            if (repDuration > 0) {
+              // Calculate rep duration
+              const repDuration = now - repStartTimeRef.current;
+              setLastRepDuration(repDuration);
+              repStartTimeRef.current = now;
+              
+              // Analyze rep speed
               const speed = analyzeRepSpeed(repDuration);
               setRepSpeed(speed);
-              setLastRepDuration(repDuration);
-            }
-            
-            setReps(prev => {
-              const newReps = prev + 1;
               
-              // 🟢 TRIGGER GREEN FLASH
-              setIsRepFlashing(true);
-              setTimeout(() => setIsRepFlashing(false), 400);
-              
-              // 📳 HAPTIC FEEDBACK - double pulse for rep completion
-              if ('vibrate' in navigator) {
-                navigator.vibrate([100, 50, 100]);
+              // Trigger haptics
+              try {
+                await Haptics.impact({ style: ImpactStyle.Medium });
+              } catch (error) {
+                console.log('Haptics not available:', error);
               }
               
-              // Completion feedback
+              // Flash effect
+              setIsRepFlashing(true);
+              setTimeout(() => setIsRepFlashing(false), 200);
+              
+              // Voice announcement
+              if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
+                speak(`${newReps} reps`, 'normal');
+                lastAnnouncedRep.current = newReps;
+              }
+              
+              // Get detection for form feedback (still useful for form analysis)
+              const detection = detectExercise(exerciseType, result.landmarks, 'up');
+              setFormScore(detection.formScore);
+              setFeedback(detection.feedback);
+              setFormIssues(detection.formIssues);
+              formScoresRef.current.push(detection.formScore);
+              
+              console.log('[Rep Counter] REP COUNTED!', { 
+                rep: newReps, 
+                smoothedY, 
+                upThresholdValue,
+                duration: repDuration 
+              });
+              
+              // Check if target reached
               if (newReps >= targetReps) {
-                const setCompletePhrase = getCoachingPhrase({ type: 'set_complete' });
-                speak(setCompletePhrase || 'Set complete! Rest time.', 'high');
+                speak('Set complete!', 'high');
                 setCurrentSet(prev => prev + 1);
                 startRestTimer();
-                toast.success(`Set ${currentSet + 1} complete! Rest for ${restDuration}s`, { duration: 2000 });
-              } else if (newReps === targetReps - 2) {
-                const nearTargetPhrase = getCoachingPhrase({ type: 'near_target' });
-                if (nearTargetPhrase) {
-                  speak(nearTargetPhrase, 'normal');
-                }
+                toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
               } else {
                 toast.success(`Rep ${newReps}!`, { duration: 1000 });
               }
-              
-              return newReps;
-            });
-            lastRepTimeRef.current = now;
+            }
+          }
+          
+          // Auto-reset if no activity for 10 seconds
+          if (now - lastStateChangeRef.current > 10000 && positionHistoryRef.current.length > 0) {
+            console.log('[Rep Counter] Auto-reset due to inactivity');
+            positionHistoryRef.current = [];
+            highestPositionRef.current = Infinity;
+            lowestPositionRef.current = 0;
           }
         }
-
+        
+        // Still get detection for form feedback and phase display
+        const detection = detectExercise(exerciseType, result.landmarks, lastPhaseRef.current);
         lastPhaseRef.current = detection.phase;
         setCurrentPhase(detection.phase);
       }
@@ -954,16 +868,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     repStartTimeRef.current = 0;
     downPhaseStartRef.current = 0;
     upPhaseStartRef.current = 0;
-    upBaselineRef.current = null;
-    minAngleInRepRef.current = Infinity;
-    bottomAchievedRef.current = false;
-    lastUpAngleRef.current = null;
-    downPhaseEnteredAtRef.current = 0;
-    
-    // Reset debug states
-    setUpBaseline(null);
-    setBottomAchieved(false);
-    setMinAngleInRep(Infinity);
+    positionHistoryRef.current = [];
+    highestPositionRef.current = Infinity;
+    lowestPositionRef.current = 0;
+    repStateRef.current = 'waiting_for_down';
+    lastStateChangeRef.current = 0;
     
     stopCamera();
     
@@ -1105,14 +1014,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     restTimer,
     restDuration,
     currentSet,
-    currentElbowAngle,
-    upBaseline,
-    upThreshold,
+    currentYPosition,
+    positionRange,
+    repState,
     downThreshold,
-    bottomAchieved,
-    minAngleInRep,
+    upThreshold,
     simpleRepMode,
-    setSimpleRepMode,
+    toggleSimpleMode: () => setSimpleRepMode(prev => !prev),
     isRepFlashing,
     isSpeaking,
     isVoiceEnabled,
