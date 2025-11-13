@@ -564,10 +564,14 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         const timeSinceLastStateChange = now - lastStateChangeRef.current;
         const MIN_STATE_DURATION = 250;
         
+        // Use raw Y for instant game-like behavior in simple mode
+        const decisionY = simpleRepMode ? currentY : smoothedY;
+        
         console.log('[Rep Counter DEBUG]', {
           exerciseType,
           confidence,
           smoothedY,
+          decisionY,
           BOTTOM_MARKER,
           MID_MARKER,
           repState: repStateRef.current,
@@ -575,16 +579,74 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           canCount: timeSinceLastStateChange > MIN_STATE_DURATION
         });
         
-        if (simpleRepMode || confidence > 10) {
-          if (repStateRef.current === 'above_threshold') {
-            // Nose dipped below red line - COUNT THE REP!
-            console.log('[Rep Counter] Checking down cross', { 
-              smoothedY, 
-              BOTTOM_MARKER, 
-              crossedDown: smoothedY > BOTTOM_MARKER,
-              canCount: timeSinceLastStateChange > MIN_STATE_DURATION
+        if (simpleRepMode) {
+          // Count immediately when crossing below the red line
+          if (repStateRef.current === 'above_threshold' && decisionY > BOTTOM_MARKER) {
+            repStateRef.current = 'below_threshold';
+            setRepState('below_threshold');
+            lastStateChangeRef.current = now;
+            
+            const newReps = repsRef.current + 1;
+            repsRef.current = newReps;
+            setReps(newReps);
+            
+            const repDuration = now - (repStartTimeRef.current || now);
+            setLastRepDuration(repDuration);
+            repStartTimeRef.current = now;
+            lastRepTimeRef.current = now;
+            
+            const speed = analyzeRepSpeed(repDuration);
+            setRepSpeed(speed);
+            
+            try {
+              await Haptics.impact({ style: ImpactStyle.Medium });
+            } catch (error) {
+              console.log('Haptics not available:', error);
+            }
+            
+            setIsRepFlashing(true);
+            setTimeout(() => setIsRepFlashing(false), 200);
+            
+            if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
+              speak(`${newReps} reps`, 'normal');
+              lastAnnouncedRep.current = newReps;
+            }
+            
+            const detection = detectExercise(exerciseType, result.landmarks, 'down');
+            setFormScore(detection.formScore);
+            setFeedback(detection.feedback);
+            setFormIssues(detection.formIssues);
+            formScoresRef.current.push(detection.formScore);
+            
+            console.log('[Rep Counter] REP COUNTED (simple mode)', {
+              exerciseType,
+              rep: newReps,
+              decisionY,
+              BOTTOM_MARKER,
+              confidence
             });
             
+            if (newReps >= targetReps) {
+              speak('Set complete!', 'high');
+              setCurrentSet(prev => prev + 1);
+              startRestTimer();
+              toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+            } else {
+              toast.success(`Rep ${newReps}!`, { duration: 1000 });
+            }
+          } else if (repStateRef.current === 'below_threshold' && decisionY <= BOTTOM_MARKER - 0.005) {
+            // Quick reset once we move back above the red line (with tiny hysteresis)
+            repStateRef.current = 'above_threshold';
+            setRepState('above_threshold');
+            lastStateChangeRef.current = now;
+            console.log('[Rep Counter] Reset (simple mode) - ready for next rep', {
+              exerciseType,
+              decisionY,
+              BOTTOM_MARKER
+            });
+          }
+        } else if (confidence > 10) {
+          if (repStateRef.current === 'above_threshold') {
             if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'below_threshold';
               setRepState('below_threshold');
@@ -621,35 +683,12 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               setFeedback(detection.feedback);
               setFormIssues(detection.formIssues);
               formScoresRef.current.push(detection.formScore);
-              
-              console.log('[Rep Counter] REP COUNTED on downward cross!', { 
-                exerciseType, 
-                rep: newReps, 
-                smoothedY, 
-                BOTTOM_MARKER, 
-                confidence 
-              });
-              
-              if (newReps >= targetReps) {
-                speak('Set complete!', 'high');
-                setCurrentSet(prev => prev + 1);
-                startRestTimer();
-                toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
-              } else {
-                toast.success(`Rep ${newReps}!`, { duration: 1000 });
-              }
             }
           } else if (repStateRef.current === 'below_threshold') {
-            // Nose rose back above mid line - RESET for next rep
             if (smoothedY < MID_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'above_threshold';
               setRepState('above_threshold');
               lastStateChangeRef.current = now;
-              console.log('[Rep Counter] Reset - ready for next rep', { 
-                exerciseType, 
-                smoothedY, 
-                MID_MARKER 
-              });
             }
           }
         }
