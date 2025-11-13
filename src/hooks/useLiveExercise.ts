@@ -503,21 +503,44 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         return;
       }
 
-      // Active workout mode: NOSE-TRACKING rep counter (simple & reliable)
+      // Active workout mode: Position-based rep counter
       if (isActive) {
-        const nose = result.landmarks[0]; // Nose tip
+        let trackedLandmark: Keypoint | null = null;
+        let MID_MARKER = 0.50;
+        let BOTTOM_MARKER = 0.68;
         
-        if (!nose) {
+        // Choose tracking landmark based on exercise type
+        if (exerciseType === 'squats') {
+          // Track average of both knees for squats
+          const leftKnee = result.landmarks[25];
+          const rightKnee = result.landmarks[26];
+          
+          if (leftKnee && rightKnee) {
+            trackedLandmark = {
+              x: (leftKnee.x + rightKnee.x) / 2,
+              y: (leftKnee.y + rightKnee.y) / 2,
+              z: (leftKnee.z + rightKnee.z) / 2,
+              visibility: Math.min(leftKnee.visibility || 0, rightKnee.visibility || 0)
+            };
+          }
+          
+          // Squat thresholds (knees move DOWN when squatting)
+          MID_MARKER = 0.55;   // Standing position (knees higher)
+          BOTTOM_MARKER = 0.72; // Deep squat position (knees lower)
+        } else {
+          // Default to nose tracking for push-ups and other exercises
+          trackedLandmark = result.landmarks[0]; // Nose tip
+          MID_MARKER = 0.50;
+          BOTTOM_MARKER = 0.68;
+        }
+        
+        if (!trackedLandmark) {
           animationFrameRef.current = requestAnimationFrame(processFrame);
           return;
         }
         
-        const currentY = nose.y; // 0 = top, 1 = bottom
+        const currentY = trackedLandmark.y; // 0 = top, 1 = bottom
         setCurrentYPosition(currentY);
-        
-        // Fixed threshold markers
-        const MID_MARKER = 0.50;    // Middle of screen
-        const BOTTOM_MARKER = 0.68; // Bottom threshold for push-up
         
         setDownThreshold(BOTTOM_MARKER);
         setUpThreshold(MID_MARKER);
@@ -542,16 +565,20 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         
         if (confidence > 30) {
           if (repStateRef.current === 'waiting_for_down') {
-            // Nose dipped below BOTTOM_MARKER
+            // Landmark dipped below BOTTOM_MARKER
             if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'waiting_for_up';
               setRepState('waiting_for_up');
               lastStateChangeRef.current = now;
               if (repStartTimeRef.current === 0) repStartTimeRef.current = now;
-              console.log('[Nose Rep] -> DOWN (nose below bottom marker)', { smoothedY, BOTTOM_MARKER });
+              console.log('[Rep Counter] -> DOWN (below bottom marker)', { 
+                exerciseType, 
+                smoothedY, 
+                BOTTOM_MARKER 
+              });
             }
           } else if (repStateRef.current === 'waiting_for_up') {
-            // Nose rose above MID_MARKER
+            // Landmark rose above MID_MARKER
             if (smoothedY < MID_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'waiting_for_down';
               setRepState('waiting_for_down');
@@ -588,7 +615,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               setFormIssues(detection.formIssues);
               formScoresRef.current.push(detection.formScore);
               
-              console.log('[Nose Rep] REP COUNTED!', { rep: newReps, smoothedY, MID_MARKER, confidence });
+              console.log('[Rep Counter] REP COUNTED!', { 
+                exerciseType, 
+                rep: newReps, 
+                smoothedY, 
+                MID_MARKER, 
+                confidence 
+              });
               
               if (newReps >= targetReps) {
                 speak('Set complete!', 'high');
