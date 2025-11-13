@@ -49,17 +49,33 @@ export default function FitnessAlarm() {
   };
 
   const handleTestAlarm = (alarmId: string) => {
+    console.log('🧪 TEST BUTTON CLICKED for alarm:', alarmId);
+    
+    const alarm = alarms?.find(a => a.id === alarmId);
+    if (!alarm) {
+      console.error('❌ Alarm not found:', alarmId);
+      toast({
+        title: '❌ Error',
+        description: 'Alarm not found. Please try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    console.log('✅ Alarm found:', alarm);
+    console.log('📊 Target push-ups:', alarm.push_up_count);
+    
     setTestingAlarmId(alarmId);
     toast({
       title: '⏱️ Test alarm starting...',
-      description: 'Alarm will trigger in 5 seconds!',
+      description: 'Get ready! Alarm will trigger in 2 seconds!',
     });
 
     setTimeout(() => {
-      console.log('🧪 Test alarm triggering for ID:', alarmId);
+      console.log('🚨 Navigating to alarm ringing screen...');
       navigate(`/alarm-ringing/${alarmId}`);
       setTestingAlarmId(null);
-    }, 5000);
+    }, 2000);
   };
 
   return (
