@@ -145,11 +145,16 @@ All colors MUST be HSL for proper theming.
   * {
     @apply border-border;
   }
+  
+  html {
+    @apply overflow-x-hidden;
+  }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans overflow-x-hidden;
     background: radial-gradient(ellipse at top, hsl(0 0% 8%) 0%, hsl(0 0% 6%) 100%);
     min-height: 100vh;
+    max-width: 100vw;
   }
 }
 

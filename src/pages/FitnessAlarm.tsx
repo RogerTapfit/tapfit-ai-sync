@@ -63,10 +63,10 @@ export default function FitnessAlarm() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 overflow-x-hidden">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 max-w-full">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -87,14 +87,14 @@ export default function FitnessAlarm() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto px-4 py-6 space-y-6 max-w-full">
         {/* Hero Section */}
         <div className="text-center py-8">
           <div className="text-6xl mb-4">⏰💪</div>
-          <h2 className="text-3xl font-black text-foreground mb-2">
+          <h2 className="text-3xl font-black text-foreground mb-2 break-words">
             Wake Up & Push Up
           </h2>
-          <p className="text-muted-foreground max-w-md mx-auto">
+          <p className="text-muted-foreground max-w-md mx-auto px-4 break-words">
             Set alarms that require you to complete push-ups before they turn off. No more snoozing!
           </p>
         </div>

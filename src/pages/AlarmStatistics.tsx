@@ -41,10 +41,10 @@ export default function AlarmStatistics() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 overflow-x-hidden">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 max-w-full">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -59,24 +59,24 @@ export default function AlarmStatistics() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto px-4 py-6 space-y-6 max-w-full overflow-x-hidden">
         {/* Badges Summary */}
         <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-500/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Award className="h-8 w-8 text-amber-500" />
-              <div>
-                <h3 className="text-lg font-bold text-foreground">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 flex-shrink min-w-0">
+              <Award className="h-8 w-8 text-amber-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <h3 className="text-lg font-bold text-foreground truncate">
                   {unlockedBadges?.length || 0}/{alarmBadges.length}
                 </h3>
-                <p className="text-sm text-muted-foreground">Badges Earned</p>
+                <p className="text-sm text-muted-foreground truncate">Badges Earned</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-amber-500">
+            <div className="text-right flex-shrink-0">
+              <p className="text-2xl font-bold text-amber-500 truncate">
                 {unlockedBadges?.reduce((sum, badge) => sum + (badge.coins_awarded || 0), 0) || 0}
               </p>
-              <p className="text-xs text-muted-foreground">Total Coins from Badges</p>
+              <p className="text-xs text-muted-foreground truncate">Coins</p>
             </div>
           </div>
         </Card>
