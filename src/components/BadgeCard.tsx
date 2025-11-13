@@ -30,13 +30,13 @@ export const BadgeCard = ({ badge, isUnlocked, unlockedAt }: BadgeCardProps) => 
 
   return (
     <Card
-      className={`p-4 transition-all ${getRarityBorder()} ${
+      className={`p-4 transition-all overflow-hidden ${getRarityBorder()} ${
         isUnlocked
           ? 'bg-gradient-to-br from-card to-accent/30'
           : 'bg-muted/30 opacity-60'
       }`}
     >
-      <div className="flex flex-col items-center text-center space-y-3">
+      <div className="flex flex-col items-center text-center space-y-3 min-w-0 w-full">
         {/* Badge Icon */}
         <div
           className={`text-6xl relative ${
@@ -58,18 +58,18 @@ export const BadgeCard = ({ badge, isUnlocked, unlockedAt }: BadgeCardProps) => 
         </div>
 
         {/* Badge Info */}
-        <div className="space-y-1 w-full">
-          <h3 className={`font-bold text-lg ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+        <div className="space-y-1 w-full min-w-0">
+          <h3 className={`font-bold text-lg truncate ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
             {badge.name}
           </h3>
-          <p className="text-xs text-muted-foreground line-clamp-2">
+          <p className="text-xs text-muted-foreground line-clamp-2 break-words">
             {badge.description}
           </p>
         </div>
 
         {/* Rarity & Reward */}
-        <div className="flex items-center justify-between w-full text-xs">
-          <span className={`px-2 py-1 rounded-full ${
+        <div className="flex items-center justify-between w-full text-xs gap-2 min-w-0">
+          <span className={`px-2 py-1 rounded-full flex-shrink-0 ${
             badge.rarity === 'legendary'
               ? 'bg-amber-500/20 text-amber-400'
               : badge.rarity === 'epic'
@@ -80,7 +80,7 @@ export const BadgeCard = ({ badge, isUnlocked, unlockedAt }: BadgeCardProps) => 
           }`}>
             {getRarityLabel()}
           </span>
-          <span className={`font-medium ${isUnlocked ? 'text-amber-500' : 'text-muted-foreground'}`}>
+          <span className={`font-medium whitespace-nowrap ${isUnlocked ? 'text-amber-500' : 'text-muted-foreground'}`}>
             +{badge.coinReward} 💰
           </span>
         </div>

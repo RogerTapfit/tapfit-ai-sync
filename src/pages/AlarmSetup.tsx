@@ -57,10 +57,10 @@ export default function AlarmSetup() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-4 max-w-full">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -77,7 +77,7 @@ export default function AlarmSetup() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-2xl space-y-8">
+      <div className="container mx-auto px-4 py-6 max-w-2xl space-y-8 overflow-x-hidden">
         {/* Time Picker */}
         <AlarmTimePicker time={time} onChange={setTime} />
 

@@ -146,9 +146,9 @@ export default function AlarmRinging() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col overflow-hidden">
       {/* Exercise tracking screen - auto-starts */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"

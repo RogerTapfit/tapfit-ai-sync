@@ -29,12 +29,12 @@ export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore }: A
   const progress = (reps / targetReps) * 100;
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full max-w-full overflow-hidden">
       <canvas
         ref={canvasRef}
         width={640}
         height={480}
-        className="w-full h-full object-cover rounded-lg"
+        className="w-full h-full object-cover rounded-lg max-w-full"
       />
       
       {/* Rep Counter Overlay */}
