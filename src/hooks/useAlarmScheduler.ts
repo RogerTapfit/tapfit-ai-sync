@@ -9,6 +9,25 @@ export const useAlarmScheduler = () => {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(false);
 
+  const triggerAlarm = (alarm: FitnessAlarm) => {
+    console.log('🚨 Alarm triggered:', alarm);
+    
+    // Store ringing alarm ID
+    alarmStorageService.setRingingAlarm(alarm.id);
+    
+    // Show notification
+    alarmNotificationService.showAlarmNotification(
+      alarm.label || 'Fitness Alarm',
+      alarm.push_up_count
+    );
+    
+    // Vibrate device
+    alarmNotificationService.vibrate();
+    
+    // Navigate to alarm ringing page
+    navigate(`/alarm-ringing/${alarm.id}`);
+  };
+
   const checkAlarms = () => {
     if (isChecking || !alarms) return;
     setIsChecking(true);
@@ -16,6 +35,8 @@ export const useAlarmScheduler = () => {
     const now = new Date();
     const currentTime = now.toTimeString().slice(0, 5); // HH:MM
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    console.log(`⏰ Checking alarms at ${now.toTimeString().slice(0, 8)} - Current day: ${currentDay}`);
 
     alarms.forEach((alarm: FitnessAlarm) => {
       if (!alarm.enabled) return;
@@ -45,24 +66,6 @@ export const useAlarmScheduler = () => {
     setIsChecking(false);
   };
 
-  const triggerAlarm = (alarm: FitnessAlarm) => {
-    console.log('🚨 Alarm triggered:', alarm);
-    
-    // Store ringing alarm ID
-    alarmStorageService.setRingingAlarm(alarm.id);
-    
-    // Show notification
-    alarmNotificationService.showAlarmNotification(
-      alarm.label || 'Fitness Alarm',
-      alarm.push_up_count
-    );
-    
-    // Vibrate device
-    alarmNotificationService.vibrate();
-    
-    // Navigate to alarm ringing page
-    navigate(`/alarm-ringing/${alarm.id}`);
-  };
 
   // Check alarms every minute
   useEffect(() => {
@@ -87,5 +90,5 @@ export const useAlarmScheduler = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [alarms]);
 
-  return { checkAlarms };
+  return { checkAlarms, triggerAlarm };
 };

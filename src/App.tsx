@@ -53,6 +53,7 @@ import AlarmSetup from "./pages/AlarmSetup";
 import AlarmRinging from "./pages/AlarmRinging";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useAlarmScheduler } from "./hooks/useAlarmScheduler";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,9 @@ const NFCHandler = () => {
 };
 
 const App = () => {
+  // Initialize alarm scheduler (runs globally)
+  useAlarmScheduler();
+  
   const platform = Capacitor.getPlatform();
   const isNative = Capacitor.isNativePlatform();
   
