@@ -111,6 +111,10 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const readyPositionStartTimeRef = useRef<number | null>(null);
   const prevVoiceEnabledRef = useRef<boolean>(false); // Track voice state for context-aware resume
   
+  // Edge detection refs for zero-delay counting
+  const lastBelowRef = useRef<boolean>(false);
+  const lastCountTimeRef = useRef<number>(0);
+  
   const { speak, clearQueue, isSpeaking, isVoiceEnabled, toggleVoice } = useWorkoutAudio();
 
   // Haptic feedback for angle thresholds
@@ -580,71 +584,67 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         });
         
         if (simpleRepMode) {
-          // Count immediately when crossing below the red line
-          if (repStateRef.current === 'above_threshold' && decisionY > BOTTOM_MARKER) {
+          const below = decisionY > BOTTOM_MARKER;
+
+          // Update UI state only
+          if (below && repStateRef.current !== 'below_threshold') {
             repStateRef.current = 'below_threshold';
             setRepState('below_threshold');
-            lastStateChangeRef.current = now;
-            
+          } else if (!below && repStateRef.current !== 'above_threshold') {
+            repStateRef.current = 'above_threshold';
+            setRepState('above_threshold');
+          }
+
+          const now = Date.now();
+          const COOLDOWN = 120; // ms to avoid double-counting due to jitter
+
+          if (below && !lastBelowRef.current && now - lastCountTimeRef.current > COOLDOWN) {
+            lastBelowRef.current = true;
+            lastCountTimeRef.current = now;
+
             const newReps = repsRef.current + 1;
             repsRef.current = newReps;
             setReps(newReps);
-            
+
             const repDuration = now - (repStartTimeRef.current || now);
             setLastRepDuration(repDuration);
             repStartTimeRef.current = now;
             lastRepTimeRef.current = now;
-            
+
             const speed = analyzeRepSpeed(repDuration);
             setRepSpeed(speed);
-            
-            try {
-              await Haptics.impact({ style: ImpactStyle.Medium });
-            } catch (error) {
-              console.log('Haptics not available:', error);
-            }
-            
+
+            try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (error) { console.log('Haptics not available:', error); }
+
             setIsRepFlashing(true);
             setTimeout(() => setIsRepFlashing(false), 200);
-            
+
             if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
               speak(`${newReps} reps`, 'normal');
               lastAnnouncedRep.current = newReps;
             }
-            
+
             const detection = detectExercise(exerciseType, result.landmarks, 'down');
             setFormScore(detection.formScore);
             setFeedback(detection.feedback);
             setFormIssues(detection.formIssues);
             formScoresRef.current.push(detection.formScore);
-            
-            console.log('[Rep Counter] REP COUNTED (simple mode)', {
-              exerciseType,
-              rep: newReps,
-              decisionY,
-              BOTTOM_MARKER,
-              confidence
-            });
-            
+
+            console.log('[Rep Counter] REP COUNTED (edge)', { decisionY, BOTTOM_MARKER, newReps });
+
             if (newReps >= targetReps) {
               speak('Set complete!', 'high');
               setCurrentSet(prev => prev + 1);
               startRestTimer();
               toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
             } else {
-              toast.success(`Rep ${newReps}!`, { duration: 1000 });
+              toast.success(`Rep ${newReps}!`, { duration: 800 });
             }
-          } else if (repStateRef.current === 'below_threshold' && decisionY <= BOTTOM_MARKER - 0.005) {
-            // Quick reset once we move back above the red line (with tiny hysteresis)
-            repStateRef.current = 'above_threshold';
-            setRepState('above_threshold');
-            lastStateChangeRef.current = now;
-            console.log('[Rep Counter] Reset (simple mode) - ready for next rep', {
-              exerciseType,
-              decisionY,
-              BOTTOM_MARKER
-            });
+          } else if (!below) {
+            // Ready to count next time we dip below
+            lastBelowRef.current = false;
           }
+        }
         } else if (confidence > 10) {
           if (repStateRef.current === 'above_threshold') {
             if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
@@ -884,6 +884,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     repStateRef.current = 'above_threshold';
     setRepState('above_threshold');
     lastStateChangeRef.current = Date.now(); // Initialize to current time for proper delay
+    lastBelowRef.current = false;
+    lastCountTimeRef.current = 0;
     
     // Set initial ideal pose (without animation)
     if (showIdealPose) {
@@ -945,6 +947,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     lowestPositionRef.current = 0;
     repStateRef.current = 'above_threshold';
     lastStateChangeRef.current = Date.now(); // Initialize to current time
+    lastBelowRef.current = false;
+    lastCountTimeRef.current = 0;
     
     stopCamera();
     
