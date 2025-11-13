@@ -14,6 +14,7 @@ import { useRobotAvatar } from '@/hooks/useRobotAvatar';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import { getDisplayName } from '@/lib/userDisplay';
+import { useCoachEncouragement } from '@/hooks/useCoachEncouragement';
 
 export default function ProfileCustomization() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function ProfileCustomization() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { avatarData, loading: avatarLoading, updateAvatar } = useRobotAvatar();
+  const { handleCoachClick, isSpeaking, canSpeak } = useCoachEncouragement();
 
   useEffect(() => {
     loadUserData();
@@ -219,6 +221,9 @@ export default function ProfileCustomization() {
                             avatarData={avatarData}
                             size="small"
                             showAnimation={true}
+                            onClick={handleCoachClick}
+                            isClickable={canSpeak}
+                            isSpeaking={isSpeaking}
                           />
                         </div>
                       ) : (

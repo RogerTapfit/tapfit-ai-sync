@@ -12,6 +12,9 @@ interface CharacterAvatarDisplayProps {
   className?: string;
   emotion?: 'happy' | 'excited' | 'focused' | 'celebrating' | 'resting' | 'charging' | 'scanning';
   pose?: 'idle' | 'flexing' | 'victory' | 'workout' | 'champion' | 'power_up' | 'scan_mode';
+  onClick?: () => void;
+  isClickable?: boolean;
+  isSpeaking?: boolean;
 }
 
 export const CharacterAvatarDisplay = ({ 
@@ -20,7 +23,10 @@ export const CharacterAvatarDisplay = ({
   showAnimation = true, 
   className = '',
   emotion = 'happy',
-  pose = 'idle'
+  pose = 'idle',
+  onClick,
+  isClickable = false,
+  isSpeaking = false
 }: CharacterAvatarDisplayProps) => {
   // Use character_type if available, otherwise use avatar_id for backward compatibility
   const characterId = avatarData?.character_type || avatarData?.avatar_id;
@@ -75,8 +81,19 @@ export const CharacterAvatarDisplay = ({
     );
   }
 
+  const clickableClasses = isClickable 
+    ? 'cursor-pointer hover:scale-105 hover:shadow-2xl hover:ring-2 hover:ring-primary/50' 
+    : '';
+  const speakingClasses = isSpeaking 
+    ? 'animate-pulse ring-2 ring-primary/70 shadow-[0_0_20px_rgba(var(--primary),0.4)]' 
+    : '';
+
   return (
-    <Card className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 shadow-xl transition-all duration-300 ${showAnimation ? 'hover:scale-105' : ''}`}>
+    <Card 
+      className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 shadow-xl transition-all duration-300 ${showAnimation ? 'hover:scale-105' : ''} ${clickableClasses} ${speakingClasses}`}
+      onClick={isClickable && !isSpeaking ? onClick : undefined}
+      title={isClickable ? (isSpeaking ? 'Coach is speaking...' : 'Click for encouragement!') : undefined}
+    >
       
       {/* Character Header */}
       <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
@@ -106,7 +123,13 @@ export const CharacterAvatarDisplay = ({
       </div>
 
       {/* Speech bubble for animations */}
-      {showAnimation && emotion === 'celebrating' && (
+      {isSpeaking && (
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary/90 text-primary-foreground border border-primary rounded-lg px-3 py-1 text-xs animate-pulse font-medium shadow-lg">
+          🔊 Speaking...
+        </div>
+      )}
+
+      {showAnimation && emotion === 'celebrating' && !isSpeaking && (
         <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-background border border-border rounded-lg px-2 py-1 text-xs animate-bounce">
           🎉 Level Up!
         </div>

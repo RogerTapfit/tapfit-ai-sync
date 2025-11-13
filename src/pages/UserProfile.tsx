@@ -18,6 +18,7 @@ import { AchievementBadges } from '@/components/social/AchievementBadges';
 import { ProfileChallengesStreaks } from '@/components/social/ProfileChallengesStreaks';
 import { WorkoutHeatmap } from '@/components/social/WorkoutHeatmap';
 import { RobotAvatarDisplay } from '@/components/RobotAvatarDisplay';
+import { useCoachEncouragement } from '@/hooks/useCoachEncouragement';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -29,6 +30,7 @@ export default function UserProfile() {
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
   const { achievements, loading: achievementsLoading } = useUserAchievements(userId);
+  const { handleCoachClick, isSpeaking, canSpeak } = useCoachEncouragement();
 
   useEffect(() => {
     if (username) {
@@ -139,6 +141,9 @@ export default function UserProfile() {
                       avatarData={{ ...(profile as any).avatar_data, avatar_id: (profile as any).avatar_id }}
                       size="small"
                       showAnimation={true}
+                      onClick={isOwnProfile ? handleCoachClick : undefined}
+                      isClickable={isOwnProfile && canSpeak}
+                      isSpeaking={isOwnProfile && isSpeaking}
                     />
                   </div>
                 ) : (

@@ -9,6 +9,9 @@ interface RobotAvatarDisplayProps {
   className?: string;
   emotion?: 'happy' | 'excited' | 'focused' | 'celebrating' | 'resting' | 'charging' | 'scanning';
   pose?: 'idle' | 'flexing' | 'victory' | 'workout' | 'champion' | 'power_up' | 'scan_mode';
+  onClick?: () => void;
+  isClickable?: boolean;
+  isSpeaking?: boolean;
 }
 
 export const RobotAvatarDisplay = ({ 
@@ -17,7 +20,10 @@ export const RobotAvatarDisplay = ({
   showAnimation = true, 
   className = '',
   emotion = 'happy',
-  pose = 'idle'
+  pose = 'idle',
+  onClick,
+  isClickable = false,
+  isSpeaking = false
 }: RobotAvatarDisplayProps) => {
   // Always use CharacterAvatarDisplay - no more legacy robots
   return (
@@ -28,6 +34,9 @@ export const RobotAvatarDisplay = ({
       className={className}
       emotion={emotion}
       pose={pose}
+      onClick={onClick}
+      isClickable={isClickable}
+      isSpeaking={isSpeaking}
     />
   );
 };
