@@ -644,7 +644,6 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             // Ready to count next time we dip below
             lastBelowRef.current = false;
           }
-        }
         } else if (confidence > 10) {
           if (repStateRef.current === 'above_threshold') {
             if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
