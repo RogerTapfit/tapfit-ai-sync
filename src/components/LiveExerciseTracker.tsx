@@ -41,6 +41,9 @@ import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useVoiceCommands } from '@/hooks/useVoiceCommands';
 import { toast } from 'sonner';
 import { shareVideo, saveVideoLocally } from '@/utils/shareVideo';
+import { RobotAvatarDisplay } from './RobotAvatarDisplay';
+import { useRobotAvatar } from '@/hooks/useRobotAvatar';
+import { useCoachEncouragement } from '@/hooks/useCoachEncouragement';
 
 const EXERCISES = [
   { id: 'pushups' as ExerciseType, name: 'Push-ups', icon: '💪', coins: 10 },
@@ -72,6 +75,8 @@ export function LiveExerciseTracker({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { awardCoins } = useTapCoins();
   const { startWorkout: logWorkoutStart, logExercise, completeWorkout: logWorkoutComplete } = useWorkoutLogger();
+  const { avatarData } = useRobotAvatar();
+  const { handleCoachClick, isSpeaking: isCoachSpeaking, canSpeak } = useCoachEncouragement();
 
   const handleComplete = async (stats: WorkoutStats) => {
     setWorkoutStats(stats);
@@ -651,6 +656,22 @@ export function LiveExerciseTracker({
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
+      {/* Coach Avatar - Clickable for Encouragement */}
+      {avatarData && (
+        <div className="flex justify-center">
+          <div className="w-32">
+            <RobotAvatarDisplay
+              avatarData={avatarData}
+              size="medium"
+              showAnimation={true}
+              onClick={handleCoachClick}
+              isClickable={canSpeak}
+              isSpeaking={isCoachSpeaking}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Stats Header */}
       <div className="grid grid-cols-4 gap-4">
         <Card className="p-4">
