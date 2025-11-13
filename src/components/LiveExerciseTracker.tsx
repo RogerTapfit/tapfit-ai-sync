@@ -78,6 +78,25 @@ export function LiveExerciseTracker({
   const { avatarData } = useRobotAvatar();
   const { handleCoachClick, isSpeaking: isCoachSpeaking, canSpeak } = useCoachEncouragement();
 
+  // Dynamic coach emotion and pose based on performance
+  const getCoachEmotion = (): 'happy' | 'excited' | 'focused' | 'celebrating' | 'resting' | 'charging' | 'scanning' => {
+    if (isResting) return 'resting';
+    if (reps >= currentTarget) return 'celebrating';
+    if (formScore >= 90) return 'excited';
+    if (formScore >= 75) return 'happy';
+    if (formScore >= 60) return 'focused';
+    return 'charging'; // Concerned/needs improvement
+  };
+
+  const getCoachPose = (): 'idle' | 'flexing' | 'victory' | 'workout' | 'champion' | 'power_up' | 'scan_mode' => {
+    if (isResting) return 'idle';
+    if (reps >= currentTarget) return 'champion';
+    if (formScore >= 90) return 'victory';
+    if (formScore >= 75) return 'flexing';
+    if (formScore >= 60) return 'workout';
+    return 'power_up'; // Encouraging to improve
+  };
+
   const handleComplete = async (stats: WorkoutStats) => {
     setWorkoutStats(stats);
     setShowResults(true);
@@ -656,20 +675,45 @@ export function LiveExerciseTracker({
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
-      {/* Coach Avatar - Clickable for Encouragement */}
+      {/* Coach Avatar - Clickable for Encouragement with Dynamic Reactions */}
       {avatarData && (
-        <div className="flex justify-center">
-          <div className="w-32">
-            <RobotAvatarDisplay
-              avatarData={avatarData}
-              size="medium"
-              showAnimation={true}
-              onClick={handleCoachClick}
-              isClickable={canSpeak}
-              isSpeaking={isCoachSpeaking}
-            />
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="w-32 flex-shrink-0">
+              <RobotAvatarDisplay
+                avatarData={avatarData}
+                size="medium"
+                showAnimation={true}
+                onClick={handleCoachClick}
+                isClickable={canSpeak}
+                isSpeaking={isCoachSpeaking}
+                emotion={getCoachEmotion()}
+                pose={getCoachPose()}
+              />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge variant={formScore >= 75 ? 'default' : 'secondary'} className="text-sm">
+                  {formScore >= 90 && '🔥 Crushing it!'}
+                  {formScore >= 75 && formScore < 90 && '💪 Great form!'}
+                  {formScore >= 60 && formScore < 75 && '👍 Keep it up!'}
+                  {formScore < 60 && '⚡ Focus on form'}
+                </Badge>
+                {isResting && (
+                  <Badge variant="outline" className="text-sm animate-pulse">
+                    😌 Resting ({restTimer}s)
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {formScore >= 90 && 'Your form is excellent! Keep this intensity!'}
+                {formScore >= 75 && formScore < 90 && 'Solid technique! You\'re doing great!'}
+                {formScore >= 60 && formScore < 75 && 'Good effort! Try to maintain better form.'}
+                {formScore < 60 && 'Focus on your form - quality over speed!'}
+              </p>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Stats Header */}
