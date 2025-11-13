@@ -242,6 +242,17 @@ export function LiveExerciseTracker({
     };
   }, [isInitialized, isActive, showResults, skipSetup]);
 
+  // Auto-start workout for pre-selected exercises
+  useEffect(() => {
+    if (skipSetup && isInitialized && !isActive && !showResults) {
+      console.log('[LiveExerciseTracker] Auto-starting workout for pre-selected exercise');
+      setTimeout(() => {
+        start();
+        setSkipSetup(false);
+      }, 100); // Small delay to ensure initialization is complete
+    }
+  }, [skipSetup, isInitialized, isActive, showResults]);
+
   // Draw pose overlay on canvas - continuously update (for both preview and active modes)
   useEffect(() => {
     if (!canvasRef.current || !videoRef.current) return;
@@ -520,12 +531,6 @@ export function LiveExerciseTracker({
   }
 
   if (!isActive) {
-    // If pre-selected and initialized, start immediately
-    if (skipSetup && isInitialized) {
-      start();
-      setSkipSetup(false);
-    }
-
     return (
       <div className="w-full max-w-6xl mx-auto space-y-4">
         <Card className="p-6 space-y-4">

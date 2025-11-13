@@ -509,8 +509,25 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         return;
       }
 
+      // FAILSAFE: If we have good landmarks and confidence but workout isn't active, something's wrong
+      if (!isActive && confidence > 50 && result.landmarks.length > 0) {
+        console.warn('[Rep Counter FAILSAFE] Good pose detected but workout not active!', {
+          isActive,
+          confidence,
+          landmarksCount: result.landmarks.length,
+          exerciseType
+        });
+      }
+
       // Active workout mode: Position-based rep counter
       if (isActive) {
+        console.log('[Rep Counter] Active workout frame processing', {
+          timestamp: Date.now(),
+          confidence,
+          landmarksCount: result.landmarks.length,
+          exerciseType
+        });
+        
         let trackedLandmark: Keypoint | null = null;
         let MID_MARKER = 0.50;
         let BOTTOM_MARKER = 0.68;
@@ -587,10 +604,20 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         if (simpleRepMode) {
           const below = decisionY > BOTTOM_MARKER;
           const now = Date.now();
-          const COOLDOWN = 50; // Reduced cooldown for instant feedback
+          const COOLDOWN = 0; // NO COOLDOWN - instant feedback
+
+          console.log('[Rep Counter SIMPLE MODE]', {
+            decisionY: decisionY.toFixed(3),
+            BOTTOM_MARKER: BOTTOM_MARKER.toFixed(3),
+            below,
+            lastBelowRef: lastBelowRef.current,
+            timeSinceLastCount: now - lastCountTimeRef.current,
+            willCount: below && !lastBelowRef.current && now - lastCountTimeRef.current > COOLDOWN
+          });
 
           // Edge detection: Count on the FIRST frame crossing below threshold
           if (below && !lastBelowRef.current && now - lastCountTimeRef.current > COOLDOWN) {
+            console.log('[Rep Counter] 🎯 COUNTING REP NOW!', { decisionY, BOTTOM_MARKER, timestamp: now });
             lastBelowRef.current = true;
             lastCountTimeRef.current = now;
 
@@ -630,7 +657,13 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             repStateRef.current = 'below_threshold';
             setRepState('below_threshold');
             
-            console.log('[Rep Counter] REP COUNTED (edge)', { decisionY, BOTTOM_MARKER, newReps, timestamp: now });
+            console.log('[Rep Counter] ✅ REP COUNTED!', { 
+              decisionY: decisionY.toFixed(3), 
+              BOTTOM_MARKER: BOTTOM_MARKER.toFixed(3), 
+              newReps, 
+              timestamp: now,
+              exerciseType
+            });
 
             if (newReps >= targetReps) {
               speak('Set complete!', 'high');
@@ -642,6 +675,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             }
           } else if (!below) {
             // Ready to count next time we dip below
+            console.log('[Rep Counter] Back above threshold - ready for next rep', { decisionY: decisionY.toFixed(3) });
             lastBelowRef.current = false;
             repStateRef.current = 'above_threshold';
             setRepState('above_threshold');
