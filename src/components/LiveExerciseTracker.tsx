@@ -409,14 +409,17 @@ export function LiveExerciseTracker({
         // Highlight tracked landmarks with reactive colors
         trackedLandmarks.forEach(landmark => {
           const landmarkY = landmark.y * srcH;
-          const isThisLandmarkCrossing = landmarkY >= BOTTOM_Y - 5 && landmarkY <= BOTTOM_Y + 5;
-          const isBelowLine = landmarkY > BOTTOM_Y;
+          // Use same threshold as rep counting logic (normalized 0-1)
+          const normalizedY = landmark.y;
+          const THRESHOLD = selectedExercise === 'squats' ? 0.72 : 0.68;
+          const isBelowLine = normalizedY > THRESHOLD;
+          const isThisLandmarkCrossing = Math.abs(normalizedY - THRESHOLD) < 0.02;
           
           ctx.setLineDash([]);
           
-          // Color changes based on position relative to line
-          if (isRepFlashing || isThisLandmarkCrossing) {
-            // Bright green flash when counting or crossing
+          // Color changes synchronized with rep counting
+          if (isRepFlashing) {
+            // Bright green flash when rep is counted (200ms)
             ctx.strokeStyle = '#22c55e';
             ctx.fillStyle = '#22c55e';
             ctx.shadowColor = '#22c55e';
@@ -424,7 +427,7 @@ export function LiveExerciseTracker({
             ctx.lineWidth = 6;
             ctx.globalAlpha = 0.9;
           } else if (isBelowLine) {
-            // Orange when below the line (waiting to go back up)
+            // Orange when below line - rep will count on next rise
             ctx.strokeStyle = '#f97316';
             ctx.fillStyle = '#f97316';
             ctx.shadowColor = '#f97316';
@@ -432,7 +435,7 @@ export function LiveExerciseTracker({
             ctx.lineWidth = 5;
             ctx.globalAlpha = 0.7;
           } else {
-            // Blue when above the line (ready position)
+            // Blue when above line - ready to count on next dip
             ctx.strokeStyle = '#3b82f6';
             ctx.fillStyle = '#3b82f6';
             ctx.shadowColor = '#3b82f6';

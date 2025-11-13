@@ -585,19 +585,10 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         
         if (simpleRepMode) {
           const below = decisionY > BOTTOM_MARKER;
-
-          // Update UI state only
-          if (below && repStateRef.current !== 'below_threshold') {
-            repStateRef.current = 'below_threshold';
-            setRepState('below_threshold');
-          } else if (!below && repStateRef.current !== 'above_threshold') {
-            repStateRef.current = 'above_threshold';
-            setRepState('above_threshold');
-          }
-
           const now = Date.now();
-          const COOLDOWN = 120; // ms to avoid double-counting due to jitter
+          const COOLDOWN = 50; // Reduced cooldown for instant feedback
 
+          // Edge detection: Count on the FIRST frame crossing below threshold
           if (below && !lastBelowRef.current && now - lastCountTimeRef.current > COOLDOWN) {
             lastBelowRef.current = true;
             lastCountTimeRef.current = now;
@@ -630,7 +621,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
             setFormIssues(detection.formIssues);
             formScoresRef.current.push(detection.formScore);
 
-            console.log('[Rep Counter] REP COUNTED (edge)', { decisionY, BOTTOM_MARKER, newReps });
+            // Update UI state immediately after counting
+            repStateRef.current = 'below_threshold';
+            setRepState('below_threshold');
+            
+            console.log('[Rep Counter] REP COUNTED (edge)', { decisionY, BOTTOM_MARKER, newReps, timestamp: now });
 
             if (newReps >= targetReps) {
               speak('Set complete!', 'high');
@@ -643,6 +638,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           } else if (!below) {
             // Ready to count next time we dip below
             lastBelowRef.current = false;
+            repStateRef.current = 'above_threshold';
+            setRepState('above_threshold');
           }
         } else if (confidence > 10) {
           if (repStateRef.current === 'above_threshold') {
