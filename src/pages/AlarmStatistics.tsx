@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAlarmStats } from '@/hooks/useAlarmStats';
 import { useAlarmBadges } from '@/hooks/useAlarmBadges';
+import { useAuth } from '@/components/AuthGuard';
 import { BadgeCard } from '@/components/BadgeCard';
 import { alarmBadges, getBadgesByCategory } from '@/config/alarmBadges';
 import { ArrowLeft, TrendingUp, Clock, Flame, Trophy, CheckCircle, Award } from 'lucide-react';
@@ -12,6 +13,7 @@ import { format } from 'date-fns';
 
 export default function AlarmStatistics() {
   const navigate = useNavigate();
+  const { isGuest } = useAuth();
   const { stats, isLoading } = useAlarmStats();
   const { unlockedBadges, isBadgeUnlocked, checkForNewBadges, isLoading: badgesLoading } = useAlarmBadges();
 
@@ -25,6 +27,38 @@ export default function AlarmStatistics() {
       });
     }
   }, [stats, isLoading]);
+
+  if (isGuest) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="container mx-auto px-4 py-4 max-w-full">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/fitness-alarm')}
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+              <h1 className="text-2xl font-bold text-foreground">Alarm Statistics</h1>
+              <div className="w-10" />
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-12 text-center space-y-4">
+          <Trophy className="h-16 w-16 text-muted-foreground mx-auto" />
+          <h2 className="text-xl font-bold text-foreground">Sign Up to Track Your Progress</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Create an account to track your alarm completion statistics, earn badges, and build streaks!
+          </p>
+          <Button onClick={() => navigate('/auth')} size="lg">
+            Sign Up / Log In
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !stats) {
     return (
