@@ -7,11 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlarmTimePicker } from '@/components/AlarmTimePicker';
 import { AlarmDaySelector } from '@/components/AlarmDaySelector';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
+import { useAuth } from '@/components/AuthGuard';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save } from 'lucide-react';
 
 export default function AlarmSetup() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { id } = useParams();
+  const { isGuest } = useAuth();
   const { alarms, createAlarm, updateAlarm } = useFitnessAlarm();
   
   const [time, setTime] = useState('07:00');
@@ -19,6 +23,18 @@ export default function AlarmSetup() {
   const [pushUpCount, setPushUpCount] = useState(15);
   const [alarmSound, setAlarmSound] = useState('classic');
   const [label, setLabel] = useState('');
+
+  // Redirect guests to auth page
+  useEffect(() => {
+    if (isGuest) {
+      toast({
+        title: '🔐 Authentication Required',
+        description: 'Please sign up or log in to create alarms.',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+    }
+  }, [isGuest, navigate, toast]);
 
   // Load existing alarm if editing
   useEffect(() => {

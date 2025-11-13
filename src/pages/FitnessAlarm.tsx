@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { AlarmCard } from '@/components/AlarmCard';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
 import { useAlarmScheduler } from '@/hooks/useAlarmScheduler';
+import { useAuth } from '@/components/AuthGuard';
 import { Plus, ArrowLeft, Bell, BarChart3 } from 'lucide-react';
 import { alarmNotificationService } from '@/services/alarmNotificationService';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function FitnessAlarm() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isGuest } = useAuth();
   const { alarms, isLoading, toggleAlarm, deleteAlarm } = useFitnessAlarm();
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
   const [testingAlarmId, setTestingAlarmId] = useState<string | null>(null);
@@ -115,8 +118,25 @@ export default function FitnessAlarm() {
           </p>
         </div>
 
+        {/* Guest User Banner */}
+        {isGuest && (
+          <Card className="border-2 border-primary/30 bg-primary/5">
+            <CardContent className="p-6 text-center space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg">🔐 Alarms Require an Account</h3>
+                <p className="text-muted-foreground">
+                  Sign up to create fitness alarms that will wake you up and keep you accountable!
+                </p>
+              </div>
+              <Button onClick={() => navigate('/auth')} className="w-full">
+                Sign Up / Log In
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Notification Permission Banner */}
-        {!alarmNotificationService.hasPermission() && !hasRequestedPermission && (
+        {!isGuest && !alarmNotificationService.hasPermission() && !hasRequestedPermission && (
           <div className="bg-accent/50 border border-border rounded-lg p-4">
             <div className="flex items-start gap-3">
               <Bell className="h-5 w-5 text-primary mt-0.5" />
@@ -166,7 +186,8 @@ export default function FitnessAlarm() {
       <Button
         size="lg"
         className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl"
-        onClick={() => navigate('/alarm-setup')}
+        onClick={() => navigate(isGuest ? '/auth' : '/alarm-setup')}
+        disabled={isGuest}
       >
         <Plus className="h-8 w-8" />
       </Button>
