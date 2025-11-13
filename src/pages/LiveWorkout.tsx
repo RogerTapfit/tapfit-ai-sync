@@ -35,6 +35,10 @@ export default function LiveWorkout() {
     }
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <SEO 
@@ -45,6 +49,7 @@ export default function LiveWorkout() {
         preSelectedExercise={exerciseParam || undefined}
         machineName={state?.machineName}
         onBackToMachine={sourceParam === 'scan' && state?.workoutId ? handleBackToMachine : undefined}
+        onBackToDashboard={handleBackToDashboard}
       />
     </div>
   );

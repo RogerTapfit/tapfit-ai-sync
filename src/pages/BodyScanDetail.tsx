@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft } from "lucide-react";
 
 interface ScanDetail {
   id: string;
@@ -20,6 +21,7 @@ interface ScanDetail {
 
 const BodyScanDetail = () => {
   const { scanId } = useParams();
+  const navigate = useNavigate();
   const [row, setRow] = useState<ScanDetail | null>(null);
   const [images, setImages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -104,6 +106,16 @@ const BodyScanDetail = () => {
         canonicalPath={`/body-scans/${scanId}`}
       />
       <main className="min-h-screen bg-background p-4 md:p-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/')}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        
         <header className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Body Scan Details</h1>

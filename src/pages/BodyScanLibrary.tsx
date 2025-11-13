@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft } from "lucide-react";
 
 interface BodyScanRow {
   id: string;
@@ -21,6 +22,7 @@ interface BodyScanRow {
 const pickFirstPath = (row: BodyScanRow) => row.front_path || row.left_path || row.right_path || row.back_path || null;
 
 const BodyScanLibrary = () => {
+  const navigate = useNavigate();
   const [scans, setScans] = useState<BodyScanRow[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,16 @@ const BodyScanLibrary = () => {
         canonicalPath="/body-scans"
       />
       <main className="min-h-screen bg-background p-4 md:p-8">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/')}
+          className="mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        
         <header className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>
