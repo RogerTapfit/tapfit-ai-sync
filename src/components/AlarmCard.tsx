@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Zap } from 'lucide-react';
 import { type FitnessAlarm } from '@/hooks/useFitnessAlarm';
 
 interface AlarmCardProps {
@@ -9,11 +9,13 @@ interface AlarmCardProps {
   onToggle: (id: string, enabled: boolean) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onTest?: (id: string) => void;
+  isTesting?: boolean;
 }
 
 const DAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-export const AlarmCard = ({ alarm, onToggle, onEdit, onDelete }: AlarmCardProps) => {
+export const AlarmCard = ({ alarm, onToggle, onEdit, onDelete, onTest, isTesting }: AlarmCardProps) => {
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const hour = parseInt(hours);
@@ -61,6 +63,18 @@ export const AlarmCard = ({ alarm, onToggle, onEdit, onDelete }: AlarmCardProps)
         </div>
         
         <div className="flex flex-col gap-2 ml-4">
+          {onTest && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onTest(alarm.id)}
+              disabled={isTesting}
+              className="border-amber-500 text-amber-500 hover:bg-amber-500/10 disabled:opacity-50"
+            >
+              <Zap className="h-4 w-4 mr-1" />
+              {isTesting ? '5s...' : 'Test'}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"

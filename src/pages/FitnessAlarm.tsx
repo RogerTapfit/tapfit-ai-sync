@@ -13,9 +13,7 @@ export default function FitnessAlarm() {
   const { toast } = useToast();
   const { alarms, isLoading, toggleAlarm, deleteAlarm } = useFitnessAlarm();
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
-  
-  // Initialize alarm scheduler
-  useAlarmScheduler();
+  const [testingAlarmId, setTestingAlarmId] = useState<string | null>(null);
 
   const handleRequestNotificationPermission = async () => {
     const granted = await alarmNotificationService.requestPermission();
@@ -48,6 +46,20 @@ export default function FitnessAlarm() {
         console.error('Failed to delete alarm:', error);
       }
     }
+  };
+
+  const handleTestAlarm = (alarmId: string) => {
+    setTestingAlarmId(alarmId);
+    toast({
+      title: '⏱️ Test alarm starting...',
+      description: 'Alarm will trigger in 5 seconds!',
+    });
+
+    setTimeout(() => {
+      console.log('🧪 Test alarm triggering for ID:', alarmId);
+      navigate(`/alarm-ringing/${alarmId}`);
+      setTestingAlarmId(null);
+    }, 5000);
   };
 
   return (
@@ -113,6 +125,8 @@ export default function FitnessAlarm() {
                 onToggle={handleToggle}
                 onEdit={(id) => navigate(`/alarm-setup/${id}`)}
                 onDelete={handleDelete}
+                onTest={handleTestAlarm}
+                isTesting={testingAlarmId === alarm.id}
               />
             ))
           ) : (

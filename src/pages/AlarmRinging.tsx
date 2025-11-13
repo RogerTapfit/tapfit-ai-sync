@@ -71,6 +71,16 @@ export default function AlarmRinging() {
     }
   }, [id, alarms]);
 
+  // Auto-start exercise tracking when alarm loads
+  useEffect(() => {
+    if (alarm && !hasStarted && !isActive) {
+      console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
+      setHasStarted(true);
+      setStartTime(Date.now());
+      startExercise();
+    }
+  }, [alarm, hasStarted, isActive]);
+
   // Start alarm sound
   useEffect(() => {
     if (alarm) {
@@ -137,45 +147,8 @@ export default function AlarmRinging() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {!hasStarted ? (
-        // Pre-start screen
-        <div className="flex-1 flex flex-col items-center justify-center p-8 animate-pulse">
-          <div className="text-8xl mb-8">⏰</div>
-          <h1 className="text-6xl font-black mb-4 text-center">
-            WAKE UP!
-          </h1>
-          <p className="text-2xl text-white/80 mb-2 text-center">
-            {alarm.label || 'Fitness Alarm'}
-          </p>
-          <p className="text-xl text-white/60 mb-12 text-center">
-            Complete {alarm.push_up_count} push-ups to turn off this alarm
-          </p>
-          
-          <Button
-            size="lg"
-            className="h-24 w-64 text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-            onClick={handleStartPushUps}
-          >
-            <Play className="h-8 w-8 mr-3" />
-            Start Push-Ups
-          </Button>
-
-          <button
-            className="mt-8 text-sm text-white/40 hover:text-white/60 transition-colors"
-            onMouseDown={handleEmergencyDismiss}
-            onMouseUp={() => setIsDismissing(false)}
-            onMouseLeave={() => setIsDismissing(false)}
-          >
-            {isDismissing ? (
-              <span className="text-red-400">Hold for 3 seconds to dismiss...</span>
-            ) : (
-              'Emergency Dismiss (Hold)'
-            )}
-          </button>
-        </div>
-      ) : (
-        // Exercise tracking screen
-        <div className="flex-1 relative">
+      {/* Exercise tracking screen - auto-starts */}
+      <div className="flex-1 relative">
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
@@ -202,8 +175,21 @@ export default function AlarmRinging() {
               </div>
             </div>
           )}
+
+          {/* Emergency dismiss button */}
+          <button
+            className="absolute top-4 right-4 text-sm text-white/60 hover:text-white bg-black/50 px-4 py-2 rounded-lg transition-colors"
+            onMouseDown={handleEmergencyDismiss}
+            onMouseUp={() => setIsDismissing(false)}
+            onMouseLeave={() => setIsDismissing(false)}
+          >
+            {isDismissing ? (
+              <span className="text-red-400">Hold to dismiss...</span>
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+          </button>
         </div>
-      )}
     </div>
   );
 }
