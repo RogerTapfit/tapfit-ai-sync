@@ -372,28 +372,81 @@ export function LiveExerciseTracker({
         ctx.lineTo(srcW, MID_Y);
         ctx.stroke();
         
-        // Bottom marker (red dashed line)
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 4;
+        // Check if tracked landmark is near/crossing the bottom marker
+        const avgTrackedY = trackedLandmarks.length > 0 
+          ? trackedLandmarks.reduce((sum, lm) => sum + lm.y * srcH, 0) / trackedLandmarks.length
+          : 0;
+        const distanceToBottom = Math.abs(avgTrackedY - BOTTOM_Y);
+        const isCrossing = avgTrackedY >= BOTTOM_Y - 5 && avgTrackedY <= BOTTOM_Y + 5;
+        const isNearBottom = distanceToBottom < 30;
+        
+        // Bottom marker (red dashed line) - glows when circle is near/crossing
+        if (isCrossing) {
+          // Add glow effect when crossing
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 30;
+          ctx.strokeStyle = '#ff0000';
+          ctx.lineWidth = 6;
+        } else if (isNearBottom) {
+          // Subtle glow when nearby
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 15;
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 5;
+        } else {
+          // Normal state
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 4;
+        }
         ctx.setLineDash([15, 10]);
-        ctx.globalAlpha = 0.8;
+        ctx.globalAlpha = isCrossing ? 1.0 : 0.8;
         ctx.beginPath();
         ctx.moveTo(0, BOTTOM_Y);
         ctx.lineTo(srcW, BOTTOM_Y);
         ctx.stroke();
+        ctx.shadowBlur = 0; // Reset shadow
         
-        // Highlight tracked landmarks with pulsing rings
+        // Highlight tracked landmarks with reactive colors
         trackedLandmarks.forEach(landmark => {
+          const landmarkY = landmark.y * srcH;
+          const isThisLandmarkCrossing = landmarkY >= BOTTOM_Y - 5 && landmarkY <= BOTTOM_Y + 5;
+          const isBelowLine = landmarkY > BOTTOM_Y;
+          
           ctx.setLineDash([]);
-          ctx.strokeStyle = isRepFlashing ? '#22c55e' : '#3b82f6';
-          ctx.fillStyle = isRepFlashing ? '#22c55e' : '#3b82f6';
-          ctx.lineWidth = 4;
-          ctx.globalAlpha = 0.6;
+          
+          // Color changes based on position relative to line
+          if (isRepFlashing || isThisLandmarkCrossing) {
+            // Bright green flash when counting or crossing
+            ctx.strokeStyle = '#22c55e';
+            ctx.fillStyle = '#22c55e';
+            ctx.shadowColor = '#22c55e';
+            ctx.shadowBlur = 25;
+            ctx.lineWidth = 6;
+            ctx.globalAlpha = 0.9;
+          } else if (isBelowLine) {
+            // Orange when below the line (waiting to go back up)
+            ctx.strokeStyle = '#f97316';
+            ctx.fillStyle = '#f97316';
+            ctx.shadowColor = '#f97316';
+            ctx.shadowBlur = 15;
+            ctx.lineWidth = 5;
+            ctx.globalAlpha = 0.7;
+          } else {
+            // Blue when above the line (ready position)
+            ctx.strokeStyle = '#3b82f6';
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 10;
+            ctx.lineWidth = 4;
+            ctx.globalAlpha = 0.6;
+          }
+          
           ctx.beginPath();
-          ctx.arc(landmark.x * srcW, landmark.y * srcH, 20, 0, 2 * Math.PI);
+          ctx.arc(landmark.x * srcW, landmarkY, isThisLandmarkCrossing ? 25 : 20, 0, 2 * Math.PI);
           ctx.stroke();
-          ctx.globalAlpha = 0.3;
+          ctx.globalAlpha = isThisLandmarkCrossing ? 0.4 : 0.3;
           ctx.fill();
+          ctx.shadowBlur = 0; // Reset shadow
         });
         
         ctx.restore();
