@@ -60,7 +60,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   // Debug states for position tracking (Y-coordinate based)
   const [currentYPosition, setCurrentYPosition] = useState<number>(0);
   const [positionRange, setPositionRange] = useState<number>(0);
-  const [repState, setRepState] = useState<'waiting_for_down' | 'waiting_for_up'>('waiting_for_down');
+  const [repState, setRepState] = useState<'above_threshold' | 'below_threshold'>('above_threshold');
   const [downThreshold, setDownThreshold] = useState<number>(0);
   const [upThreshold, setUpThreshold] = useState<number>(0);
   const [simpleRepMode, setSimpleRepMode] = useState(false);
@@ -69,7 +69,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const positionHistoryRef = useRef<number[]>([]);
   const highestPositionRef = useRef<number>(Infinity); // Minimum Y value (top of movement)
   const lowestPositionRef = useRef<number>(0); // Maximum Y value (bottom of movement)
-  const repStateRef = useRef<'waiting_for_down' | 'waiting_for_up'>('waiting_for_down');
+  const repStateRef = useRef<'above_threshold' | 'below_threshold'>('above_threshold');
   const lastStateChangeRef = useRef<number>(0); // Timestamp of last state transition
   
   // Velocity tracking states
@@ -564,24 +564,11 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         const MIN_STATE_DURATION = 400;
         
         if (confidence > 30) {
-          if (repStateRef.current === 'waiting_for_down') {
-            // Landmark dipped below BOTTOM_MARKER
+          if (repStateRef.current === 'above_threshold') {
+            // Nose dipped below red line - COUNT THE REP!
             if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
-              repStateRef.current = 'waiting_for_up';
-              setRepState('waiting_for_up');
-              lastStateChangeRef.current = now;
-              if (repStartTimeRef.current === 0) repStartTimeRef.current = now;
-              console.log('[Rep Counter] -> DOWN (below bottom marker)', { 
-                exerciseType, 
-                smoothedY, 
-                BOTTOM_MARKER 
-              });
-            }
-          } else if (repStateRef.current === 'waiting_for_up') {
-            // Landmark rose above MID_MARKER
-            if (smoothedY < MID_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
-              repStateRef.current = 'waiting_for_down';
-              setRepState('waiting_for_down');
+              repStateRef.current = 'below_threshold';
+              setRepState('below_threshold');
               lastStateChangeRef.current = now;
               
               const newReps = reps + 1;
@@ -609,17 +596,17 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
                 lastAnnouncedRep.current = newReps;
               }
               
-              const detection = detectExercise(exerciseType, result.landmarks, 'up');
+              const detection = detectExercise(exerciseType, result.landmarks, 'down');
               setFormScore(detection.formScore);
               setFeedback(detection.feedback);
               setFormIssues(detection.formIssues);
               formScoresRef.current.push(detection.formScore);
               
-              console.log('[Rep Counter] REP COUNTED!', { 
+              console.log('[Rep Counter] REP COUNTED on downward cross!', { 
                 exerciseType, 
                 rep: newReps, 
                 smoothedY, 
-                MID_MARKER, 
+                BOTTOM_MARKER, 
                 confidence 
               });
               
@@ -631,6 +618,18 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               } else {
                 toast.success(`Rep ${newReps}!`, { duration: 1000 });
               }
+            }
+          } else if (repStateRef.current === 'below_threshold') {
+            // Nose rose back above mid line - RESET for next rep
+            if (smoothedY < MID_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
+              repStateRef.current = 'above_threshold';
+              setRepState('above_threshold');
+              lastStateChangeRef.current = now;
+              console.log('[Rep Counter] Reset - ready for next rep', { 
+                exerciseType, 
+                smoothedY, 
+                MID_MARKER 
+              });
             }
           }
         }
@@ -872,7 +871,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     positionHistoryRef.current = [];
     highestPositionRef.current = Infinity;
     lowestPositionRef.current = 0;
-    repStateRef.current = 'waiting_for_down';
+    repStateRef.current = 'above_threshold';
     lastStateChangeRef.current = 0;
     
     stopCamera();

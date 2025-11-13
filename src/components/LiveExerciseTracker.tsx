@@ -790,11 +790,11 @@ export function LiveExerciseTracker({
                   </span>
                 </div>
                 <Badge className={cn(
-                  repState === 'waiting_for_down' ? "bg-blue-500" : "bg-green-500"
+                  repState === 'above_threshold' ? "bg-blue-500" : "bg-green-500"
                 )}>
                   {selectedExercise === 'squats'
-                    ? (repState === 'waiting_for_down' ? 'Squat Down' : 'Stand Up')
-                    : (repState === 'waiting_for_down' ? 'Nose Down' : 'Nose Up')
+                    ? (repState === 'above_threshold' ? 'Squat Down' : 'Stand Up')
+                    : (repState === 'above_threshold' ? 'Nose Down' : 'Nose Up')
                   }
                 </Badge>
               </div>
@@ -832,7 +832,7 @@ export function LiveExerciseTracker({
                     >
                       <div className={cn(
                         "w-8 h-8 rounded-full border-4 border-white shadow-lg transition-colors",
-                        repState === 'waiting_for_down' ? "bg-blue-500" : "bg-green-500"
+                        repState === 'above_threshold' ? "bg-blue-500" : "bg-green-500"
                       )} />
                     </div>
                   </>
@@ -912,8 +912,8 @@ export function LiveExerciseTracker({
               <Badge className="text-xs px-3 py-2 backdrop-blur-md bg-black/70 border border-white/30 text-white font-mono">
                 <div className="font-bold text-sm">
                   {selectedExercise === 'squats' 
-                    ? (repState === 'waiting_for_down' ? '↓ Squat Down' : '↑ Stand Up')
-                    : (repState === 'waiting_for_down' ? '↓ Down' : '↑ Up')
+                    ? (repState === 'above_threshold' ? '↓ Squat Down' : '↑ Stand Up')
+                    : (repState === 'above_threshold' ? '↓ Down' : '↑ Up')
                   }
                 </div>
                 <div className="text-[10px] opacity-80">
