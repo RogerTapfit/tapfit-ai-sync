@@ -353,7 +353,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Card>
 
-      {/* SEE FOOD and BODY SCAN - side by side on wide, stacked on small */}
+      {/* SEE FOOD, BODY SCAN, and FITNESS ALARM - grid layout */}
       <div className="my-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* SEE FOOD */}
         <Button
@@ -383,6 +383,22 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
             <div className="flex flex-col items-start">
               <span className="text-2xl font-black">BODY SCAN</span>
               <span className="text-sm font-normal opacity-90">AI Body Analyzer</span>
+            </div>
+          </div>
+        </Button>
+
+        {/* FITNESS ALARM - spans full width on mobile, single cell on desktop */}
+        <Button
+          size="lg"
+          onClick={() => navigate('/fitness-alarm')}
+          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-2xl hover:shadow-green-500/40 transform hover:scale-105 transition-transform duration-200 border-0 rounded-2xl w-full sm:col-span-2"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity"></div>
+          <div className="relative flex items-center gap-4 justify-center">
+            <Clock className="h-8 w-8" />
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black">FITNESS ALARM</span>
+              <span className="text-sm font-normal opacity-90">Wake Up & Push Up</span>
             </div>
           </div>
         </Button>

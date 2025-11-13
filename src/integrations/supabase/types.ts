@@ -140,6 +140,44 @@ export type Database = {
         }
         Relationships: []
       }
+      alarm_completions: {
+        Row: {
+          alarm_id: string
+          completed_at: string
+          created_at: string
+          id: string
+          push_ups_completed: number
+          time_to_complete: number
+          user_id: string
+        }
+        Insert: {
+          alarm_id: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          push_ups_completed: number
+          time_to_complete: number
+          user_id: string
+        }
+        Update: {
+          alarm_id?: string
+          completed_at?: string
+          created_at?: string
+          id?: string
+          push_ups_completed?: number
+          time_to_complete?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alarm_completions_alarm_id_fkey"
+            columns: ["alarm_id"]
+            isOneToOne: false
+            referencedRelation: "fitness_alarms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alcohol_entries: {
         Row: {
           alcohol_content: number | null
@@ -970,6 +1008,45 @@ export type Database = {
           set_number?: number
           user_id?: string
           weight_used?: number | null
+        }
+        Relationships: []
+      }
+      fitness_alarms: {
+        Row: {
+          alarm_sound: string
+          alarm_time: string
+          created_at: string
+          days_of_week: Json
+          enabled: boolean
+          id: string
+          label: string | null
+          push_up_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alarm_sound?: string
+          alarm_time: string
+          created_at?: string
+          days_of_week?: Json
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          push_up_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alarm_sound?: string
+          alarm_time?: string
+          created_at?: string
+          days_of_week?: Json
+          enabled?: boolean
+          id?: string
+          label?: string | null
+          push_up_count?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -48,6 +48,9 @@ import ProfileCustomization from "./pages/ProfileCustomization";
 import Leaderboard from "./pages/Leaderboard";
 import SharedMenuItem from "./pages/SharedMenuItem";
 import MealFeed from "./pages/MealFeed";
+import FitnessAlarm from "./pages/FitnessAlarm";
+import AlarmSetup from "./pages/AlarmSetup";
+import AlarmRinging from "./pages/AlarmRinging";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -238,6 +241,10 @@ const App = () => {
             <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
             <Route path="/live-workout" element={<AuthGuard fallback={<Auth />}><LiveWorkout /></AuthGuard>} />
             <Route path="/shared/:type/:token" element={<SharedMenuItem />} />
+            <Route path="/fitness-alarm" element={<AuthGuard fallback={<Auth />}><FitnessAlarm /></AuthGuard>} />
+            <Route path="/alarm-setup" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
+            <Route path="/alarm-setup/:id" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
+            <Route path="/alarm-ringing/:id" element={<AuthGuard fallback={<Auth />}><AlarmRinging /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
               <AuthGuard fallback={<Auth />}>
