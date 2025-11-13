@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useWorkoutAudio } from './useWorkoutAudio';
 import { getCoachingPhrase, shouldCoach } from '@/services/workoutVoiceCoaching';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { playRepBeep, playSuccessBeep } from '@/lib/audioFeedback';
 
 interface UseLiveExerciseProps {
   exerciseType: ExerciseType;
@@ -607,10 +608,14 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
             try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (error) { console.log('Haptics not available:', error); }
 
+            // Play beep sound for rep feedback
+            playRepBeep(0.3);
+
             setIsRepFlashing(true);
             setTimeout(() => setIsRepFlashing(false), 200);
 
             if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
+              playSuccessBeep(0.4); // Extra sound for milestones
               speak(`${newReps} reps`, 'normal');
               lastAnnouncedRep.current = newReps;
             }
