@@ -861,7 +861,7 @@ export function LiveExerciseTracker({
                 <span>
                   {selectedExercise === 'squats'
                     ? 'Your knees are being tracked. Squat down until your knees cross the bottom marker (red line), then stand back up past the mid marker (yellow line) to count a rep.'
-                    : 'Your nose is being tracked. Dip below the bottom marker (red line on screen) and return above the mid marker (yellow line) to count a rep.'
+                    : 'Your nose is being tracked. A rep counts the moment your nose dips below the bottom marker (red line).'
                   }
                 </span>
               </div>

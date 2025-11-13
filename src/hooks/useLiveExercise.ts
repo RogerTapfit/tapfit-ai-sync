@@ -63,7 +63,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const [repState, setRepState] = useState<'above_threshold' | 'below_threshold'>('above_threshold');
   const [downThreshold, setDownThreshold] = useState<number>(0);
   const [upThreshold, setUpThreshold] = useState<number>(0);
-  const [simpleRepMode, setSimpleRepMode] = useState(false);
+  const [simpleRepMode, setSimpleRepMode] = useState(true);
   
   // Position tracking refs for predictive rep counting
   const positionHistoryRef = useRef<number[]>([]);
@@ -100,6 +100,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const formScoresRef = useRef<number[]>([]);
   const lastRepTimeRef = useRef<number>(0);
   const lastAnnouncedRep = useRef<number>(0);
+  const repsRef = useRef<number>(0);
   const repStartTimeRef = useRef<number>(0);
   const downPhaseStartRef = useRef<number>(0);
   const upPhaseStartRef = useRef<number>(0);
@@ -561,7 +562,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         // State machine with fixed markers
         const now = Date.now();
         const timeSinceLastStateChange = now - lastStateChangeRef.current;
-        const MIN_STATE_DURATION = 400;
+        const MIN_STATE_DURATION = 250;
         
         console.log('[Rep Counter DEBUG]', {
           exerciseType,
@@ -574,7 +575,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
           canCount: timeSinceLastStateChange > MIN_STATE_DURATION
         });
         
-        if (confidence > 30) {
+        if (simpleRepMode || confidence > 10) {
           if (repStateRef.current === 'above_threshold') {
             // Nose dipped below red line - COUNT THE REP!
             console.log('[Rep Counter] Checking down cross', { 
@@ -589,7 +590,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
               setRepState('below_threshold');
               lastStateChangeRef.current = now;
               
-              const newReps = reps + 1;
+              const newReps = repsRef.current + 1;
+              repsRef.current = newReps;
               setReps(newReps);
               
               const repDuration = now - (repStartTimeRef.current || now);
@@ -712,7 +714,12 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
       }
     }
   }, [reps, isActive, targetReps, speak]);
-
+  
+  // Keep a live ref of reps to avoid stale increments in callbacks
+  useEffect(() => {
+    repsRef.current = reps;
+  }, [reps]);
+  
   // Context-aware voice resume - announce current rep when voice is turned back on
   useEffect(() => {
     // Detect when voice is turned ON (false -> true)
