@@ -18,6 +18,7 @@ export default function AlarmRinging() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [isDismissing, setIsDismissing] = useState(false);
   const dismissTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAutoStartedRef = useRef(false);
 
   const { play: playAlarm, stop: stopAlarm } = useAlarmAudio(alarm?.alarm_sound || 'classic');
 
@@ -73,13 +74,16 @@ export default function AlarmRinging() {
 
   // Auto-start exercise tracking when alarm loads
   useEffect(() => {
-    if (alarm && !hasStarted && !isActive) {
+    if (alarm && !hasStarted && !isActive && !hasAutoStartedRef.current) {
       console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
+      console.log('📊 Target push-ups:', alarm.push_up_count);
+      console.log('🔊 Alarm sound:', alarm.alarm_sound);
+      hasAutoStartedRef.current = true;
       setHasStarted(true);
       setStartTime(Date.now());
       startExercise();
     }
-  }, [alarm, hasStarted, isActive]);
+  }, [alarm]);
 
   // Start alarm sound
   useEffect(() => {
