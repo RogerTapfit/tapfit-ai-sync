@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AlarmCard } from '@/components/AlarmCard';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
 import { useAlarmScheduler } from '@/hooks/useAlarmScheduler';
-import { Plus, ArrowLeft, Bell } from 'lucide-react';
+import { Plus, ArrowLeft, Bell, BarChart3 } from 'lucide-react';
 import { alarmNotificationService } from '@/services/alarmNotificationService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -76,7 +76,13 @@ export default function FitnessAlarm() {
               <ArrowLeft className="h-6 w-6" />
             </Button>
             <h1 className="text-2xl font-bold text-foreground">Fitness Alarm</h1>
-            <div className="w-10" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/alarm-statistics')}
+            >
+              <BarChart3 className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
