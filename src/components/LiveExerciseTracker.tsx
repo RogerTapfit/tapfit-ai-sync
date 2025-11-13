@@ -57,12 +57,14 @@ interface LiveExerciseTrackerProps {
   preSelectedExercise?: ExerciseType;
   machineName?: string;
   onBackToMachine?: () => void;
+  onBackToDashboard?: () => void;
 }
 
 export function LiveExerciseTracker({ 
   preSelectedExercise,
   machineName,
-  onBackToMachine 
+  onBackToMachine,
+  onBackToDashboard 
 }: LiveExerciseTrackerProps) {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseType>(preSelectedExercise || 'pushups');
   const [targetReps, setTargetReps] = useState(10);
@@ -509,6 +511,19 @@ export function LiveExerciseTracker({
   if (showResults && workoutStats) {
     return (
       <Card className="w-full max-w-4xl mx-auto p-6 space-y-6">
+        {/* Back to Dashboard Button */}
+        {onBackToDashboard && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBackToDashboard}
+            className="mb-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        )}
+        
         <div className="text-center space-y-4">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-bold">Workout Complete!</h2>
@@ -563,6 +578,19 @@ export function LiveExerciseTracker({
   if (!isActive) {
     return (
       <div className="w-full max-w-6xl mx-auto space-y-4">
+        {/* Back to Dashboard Button */}
+        {onBackToDashboard && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBackToDashboard}
+            className="mb-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        )}
+        
         <Card className="p-6 space-y-4">
           <div className="text-center space-y-4">
             <Activity className="w-16 h-16 mx-auto text-primary" />
@@ -766,6 +794,19 @@ export function LiveExerciseTracker({
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-4">
+      {/* Back to Dashboard Button */}
+      {onBackToDashboard && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBackToDashboard}
+          className="mb-2"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      )}
+
       {/* Coach Avatar - Clickable for Encouragement with Dynamic Reactions */}
       {avatarData && (
         <Card className="p-4">
