@@ -70,7 +70,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
   const highestPositionRef = useRef<number>(Infinity); // Minimum Y value (top of movement)
   const lowestPositionRef = useRef<number>(0); // Maximum Y value (bottom of movement)
   const repStateRef = useRef<'above_threshold' | 'below_threshold'>('above_threshold');
-  const lastStateChangeRef = useRef<number>(0); // Timestamp of last state transition
+  const lastStateChangeRef = useRef<number>(Date.now()); // Timestamp of last state transition
   
   // Velocity tracking states
   const [concentricVelocity, setConcentricVelocity] = useState<number>(0); // Time for up phase (ms)
@@ -563,9 +563,27 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         const timeSinceLastStateChange = now - lastStateChangeRef.current;
         const MIN_STATE_DURATION = 400;
         
+        console.log('[Rep Counter DEBUG]', {
+          exerciseType,
+          confidence,
+          smoothedY,
+          BOTTOM_MARKER,
+          MID_MARKER,
+          repState: repStateRef.current,
+          timeSinceLastStateChange,
+          canCount: timeSinceLastStateChange > MIN_STATE_DURATION
+        });
+        
         if (confidence > 30) {
           if (repStateRef.current === 'above_threshold') {
             // Nose dipped below red line - COUNT THE REP!
+            console.log('[Rep Counter] Checking down cross', { 
+              smoothedY, 
+              BOTTOM_MARKER, 
+              crossedDown: smoothedY > BOTTOM_MARKER,
+              canCount: timeSinceLastStateChange > MIN_STATE_DURATION
+            });
+            
             if (smoothedY > BOTTOM_MARKER && timeSinceLastStateChange > MIN_STATE_DURATION) {
               repStateRef.current = 'below_threshold';
               setRepState('below_threshold');
@@ -813,6 +831,14 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     lastRepTimeRef.current = 0;
     lastAnnouncedRep.current = 0;
     
+    // Reset position tracking refs for clean start
+    positionHistoryRef.current = [];
+    highestPositionRef.current = Infinity;
+    lowestPositionRef.current = 0;
+    repStateRef.current = 'above_threshold';
+    setRepState('above_threshold');
+    lastStateChangeRef.current = Date.now(); // Initialize to current time for proper delay
+    
     // Set initial ideal pose (without animation)
     if (showIdealPose) {
       const initialPose = getIdealPoseForPhase('up');
@@ -872,7 +898,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     highestPositionRef.current = Infinity;
     lowestPositionRef.current = 0;
     repStateRef.current = 'above_threshold';
-    lastStateChangeRef.current = 0;
+    lastStateChangeRef.current = Date.now(); // Initialize to current time
     
     stopCamera();
     
