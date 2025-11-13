@@ -892,36 +892,6 @@ export function LiveExerciseTracker({
             style={{ mixBlendMode: 'normal' }}
           />
           
-          {/* Phase Position Indicator */}
-          <div className="absolute right-4 top-20 z-30 pointer-events-none">
-            <Badge className={cn(
-              "text-base px-4 py-2 font-bold backdrop-blur-md border-2 shadow-2xl transition-all duration-200",
-              currentPhase === 'up' && "bg-green-500/90 border-green-400 text-white scale-110",
-              currentPhase === 'down' && "bg-blue-500/90 border-blue-400 text-white scale-110",
-              currentPhase === 'transition' && "bg-yellow-500/50 border-yellow-400 text-white scale-95"
-            )}>
-              {currentPhase === 'up' && '↑ UP'}
-              {currentPhase === 'down' && '↓ DOWN'}
-              {currentPhase === 'transition' && '⟷'}
-            </Badge>
-          </div>
-          
-          {/* Rep State Badge */}
-          {isActive && (
-            <div className="absolute left-4 top-20 z-30 pointer-events-none">
-              <Badge className="text-xs px-3 py-2 backdrop-blur-md bg-black/70 border border-white/30 text-white font-mono">
-                <div className="font-bold text-sm">
-                  {selectedExercise === 'squats' 
-                    ? (repState === 'above_threshold' ? '↓ Squat Down' : '↑ Stand Up')
-                    : (repState === 'above_threshold' ? '↓ Down' : '↑ Up')
-                  }
-                </div>
-                <div className="text-[10px] opacity-80">
-                  {selectedExercise === 'squats' ? 'Knee' : 'Nose'} Y: {currentYPosition.toFixed(2)} | Conf: {Math.round(poseConfidence)}%
-                </div>
-              </Badge>
-            </div>
-          )}
           
           {/* Animated Rep Counter - Right Side Display */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none z-20">
