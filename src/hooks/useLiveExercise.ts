@@ -418,6 +418,66 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     }
   }, [reps, currentSet, targetReps, onComplete, speak]);
 
+  // Centralized rep counting function with guard
+  const countRepNow = useCallback(async () => {
+    const now = Date.now();
+    const GUARD_MS = 150; // Prevent double-counting
+    
+    if (now - lastCountTimeRef.current < GUARD_MS) {
+      console.log('[Rep Counter] Guard prevented double-count', { timeSince: now - lastCountTimeRef.current });
+      return;
+    }
+
+    lastBelowRef.current = true;
+    lastCountTimeRef.current = now;
+
+    const newReps = repsRef.current + 1;
+    repsRef.current = newReps;
+    setReps(newReps);
+
+    const repDuration = now - (repStartTimeRef.current || now);
+    setLastRepDuration(repDuration);
+    repStartTimeRef.current = now;
+    lastRepTimeRef.current = now;
+
+    const speed = analyzeRepSpeed(repDuration);
+    setRepSpeed(speed);
+
+    try { 
+      await Haptics.impact({ style: ImpactStyle.Medium }); 
+    } catch (error) { 
+      console.log('Haptics not available:', error); 
+    }
+
+    playRepBeep(0.3);
+    setIsRepFlashing(true);
+    setTimeout(() => setIsRepFlashing(false), 200);
+
+    if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
+      playSuccessBeep(0.4);
+      speak(`${newReps} reps`, 'normal');
+      lastAnnouncedRep.current = newReps;
+    }
+
+    repStateRef.current = 'below_threshold';
+    setRepState('below_threshold');
+    
+    console.log('[Rep Counter] ✅ REP COUNTED!', { 
+      newReps, 
+      timestamp: now,
+      exerciseType
+    });
+
+    if (newReps >= targetReps) {
+      speak('Set complete!', 'high');
+      setCurrentSet(prev => prev + 1);
+      startRestTimer();
+      toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+    } else {
+      toast.success(`Rep ${newReps}!`, { duration: 800 });
+    }
+  }, [exerciseType, targetReps, analyzeRepSpeed, playRepBeep, speak, startRestTimer, restDuration]);
+
   // Process video frame
   const processFrame = useCallback(async (timestamp: number) => {
     if (!videoRef.current || !isInitialized) return;
@@ -519,14 +579,68 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         });
       }
 
-      // Active workout mode: Position-based rep counter
-      if (isActive) {
-        console.log('[Rep Counter] Active workout frame processing', {
-          timestamp: Date.now(),
-          confidence,
-          landmarksCount: result.landmarks.length,
+  // Centralized rep counting function with guard
+      const countRepNow = useCallback(async () => {
+        const now = Date.now();
+        const GUARD_MS = 150; // Prevent double-counting
+        
+        if (now - lastCountTimeRef.current < GUARD_MS) {
+          console.log('[Rep Counter] Guard prevented double-count', { timeSince: now - lastCountTimeRef.current });
+          return;
+        }
+
+        lastBelowRef.current = true;
+        lastCountTimeRef.current = now;
+
+        const newReps = repsRef.current + 1;
+        repsRef.current = newReps;
+        setReps(newReps);
+
+        const repDuration = now - (repStartTimeRef.current || now);
+        setLastRepDuration(repDuration);
+        repStartTimeRef.current = now;
+        lastRepTimeRef.current = now;
+
+        const speed = analyzeRepSpeed(repDuration);
+        setRepSpeed(speed);
+
+        try { 
+          await Haptics.impact({ style: ImpactStyle.Medium }); 
+        } catch (error) { 
+          console.log('Haptics not available:', error); 
+        }
+
+        playRepBeep(0.3);
+        setIsRepFlashing(true);
+        setTimeout(() => setIsRepFlashing(false), 200);
+
+        if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
+          playSuccessBeep(0.4);
+          speak(`${newReps} reps`, 'normal');
+          lastAnnouncedRep.current = newReps;
+        }
+
+        repStateRef.current = 'below_threshold';
+        setRepState('below_threshold');
+        
+        console.log('[Rep Counter] ✅ REP COUNTED!', { 
+          newReps, 
+          timestamp: now,
           exerciseType
         });
+
+        if (newReps >= targetReps) {
+          speak('Set complete!', 'high');
+          setCurrentSet(prev => prev + 1);
+          startRestTimer();
+          toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+        } else {
+          toast.success(`Rep ${newReps}!`, { duration: 800 });
+        }
+      }, [exerciseType, targetReps, analyzeRepSpeed, playRepBeep, speak, startRestTimer, restDuration]);
+
+      // Active workout mode: Position-based rep counter
+      if (isActive) {
         
         let trackedLandmark: Keypoint | null = null;
         let MID_MARKER = 0.50;
@@ -617,62 +731,8 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
           // Edge detection: Count on the FIRST frame crossing below threshold
           if (below && !lastBelowRef.current && now - lastCountTimeRef.current > COOLDOWN) {
-            console.log('[Rep Counter] 🎯 COUNTING REP NOW!', { decisionY, BOTTOM_MARKER, timestamp: now });
-            lastBelowRef.current = true;
-            lastCountTimeRef.current = now;
-
-            const newReps = repsRef.current + 1;
-            repsRef.current = newReps;
-            setReps(newReps);
-
-            const repDuration = now - (repStartTimeRef.current || now);
-            setLastRepDuration(repDuration);
-            repStartTimeRef.current = now;
-            lastRepTimeRef.current = now;
-
-            const speed = analyzeRepSpeed(repDuration);
-            setRepSpeed(speed);
-
-            try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (error) { console.log('Haptics not available:', error); }
-
-            // Play beep sound for rep feedback
-            playRepBeep(0.3);
-
-            setIsRepFlashing(true);
-            setTimeout(() => setIsRepFlashing(false), 200);
-
-            if (newReps % 5 === 0 && newReps !== lastAnnouncedRep.current) {
-              playSuccessBeep(0.4); // Extra sound for milestones
-              speak(`${newReps} reps`, 'normal');
-              lastAnnouncedRep.current = newReps;
-            }
-
-            const detection = detectExercise(exerciseType, result.landmarks, 'down');
-            setFormScore(detection.formScore);
-            setFeedback(detection.feedback);
-            setFormIssues(detection.formIssues);
-            formScoresRef.current.push(detection.formScore);
-
-            // Update UI state immediately after counting
-            repStateRef.current = 'below_threshold';
-            setRepState('below_threshold');
-            
-            console.log('[Rep Counter] ✅ REP COUNTED!', { 
-              decisionY: decisionY.toFixed(3), 
-              BOTTOM_MARKER: BOTTOM_MARKER.toFixed(3), 
-              newReps, 
-              timestamp: now,
-              exerciseType
-            });
-
-            if (newReps >= targetReps) {
-              speak('Set complete!', 'high');
-              setCurrentSet(prev => prev + 1);
-              startRestTimer();
-              toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
-            } else {
-              toast.success(`Rep ${newReps}!`, { duration: 800 });
-            }
+            console.log('[Rep Counter] 🎯 Internal backup edge detection');
+            await countRepNow();
           } else if (!below) {
             // Ready to count next time we dip below
             console.log('[Rep Counter] Back above threshold - ready for next rep', { decisionY: decisionY.toFixed(3) });
@@ -1144,6 +1204,7 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     updateRestDuration,
     skipRest,
     completeWorkout,
+    countRepNow,
     start,
     pause,
     resume,

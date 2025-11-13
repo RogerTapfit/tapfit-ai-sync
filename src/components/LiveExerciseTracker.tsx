@@ -73,6 +73,7 @@ export function LiveExerciseTracker({
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const visualCrossingRef = useRef<{ below: boolean; initialized: boolean }>({ below: false, initialized: false });
   const { awardCoins } = useTapCoins();
   const { startWorkout: logWorkoutStart, logExercise, completeWorkout: logWorkoutComplete } = useWorkoutLogger();
   const { avatarData } = useRobotAvatar();
@@ -188,6 +189,7 @@ export function LiveExerciseTracker({
     updateRestDuration,
     skipRest,
     completeWorkout,
+    countRepNow,
     start,
     pause,
     resume,
@@ -462,6 +464,34 @@ export function LiveExerciseTracker({
           ctx.fill();
           ctx.shadowBlur = 0; // Reset shadow
         });
+
+        // Visual crossing detection for rep counting
+        if (isActive && !isPaused) {
+          const avgNormalizedY = selectedExercise === 'squats' 
+            ? (trackedLandmarks.reduce((sum, l) => sum + l.y, 0) / trackedLandmarks.length)
+            : trackedLandmarks[0].y;
+          const THRESHOLD = selectedExercise === 'squats' ? 0.72 : 0.68;
+          const isBelowLine = avgNormalizedY > THRESHOLD;
+          
+          // Initialize on first frame to avoid instant count if starting below
+          if (!visualCrossingRef.current.initialized) {
+            visualCrossingRef.current = { below: isBelowLine, initialized: true };
+            console.log('[Visual Counter] Initialized', { startedBelow: isBelowLine, avgNormalizedY: avgNormalizedY.toFixed(3) });
+          } else {
+            // Detect above -> below crossing
+            if (isBelowLine && !visualCrossingRef.current.below) {
+              console.log('[Visual Counter] 🎯 Crossing detected — counting rep', { 
+                avgNormalizedY: avgNormalizedY.toFixed(3), 
+                THRESHOLD: THRESHOLD.toFixed(3) 
+              });
+              countRepNow();
+            } else if (!isBelowLine && visualCrossingRef.current.below) {
+              console.log('[Visual Counter] Back above line — ready for next rep', { avgNormalizedY: avgNormalizedY.toFixed(3) });
+            }
+            
+            visualCrossingRef.current.below = isBelowLine;
+          }
+        }
         
         ctx.restore();
       }
