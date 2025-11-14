@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlarmPushUpTracker } from '@/components/AlarmPushUpTracker';
+import { Progress } from '@/components/ui/progress';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
 import { useLiveExercise } from '@/hooks/useLiveExercise';
 import { useAlarmAudio } from '@/hooks/useAlarmAudio';
@@ -11,6 +11,8 @@ import { alarmStorageService } from '@/services/alarmStorageService';
 import { Play, SwitchCamera, FlipHorizontal, Volume2, VolumeX, Activity, Pause } from 'lucide-react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { cn } from '@/lib/utils';
+import { drawPose } from '@/features/bodyScan/ml/poseVideo';
+import { toast } from 'sonner';
 
 export default function AlarmRinging() {
   const navigate = useNavigate();
@@ -19,9 +21,10 @@ export default function AlarmRinging() {
   const [alarm, setAlarm] = useState<any>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [isMirrored, setIsMirrored] = useState(true);
+  const [isAlarmMuted, setIsAlarmMuted] = useState(false);
   const completedRef = useRef(false);
   const hasAutoStartedRef = useRef(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { play: playAlarm, stop: stopAlarm } = useAlarmAudio(alarm?.alarm_sound || 'classic');
 
@@ -61,6 +64,8 @@ export default function AlarmRinging() {
     reps,
     landmarks,
     formScore,
+    formIssues,
+    misalignedJoints,
     start: startExercise,
     isActive,
     isInitialized,
@@ -87,6 +92,10 @@ export default function AlarmRinging() {
     targetReps: alarm?.push_up_count ?? 10,
     onComplete: handleComplete,
   });
+
+  // Local state for mirror since useLiveExercise doesn't provide it on alarm page
+  const [isMirrored, setIsMirrored] = useState(true);
+  const toggleMirror = () => setIsMirrored(!isMirrored);
 
   // Load alarm data
   useEffect(() => {
@@ -118,20 +127,88 @@ export default function AlarmRinging() {
     }
   }, [alarm, isInitialized, isActive, landmarks.length]);
 
-  // Debug: Log landmarks detection
+  // Canvas sizing - match video display dimensions with device pixel ratio
   useEffect(() => {
+    if (!canvasRef.current || !videoRef.current) return;
+    if (!isActive) return;
+
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+
+    const updateCanvasSize = () => {
+      const rect = video.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      if (rect.width && rect.height) {
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+      }
+    };
+
+    updateCanvasSize();
+    video.addEventListener('loadedmetadata', updateCanvasSize);
+    window.addEventListener('orientationchange', updateCanvasSize);
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateCanvasSize();
+    });
+    resizeObserver.observe(video);
+
+    return () => {
+      video.removeEventListener('loadedmetadata', updateCanvasSize);
+      window.removeEventListener('orientationchange', updateCanvasSize);
+      resizeObserver.disconnect();
+    };
+  }, [isActive]);
+
+  // Draw landmarks with proper scaling for object-fit: cover
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth;
+    const cssH = canvas.clientHeight;
+
+    // Clear entire canvas
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Source (intrinsic) video size
+    const srcW = video.videoWidth || cssW;
+    const srcH = video.videoHeight || cssH;
+
+    // object-cover: scale to fill and center
+    const scale = Math.max(cssW / srcW, cssH / srcH);
+    const dx = (cssW - srcW * scale) / 2;
+    const dy = (cssH - srcH * scale) / 2;
+
+    // Apply transform
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.translate(dx, dy);
+    ctx.scale(scale, scale);
+
+    // Draw pose if landmarks available
     if (landmarks.length > 0) {
-      console.log(`🎯 Landmarks detected: ${landmarks.length} points`);
+      drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
     }
-  }, [landmarks.length]);
+  }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
   useEffect(() => {
-    if (alarm) {
+    if (alarm && !isAlarmMuted) {
+      console.log('🔊 Playing alarm sound:', alarm.alarm_sound);
       playAlarm();
       
-      // Vibrate device
+      // Start vibration pattern if supported
       if ('vibrate' in navigator) {
+        console.log('📳 Starting vibration pattern');
+        navigator.vibrate([500, 200, 500, 200, 500]);
         const vibrateInterval = setInterval(() => {
           navigator.vibrate([500, 100, 500]);
         }, 2000);
@@ -143,7 +220,7 @@ export default function AlarmRinging() {
       }
     }
     return () => stopAlarm();
-  }, [alarm]);
+  }, [alarm, isAlarmMuted]);
 
   // Check if target reached
   useEffect(() => {
@@ -247,7 +324,7 @@ export default function AlarmRinging() {
           isActive && currentPhase === 'down' && "ring-4 ring-blue-500/50",
           isActive && currentPhase === 'transition' && "ring-4 ring-yellow-500/50"
         )}>
-          <div className="relative aspect-[4/3]">
+          <div className="relative aspect-[9/16] bg-black max-w-2xl mx-auto">
             <video
               ref={videoRef}
               autoPlay
@@ -258,10 +335,15 @@ export default function AlarmRinging() {
                 isMirrored && "scale-x-[-1]"
               )}
             />
+            <canvas
+              ref={canvasRef}
+              className={cn("absolute inset-0 w-full h-full pointer-events-none", isMirrored && "scale-x-[-1]")}
+              style={{ mixBlendMode: 'normal' }}
+            />
             
             {/* Camera Controls - Top Right */}
             {isActive && (
-              <div className="absolute top-4 right-4 flex gap-2 z-20">
+              <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
                 <Button
                   onClick={switchCamera}
                   size="icon"
@@ -271,11 +353,11 @@ export default function AlarmRinging() {
                 </Button>
                 
                 <Button
-                  onClick={() => setIsMirrored(!isMirrored)}
+                  onClick={toggleMirror}
                   size="icon"
                   className={cn(
-                    "rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20",
-                    isMirrored && "ring-2 ring-primary"
+                    "rounded-full w-10 h-10 backdrop-blur-sm border border-white/20",
+                    isMirrored ? "bg-primary/70 hover:bg-primary/80" : "bg-black/50 hover:bg-black/70"
                   )}
                 >
                   <FlipHorizontal className="w-4 h-4 text-white" />
@@ -284,13 +366,37 @@ export default function AlarmRinging() {
                 <Button
                   onClick={toggleVoice}
                   size="icon"
-                  className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                  className={cn(
+                    "rounded-full w-10 h-10 backdrop-blur-sm border border-white/20",
+                    isVoiceEnabled ? "bg-blue-500/70 hover:bg-blue-600/70" : "bg-black/50 hover:bg-black/70"
+                  )}
                 >
                   {isVoiceEnabled ? (
                     <Volume2 className="w-4 h-4 text-white" />
                   ) : (
                     <VolumeX className="w-4 h-4 text-white" />
                   )}
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setIsAlarmMuted(!isAlarmMuted);
+                    if (isAlarmMuted) {
+                      playAlarm();
+                      toast.info('Alarm unmuted');
+                    } else {
+                      stopAlarm();
+                      toast.success('Alarm muted');
+                    }
+                  }}
+                  size="icon"
+                  className={cn(
+                    "rounded-full w-10 h-10 backdrop-blur-sm border border-white/20",
+                    isAlarmMuted ? "bg-orange-500/70 hover:bg-orange-600/70" : "bg-black/50 hover:bg-black/70"
+                  )}
+                  title={isAlarmMuted ? "Unmute Alarm" : "Mute Alarm"}
+                >
+                  {isAlarmMuted ? <VolumeX className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-white" />}
                 </Button>
               </div>
             )}
@@ -339,15 +445,6 @@ export default function AlarmRinging() {
               </div>
             )}
             
-            {/* Pose tracking overlay */}
-            <AlarmPushUpTracker
-              landmarks={landmarks}
-              reps={reps}
-              targetReps={alarm.push_up_count}
-              formScore={formScore}
-              hideHud
-              showReferenceLine
-            />
             
             {/* Direction cues - left side */}
             {isActive && currentPhase && (

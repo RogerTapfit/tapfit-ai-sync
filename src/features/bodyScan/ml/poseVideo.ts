@@ -199,9 +199,7 @@ export function drawPose(
   isRepFlashing?: boolean,
   showReferenceLine?: boolean
 ): void {
-  if (landmarks.length < 33) return;
-
-  // Draw reference line first (so it's behind the skeleton)
+  // Draw reference line FIRST (before landmark check so it's always visible)
   if (showReferenceLine) {
     const referenceY = height * 0.33; // 33% from top (shoulder height for push-up depth)
     ctx.save();
@@ -217,6 +215,9 @@ export function drawPose(
     ctx.setLineDash([]); // reset to solid
     ctx.restore();
   }
+  
+  // Early return if not enough landmarks (after drawing reference line)
+  if (landmarks.length < 33) return;
   
   // Create sets of landmarks for each severity level for efficient lookup
   const errorLandmarks = new Set<number>();
