@@ -59,6 +59,7 @@ export default function AlarmRinging() {
     formScore,
     start: startExercise,
     isActive,
+    isInitialized,
   } = useLiveExercise({
     exerciseType: 'pushups',
     onComplete: handleComplete,
@@ -72,18 +73,19 @@ export default function AlarmRinging() {
     }
   }, [id, alarms]);
 
-  // Auto-start exercise tracking when alarm loads
+  // Auto-start exercise tracking when alarm loads AND MediaPipe is ready
   useEffect(() => {
-    if (alarm && !hasStarted && !isActive && !hasAutoStartedRef.current) {
+    if (alarm && isInitialized && !hasStarted && !isActive && !hasAutoStartedRef.current) {
       console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
       console.log('📊 Target push-ups:', alarm.push_up_count);
       console.log('🔊 Alarm sound:', alarm.alarm_sound);
+      console.log('✅ MediaPipe ready, starting camera...');
       hasAutoStartedRef.current = true;
       setHasStarted(true);
       setStartTime(Date.now());
       startExercise();
     }
-  }, [alarm]);
+  }, [alarm, isInitialized]);
 
   // Start alarm sound
   useEffect(() => {
@@ -160,6 +162,31 @@ export default function AlarmRinging() {
             playsInline
             muted
           />
+          
+          {/* Loading overlay while initializing */}
+          {!isInitialized && (
+            <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto" />
+                <p className="text-xl">Initializing camera...</p>
+                <p className="text-sm text-white/60">Please wait a moment</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Show manual start button if not active after initialization */}
+          {isInitialized && !isActive && !hasStarted && (
+            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
+              <Button 
+                onClick={handleStartPushUps}
+                size="lg"
+                className="text-2xl py-8 px-12"
+              >
+                <Play className="h-8 w-8 mr-4" />
+                Start Push-Ups
+              </Button>
+            </div>
+          )}
           
           {landmarks.length > 0 && (
             <AlarmPushUpTracker
