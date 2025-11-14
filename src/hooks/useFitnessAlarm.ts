@@ -45,12 +45,13 @@ export const useFitnessAlarm = () => {
   // Create alarm
   const createAlarm = useMutation({
     mutationFn: async (alarm: Omit<FitnessAlarm, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('fitness_alarms')
-        .insert({ ...alarm, user_id: user.id })
+        .insert({ ...alarm, user_id: userId })
         .select()
         .single();
 
@@ -125,12 +126,13 @@ export const useFitnessAlarm = () => {
   // Log completion
   const logCompletion = useMutation({
     mutationFn: async (completion: Omit<AlarmCompletion, 'id' | 'user_id' | 'completed_at'>) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('alarm_completions')
-        .insert({ ...completion, user_id: user.id });
+        .insert({ ...completion, user_id: userId });
 
       if (error) throw error;
     },
