@@ -1,13 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { AlarmPushUpTracker } from '@/components/AlarmPushUpTracker';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
 import { useLiveExercise } from '@/hooks/useLiveExercise';
 import { useAlarmAudio } from '@/hooks/useAlarmAudio';
 import { alarmStorageService } from '@/services/alarmStorageService';
-import { Play } from 'lucide-react';
+import { Play, SwitchCamera, FlipHorizontal, Volume2, VolumeX, Activity, Pause } from 'lucide-react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { cn } from '@/lib/utils';
 
 export default function AlarmRinging() {
   const navigate = useNavigate();
@@ -16,6 +19,7 @@ export default function AlarmRinging() {
   const [alarm, setAlarm] = useState<any>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [isMirrored, setIsMirrored] = useState(true);
   const completedRef = useRef(false);
   const hasAutoStartedRef = useRef(false);
 
@@ -68,6 +72,16 @@ export default function AlarmRinging() {
     toggleVoice,
     stop: stopWorkout,
     progress,
+    currentYPosition,
+    positionRange,
+    repState,
+    downThreshold,
+    upThreshold,
+    duration,
+    lastRepDuration,
+    repSpeed,
+    switchCamera,
+    isRepFlashing,
   } = useLiveExercise({
     exerciseType: 'pushups',
     targetReps: alarm?.push_up_count ?? 10,
@@ -155,44 +169,170 @@ export default function AlarmRinging() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col overflow-hidden">
-      {/* Exercise tracking screen - auto-starts */}
-      <div className="flex-1 relative overflow-hidden">
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
-          
-          {/* Loading overlay while initializing */}
-          {!isInitialized && (
-            <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
-              <div className="text-center space-y-4">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto" />
-                <p className="text-xl">Initializing camera...</p>
-                <p className="text-sm text-white/60">Please wait a moment</p>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl mx-auto space-y-4">
+        {/* Position Tracking Card */}
+        {isActive && (
+          <Card className="p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-primary" />
+                  <span className="font-semibold">Nose Tracking</span>
+                </div>
+                <Badge className={cn(
+                  "font-semibold",
+                  repState === 'above_threshold' ? "bg-blue-500 hover:bg-blue-600" : "bg-green-500 hover:bg-green-600"
+                )}>
+                  {repState === 'above_threshold' ? '↓ Nose Down' : '↑ Nose Up'}
+                </Badge>
+              </div>
+              
+              {/* Visual Range Bar */}
+              <div className="relative h-20 bg-muted rounded-lg border">
+                {/* Down threshold (red dashed) */}
+                <div 
+                  className="absolute left-0 right-0 border-t-2 border-red-500 border-dashed"
+                  style={{ top: `${(downThreshold / 1) * 100}%` }} 
+                />
+                
+                {/* Up threshold (green) */}
+                <div 
+                  className="absolute left-0 right-0 border-t-2 border-green-500"
+                  style={{ top: `${(upThreshold / 1) * 100}%` }} 
+                />
+                
+                {/* Current position marker */}
+                <div 
+                  className="absolute left-0 right-0 flex justify-center transition-all duration-200"
+                  style={{ top: `${currentYPosition * 100}%` }}
+                >
+                  <div className={cn(
+                    "w-8 h-8 rounded-full border-4 border-white shadow-lg transition-colors",
+                    repState === 'above_threshold' ? 'bg-blue-500' : 'bg-green-500'
+                  )} />
+                </div>
+              </div>
+              
+              {/* Metrics */}
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="p-2 rounded bg-muted/50">
+                  <div className="font-semibold text-muted-foreground">Nose Y</div>
+                  <div className="text-base font-bold">{currentYPosition.toFixed(3)}</div>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <div className="font-semibold text-muted-foreground">Range</div>
+                  <div className="text-base font-bold">{positionRange.toFixed(3)}</div>
+                </div>
+                <div className="p-2 rounded bg-muted/50">
+                  <div className="font-semibold text-muted-foreground">Confidence</div>
+                  <div className="text-base font-bold">High</div>
+                </div>
               </div>
             </div>
-          )}
-          
-          {/* Show manual start button if not active after initialization */}
-          {isInitialized && !isActive && !hasStarted && (
-            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
-              <Button 
-                onClick={handleStartPushUps}
-                size="lg"
-                className="text-2xl py-8 px-12"
-              >
-                <Play className="h-8 w-8 mr-4" />
-                Start Push-Ups
-              </Button>
-            </div>
-          )}
-          
-          {/* Pose overlay canvas only - no built-in HUD */}
-          {landmarks.length > 0 && (
+          </Card>
+        )}
+
+        {/* Video Container with Phase Ring */}
+        <Card className={cn(
+          "relative overflow-hidden bg-black transition-all duration-300",
+          isActive && currentPhase === 'up' && "ring-4 ring-green-500/50",
+          isActive && currentPhase === 'down' && "ring-4 ring-blue-500/50",
+          isActive && currentPhase === 'transition' && "ring-4 ring-yellow-500/50"
+        )}>
+          <div className="relative aspect-[4/3]">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={cn(
+                "w-full h-full object-cover",
+                isMirrored && "scale-x-[-1]"
+              )}
+            />
+            
+            {/* Camera Controls - Top Right */}
+            {isActive && (
+              <div className="absolute top-4 right-4 flex gap-2 z-20">
+                <Button
+                  onClick={switchCamera}
+                  size="icon"
+                  className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                >
+                  <SwitchCamera className="w-4 h-4 text-white" />
+                </Button>
+                
+                <Button
+                  onClick={() => setIsMirrored(!isMirrored)}
+                  size="icon"
+                  className={cn(
+                    "rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20",
+                    isMirrored && "ring-2 ring-primary"
+                  )}
+                >
+                  <FlipHorizontal className="w-4 h-4 text-white" />
+                </Button>
+                
+                <Button
+                  onClick={toggleVoice}
+                  size="icon"
+                  className="rounded-full w-10 h-10 bg-black/50 hover:bg-black/70 backdrop-blur-sm border border-white/20"
+                >
+                  {isVoiceEnabled ? (
+                    <Volume2 className="w-4 h-4 text-white" />
+                  ) : (
+                    <VolumeX className="w-4 h-4 text-white" />
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Status Badges - Top Left */}
+            {isActive && (
+              <div className="absolute top-4 left-4 space-y-2 z-10">
+                <Badge className="text-sm px-3 py-1 bg-green-500/90 backdrop-blur-sm hover:bg-green-500/90">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse mr-2" />
+                  Rep Tracking Active
+                </Badge>
+                
+                {currentPhase && (
+                  <Badge className={cn(
+                    "text-sm px-3 py-1 backdrop-blur-sm font-semibold",
+                    currentPhase === 'up' && "bg-green-500/90 hover:bg-green-500/90",
+                    currentPhase === 'down' && "bg-blue-500/90 hover:bg-blue-500/90",
+                    currentPhase === 'transition' && "bg-yellow-500/90 hover:bg-yellow-500/90"
+                  )}>
+                    {currentPhase === 'up' ? '↑ UP' : currentPhase === 'down' ? '↓ DOWN' : '• TRANSITION'}
+                  </Badge>
+                )}
+              </div>
+            )}
+            
+            {!isActive && !isInitialized && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="text-center text-white p-6">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+                  <p className="text-lg font-semibold">Initializing Camera...</p>
+                  <p className="text-sm text-white/70 mt-2">Setting up push-up tracking</p>
+                </div>
+              </div>
+            )}
+            
+            {isInitialized && !isActive && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <Button 
+                  onClick={handleStartPushUps}
+                  size="lg"
+                  className="flex items-center gap-2"
+                >
+                  <Play className="w-5 h-5" />
+                  Start Push-Ups
+                </Button>
+              </div>
+            )}
+            
+            {/* Pose tracking overlay */}
             <AlarmPushUpTracker
               landmarks={landmarks}
               reps={reps}
@@ -201,82 +341,103 @@ export default function AlarmRinging() {
               hideHud
               showReferenceLine
             />
-          )}
-
-          {/* Direction cue - UP/DOWN indicator */}
-          {hasStarted && isActive && (
-            <div className={`absolute right-4 top-24 rounded-xl px-6 py-3 text-black font-bold text-xl shadow-lg transition-all ${
-              currentPhase === 'up' ? 'bg-emerald-400' : currentPhase === 'down' ? 'bg-sky-400' : 'bg-yellow-400'
-            }`}>
-              {currentPhase === 'up' ? '↑ UP' : currentPhase === 'down' ? '↓ DOWN' : '•'}
-            </div>
-          )}
-
-          {/* Big circular rep counter */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-center">
-            <div className="w-28 h-28 rounded-full bg-emerald-500 text-black flex items-center justify-center text-6xl font-black shadow-2xl border-4 border-white">
-              {reps}
-            </div>
-            <div className="mt-2 text-white/90 text-sm font-bold">/ {alarm.push_up_count}</div>
-          </div>
-
-          {/* Form score indicator - left side */}
-          {hasStarted && isActive && (
-            <div className="absolute left-4 top-24 bg-black/60 backdrop-blur-sm px-4 py-3 rounded-xl">
-              <div className="text-xs text-white/60 font-medium">FORM</div>
-              <div className="text-3xl font-black text-white">{formScore}%</div>
-            </div>
-          )}
-
-          {/* Bottom control bar */}
-          {hasStarted && isActive && (
-            <div className="absolute inset-x-0 bottom-20 flex items-center justify-center gap-3 px-4">
-              <Button 
-                variant="secondary" 
-                size="lg"
-                onClick={isPaused ? resume : pause}
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30 font-bold"
-              >
-                {isPaused ? 'Resume' : 'Pause'}
-              </Button>
-              <Button 
-                variant="secondary"
-                size="lg"
-                onClick={toggleVoice}
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30 font-bold"
-              >
-                {isVoiceEnabled ? '🔊 Voice' : '🔇 Muted'}
-              </Button>
-              <Button 
-                variant="destructive"
-                size="lg"
-                onClick={handleEndWorkout}
-                className="font-bold"
-              >
-                End Workout
-              </Button>
-            </div>
-          )}
-
-          {/* Bottom progress bar */}
-          <div className="absolute left-0 right-0 bottom-0 h-3 bg-black/40">
-            <div 
-              className="h-full bg-emerald-500 transition-all duration-300" 
-              style={{ width: `${Math.min(100, (reps / (alarm.push_up_count || 1)) * 100)}%` }} 
-            />
-          </div>
-
-          {/* Completion celebration overlay */}
-          {reps >= alarm.push_up_count && (
-            <div className="absolute inset-0 bg-emerald-500/95 flex items-center justify-center backdrop-blur-sm">
-              <div className="text-center">
-                <div className="text-9xl mb-6 animate-bounce">🎉</div>
-                <h2 className="text-6xl font-black mb-4 text-white">ALARM OFF!</h2>
-                <p className="text-2xl text-white/90">Great job! You're awake now!</p>
+            
+            {/* Direction cues - left side */}
+            {isActive && currentPhase && (
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white pointer-events-none z-10">
+                <div className="text-6xl font-black mb-2">
+                  {currentPhase === 'down' ? '↓' : currentPhase === 'up' ? '↑' : '•'}
+                </div>
+                <div className="text-sm font-semibold uppercase tracking-wider">
+                  {currentPhase === 'down' ? 'Down' : currentPhase === 'up' ? 'Up' : 'Hold'}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            
+            {/* Enhanced Animated Rep Counter - right side */}
+            {isActive && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none z-20">
+                <div className="flex flex-col items-center gap-2">
+                  <div 
+                    key={reps}
+                    className={cn(
+                      "text-8xl font-black leading-none tabular-nums transition-all animate-scale-in",
+                      isRepFlashing ? "text-green-400" : 
+                      formScore >= 90 ? "text-green-400" : 
+                      formScore >= 75 ? "text-yellow-400" : 
+                      "text-orange-400"
+                    )}
+                    style={{
+                      textShadow: isRepFlashing 
+                        ? '0 0 50px rgba(34, 197, 94, 1), 0 0 30px rgba(34, 197, 94, 0.8)' 
+                        : '0 0 40px rgba(0,0,0,0.9), 0 0 20px currentColor',
+                      transform: isRepFlashing ? 'scale(1.2)' : 'scale(1)',
+                      transition: 'all 0.3s ease-out'
+                    }}
+                  >
+                    {reps}
+                  </div>
+                  <div className="text-sm text-white/80 font-semibold">
+                    / {alarm.push_up_count}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Form score badge */}
+            {isActive && (
+              <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
+                <span className="text-white font-semibold">Form: {formScore}%</span>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Control buttons */}
+        {isActive && (
+          <div className="flex gap-4 justify-center">
+            <Button
+              onClick={() => isPaused ? resume() : pause()}
+              variant="outline"
+              size="lg"
+              className="gap-2"
+            >
+              <Pause className="w-4 h-4" />
+              {isPaused ? 'Resume' : 'Pause'}
+            </Button>
+            
+            <Button
+              onClick={handleEndWorkout}
+              variant="destructive"
+              size="lg"
+            >
+              End Workout
+            </Button>
+          </div>
+        )}
+
+        {/* Progress bar */}
+        <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
+
+        {/* Success overlay */}
+        {reps >= alarm.push_up_count && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="text-center text-white p-8">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-4xl font-bold mb-2">Alarm Dismissed!</h2>
+              <p className="text-xl text-white/80">
+                {reps} push-ups completed
+              </p>
+              <p className="text-sm text-white/60 mt-4">Redirecting...</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
