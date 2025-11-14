@@ -35,7 +35,8 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     isNative
   });
 
-  const isGuest = (session?.user as any)?.is_anonymous === true || (typeof window !== 'undefined' && localStorage.getItem('tapfit_guest') === '1');
+  // If user has a real authenticated session, they're not a guest (prioritize session over localStorage)
+  const isGuest = session?.user ? (session.user as any)?.is_anonymous === true : (typeof window !== 'undefined' && localStorage.getItem('tapfit_guest') === '1');
 
   useEffect(() => {
     console.log('🔐 AuthGuard: Setting up auth listener...');
@@ -45,6 +46,13 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           console.log('🔐 AuthGuard: Auth state changed =>', { event, hasSession: !!session });
+          
+          // Clear guest tokens when user logs in with real account
+          if (session?.user && !(session.user as any)?.is_anonymous) {
+            localStorage.removeItem('tapfit_guest');
+            localStorage.removeItem('tapfit_guest_session');
+          }
+          
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
