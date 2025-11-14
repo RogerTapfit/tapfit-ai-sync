@@ -15,8 +15,8 @@ export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hid
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !landmarks.length) return;
-
+    if (!canvasRef.current) return;
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -24,6 +24,13 @@ export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hid
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    if (!landmarks.length) {
+      console.log('⚠️ No landmarks detected yet for skeletal overlay');
+      return;
+    }
+
+    console.log(`✅ Drawing pose with ${landmarks.length} landmarks`);
+    
     // Draw pose
     drawPose(ctx, landmarks, canvas.width, canvas.height, undefined, undefined, undefined, showReferenceLine);
   }, [landmarks, showReferenceLine]);
@@ -31,12 +38,13 @@ export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hid
   const progress = (reps / targetReps) * 100;
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none z-10">
+    <div className="absolute inset-0 w-full h-full pointer-events-none z-20">
       <canvas
         ref={canvasRef}
         width={640}
         height={480}
         className="w-full h-full object-cover"
+        style={{ border: landmarks.length > 0 ? '2px solid lime' : '2px solid red' }}
       />
       
       {/* Overlay UI - only show if hideHud is false */}

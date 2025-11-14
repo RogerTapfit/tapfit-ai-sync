@@ -118,6 +118,13 @@ export default function AlarmRinging() {
     }
   }, [alarm, isInitialized, isActive, landmarks.length]);
 
+  // Debug: Log landmarks detection
+  useEffect(() => {
+    if (landmarks.length > 0) {
+      console.log(`🎯 Landmarks detected: ${landmarks.length} points`);
+    }
+  }, [landmarks.length]);
+
   // Start alarm sound
   useEffect(() => {
     if (alarm) {
