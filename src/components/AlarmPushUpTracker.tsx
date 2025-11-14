@@ -8,9 +8,10 @@ interface AlarmPushUpTrackerProps {
   targetReps: number;
   formScore: number;
   hideHud?: boolean;
+  showReferenceLine?: boolean;
 }
 
-export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hideHud = false }: AlarmPushUpTrackerProps) => {
+export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hideHud = false, showReferenceLine = false }: AlarmPushUpTrackerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -24,18 +25,18 @@ export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hid
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw pose
-    drawPose(ctx, landmarks, canvas.width, canvas.height);
-  }, [landmarks]);
+    drawPose(ctx, landmarks, canvas.width, canvas.height, undefined, undefined, undefined, showReferenceLine);
+  }, [landmarks, showReferenceLine]);
 
   const progress = (reps / targetReps) * 100;
 
   return (
-    <div className="relative w-full h-full max-w-full overflow-hidden">
+    <div className="absolute inset-0 w-full h-full pointer-events-none z-10">
       <canvas
         ref={canvasRef}
         width={640}
         height={480}
-        className="w-full h-full object-cover rounded-lg max-w-full"
+        className="w-full h-full object-cover"
       />
       
       {/* Overlay UI - only show if hideHud is false */}

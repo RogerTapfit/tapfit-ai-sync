@@ -196,9 +196,27 @@ export function drawPose(
     message: string;
   }>,
   misalignedJoints?: number[],
-  isRepFlashing?: boolean
+  isRepFlashing?: boolean,
+  showReferenceLine?: boolean
 ): void {
   if (landmarks.length < 33) return;
+
+  // Draw reference line first (so it's behind the skeleton)
+  if (showReferenceLine) {
+    const referenceY = height * 0.33; // 33% from top (shoulder height for push-up depth)
+    ctx.save();
+    ctx.strokeStyle = '#EF4444'; // red-500
+    ctx.lineWidth = 3;
+    ctx.setLineDash([15, 10]); // dashed line (15px dash, 10px gap)
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
+    ctx.beginPath();
+    ctx.moveTo(0, referenceY);
+    ctx.lineTo(width, referenceY);
+    ctx.stroke();
+    ctx.setLineDash([]); // reset to solid
+    ctx.restore();
+  }
   
   // Create sets of landmarks for each severity level for efficient lookup
   const errorLandmarks = new Set<number>();
@@ -237,10 +255,10 @@ export function drawPose(
     [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8], // Face
   ];
 
-  // Draw connections with color-coded feedback
-  ctx.lineWidth = 4;
+  // Draw connections with color-coded feedback (thicker for better visibility)
+  ctx.lineWidth = 5;
   ctx.lineCap = 'round';
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = 12;
 
   POSE_CONNECTIONS.forEach(([startIdx, endIdx]) => {
     const start = landmarks[startIdx];
@@ -258,11 +276,11 @@ export function drawPose(
     if (errorConnections.has(connKey) || errorConnections.has(connKeyReverse)) {
       strokeColor = '#ef4444'; // Red for errors
       shadowColor = 'rgba(239, 68, 68, 0.7)';
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 7;
     } else if (perfectConnections.has(connKey) || perfectConnections.has(connKeyReverse)) {
       strokeColor = '#22c55e'; // Green for perfect
       shadowColor = 'rgba(34, 197, 94, 0.7)';
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 7;
     }
     
     ctx.strokeStyle = strokeColor;
@@ -273,7 +291,7 @@ export function drawPose(
     ctx.stroke();
     
     // Reset line width
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
   });
 
   // Draw keypoints with color-coded form feedback
@@ -283,11 +301,11 @@ export function drawPose(
     const x = point.x * width;
     const y = point.y * height;
     
-    // Determine color based on form issues and alignment
+    // Determine color based on form issues and alignment (larger for better visibility)
     let outerColor = isRepFlashing ? '#22c55e' : '#dc2626'; // Green when flashing, else red
     let innerColor = isRepFlashing ? '#c9ffc9' : '#ffffff';
     let glowColor = isRepFlashing ? 'rgba(34, 197, 94, 0.8)' : 'rgba(220, 38, 38, 0.5)';
-    let radius = isRepFlashing ? 12 : 8; // Bigger when flashing
+    let radius = isRepFlashing ? 14 : 10; // Bigger joints for visibility
     
     // Only apply flash if no specific form issues - errors/warnings override
     if (!isRepFlashing || errorLandmarks.has(idx) || warningLandmarks.has(idx) || perfectLandmarks.has(idx) || misalignedJoints?.includes(idx)) {
@@ -296,25 +314,25 @@ export function drawPose(
       outerColor = '#f59e0b'; // Amber for misalignment
       innerColor = '#fef3c7';
       glowColor = 'rgba(245, 158, 11, 0.7)';
-      radius = 11;
+      radius = 13;
     } else if (errorLandmarks.has(idx)) {
       // Red for errors - more prominent
       outerColor = '#ef4444';
       innerColor = '#ffc9c9';
       glowColor = 'rgba(239, 68, 68, 0.7)';
-      radius = 12;
+      radius = 14;
     } else if (warningLandmarks.has(idx)) {
       // Yellow for warnings
       outerColor = '#facc15';
       innerColor = '#ffffc9';
       glowColor = 'rgba(250, 204, 21, 0.7)';
-      radius = 10;
+      radius = 12;
     } else if (perfectLandmarks.has(idx)) {
       // Green for perfect form
       outerColor = '#22c55e';
       innerColor = '#c9ffc9';
       glowColor = 'rgba(34, 197, 94, 0.7)';
-      radius = 10;
+      radius = 12;
     }
     }
     

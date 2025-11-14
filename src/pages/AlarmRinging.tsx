@@ -199,6 +199,7 @@ export default function AlarmRinging() {
               targetReps={alarm.push_up_count}
               formScore={formScore}
               hideHud
+              showReferenceLine
             />
           )}
 
