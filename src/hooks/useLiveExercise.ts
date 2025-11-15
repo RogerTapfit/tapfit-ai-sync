@@ -95,7 +95,6 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const cameraStartingRef = useRef<boolean>(false);
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const lastPhaseRef = useRef<'up' | 'down' | 'transition'>('up');
@@ -287,51 +286,26 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     }
   }, [isActive, isPreviewMode]);
 
-  // Start camera (idempotent, serialized)
+  // Start camera
   const startCamera = useCallback(async () => {
-    if (cameraStartingRef.current) return false;
-    cameraStartingRef.current = true;
     try {
-      // Reuse existing stream if available
-      if (streamRef.current) {
-        if (videoRef.current && videoRef.current.srcObject !== streamRef.current) {
-          videoRef.current.srcObject = streamRef.current;
-        }
-        if (videoRef.current) {
-          try { await videoRef.current.play(); } catch {}
-        }
-        return true;
-      }
-
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: 1280,
+        video: { 
+          width: 1280, 
           height: 720,
           facingMode
-        },
-        audio: false,
+        }
       });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
-        // Wait metadata before play to avoid AbortError
-        await new Promise<void>((resolve) => {
-          if (!videoRef.current) return resolve();
-          const handler = () => { videoRef.current?.removeEventListener('loadedmetadata', handler); resolve(); };
-          videoRef.current.addEventListener('loadedmetadata', handler, { once: true });
-          // If already available, resolve next tick
-          if ((videoRef.current as HTMLVideoElement).readyState >= 1) resolve();
-        });
-        try { await videoRef.current.play(); } catch (err) { console.warn('video.play() failed', err); }
+        await videoRef.current.play();
       }
       return true;
     } catch (error) {
       console.error('Camera access error:', error);
       toast.error('Could not access camera. Please grant permission.');
       return false;
-    } finally {
-      cameraStartingRef.current = false;
     }
   }, [facingMode]);
 

@@ -131,10 +131,11 @@ export default function AlarmRinging() {
     })();
   }, [isInitialized, isActive, isPreviewMode, startPreview]);
 
-  // Auto-start exercise tracking: replaced with preview-only to avoid double camera starts
+  // Auto-start exercise tracking when alarm loads AND MediaPipe is ready
+  // Auto-start only if camera permission is already granted (prevents NotAllowedError in iframes)
   useEffect(() => {
     const maybeAutoStart = async () => {
-      if (!alarm || !isInitialized || isActive || hasAutoStartedRef.current) return;
+      if (!alarm || !isInitialized || hasStarted || isActive || hasAutoStartedRef.current) return;
 
       let canAutoStart = false;
       try {
@@ -143,21 +144,35 @@ export default function AlarmRinging() {
           const status = await anyNav.permissions.query({ name: 'camera' as any });
           canAutoStart = status.state === 'granted';
         }
-      } catch {
+      } catch (e) {
+        // Permissions API not supported; do not auto start to ensure user gesture
         canAutoStart = false;
       }
 
-      if (canAutoStart && !isPreviewMode) {
-        console.log('🎯 Auto-starting PREVIEW for alarm:', alarm?.label);
+      if (canAutoStart) {
+        console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
+        console.log('📊 Target push-ups:', alarm.push_up_count);
+        console.log('🔊 Alarm sound:', alarm.alarm_sound);
+        console.log('✅ MediaPipe ready, starting camera...');
         hasAutoStartedRef.current = true;
-        await startPreview();
-      } else if (!canAutoStart) {
+        setHasStarted(true);
+        setStartTime(Date.now());
+        startExercise();
+
+        // Retry once after 3 seconds if no landmarks detected
+        setTimeout(() => {
+          if (!isActive && landmarks.length === 0) {
+            console.log('🔄 Retrying camera start...');
+            startExercise();
+          }
+        }, 3000);
+      } else {
         console.log('⚠️ Camera permission not granted yet. Waiting for user to tap Start.');
       }
     };
 
     maybeAutoStart();
-  }, [alarm, isInitialized, isActive, isPreviewMode, startPreview]);
+  }, [alarm, isInitialized, isActive, landmarks.length, hasStarted]);
 
   // Canvas sizing - match video display dimensions with device pixel ratio
   useEffect(() => {
@@ -194,7 +209,7 @@ export default function AlarmRinging() {
     };
   }, [isActive, isPreviewMode]);
 
-  // Draw landmarks with proper scaling for object-fit: cover (handles cropping offsets)
+  // Draw landmarks with proper scaling for object-fit: cover
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -204,26 +219,19 @@ export default function AlarmRinging() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-
-    // Compute mapping from video space -> canvas space under object-fit: cover
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
-    const vw = video.videoWidth || cssW; // fallback to avoid NaN before ready
-    const vh = video.videoHeight || cssH;
-    const scale = Math.max(cssW / vw, cssH / vh);
-    const offsetX = (cssW - vw * scale) / 2;
-    const offsetY = (cssH - vh * scale) / 2;
 
-    // Reset and clear
+    // Clear entire canvas
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Transform so that drawing in video coordinates maps correctly to canvas
-    // We draw in "video pixels" and let the transform handle scale+offset and DPR.
-    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offsetX, dpr * offsetY);
+    // Draw directly in CSS coordinates for reliability
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Always draw the overlay (reference line shown even with no landmarks)
-    drawPose(ctx, landmarks || [], vw, vh, formIssues, misalignedJoints, isRepFlashing, true);
+    // Always draw pose (shows reference line even before detection)
+    console.debug('[PoseOverlay] draw', { cssW, cssH, landmarksCount: landmarks.length });
+    drawPose(ctx, landmarks || [], cssW, cssH, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
