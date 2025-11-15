@@ -225,7 +225,7 @@ export default function AlarmRinging() {
     ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offsetX, dpr * offsetY);
 
     // Draw skeleton only (no default reference line)
-    drawPose(ctx, landmarks || [], vw, vh, formIssues, misalignedJoints, isRepFlashing, false);
+    drawPose(ctx, landmarks, vw, vh, formIssues, misalignedJoints, isRepFlashing, false);
 
     // Draw custom threshold lines and nose circle
     const srcW = vw;
