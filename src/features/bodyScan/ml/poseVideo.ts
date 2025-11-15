@@ -28,9 +28,9 @@ async function ensureInit() {
       baseOptions: { modelAssetPath: MODEL_URL },
       runningMode: "VIDEO",
       numPoses: 1,
-      minPoseDetectionConfidence: 0.1,
-      minPosePresenceConfidence: 0.1,
-      minTrackingConfidence: 0.1,
+      minPoseDetectionConfidence: 0.05,
+      minPosePresenceConfidence: 0.05,
+      minTrackingConfidence: 0.05,
     });
   })();
   return initPromise;

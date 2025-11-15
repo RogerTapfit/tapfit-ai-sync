@@ -222,6 +222,14 @@ export default function AlarmRinging() {
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
 
+    // Ensure backing store size matches CSS size on every draw (prevents stale sizes)
+    const targetW = Math.max(1, Math.round(cssW * dpr));
+    const targetH = Math.max(1, Math.round(cssH * dpr));
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
+
     // Get video intrinsic dimensions (fallback to CSS dimensions until metadata loads)
     const srcW = video.videoWidth || cssW;
     const srcH = video.videoHeight || cssH;
@@ -231,17 +239,22 @@ export default function AlarmRinging() {
     const dx = (cssW - srcW * scale) / 2;
     const dy = (cssH - srcH * scale) / 2;
 
-    // Clear entire canvas
+    // Clear entire canvas (pixel space)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Apply DPR and object-fit: cover transformation
+    // Debug frame to verify overlay visibility and bounds
+    ctx.strokeStyle = '#22c55e'; // green-500
+    ctx.lineWidth = 4 * dpr;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+    // Apply DPR and object-fit: cover transformation for drawing in video coords
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.translate(dx, dy);
     ctx.scale(scale, scale);
 
     // Draw pose in video's intrinsic coordinate space
-    console.debug('[PoseOverlay] draw', { srcW, srcH, cssW, cssH, scale, dx, dy, landmarksCount: landmarks.length });
+    console.info('[PoseOverlay] draw', { srcW, srcH, cssW, cssH, dpr, scale, dx, dy, landmarksCount: (landmarks?.length || 0) });
     drawPose(ctx, landmarks || [], srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
