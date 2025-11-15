@@ -264,7 +264,7 @@ export function drawPose(
     const start = landmarks[startIdx];
     const end = landmarks[endIdx];
     if (!start || !end) return;
-    if ((start.visibility || 0) < 0.5 || (end.visibility || 0) < 0.5) return;
+    if ((start.visibility || 0) < 0.1 && (end.visibility || 0) < 0.1) return;
     
     const connKey = `${startIdx}-${endIdx}`;
     const connKeyReverse = `${endIdx}-${startIdx}`;
@@ -297,7 +297,7 @@ export function drawPose(
   // Draw keypoints with color-coded form feedback
   ctx.shadowBlur = 12;
   landmarks.forEach((point, idx) => {
-    if ((point.visibility || 0) < 0.5) return;
+    if ((point.visibility || 0) < 0.1) return;
     const x = point.x * width;
     const y = point.y * height;
     
