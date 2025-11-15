@@ -87,6 +87,8 @@ export default function AlarmRinging() {
     repSpeed,
     switchCamera,
     isRepFlashing,
+    isPreviewMode,
+    startPreview,
   } = useLiveExercise({
     exerciseType: 'pushups',
     targetReps: alarm?.push_up_count ?? 10,
