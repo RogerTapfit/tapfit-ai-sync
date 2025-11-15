@@ -111,6 +111,26 @@ export default function AlarmRinging() {
     }
   }, [id, alarms]);
 
+  // Auto-start preview if camera permission already granted
+  useEffect(() => {
+    if (!isInitialized || isActive || isPreviewMode) return;
+    
+    (async () => {
+      try {
+        const anyNav: any = navigator as any;
+        if (anyNav?.permissions?.query) {
+          const status = await anyNav.permissions.query({ name: 'camera' as any });
+          if (status.state === 'granted') {
+            await startPreview();
+          }
+        }
+      } catch (err) {
+        // Permission API not available or error - user can still click button
+        console.log('Permission check failed:', err);
+      }
+    })();
+  }, [isInitialized, isActive, isPreviewMode, startPreview]);
+
   // Auto-start exercise tracking when alarm loads AND MediaPipe is ready
   // Auto-start only if camera permission is already granted (prevents NotAllowedError in iframes)
   useEffect(() => {
@@ -157,7 +177,7 @@ export default function AlarmRinging() {
   // Canvas sizing - match video display dimensions with device pixel ratio
   useEffect(() => {
     if (!canvasRef.current || !videoRef.current) return;
-    if (!isActive) return;
+    if (!isActive && !isPreviewMode) return;
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -187,7 +207,7 @@ export default function AlarmRinging() {
       window.removeEventListener('orientationchange', updateCanvasSize);
       resizeObserver.disconnect();
     };
-  }, [isActive]);
+  }, [isActive, isPreviewMode]);
 
   // Draw landmarks with proper scaling for object-fit: cover
   useEffect(() => {
@@ -220,10 +240,8 @@ export default function AlarmRinging() {
     ctx.translate(dx, dy);
     ctx.scale(scale, scale);
 
-    // Draw pose if landmarks available
-    if (landmarks.length > 0) {
-      drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
-    }
+    // Always draw pose (shows reference line even before detection)
+    drawPose(ctx, landmarks || [], srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
