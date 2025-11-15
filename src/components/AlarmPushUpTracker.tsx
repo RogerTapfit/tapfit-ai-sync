@@ -11,7 +11,7 @@ interface AlarmPushUpTrackerProps {
   showReferenceLine?: boolean;
 }
 
-export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hideHud = false, showReferenceLine = false }: AlarmPushUpTrackerProps) => {
+export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hideHud = false, showReferenceLine = true }: AlarmPushUpTrackerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -24,10 +24,6 @@ export const AlarmPushUpTracker = ({ landmarks, reps, targetReps, formScore, hid
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!landmarks.length) {
-      console.log('⚠️ No landmarks detected yet for skeletal overlay');
-      return;
-    }
 
     console.log(`✅ Drawing pose with ${landmarks.length} landmarks`);
     

@@ -235,8 +235,10 @@ export default function AlarmRinging() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Apply DPR and object-fit: cover transformation (single matrix to avoid compounding)
-    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * dx, dpr * dy);
+    // Apply DPR and object-fit: cover transformation
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.translate(dx, dy);
+    ctx.scale(scale, scale);
 
     // Draw pose in video's intrinsic coordinate space
     console.debug('[PoseOverlay] draw', { srcW, srcH, cssW, cssH, scale, dx, dy, landmarksCount: landmarks.length });
