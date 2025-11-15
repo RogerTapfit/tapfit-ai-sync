@@ -11,7 +11,7 @@ import { alarmStorageService } from '@/services/alarmStorageService';
 import { Play, SwitchCamera, FlipHorizontal, Volume2, VolumeX, Activity, Pause } from 'lucide-react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { cn } from '@/lib/utils';
-import { drawPose } from '@/features/bodyScan/ml/poseVideo';
+import { drawPose, type Keypoint } from '@/features/bodyScan/ml/poseVideo';
 import { toast } from 'sonner';
 
 export default function AlarmRinging() {
