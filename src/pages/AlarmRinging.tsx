@@ -97,6 +97,10 @@ export default function AlarmRinging() {
   const [isMirrored, setIsMirrored] = useState(true);
   const toggleMirror = () => setIsMirrored(!isMirrored);
 
+  // Camera permission helpers
+  const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
   // Load alarm data
   useEffect(() => {
     if (id && alarms) {
@@ -251,9 +255,16 @@ export default function AlarmRinging() {
   }, [reps, hasStarted, alarm]);
 
   const handleStartPushUps = async () => {
-    setHasStarted(true);
-    setStartTime(Date.now());
-    await startExercise();
+    try {
+      await startExercise();
+      setHasStarted(true);
+      setStartTime(Date.now());
+      setCameraError(null);
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      setCameraError(err?.name || 'CameraError');
+      toast.error('Could not access camera. Please grant permission.');
+    }
   };
 
   const handleEndWorkout = () => {
@@ -455,14 +466,32 @@ export default function AlarmRinging() {
             
             {isInitialized && !isActive && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                  <Button 
-                    onClick={handleStartPushUps}
-                    size="lg"
-                    className="flex items-center gap-2"
-                  >
-                    <Play className="w-5 h-5" />
-                    Enable Camera
-                  </Button>
+                  <div className="text-center space-y-3">
+                    {cameraError && (
+                      <p className="text-white/80 text-sm px-4">
+                        Camera permission was blocked. If you’re viewing in an embedded preview, open this page in a new tab to allow access.
+                      </p>
+                    )}
+                    <div className="flex items-center justify-center gap-3">
+                      <Button 
+                        onClick={handleStartPushUps}
+                        size="lg"
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="w-5 h-5" />
+                        Enable Camera
+                      </Button>
+                      {isEmbedded && (
+                        <Button
+                          onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
+                          variant="secondary"
+                          size="lg"
+                        >
+                          Open in new tab
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
             )}
             
