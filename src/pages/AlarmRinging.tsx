@@ -222,16 +222,27 @@ export default function AlarmRinging() {
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
 
+    // Get video intrinsic dimensions (fallback to CSS dimensions until metadata loads)
+    const srcW = video.videoWidth || cssW;
+    const srcH = video.videoHeight || cssH;
+
+    // Calculate object-fit: cover transformation
+    const scale = Math.max(cssW / srcW, cssH / srcH);
+    const dx = (cssW - srcW * scale) / 2;
+    const dy = (cssH - srcH * scale) / 2;
+
     // Clear entire canvas
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw directly in CSS coordinates for reliability
+    // Apply DPR and object-fit: cover transformation
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.translate(dx, dy);
+    ctx.scale(scale, scale);
 
-    // Always draw pose (shows reference line even before detection)
-    console.debug('[PoseOverlay] draw', { cssW, cssH, landmarksCount: landmarks.length });
-    drawPose(ctx, landmarks || [], cssW, cssH, formIssues, misalignedJoints, isRepFlashing, true);
+    // Draw pose in video's intrinsic coordinate space
+    console.debug('[PoseOverlay] draw', { srcW, srcH, cssW, cssH, scale, dx, dy, landmarksCount: landmarks.length });
+    drawPose(ctx, landmarks || [], srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
