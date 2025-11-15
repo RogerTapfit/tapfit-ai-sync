@@ -194,7 +194,7 @@ export default function AlarmRinging() {
     };
   }, [isActive, isPreviewMode]);
 
-  // Draw landmarks with proper scaling for object-fit: cover
+  // Draw landmarks with proper scaling for object-fit: cover (handles cropping offsets)
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -204,19 +204,26 @@ export default function AlarmRinging() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
+
+    // Compute mapping from video space -> canvas space under object-fit: cover
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
+    const vw = video.videoWidth || cssW; // fallback to avoid NaN before ready
+    const vh = video.videoHeight || cssH;
+    const scale = Math.max(cssW / vw, cssH / vh);
+    const offsetX = (cssW - vw * scale) / 2;
+    const offsetY = (cssH - vh * scale) / 2;
 
-    // Clear entire canvas
+    // Reset and clear
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw directly in CSS coordinates for reliability
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Transform so that drawing in video coordinates maps correctly to canvas
+    // We draw in "video pixels" and let the transform handle scale+offset and DPR.
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offsetX, dpr * offsetY);
 
-    // Always draw pose (shows reference line even before detection)
-    console.debug('[PoseOverlay] draw', { cssW, cssH, landmarksCount: landmarks.length });
-    drawPose(ctx, landmarks || [], cssW, cssH, formIssues, misalignedJoints, isRepFlashing, true);
+    // Always draw the overlay (reference line shown even with no landmarks)
+    drawPose(ctx, landmarks || [], vw, vh, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
