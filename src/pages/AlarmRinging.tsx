@@ -226,23 +226,12 @@ export default function AlarmRinging() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Source (intrinsic) video size
-    const srcW = video.videoWidth || cssW;
-    const srcH = video.videoHeight || cssH;
-
-    // object-cover: scale to fill and center
-    const scale = Math.max(cssW / srcW, cssH / srcH);
-    const dx = (cssW - srcW * scale) / 2;
-    const dy = (cssH - srcH * scale) / 2;
-
-    // Apply transform
+    // Draw directly in CSS coordinates for reliability
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.translate(dx, dy);
-    ctx.scale(scale, scale);
 
     // Always draw pose (shows reference line even before detection)
-    console.debug('[PoseOverlay] draw', { cssW, cssH, srcW, srcH, landmarksCount: landmarks.length });
-    drawPose(ctx, landmarks || [], srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
+    console.debug('[PoseOverlay] draw', { cssW, cssH, landmarksCount: landmarks.length });
+    drawPose(ctx, landmarks || [], cssW, cssH, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
