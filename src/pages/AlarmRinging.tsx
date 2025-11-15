@@ -25,6 +25,7 @@ export default function AlarmRinging() {
   const completedRef = useRef(false);
   const hasAutoStartedRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const noseBelowRef = useRef(false);
 
   const { play: playAlarm, stop: stopAlarm } = useAlarmAudio(alarm?.alarm_sound || 'classic');
 
@@ -89,6 +90,7 @@ export default function AlarmRinging() {
     isRepFlashing,
     isPreviewMode,
     startPreview,
+    countRepNow,
   } = useLiveExercise({
     exerciseType: 'pushups',
     targetReps: alarm?.push_up_count ?? 10,
@@ -222,9 +224,122 @@ export default function AlarmRinging() {
     // We draw in "video pixels" and let the transform handle scale+offset and DPR.
     ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offsetX, dpr * offsetY);
 
-    // Always draw the overlay (reference line shown even with no landmarks)
-    drawPose(ctx, landmarks || [], vw, vh, formIssues, misalignedJoints, isRepFlashing, true);
-  }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
+    // Draw skeleton only (no default reference line)
+    drawPose(ctx, landmarks || [], vw, vh, formIssues, misalignedJoints, isRepFlashing, false);
+
+    // Draw custom threshold lines and nose circle
+    const srcW = vw;
+    const srcH = vh;
+    const MID_Y = upThreshold * srcH;
+    const BOTTOM_Y = downThreshold * srcH;
+
+    // Yellow dashed line at mid threshold
+    ctx.save();
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([15, 10]);
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(0, MID_Y);
+    ctx.lineTo(srcW, MID_Y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Red dashed line at bottom threshold with glow when near/crossing
+    const nose = landmarks?.[0];
+    const noseY = nose ? nose.y * srcH : null;
+    const isNearBottom = noseY != null ? Math.abs(noseY - BOTTOM_Y) < 30 : false;
+    const isCrossing = noseY != null ? Math.abs(noseY - BOTTOM_Y) <= 5 : false;
+
+    ctx.save();
+    if (isCrossing) {
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 30;
+      ctx.strokeStyle = '#ff0000';
+      ctx.lineWidth = 6;
+    } else if (isNearBottom) {
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 5;
+    } else {
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 4;
+    }
+    ctx.setLineDash([15, 10]);
+    ctx.globalAlpha = isCrossing ? 1.0 : 0.8;
+    ctx.beginPath();
+    ctx.moveTo(0, BOTTOM_Y);
+    ctx.lineTo(srcW, BOTTOM_Y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Blue circle on nose (flash green on rep)
+    if (nose) {
+      const normalizedY = nose.y; // 0..1
+      const isBelowLine = normalizedY > downThreshold;
+
+      ctx.save();
+      ctx.setLineDash([]);
+      if (isRepFlashing) {
+        ctx.strokeStyle = '#22c55e';
+        ctx.fillStyle = '#22c55e';
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 25;
+        ctx.globalAlpha = 0.9;
+        ctx.lineWidth = 6;
+      } else if (isBelowLine) {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.fillStyle = '#3b82f6';
+        ctx.shadowColor = '#3b82f6';
+        ctx.shadowBlur = 15;
+        ctx.globalAlpha = 0.7;
+        ctx.lineWidth = 5;
+      } else {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.fillStyle = '#3b82f6';
+        ctx.shadowColor = '#3b82f6';
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.6;
+        ctx.lineWidth = 4;
+      }
+
+      const r = 20;
+      const cx = nose.x * srcW;
+      const cy = nose.y * srcH;
+
+      // Outer blue circle with glow
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+      ctx.stroke();
+      ctx.globalAlpha *= 0.5;
+      ctx.fill();
+
+      // White border ring
+      ctx.globalAlpha = 0.9;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 6, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Small center dot
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+      ctx.fill();
+
+      ctx.restore();
+
+      // Edge detection: count rep the instant nose crosses below bottom line
+      const below = normalizedY > downThreshold;
+      if (below && !noseBelowRef.current) {
+        countRepNow();
+      }
+      noseBelowRef.current = below;
+    }
+  }, [landmarks, formIssues, misalignedJoints, isRepFlashing, upThreshold, downThreshold, countRepNow]);
 
   // Start alarm sound
   useEffect(() => {
