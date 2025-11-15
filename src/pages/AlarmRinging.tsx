@@ -106,26 +106,47 @@ export default function AlarmRinging() {
   }, [id, alarms]);
 
   // Auto-start exercise tracking when alarm loads AND MediaPipe is ready
+  // Auto-start only if camera permission is already granted (prevents NotAllowedError in iframes)
   useEffect(() => {
-    if (alarm && isInitialized && !hasStarted && !isActive && !hasAutoStartedRef.current) {
-      console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
-      console.log('📊 Target push-ups:', alarm.push_up_count);
-      console.log('🔊 Alarm sound:', alarm.alarm_sound);
-      console.log('✅ MediaPipe ready, starting camera...');
-      hasAutoStartedRef.current = true;
-      setHasStarted(true);
-      setStartTime(Date.now());
-      startExercise();
-      
-      // Retry once after 3 seconds if no landmarks detected
-      setTimeout(() => {
-        if (!isActive && landmarks.length === 0) {
-          console.log('🔄 Retrying camera start...');
-          startExercise();
+    const maybeAutoStart = async () => {
+      if (!alarm || !isInitialized || hasStarted || isActive || hasAutoStartedRef.current) return;
+
+      let canAutoStart = false;
+      try {
+        const anyNav: any = navigator as any;
+        if (anyNav?.permissions?.query) {
+          const status = await anyNav.permissions.query({ name: 'camera' as any });
+          canAutoStart = status.state === 'granted';
         }
-      }, 3000);
-    }
-  }, [alarm, isInitialized, isActive, landmarks.length]);
+      } catch (e) {
+        // Permissions API not supported; do not auto start to ensure user gesture
+        canAutoStart = false;
+      }
+
+      if (canAutoStart) {
+        console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
+        console.log('📊 Target push-ups:', alarm.push_up_count);
+        console.log('🔊 Alarm sound:', alarm.alarm_sound);
+        console.log('✅ MediaPipe ready, starting camera...');
+        hasAutoStartedRef.current = true;
+        setHasStarted(true);
+        setStartTime(Date.now());
+        startExercise();
+
+        // Retry once after 3 seconds if no landmarks detected
+        setTimeout(() => {
+          if (!isActive && landmarks.length === 0) {
+            console.log('🔄 Retrying camera start...');
+            startExercise();
+          }
+        }, 3000);
+      } else {
+        console.log('⚠️ Camera permission not granted yet. Waiting for user to tap Start.');
+      }
+    };
+
+    maybeAutoStart();
+  }, [alarm, isInitialized, isActive, landmarks.length, hasStarted]);
 
   // Canvas sizing - match video display dimensions with device pixel ratio
   useEffect(() => {
@@ -433,16 +454,16 @@ export default function AlarmRinging() {
             )}
             
             {isInitialized && !isActive && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                <Button 
-                  onClick={handleStartPushUps}
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
-                  <Play className="w-5 h-5" />
-                  Start Push-Ups
-                </Button>
-              </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <Button 
+                    onClick={handleStartPushUps}
+                    size="lg"
+                    className="flex items-center gap-2"
+                  >
+                    <Play className="w-5 h-5" />
+                    Enable Camera
+                  </Button>
+                </div>
             )}
             
             
