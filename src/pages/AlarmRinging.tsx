@@ -268,8 +268,17 @@ export default function AlarmRinging() {
       setCameraError(null);
     } catch (err: any) {
       console.error('Camera access error:', err);
-      setCameraError(err?.name || 'CameraError');
+      const name = err?.name || 'CameraError';
+      setCameraError(name);
       toast.error('Could not access camera. Please grant permission.');
+
+      // If embedded previews block camera, automatically offer full window
+      const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+      const blocked = name === 'NotAllowedError' || /Permission denied|denied/i.test(err?.message || '');
+      if (isEmbedded && blocked) {
+        // Attempt to open the same page in a new tab where camera permissions are allowed
+        window.open(window.location.href, '_blank', 'noopener,noreferrer');
+      }
     }
   };
 
