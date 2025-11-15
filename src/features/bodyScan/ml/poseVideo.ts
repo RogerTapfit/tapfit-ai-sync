@@ -66,7 +66,7 @@ export async function detectPoseVideo(
       visibility: p.visibility 
     }));
     
-    return { landmarks, worldLandmarks, ok: landmarks.length >= 20 };
+    return { landmarks, worldLandmarks, ok: landmarks.length > 0 };
   } catch (e) {
     console.warn("detectPoseVideo failed", e);
     return { landmarks: [], worldLandmarks: [], ok: false };
@@ -216,9 +216,8 @@ export function drawPose(
     ctx.restore();
   }
   
-  // Early return if not enough landmarks (after drawing reference line)
-  if (landmarks.length < 33) return;
-  
+  // Proceed with whatever landmarks are available; draw connections that exist
+  if (!landmarks || landmarks.length === 0) return;
   // Create sets of landmarks for each severity level for efficient lookup
   const errorLandmarks = new Set<number>();
   const warningLandmarks = new Set<number>();
