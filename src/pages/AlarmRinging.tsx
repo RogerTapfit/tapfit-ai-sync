@@ -131,11 +131,10 @@ export default function AlarmRinging() {
     })();
   }, [isInitialized, isActive, isPreviewMode, startPreview]);
 
-  // Auto-start exercise tracking when alarm loads AND MediaPipe is ready
-  // Auto-start only if camera permission is already granted (prevents NotAllowedError in iframes)
+  // Auto-start exercise tracking: replaced with preview-only to avoid double camera starts
   useEffect(() => {
     const maybeAutoStart = async () => {
-      if (!alarm || !isInitialized || hasStarted || isActive || hasAutoStartedRef.current) return;
+      if (!alarm || !isInitialized || isActive || hasAutoStartedRef.current) return;
 
       let canAutoStart = false;
       try {
@@ -144,35 +143,21 @@ export default function AlarmRinging() {
           const status = await anyNav.permissions.query({ name: 'camera' as any });
           canAutoStart = status.state === 'granted';
         }
-      } catch (e) {
-        // Permissions API not supported; do not auto start to ensure user gesture
+      } catch {
         canAutoStart = false;
       }
 
-      if (canAutoStart) {
-        console.log('🎯 Auto-starting push-up tracking for alarm:', alarm.label);
-        console.log('📊 Target push-ups:', alarm.push_up_count);
-        console.log('🔊 Alarm sound:', alarm.alarm_sound);
-        console.log('✅ MediaPipe ready, starting camera...');
+      if (canAutoStart && !isPreviewMode) {
+        console.log('🎯 Auto-starting PREVIEW for alarm:', alarm?.label);
         hasAutoStartedRef.current = true;
-        setHasStarted(true);
-        setStartTime(Date.now());
-        startExercise();
-
-        // Retry once after 3 seconds if no landmarks detected
-        setTimeout(() => {
-          if (!isActive && landmarks.length === 0) {
-            console.log('🔄 Retrying camera start...');
-            startExercise();
-          }
-        }, 3000);
-      } else {
+        await startPreview();
+      } else if (!canAutoStart) {
         console.log('⚠️ Camera permission not granted yet. Waiting for user to tap Start.');
       }
     };
 
     maybeAutoStart();
-  }, [alarm, isInitialized, isActive, landmarks.length, hasStarted]);
+  }, [alarm, isInitialized, isActive, isPreviewMode, startPreview]);
 
   // Canvas sizing - match video display dimensions with device pixel ratio
   useEffect(() => {
