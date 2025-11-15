@@ -256,6 +256,12 @@ export default function AlarmRinging() {
 
   const handleStartPushUps = async () => {
     try {
+      // Preflight permission request to trigger browser prompt, then release immediately
+      if (navigator.mediaDevices?.getUserMedia) {
+        const preflight = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        preflight.getTracks().forEach((t) => t.stop());
+      }
+
       await startExercise();
       setHasStarted(true);
       setStartTime(Date.now());
