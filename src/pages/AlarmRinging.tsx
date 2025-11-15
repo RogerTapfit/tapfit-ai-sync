@@ -241,6 +241,7 @@ export default function AlarmRinging() {
     ctx.scale(scale, scale);
 
     // Always draw pose (shows reference line even before detection)
+    console.debug('[PoseOverlay] draw', { cssW, cssH, srcW, srcH, landmarksCount: landmarks.length });
     drawPose(ctx, landmarks || [], srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
   }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
 
@@ -404,7 +405,7 @@ export default function AlarmRinging() {
             />
             <canvas
               ref={canvasRef}
-              className={cn("absolute inset-0 w-full h-full pointer-events-none z-10", isMirrored && "scale-x-[-1]")}
+              className={cn("absolute inset-0 w-full h-full pointer-events-none z-30", isMirrored && "scale-x-[-1]")}
               style={{ mixBlendMode: 'normal' }}
             />
             
