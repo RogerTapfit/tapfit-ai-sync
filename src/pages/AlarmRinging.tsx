@@ -25,7 +25,7 @@ export default function AlarmRinging() {
   const completedRef = useRef(false);
   const hasAutoStartedRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastLandmarksRef = useRef<Keypoint[]>([]);
+  const visualCrossingRef = useRef<{ below: boolean; initialized: boolean }>({ below: false, initialized: false });
 
   const { play: playAlarm, stop: stopAlarm } = useAlarmAudio(alarm?.alarm_sound || 'classic');
 
@@ -90,6 +90,7 @@ export default function AlarmRinging() {
     isRepFlashing,
     isPreviewMode,
     startPreview,
+    countRepNow,
   } = useLiveExercise({
     exerciseType: 'pushups',
     targetReps: alarm?.push_up_count ?? 10,
@@ -210,69 +211,146 @@ export default function AlarmRinging() {
     };
   }, [isActive, isPreviewMode]);
 
-  // Keep latest landmarks in ref for the renderer loop
-  useEffect(() => {
-    lastLandmarksRef.current = landmarks || [];
-  }, [landmarks]);
-
-  // Draw landmarks with proper scaling for object-fit: cover
+  // Draw pose overlay with tracking markers
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
 
-    let rafId = 0;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    const render = () => {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        rafId = requestAnimationFrame(render);
-        return;
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth;
+    const cssH = canvas.clientHeight;
+
+    // Clear entire canvas
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Source (intrinsic) video size
+    const srcW = video.videoWidth || cssW;
+    const srcH = video.videoHeight || cssH;
+
+    // object-fit: cover transformation
+    const scale = Math.max(cssW / srcW, cssH / srcH);
+    const dx = (cssW - srcW * scale) / 2;
+    const dy = (cssH - srcH * scale) / 2;
+
+    // Apply DPR and mapping transform
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.translate(dx, dy);
+    ctx.scale(scale, scale);
+
+    // Draw pose skeleton
+    if (landmarks.length > 0) {
+      drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
+
+      // Draw tracking markers when active
+      if (isActive && !isPaused) {
+        const MID_Y = 0.50 * srcH;
+        const BOTTOM_Y = 0.68 * srcH;
+        const nose = landmarks[0];
+
+        // Yellow dashed line (mid reference)
+        ctx.save();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([15, 10]);
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(0, MID_Y);
+        ctx.lineTo(srcW, MID_Y);
+        ctx.stroke();
+
+        if (nose) {
+          const noseY = nose.y * srcH;
+          const normalizedY = nose.y;
+          const distanceToBottom = Math.abs(noseY - BOTTOM_Y);
+          const isCrossing = noseY >= BOTTOM_Y - 5 && noseY <= BOTTOM_Y + 5;
+          const isNearBottom = distanceToBottom < 30;
+
+          // Red dashed line (bottom threshold) - glows when nose is near/crossing
+          if (isCrossing) {
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 30;
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 6;
+          } else if (isNearBottom) {
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 15;
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 5;
+          } else {
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 4;
+          }
+          ctx.setLineDash([15, 10]);
+          ctx.globalAlpha = isCrossing ? 1.0 : 0.8;
+          ctx.beginPath();
+          ctx.moveTo(0, BOTTOM_Y);
+          ctx.lineTo(srcW, BOTTOM_Y);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Nose tracking circle with reactive colors
+          const THRESHOLD = 0.68;
+          const isBelowLine = normalizedY > THRESHOLD;
+          const isThisLandmarkCrossing = Math.abs(normalizedY - THRESHOLD) < 0.02;
+
+          ctx.setLineDash([]);
+
+          // Color changes synchronized with rep counting
+          if (isRepFlashing) {
+            // Bright green flash when rep is counted
+            ctx.strokeStyle = '#22c55e';
+            ctx.fillStyle = '#22c55e';
+            ctx.shadowColor = '#22c55e';
+            ctx.shadowBlur = 25;
+            ctx.lineWidth = 6;
+            ctx.globalAlpha = 0.9;
+          } else if (isBelowLine) {
+            // Orange when below line
+            ctx.strokeStyle = '#f97316';
+            ctx.fillStyle = '#f97316';
+            ctx.shadowColor = '#f97316';
+            ctx.shadowBlur = 15;
+            ctx.lineWidth = 5;
+            ctx.globalAlpha = 0.7;
+          } else {
+            // Blue when above line
+            ctx.strokeStyle = '#3b82f6';
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 10;
+            ctx.lineWidth = 4;
+            ctx.globalAlpha = 0.6;
+          }
+
+          ctx.beginPath();
+          ctx.arc(nose.x * srcW, noseY, isThisLandmarkCrossing ? 25 : 20, 0, 2 * Math.PI);
+          ctx.stroke();
+          ctx.globalAlpha = isThisLandmarkCrossing ? 0.4 : 0.3;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Visual crossing detection for rep counting
+          if (!visualCrossingRef.current.initialized) {
+            visualCrossingRef.current = { below: isBelowLine, initialized: true };
+          } else if (visualCrossingRef.current.below && !isBelowLine) {
+            // Crossed from below to above - count rep
+            console.log('🎯 Visual crossing detected - counting rep!');
+            countRepNow();
+            visualCrossingRef.current.below = false;
+          } else if (!visualCrossingRef.current.below && isBelowLine) {
+            visualCrossingRef.current.below = true;
+          }
+        }
+
+        ctx.restore();
       }
-
-      const dpr = window.devicePixelRatio || 1;
-      const cssW = canvas.clientWidth || canvas.width / dpr;
-      const cssH = canvas.clientHeight || canvas.height / dpr;
-
-      // Ensure backing store size matches CSS size
-      const targetW = Math.max(1, Math.round(cssW * dpr));
-      const targetH = Math.max(1, Math.round(cssH * dpr));
-      if (canvas.width !== targetW || canvas.height !== targetH) {
-        canvas.width = targetW;
-        canvas.height = targetH;
-      }
-
-      // Video intrinsic dimensions
-      const srcW = video.videoWidth || cssW;
-      const srcH = video.videoHeight || cssH;
-
-      // object-fit: cover transform
-      const scale = Math.max(cssW / srcW, cssH / srcH);
-      const dx = (cssW - srcW * scale) / 2;
-      const dy = (cssH - srcH * scale) / 2;
-
-      // Clear and optional debug border
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#22c55e';
-      ctx.lineWidth = 2 * dpr;
-      ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-      // Apply DPR then cover transform
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.translate(dx, dy);
-      ctx.scale(scale, scale);
-
-      // Draw with latest landmarks; always show reference line
-      const lm = lastLandmarksRef.current || [];
-      drawPose(ctx, lm, srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
-
-      rafId = requestAnimationFrame(render);
-    };
-
-    rafId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(rafId);
-  }, [isActive, isPreviewMode, formIssues, misalignedJoints, isRepFlashing]);
+    }
+  }, [landmarks, isActive, isPaused, formIssues, misalignedJoints, isRepFlashing, countRepNow]);
 
   // Start alarm sound
   useEffect(() => {
