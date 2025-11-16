@@ -408,8 +408,8 @@ export function LiveExerciseTracker({
             if (currentLandmarks[25]) trackedLandmarks.push(currentLandmarks[25]);
             if (currentLandmarks[26]) trackedLandmarks.push(currentLandmarks[26]);
           } else {
-            MID_Y = srcH * 0.45;
-            BOTTOM_Y = srcH * 0.75;
+            MID_Y = srcH * 0.50; // Align with hook MID_MARKER
+            BOTTOM_Y = srcH * 0.68; // Align with hook BOTTOM_MARKER
             if (currentLandmarks[0]) trackedLandmarks.push(currentLandmarks[0]);
           }
 
