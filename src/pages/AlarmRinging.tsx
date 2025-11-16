@@ -215,14 +215,30 @@ export default function AlarmRinging() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
-    if (!canvas || !video) return;
+    if (!canvas || !video) {
+      console.log('[AlarmCanvas] Missing refs:', { canvas: !!canvas, video: !!video });
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('[AlarmCanvas] No 2d context');
+      return;
+    }
 
     const dpr = window.devicePixelRatio || 1;
     const cssW = canvas.clientWidth;
     const cssH = canvas.clientHeight;
+
+    console.log('[AlarmCanvas] Drawing:', {
+      canvasSize: `${canvas.width}x${canvas.height}`,
+      cssSize: `${cssW}x${cssH}`,
+      videoSize: `${video.videoWidth}x${video.videoHeight}`,
+      landmarksCount: landmarks.length,
+      isActive,
+      isPaused,
+      dpr
+    });
 
     // Clear entire canvas
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -242,12 +258,14 @@ export default function AlarmRinging() {
     ctx.translate(dx, dy);
     ctx.scale(scale, scale);
 
-    // Draw pose skeleton
+    // Draw pose skeleton - ALWAYS show when landmarks exist
     if (landmarks.length > 0) {
+      console.log('[AlarmCanvas] Drawing pose with', landmarks.length, 'landmarks');
       drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
 
       // Draw tracking markers when active
       if (isActive && !isPaused) {
+        console.log('[AlarmCanvas] Drawing tracking markers');
         const MID_Y = 0.50 * srcH;
         const BOTTOM_Y = 0.68 * srcH;
         const nose = landmarks[0];
@@ -349,6 +367,8 @@ export default function AlarmRinging() {
 
         ctx.restore();
       }
+    } else {
+      console.log('[AlarmCanvas] No landmarks to draw');
     }
   }, [landmarks, isActive, isPaused, formIssues, misalignedJoints, isRepFlashing, countRepNow]);
 
