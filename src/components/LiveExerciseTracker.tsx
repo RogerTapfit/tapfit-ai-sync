@@ -408,7 +408,7 @@ export function LiveExerciseTracker({
             if (currentLandmarks[26]) trackedLandmarks.push(currentLandmarks[26]);
           } else {
             MID_Y = srcH * 0.45;
-            BOTTOM_Y = srcH * 0.60;
+            BOTTOM_Y = srcH * 0.75;
             if (currentLandmarks[0]) trackedLandmarks.push(currentLandmarks[0]);
           }
 
