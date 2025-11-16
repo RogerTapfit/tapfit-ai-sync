@@ -38,7 +38,7 @@ export default function AlarmRinging() {
       alarmStorageService.clearRingingAlarm();
       await Haptics.impact({ style: ImpactStyle.Heavy });
       
-      toast.success(`Alarm completed! ${stats.reps} push-ups in ${timeToComplete}s`);
+      toast.success(`Congratulations! ${stats.reps} push-ups completed! Have a great day! 🎉`, { duration: 3000 });
       
       setTimeout(() => {
         navigate('/fitness-alarm');

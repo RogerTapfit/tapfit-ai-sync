@@ -18,6 +18,7 @@ interface UseLiveExerciseProps {
   exerciseType: ExerciseType;
   targetReps?: number;
   onComplete?: (stats: WorkoutStats) => void;
+  alarmMode?: boolean;
 }
 
 export interface WorkoutStats {
@@ -28,7 +29,7 @@ export interface WorkoutStats {
   caloriesBurned: number;
 }
 
-export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: UseLiveExerciseProps) {
+export function useLiveExercise({ exerciseType, targetReps = 10, onComplete, alarmMode = false }: UseLiveExerciseProps) {
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -469,14 +470,27 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     });
 
     if (newReps >= targetReps) {
-      speak('Set complete!', 'high');
-      setCurrentSet(prev => prev + 1);
-      startRestTimer();
-      toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+      // Alarm mode: auto-complete immediately
+      if (alarmMode) {
+        console.log('[Alarm Mode] Target reached! Auto-completing workout...');
+        speak('Congratulations! Workout complete!', 'high');
+        playSuccessBeep();
+        
+        // Complete workout immediately
+        setTimeout(() => {
+          completeWorkout();
+        }, 500);
+      } else {
+        // Normal mode: start rest for next set
+        speak('Set complete!', 'high');
+        setCurrentSet(prev => prev + 1);
+        startRestTimer();
+        toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+      }
     } else {
       toast.success(`Rep ${newReps}!`, { duration: 800 });
     }
-  }, [exerciseType, targetReps, analyzeRepSpeed, playRepBeep, speak, startRestTimer, restDuration]);
+  }, [exerciseType, targetReps, analyzeRepSpeed, playRepBeep, speak, startRestTimer, restDuration, alarmMode, completeWorkout]);
 
   // Process video frame
   const processFrame = useCallback(async (timestamp: number) => {
@@ -636,14 +650,27 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
         });
 
         if (newReps >= targetReps) {
-          speak('Set complete!', 'high');
-          setCurrentSet(prev => prev + 1);
-          startRestTimer();
-          toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+          // Alarm mode: auto-complete immediately
+          if (alarmMode) {
+            console.log('[Alarm Mode] Target reached! Auto-completing workout...');
+            speak('Congratulations! Workout complete!', 'high');
+            playSuccessBeep();
+            
+            // Complete workout immediately
+            setTimeout(() => {
+              completeWorkout();
+            }, 500);
+          } else {
+            // Normal mode: start rest for next set
+            speak('Set complete!', 'high');
+            setCurrentSet(prev => prev + 1);
+            startRestTimer();
+            toast.success(`Set complete! Rest for ${restDuration}s`, { duration: 2000 });
+          }
         } else {
           toast.success(`Rep ${newReps}!`, { duration: 800 });
         }
-      }, [exerciseType, targetReps, analyzeRepSpeed, playRepBeep, speak, startRestTimer, restDuration]);
+      }, [exerciseType, targetReps, analyzeRepSpeed, playRepBeep, speak, startRestTimer, restDuration, alarmMode, completeWorkout]);
 
       // Active workout mode: Position-based rep counter
       if (isActive) {
