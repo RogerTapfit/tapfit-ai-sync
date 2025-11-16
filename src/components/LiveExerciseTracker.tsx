@@ -79,6 +79,13 @@ export function LiveExerciseTracker({
   const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise || alarmMode);
   const [isMirrored, setIsMirrored] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+
+  // Sync external target reps override (e.g., alarm mode)
+  useEffect(() => {
+    if (typeof targetRepsOverride === 'number') {
+      setTargetReps(targetRepsOverride);
+    }
+  }, [targetRepsOverride]);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const visualCrossingRef = useRef<{ below: boolean; initialized: boolean }>({ below: false, initialized: false });
@@ -266,6 +273,13 @@ export function LiveExerciseTracker({
       }, 100); // Small delay to ensure initialization is complete
     }
   }, [skipSetup, isInitialized, isActive, showResults]);
+
+  // Alarm mode: ensure preview starts to request camera permission then auto-start
+  useEffect(() => {
+    if (alarmMode && isInitialized && !isActive && !isPreviewMode) {
+      startPreview();
+    }
+  }, [alarmMode, isInitialized, isActive, isPreviewMode]);
 
   // Draw pose overlay on canvas - continuously update (for both preview and active modes)
   useEffect(() => {
