@@ -381,17 +381,6 @@ export function LiveExerciseTracker({
       // Get current landmarks to use
       const currentLandmarks = landmarks.length > 0 ? landmarks : lastGoodLandmarks;
 
-      // For alarm mode, always show skeleton even without detection
-      if (forceShowSkeleton && alarmMode && currentLandmarks.length === 0) {
-        // Create basic skeleton landmarks for pushups
-        const basicPose = Array.from({length: 33}, (_, i) => ({
-          x: 0.5 + Math.sin(i) * 0.1,
-          y: 0.3 + (i / 33) * 0.6,
-          z: 0
-        }));
-        drawPose(ctx, basicPose, srcW, srcH, [], [], false);
-      }
-
       // Draw current pose or last good landmarks (using source dimensions)
       if (currentLandmarks.length > 0) {
         drawPose(ctx, currentLandmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
