@@ -328,6 +328,7 @@ export function LiveExerciseTracker({
     if (!isPreviewMode && !isActive) return;
 
     let animationId: number;
+    let lastGoodLandmarks: typeof landmarks = [];
 
     const drawFrame = () => {
       const ctx = canvas.getContext('2d');
@@ -360,14 +361,20 @@ export function LiveExerciseTracker({
       ctx.translate(dx, dy);
       ctx.scale(scale, scale);
 
-      // Draw ideal pose if enabled (using source dimensions)
+      // Update lastGoodLandmarks if we have new landmarks
+      if (landmarks.length > 0) {
+        lastGoodLandmarks = landmarks;
+      }
+
+      // Draw ideal pose if enabled (using source dimensions) 
       if (showIdealPose && idealPoseLandmarks.length > 0) {
         drawIdealPose(ctx, idealPoseLandmarks, srcW, srcH);
       }
 
-      // Draw current pose (using source dimensions)
-      if (landmarks.length > 0) {
-        drawPose(ctx, landmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
+      // Draw current pose or last good landmarks (using source dimensions)
+      const currentLandmarks = landmarks.length > 0 ? landmarks : lastGoodLandmarks;
+      if (currentLandmarks.length > 0) {
+        drawPose(ctx, currentLandmarks, srcW, srcH, formIssues, misalignedJoints, isRepFlashing);
         
         // Draw tracking markers when active
         if (isActive && !isPaused) {
