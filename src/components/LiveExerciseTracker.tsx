@@ -220,7 +220,8 @@ export function LiveExerciseTracker({
   } = useLiveExercise({
     exerciseType: selectedExercise,
     targetReps,
-    onComplete: handleComplete
+    onComplete: handleComplete,
+    alarmMode
   });
 
   // Voice commands integration
