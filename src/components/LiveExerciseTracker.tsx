@@ -444,17 +444,17 @@ export function LiveExerciseTracker({
             const wasBelow = visualCrossingRef.current.below;
             const isNowBelow = crossedBottom;
             
-            // Nose just crossed below the line
+            // Nose just crossed below the line - COUNT THE REP!
             if (!wasBelow && isNowBelow) {
               visualCrossingRef.current.below = true;
-              console.log('[Alarm Rep] Nose crossed BELOW line');
+              console.log('[Alarm Rep] Nose crossed BELOW line (turned GREEN) - counting rep!');
+              countRepNow(); // Count rep immediately when nose turns green
             }
-            
-            // Nose came back above the line - count the rep!
+
+            // Nose came back above the line - reset state for next rep
             if (wasBelow && !isNowBelow) {
               visualCrossingRef.current.below = false;
-              console.log('[Alarm Rep] Nose crossed ABOVE line - counting rep!');
-              countRepNow();
+              console.log('[Alarm Rep] Nose crossed ABOVE line - ready for next rep');
             }
           }
 
