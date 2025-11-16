@@ -501,6 +501,12 @@ export function useLiveExercise({ exerciseType, targetReps = 10, onComplete }: U
     const result = await detectPoseVideo(video, timestamp);
     
     if (result.ok && result.landmarks.length > 0) {
+      console.log('[Pose Detection] Landmarks detected:', {
+        count: result.landmarks.length,
+        isPreviewMode,
+        isActive,
+        timestamp
+      });
       setLandmarks(result.landmarks);
       
       // Calculate and update pose confidence

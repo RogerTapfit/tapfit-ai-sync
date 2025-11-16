@@ -327,6 +327,12 @@ export function LiveExerciseTracker({
     if (!canvas || !video) return;
     if (!isPreviewMode && !isActive) return;
 
+    console.log('[Canvas Draw] Starting draw loop', { 
+      isPreviewMode, 
+      isActive, 
+      landmarksCount: landmarks.length 
+    });
+
     let animationId: number;
     let lastGoodLandmarks: typeof landmarks = [];
 
@@ -384,12 +390,12 @@ export function LiveExerciseTracker({
           if (selectedExercise === 'squats') {
             MID_Y = srcH * 0.50;
             BOTTOM_Y = srcH * 0.68;
-            if (landmarks[25]) trackedLandmarks.push(landmarks[25]);
-            if (landmarks[26]) trackedLandmarks.push(landmarks[26]);
+            if (currentLandmarks[25]) trackedLandmarks.push(currentLandmarks[25]);
+            if (currentLandmarks[26]) trackedLandmarks.push(currentLandmarks[26]);
           } else {
             MID_Y = srcH * 0.45;
             BOTTOM_Y = srcH * 0.60;
-            if (landmarks[0]) trackedLandmarks.push(landmarks[0]);
+            if (currentLandmarks[0]) trackedLandmarks.push(currentLandmarks[0]);
           }
 
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
