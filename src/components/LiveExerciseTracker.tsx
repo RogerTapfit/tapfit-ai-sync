@@ -432,6 +432,31 @@ export function LiveExerciseTracker({
           const crossedMid = avgTrackedY > MID_Y;
           const crossedBottom = avgTrackedY > BOTTOM_Y;
 
+          // Alarm mode: Track nose crossing bottom line to count reps
+          if (alarmMode && trackedLandmarks.length > 0) {
+            // Initialize tracking on first detection
+            if (!visualCrossingRef.current.initialized) {
+              visualCrossingRef.current.initialized = true;
+              visualCrossingRef.current.below = crossedBottom;
+            }
+            
+            const wasBelow = visualCrossingRef.current.below;
+            const isNowBelow = crossedBottom;
+            
+            // Nose just crossed below the line
+            if (!wasBelow && isNowBelow) {
+              visualCrossingRef.current.below = true;
+              console.log('[Alarm Rep] Nose crossed BELOW line');
+            }
+            
+            // Nose came back above the line - count the rep!
+            if (wasBelow && !isNowBelow) {
+              visualCrossingRef.current.below = false;
+              console.log('[Alarm Rep] Nose crossed ABOVE line - counting rep!');
+              countRepNow();
+            }
+          }
+
           ctx.font = 'bold 16px system-ui';
           ctx.textAlign = 'left';
           ctx.fillStyle = crossedMid ? 'rgba(255, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.6)';
