@@ -264,21 +264,32 @@ export function LiveExerciseTracker({
     };
   }, [isInitialized, isActive, showResults, skipSetup]);
 
-  // Auto-start workout for pre-selected exercises
+  // Auto-start workout for pre-selected exercises (but not in alarm mode, which has its own logic)
   useEffect(() => {
-    if (skipSetup && isInitialized && !isActive && !showResults) {
+    if (!alarmMode && skipSetup && isInitialized && !isActive && !showResults) {
       console.log('[LiveExerciseTracker] Auto-starting workout for pre-selected exercise');
       setTimeout(() => {
         start();
         setSkipSetup(false);
       }, 100); // Small delay to ensure initialization is complete
     }
-  }, [skipSetup, isInitialized, isActive, showResults]);
+  }, [skipSetup, isInitialized, isActive, showResults, alarmMode]);
 
-  // Alarm mode: ensure preview starts to request camera permission then auto-start
+  // Alarm mode: ensure preview starts and then auto-start workout
   useEffect(() => {
-    if (alarmMode && isInitialized && !isActive && !isPreviewMode) {
-      startPreview();
+    if (alarmMode && isInitialized && !isActive) {
+      console.log('[AlarmMode] Starting preview and workout');
+      if (!isPreviewMode) {
+        startPreview();
+      }
+      // Auto-start workout after camera initializes
+      const timer = setTimeout(() => {
+        if (!isActive) {
+          console.log('[AlarmMode] Auto-starting workout');
+          start();
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [alarmMode, isInitialized, isActive, isPreviewMode]);
 
