@@ -58,19 +58,25 @@ interface LiveExerciseTrackerProps {
   machineName?: string;
   onBackToMachine?: () => void;
   onBackToDashboard?: () => void;
+  alarmMode?: boolean;
+  targetRepsOverride?: number;
+  onAlarmComplete?: (stats: WorkoutStats) => void;
 }
 
 export function LiveExerciseTracker({ 
   preSelectedExercise,
   machineName,
   onBackToMachine,
-  onBackToDashboard 
+  onBackToDashboard,
+  alarmMode = false,
+  targetRepsOverride,
+  onAlarmComplete
 }: LiveExerciseTrackerProps) {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseType>(preSelectedExercise || 'pushups');
-  const [targetReps, setTargetReps] = useState(10);
+  const [targetReps, setTargetReps] = useState(targetRepsOverride || 10);
   const [showResults, setShowResults] = useState(false);
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
-  const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise);
+  const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise || alarmMode);
   const [isMirrored, setIsMirrored] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   
@@ -101,6 +107,10 @@ export function LiveExerciseTracker({
   };
 
   const handleComplete = async (stats: WorkoutStats) => {
+    if (alarmMode && onAlarmComplete) {
+      onAlarmComplete(stats);
+      return;
+    }
     setWorkoutStats(stats);
     setShowResults(true);
 
