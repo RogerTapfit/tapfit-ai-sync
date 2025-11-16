@@ -25,6 +25,7 @@ export default function AlarmRinging() {
   const completedRef = useRef(false);
   const hasAutoStartedRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastLandmarksRef = useRef<Keypoint[]>([]);
 
   const { play: playAlarm, stop: stopAlarm } = useAlarmAudio(alarm?.alarm_sound || 'classic');
 
@@ -209,54 +210,69 @@ export default function AlarmRinging() {
     };
   }, [isActive, isPreviewMode]);
 
+  // Keep latest landmarks in ref for the renderer loop
+  useEffect(() => {
+    lastLandmarksRef.current = landmarks || [];
+  }, [landmarks]);
+
   // Draw landmarks with proper scaling for object-fit: cover
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let rafId = 0;
 
-    const dpr = window.devicePixelRatio || 1;
-    const cssW = canvas.clientWidth;
-    const cssH = canvas.clientHeight;
+    const render = () => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        rafId = requestAnimationFrame(render);
+        return;
+      }
 
-    // Ensure backing store size matches CSS size on every draw (prevents stale sizes)
-    const targetW = Math.max(1, Math.round(cssW * dpr));
-    const targetH = Math.max(1, Math.round(cssH * dpr));
-    if (canvas.width !== targetW || canvas.height !== targetH) {
-      canvas.width = targetW;
-      canvas.height = targetH;
-    }
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = canvas.clientWidth || canvas.width / dpr;
+      const cssH = canvas.clientHeight || canvas.height / dpr;
 
-    // Get video intrinsic dimensions (fallback to CSS dimensions until metadata loads)
-    const srcW = video.videoWidth || cssW;
-    const srcH = video.videoHeight || cssH;
+      // Ensure backing store size matches CSS size
+      const targetW = Math.max(1, Math.round(cssW * dpr));
+      const targetH = Math.max(1, Math.round(cssH * dpr));
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
 
-    // Calculate object-fit: cover transformation
-    const scale = Math.max(cssW / srcW, cssH / srcH);
-    const dx = (cssW - srcW * scale) / 2;
-    const dy = (cssH - srcH * scale) / 2;
+      // Video intrinsic dimensions
+      const srcW = video.videoWidth || cssW;
+      const srcH = video.videoHeight || cssH;
 
-    // Clear entire canvas (pixel space)
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // object-fit: cover transform
+      const scale = Math.max(cssW / srcW, cssH / srcH);
+      const dx = (cssW - srcW * scale) / 2;
+      const dy = (cssH - srcH * scale) / 2;
 
-    // Debug frame to verify overlay visibility and bounds
-    ctx.strokeStyle = '#22c55e'; // green-500
-    ctx.lineWidth = 4 * dpr;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      // Clear and optional debug border
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = 2 * dpr;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
 
-    // Apply DPR and object-fit: cover transformation for drawing in video coords
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.translate(dx, dy);
-    ctx.scale(scale, scale);
+      // Apply DPR then cover transform
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(dx, dy);
+      ctx.scale(scale, scale);
 
-    // Draw pose in video's intrinsic coordinate space
-    console.info('[PoseOverlay] draw', { srcW, srcH, cssW, cssH, dpr, scale, dx, dy, landmarksCount: (landmarks?.length || 0) });
-    drawPose(ctx, landmarks || [], srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
-  }, [landmarks, formIssues, misalignedJoints, isRepFlashing]);
+      // Draw with latest landmarks; always show reference line
+      const lm = lastLandmarksRef.current || [];
+      drawPose(ctx, lm, srcW, srcH, formIssues, misalignedJoints, isRepFlashing, true);
+
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(rafId);
+  }, [isActive, isPreviewMode, formIssues, misalignedJoints, isRepFlashing]);
 
   // Start alarm sound
   useEffect(() => {
