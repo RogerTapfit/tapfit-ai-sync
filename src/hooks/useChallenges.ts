@@ -343,6 +343,7 @@ export const useChallenges = () => {
           toast({
             title: `Achievement unlocked! ${achievement.badge_icon}`,
             description: `"${achievement.name}" - You earned ${achievement.coin_reward} Tap Coins!`,
+            duration: 8000, // Display for 8 seconds
           });
         }
       }
