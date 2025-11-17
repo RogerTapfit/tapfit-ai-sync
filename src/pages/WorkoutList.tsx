@@ -432,14 +432,21 @@ const WorkoutList = () => {
       console.log("Initializing workout, currentWorkoutLog:", currentWorkoutLog);
       if (mounted && !currentWorkoutLog) {
         console.log("No current workout log, starting new workout");
-        // Use dynamic muscle group analysis for workout name
-        const workoutName = `Daily ${muscleGroupAnalysis.workoutType}`;
-        await startWorkout(workoutName, muscleGroupAnalysis.predominantGroup, todaysWorkouts.length);
+        // Use appropriate name and muscle group based on workout mode
+        const workoutName = workoutMode === 'custom' 
+          ? 'Custom Workout' 
+          : `Daily ${muscleGroupAnalysis.workoutType}`;
+        
+        const muscleGroup = workoutMode === 'custom'
+          ? currentMuscleGroup
+          : muscleGroupAnalysis.predominantGroup;
+        
+        await startWorkout(workoutName, muscleGroup, todaysWorkouts.length);
       }
     };
 
-    // Only initialize if we don't have a workout log and we have workouts loaded
-    if (!currentWorkoutLog && todaysWorkouts.length > 0) {
+    // Initialize workout immediately in custom mode, or when workouts are loaded in scheduled mode
+    if (!currentWorkoutLog && (workoutMode === 'custom' || todaysWorkouts.length > 0)) {
       initializeWorkout();
     }
     
