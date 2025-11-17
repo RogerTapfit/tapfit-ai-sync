@@ -145,10 +145,10 @@ export default function MachineWorkout() {
     // Prioritize last used set count over recommendation
     const setCount = machineHistory?.lastSets || recommendation.sets || 3;
     
-    // Prioritize last used weight over calculated recommendation
-    const startingWeight = machineHistory?.lastWeight || 
-                           recommendation.recommended_weight || 
-                           80;
+    // Smart weight selection: use progressive overload if ready, otherwise last weight, then recommendation
+    const startingWeight = machineHistory?.shouldProgressWeight && machineHistory?.suggestedWeight
+                           ? machineHistory.suggestedWeight  // Progressive overload! 
+                           : machineHistory?.lastWeight || recommendation.recommended_weight || 80;
     
     const newSets: WorkoutSet[] = [];
     for (let i = 0; i < setCount; i++) {
@@ -158,7 +158,7 @@ export default function MachineWorkout() {
         weight: 0,
         completed: false,
         actualReps: recommendation.reps || 12,
-        actualWeight: startingWeight // Use historical weight!
+        actualWeight: startingWeight
       });
     }
     setSets(newSets);
@@ -702,28 +702,60 @@ export default function MachineWorkout() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Dumbbell className="h-5 w-5" />
-                  Recommended Weight
+                  {machineHistory ? 'Updated Weight' : 'Recommended Weight'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {recommendationLoading ? (
+                {recommendationLoading || historyLoading ? (
                   <div className="text-center text-muted-foreground">
                     Calculating...
                   </div>
                 ) : (
                   <>
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-primary">
-                        {recommendation?.recommended_weight || 80} lbs
+                      <div className="text-4xl font-bold text-primary">
+                        {machineHistory?.shouldProgressWeight && machineHistory?.suggestedWeight
+                          ? machineHistory.suggestedWeight
+                          : machineHistory?.lastWeight || recommendation?.recommended_weight || 80} lbs
                       </div>
-                      <div className={`text-sm ${getConfidenceColor(recommendation?.confidence || 'learning')}`}>
-                        {getConfidenceDescription(recommendation?.confidence || 'learning')}
+                      
+                      {machineHistory?.shouldProgressWeight && machineHistory?.suggestedWeight && (
+                        <Badge variant="default" className="mt-2 bg-green-500 hover:bg-green-600">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          ↑ {machineHistory.suggestedWeight - machineHistory.lastWeight} lbs
+                        </Badge>
+                      )}
+                      
+                      <div className={`text-sm mt-2 ${machineHistory ? 'text-primary font-medium' : getConfidenceColor(recommendation?.confidence || 'learning')}`}>
+                        {machineHistory?.shouldProgressWeight
+                          ? 'Progressive overload from last workout'
+                          : machineHistory
+                          ? 'Maintain from last workout'
+                          : getConfidenceDescription(recommendation?.confidence || 'learning')}
                       </div>
                     </div>
                     
-                    <div className="text-xs text-muted-foreground text-center">
-                      Based on your profile and experience level
-                    </div>
+                    {!machineHistory && (
+                      <div className="text-xs text-muted-foreground text-center">
+                        Based on your profile and experience level
+                      </div>
+                    )}
+                    
+                    {/* Last Workout Reference - Secondary Info */}
+                    {machineHistory && (
+                      <div className="pt-3 border-t border-border">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                          <div className="flex items-center gap-1">
+                            <Target className="h-3 w-3" />
+                            <span className="font-medium">Previous Workout</span>
+                          </div>
+                          <span>{new Date(machineHistory.lastWorkoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                        <div className="text-sm font-medium text-foreground/80">
+                          {machineHistory.lastSets} sets × {machineHistory.lastReps} reps @ {machineHistory.lastWeight} lbs
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Current PR Display */}
                     {currentPR && (
@@ -737,23 +769,6 @@ export default function MachineWorkout() {
                         <div className="text-lg font-bold">{currentPR.weightLbs} lbs</div>
                         <div className="text-xs text-muted-foreground">
                           {currentPR.sets} sets × {currentPR.reps} reps
-                        </div>
-                      </div>
-                    )}
-                    
-                    {machineHistory && (
-                      <div className="text-xs text-center text-muted-foreground mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <Target className="h-4 w-4 text-blue-500" />
-                          <span className="font-semibold text-blue-600 dark:text-blue-400">
-                            Last Workout
-                          </span>
-                        </div>
-                        <div className="text-sm">
-                          {machineHistory.lastSets} sets × {machineHistory.lastReps} reps @ {machineHistory.lastWeight} lbs
-                        </div>
-                        <div className="text-xs mt-1 opacity-70">
-                          {new Date(machineHistory.lastWorkoutDate).toLocaleDateString()}
                         </div>
                       </div>
                     )}
