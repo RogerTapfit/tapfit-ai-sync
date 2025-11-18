@@ -3300,6 +3300,7 @@ export type Database = {
           updated_at: string
           user_id: string
           workout_name: string
+          workout_source: string | null
         }
         Insert: {
           calories_burned?: number | null
@@ -3317,6 +3318,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           workout_name: string
+          workout_source?: string | null
         }
         Update: {
           calories_burned?: number | null
@@ -3334,6 +3336,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           workout_name?: string
+          workout_source?: string | null
         }
         Relationships: [
           {
