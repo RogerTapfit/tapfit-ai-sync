@@ -33,6 +33,9 @@ export const useWeightRecommendation = ({
   const fetchUserProfileAndCalculate = async () => {
     try {
       setLoading(true);
+      console.log(`[Weight Rec] Calculating for ${machineName} - ${exerciseName}`);
+      console.log(`[Weight Rec] Historical weight: ${historicalWeight || 'none'}`);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
@@ -90,6 +93,9 @@ export const useWeightRecommendation = ({
         rest_seconds,
         confidence: historicalWeight ? 'high' : confidence // Boost confidence if using history
       };
+
+      console.log(`[Weight Rec] Recommendation: ${exerciseRecommendation.recommended_weight} lbs (${exerciseRecommendation.confidence} confidence)`);
+      console.log(`[Weight Rec] Sets: ${exerciseRecommendation.sets}, Reps: ${exerciseRecommendation.reps}`);
 
       setRecommendation(exerciseRecommendation);
       setError(null);

@@ -31,13 +31,28 @@ export const useMachineHistory = (machineName: string) => {
         }
 
         // Get the last 3 workouts for this machine to detect progressive overload opportunity
+        // Include workout_logs context to show where the workout came from
         const { data: recentWorkouts, error } = await supabase
           .from('exercise_logs')
-          .select('exercise_name, machine_name, sets_completed, reps_completed, weight_used, completed_at')
+          .select(`
+            exercise_name, 
+            machine_name, 
+            sets_completed, 
+            reps_completed, 
+            weight_used, 
+            completed_at,
+            workout_logs!inner(
+              workout_name,
+              muscle_group
+            )
+          `)
           .eq('user_id', user.id)
           .eq('machine_name', machineName)
           .order('completed_at', { ascending: false })
           .limit(3);
+        
+        console.log(`[Machine History] Fetching history for: ${machineName}`);
+        console.log(`[Machine History] Found ${recentWorkouts?.length || 0} previous workouts`);
 
         if (error) {
           console.error('Error fetching machine history:', error);
