@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { MachineRegistryService } from '@/services/machineRegistryService';
+import { getMachineImageUrl } from '@/utils/machineImageUtils';
 import { useWeightRecommendation } from '@/hooks/useWeightRecommendation';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useMachineHistory } from '@/hooks/useMachineHistory';

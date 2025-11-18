@@ -294,15 +294,35 @@ TEMPLATE GUIDELINES:
 ${templateData ? `Base Template: ${JSON.stringify(templateData.template_data)}
 Week Structure: ${JSON.stringify(templateData.week_structure)}` : 'Use standard progression'}
 
+CRITICAL VARIETY RULES:
+1. Each workout day MUST have 6-8 UNIQUE exercises (NO DUPLICATES within the same day)
+2. NEVER repeat the same machine/exercise more than once per day
+3. Each muscle group day must include 4-5 DIFFERENT machines/exercises for that muscle group
+4. Rotate exercises across the week - don't use the same machine on consecutive days unless necessary
+5. Mix machine types: compound movements (60%), isolation (30%), cardio warmup/finisher (10%)
+
+MUSCLE GROUP EXERCISE DISTRIBUTION:
+- Chest Days: Mix from Chest Press, Incline Chest Press, Pec Deck, Cable Crossover, Decline Chest Press, Assisted Dips
+- Back Days: Mix from Lat Pulldown (wide/narrow grip), Seated Row, T-Bar Row, Cable Row variations
+- Shoulder Days: Mix from Shoulder Press, Lateral Raise Machine, variations
+- Leg Days: Mix from Leg Press, Leg Extension, Leg Curl, Calf Raise, variations
+- Arm Days: Mix from Bicep Curl Machine, Preacher Curl, Tricep Pushdown, Dip Machine variations
+
+PROGRESSIVE VARIATION STRUCTURE:
+- Week 1-2: Foundation exercises (60% intensity)
+- Week 3-4: Add variation exercises and increase intensity (70-85%)
+- Each day: 6-8 DIFFERENT exercises total
+
 REQUIREMENTS:
 1. Create a TRUE 30-day plan (4 weeks + 2 bonus days) with progressive overload
 2. Balance muscle groups across the week
 3. Include 70% machines, 20% free weights, 10% cardio
-4. Each workout should have 6-8 exercises
-5. Add 10-15 minutes of cardio to each strength session
+4. Each workout MUST have 6-8 DIFFERENT exercises (NO duplicates in same workout)
+5. Add 10-15 minutes of cardio warmup or finisher to each session
 6. Progressive intensity: Week 1 (60%), Week 2 (70%), Week 3 (80%), Week 4 (85%)
 7. Include specific weight recommendations when possible
 8. Provide form instructions and progression notes
+9. VALIDATE: Every workout must have unique exercises - reject if any duplicates found
 
 Return ONLY a JSON object with this exact structure (no other text):
 {
@@ -377,6 +397,34 @@ Return ONLY a JSON object with this exact structure (no other text):
 
     let generatedContent = data.choices[0].message.content;
     console.log('Raw AI response:', generatedContent);
+    
+    // Validation function to ensure workout variety
+    const validateWorkoutVariety = (workouts: any[]) => {
+      console.log('Validating workout variety...');
+      for (const workout of workouts) {
+        const exercises = workout.exercises || [];
+        const machineNames = exercises.map((e: any) => e.machine).filter(Boolean);
+        const uniqueMachines = new Set(machineNames);
+        
+        // Check for duplicates
+        if (uniqueMachines.size !== machineNames.length) {
+          console.error(`❌ VALIDATION FAILED: Duplicate exercises in ${workout.muscle_group} - ${machineNames.length} exercises but only ${uniqueMachines.size} unique`);
+          return false;
+        }
+        
+        // Check minimum exercise count (excluding pure cardio)
+        const nonCardioExercises = exercises.filter((e: any) => 
+          e.type !== 'cardio' || e.exercise_name.toLowerCase().includes('warmup')
+        );
+        if (nonCardioExercises.length < 4) {
+          console.error(`❌ VALIDATION FAILED: Too few exercises in ${workout.muscle_group} - only ${nonCardioExercises.length} found, need at least 4`);
+          return false;
+        }
+        
+        console.log(`✅ ${workout.muscle_group}: ${uniqueMachines.size} unique exercises`);
+      }
+      return true;
+    };
 
     // Clean up the response to ensure it's valid JSON
     generatedContent = generatedContent.replace(/```json\n?/g, '').replace(/\n?```/g, '');
