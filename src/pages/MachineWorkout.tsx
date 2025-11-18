@@ -654,18 +654,21 @@ export default function MachineWorkout() {
             {/* Machine Image */}
             <Card>
               <CardContent className="p-4">
-                {(location.state?.aiSelectedImageUrl || machine.imageUrl) && (
-                  <div className="w-full h-64 bg-muted rounded-lg overflow-hidden">
-                    <img 
-                      src={location.state?.fromScan && location.state?.aiSelectedImageUrl 
+                <div className="w-full h-64 bg-muted rounded-lg overflow-hidden">
+                  <img 
+                    src={
+                      (location.state?.fromScan && location.state?.aiSelectedImageUrl) 
                         ? location.state.aiSelectedImageUrl 
-                        : machine.imageUrl
-                      } 
-                      alt={machine.name}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                )}
+                        : machine.imageUrl || getMachineImageUrl(machine.name || '')
+                    } 
+                    alt={machine.name || 'Exercise Machine'}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.src = getMachineImageUrl(machine.name || '');
+                    }}
+                  />
+                </div>
               </CardContent>
             </Card>
 

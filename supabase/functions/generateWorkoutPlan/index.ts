@@ -439,6 +439,14 @@ Return ONLY a JSON object with this exact structure (no other text):
       throw new Error('Invalid AI response format');
     }
 
+    // CRITICAL: Validate workout variety before proceeding
+    if (workoutPlan.workouts && !validateWorkoutVariety(workoutPlan.workouts)) {
+      console.error('❌ CRITICAL: AI generated plan lacks required variety');
+      throw new Error('Workout plan validation failed - insufficient exercise variety. Please regenerate.');
+    }
+    
+    console.log('✅ Workout plan passed variety validation');
+
     // Enhance the plan with precise weight calculations if user profile available
     if (userProfile && workoutPlan.workouts) {
       console.log('Enhancing workout plan with precise weight calculations...');
