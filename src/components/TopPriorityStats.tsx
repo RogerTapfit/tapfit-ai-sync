@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -11,6 +11,8 @@ import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { WaterQuickAddModal } from "./WaterQuickAddModal";
+import { useSleepData } from "@/hooks/useSleepData";
+import { SleepTrackerModal } from "./SleepTrackerModal";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
   onStartRun?: () => void;
@@ -26,8 +28,10 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
   const [showScanModal, setShowScanModal] = useState(false);
   const [showWaterModal, setShowWaterModal] = useState(false);
+  const [showSleepModal, setShowSleepModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
   const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
+  const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
   const handleHeartRateClick = async () => {
@@ -87,7 +91,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         <div
           className="text-center space-y-2 cursor-pointer select-none"
           onClick={() => onCaloriesBurnedClick?.()}
@@ -205,9 +209,34 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
           </p>
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
+
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowSleepModal(true)}
+          role="button"
+          aria-label="Track sleep"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowSleepModal(true);
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all duration-200">
+            <Moon className="size-6 block text-indigo-400" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {lastNightSleep?.duration_minutes 
+              ? formatDurationShort(lastNightSleep.duration_minutes) 
+              : '--'}
+          </p>
+          <p className="text-sm text-muted-foreground">Sleep ({targetHours}h goal)</p>
+        </div>
       </div>
 
       <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
+      <SleepTrackerModal open={showSleepModal} onOpenChange={setShowSleepModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}
