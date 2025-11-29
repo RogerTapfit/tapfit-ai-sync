@@ -634,6 +634,65 @@ export function LiveExerciseTracker({
                   style={{ mixBlendMode: 'normal' }}
                 />
                 
+                {/* Position Warning Overlay - Preview Mode */}
+                {poseConfidence < 20 && (
+                  <div className="absolute inset-x-0 top-20 flex justify-center z-30 pointer-events-none">
+                    <div className="bg-destructive/90 text-destructive-foreground px-4 py-2 rounded-lg shadow-lg animate-pulse">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5" />
+                        <span className="font-semibold">
+                          {distanceStatus === 'too-far' ? 'Move closer or show more body' :
+                           distanceStatus === 'too-close' ? 'Step back from camera' :
+                           'Position your body in frame'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Body Position Guide - Preview Mode */}
+                {landmarks.length < 10 && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <div className="relative w-32 h-56">
+                      {/* Head outline */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 border-2 border-dashed border-white/40 rounded-full" />
+                      {/* Body outline */}
+                      <div className="absolute top-12 left-1/2 -translate-x-1/2 w-16 h-28 border-2 border-dashed border-white/40 rounded-lg" />
+                      {/* Arms */}
+                      <div className="absolute top-14 left-0 w-4 h-20 border-2 border-dashed border-white/30 rounded-full" />
+                      <div className="absolute top-14 right-0 w-4 h-20 border-2 border-dashed border-white/30 rounded-full" />
+                      {/* Text */}
+                      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-white/60 text-xs font-medium">
+                        Position body here
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Distance Status Badge - Preview Mode */}
+                {distanceStatus && distanceStatus !== 'perfect' && (
+                  <Badge 
+                    className={cn(
+                      "absolute top-4 left-4 z-30",
+                      distanceStatus === 'too-close' && "bg-orange-500 text-white",
+                      distanceStatus === 'too-far' && "bg-yellow-500 text-black"
+                    )}
+                  >
+                    {distanceStatus === 'too-close' ? '📏 Step back' : '📏 Move closer'}
+                  </Badge>
+                )}
+
+                {/* Confidence indicator - Preview Mode */}
+                {poseConfidence > 0 && (
+                  <div className={cn(
+                    "absolute bottom-4 left-4 z-30 px-3 py-1.5 rounded-lg text-sm font-medium",
+                    poseConfidence >= 50 ? "bg-green-500/80 text-white" : "bg-red-500/80 text-white"
+                  )}>
+                    {poseConfidence >= 50 ? '✓ Body detected' : `${Math.round(poseConfidence)}% - Show more body`}
+                  </div>
+                )}
+
+
 
                 {/* Control Buttons */}
                 <div className="absolute top-4 right-4 flex gap-2 pointer-events-auto">
@@ -881,12 +940,26 @@ export function LiveExerciseTracker({
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className={cn(
+          "p-4 transition-all",
+          poseConfidence < 30 && "bg-destructive/10 border-destructive"
+        )}>
           <div className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-primary" />
+            <Award className={cn(
+              "w-5 h-5",
+              poseConfidence < 30 ? "text-destructive" : "text-primary"
+            )} />
             <div>
-              <div className="text-2xl font-bold">{formScore}%</div>
+              <div className={cn(
+                "text-2xl font-bold",
+                poseConfidence < 30 && "text-destructive"
+              )}>
+                {formScore}%
+              </div>
               <div className="text-xs text-muted-foreground">Form</div>
+              {poseConfidence < 30 && (
+                <div className="text-xs text-destructive mt-0.5">Show more body</div>
+              )}
             </div>
           </div>
         </Card>
@@ -1035,6 +1108,51 @@ export function LiveExerciseTracker({
             style={{ mixBlendMode: 'normal' }}
           />
           
+          {/* Position Warning Overlay - Active Mode */}
+          {!isPaused && poseConfidence < 20 && (
+            <div className="absolute inset-x-0 top-20 flex justify-center z-30 pointer-events-none">
+              <div className="bg-destructive/90 text-destructive-foreground px-4 py-2 rounded-lg shadow-lg animate-pulse">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span className="font-semibold">
+                    {distanceStatus === 'too-far' ? 'Move closer or show more body' :
+                     distanceStatus === 'too-close' ? 'Step back from camera' :
+                     'Position your body in frame'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Body Position Guide - Active Mode */}
+          {!isPaused && landmarks.length < 10 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
+              <div className="relative w-32 h-56 opacity-50">
+                {/* Head outline */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 border-2 border-dashed border-white/40 rounded-full" />
+                {/* Body outline */}
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-16 h-28 border-2 border-dashed border-white/40 rounded-lg" />
+                {/* Arms */}
+                <div className="absolute top-14 left-0 w-4 h-20 border-2 border-dashed border-white/30 rounded-full" />
+                <div className="absolute top-14 right-0 w-4 h-20 border-2 border-dashed border-white/30 rounded-full" />
+              </div>
+            </div>
+          )}
+
+          {/* Distance Status Badge - Active Mode */}
+          {!isRecording && distanceStatus && distanceStatus !== 'perfect' && (
+            <Badge 
+              className={cn(
+                "absolute top-4 left-4 z-30",
+                distanceStatus === 'too-close' && "bg-orange-500 text-white",
+                distanceStatus === 'too-far' && "bg-yellow-500 text-black"
+              )}
+            >
+              {distanceStatus === 'too-close' ? '📏 Step back' : '📏 Move closer'}
+            </Badge>
+          )}
+          
+
           
           {/* Animated Rep Counter - Right Side Display */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none z-20">
