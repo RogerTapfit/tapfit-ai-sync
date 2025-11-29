@@ -1943,6 +1943,7 @@ export type Database = {
           target_daily_calories: number | null
           target_fat_grams: number | null
           target_protein_grams: number | null
+          target_sleep_hours: number | null
           unit_preference: string | null
           username: string | null
           vo2max_velocity: number | null
@@ -1982,6 +1983,7 @@ export type Database = {
           target_daily_calories?: number | null
           target_fat_grams?: number | null
           target_protein_grams?: number | null
+          target_sleep_hours?: number | null
           unit_preference?: string | null
           username?: string | null
           vo2max_velocity?: number | null
@@ -2021,6 +2023,7 @@ export type Database = {
           target_daily_calories?: number | null
           target_fat_grams?: number | null
           target_protein_grams?: number | null
+          target_sleep_hours?: number | null
           unit_preference?: string | null
           username?: string | null
           vo2max_velocity?: number | null
@@ -2515,6 +2518,60 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           view_count?: number | null
+        }
+        Relationships: []
+      }
+      sleep_logs: {
+        Row: {
+          awakenings: number | null
+          bedtime: string | null
+          created_at: string | null
+          deep_sleep_minutes: number | null
+          duration_minutes: number | null
+          id: string
+          light_sleep_minutes: number | null
+          notes: string | null
+          quality_score: number | null
+          rem_sleep_minutes: number | null
+          sleep_date: string
+          source: string | null
+          updated_at: string | null
+          user_id: string
+          wake_time: string | null
+        }
+        Insert: {
+          awakenings?: number | null
+          bedtime?: string | null
+          created_at?: string | null
+          deep_sleep_minutes?: number | null
+          duration_minutes?: number | null
+          id?: string
+          light_sleep_minutes?: number | null
+          notes?: string | null
+          quality_score?: number | null
+          rem_sleep_minutes?: number | null
+          sleep_date: string
+          source?: string | null
+          updated_at?: string | null
+          user_id: string
+          wake_time?: string | null
+        }
+        Update: {
+          awakenings?: number | null
+          bedtime?: string | null
+          created_at?: string | null
+          deep_sleep_minutes?: number | null
+          duration_minutes?: number | null
+          id?: string
+          light_sleep_minutes?: number | null
+          notes?: string | null
+          quality_score?: number | null
+          rem_sleep_minutes?: number | null
+          sleep_date?: string
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string
+          wake_time?: string | null
         }
         Relationships: []
       }
