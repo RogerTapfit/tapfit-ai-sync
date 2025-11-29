@@ -6,16 +6,79 @@ import { getDisplayName } from '@/lib/userDisplay';
 import { useAvatarSpeaking } from './useAvatarSpeaking';
 import { useVoiceVolume } from './useVoiceVolume';
 
-const AVATAR_PERSONALITIES: Record<string, string> = {
-  'Stark': "Hope you're ready to work because I don't do excuses—only results. This crimson armor means business. Let's turn that sweat into strength!",
-  'Petrie': "These cyan wings have been soaring for ages. I've been in this game long enough to know—consistency beats intensity every time. Let's build something that lasts!",
-  'Night Hawk': "See this midnight blue suit? It's built for precision. Peak performance happens in the details—sharp eyes, sharper talons. Let's sharpen every rep, every set, every session. Excellence awaits!",
-  'Tails': "Check out these pink tails—they're not just for show! Ready to fly high today? We're going to crush these goals with fox-like agility and have a blast doing it! Let's gooo!",
-  'Tygrus': "See these purple stripes? They're my battle scars. Time to unleash your inner beast! Every workout is a battle—and we tigers are here to dominate. Let's hunt down those gains!",
-  'Banjo': "This bear knows fitness doesn't have to be serious all the time in my forest green. Let's keep it fun and fresh—we're gonna jam through this workout together!",
-  'Ceasar': "Victory in fitness comes from strategy and discipline—just like a king ruling his kingdom in aqua armor. Let's conquer today's session with precision and power!",
-  'Reptile': "These lime-green scales aren't just for show. Slow and steady wins the race—but we'll add some serpent bite to it. Let's strike fast and make every move count!",
-  'Rhydon': "This rose-pink armor is tougher than it looks! I'm built like a tank with my rhino horn, and so will you be. Let's grind through this with unstoppable force!",
+const AVATAR_SAYINGS: Record<string, string[]> = {
+  'Stark': [
+    "Red means go hard. Let's crush it!",
+    "These crimson arms are ready to pump!",
+    "Iron body, iron will. You in?",
+    "My cyan eyes see a champion. That's you!",
+    "Red hot and ready to roll!",
+  ],
+  'Petrie': [
+    "Silver scales, golden gains. Let's fly!",
+    "This dino doesn't do lazy. Move it!",
+    "Cyan powered and ready to soar!",
+    "Ancient wisdom, modern muscles. Let's go!",
+    "Roar into action with me!",
+  ],
+  'Night Hawk': [
+    "Midnight blue, maximum effort!",
+    "Sharp talons, sharper focus. Ready?",
+    "Silent but deadly workouts ahead!",
+    "These blue wings only fly forward!",
+    "Hunt those gains with me!",
+  ],
+  'Banjo': [
+    "Green light means go time, friend!",
+    "This panda packs a punch!",
+    "Bear hugs and big gains ahead!",
+    "Forest green and fighting fit!",
+    "Let's make fitness fun together!",
+  ],
+  'Tails': [
+    "Purple power activated. Let's move!",
+    "These tails bring the trails!",
+    "Foxes stay foxy. Workout time!",
+    "Dark and swift. Keep up!",
+    "Shadow speed, real results!",
+  ],
+  'Tygrus': [
+    "Yellow spots, zero stops!",
+    "This cat's got claws. Show yours!",
+    "Leopard speed, lion heart!",
+    "Purple stripes mean business!",
+    "Pounce on these gains!",
+  ],
+  'Ceasar': [
+    "Teal tech, total transformation!",
+    "Chrome finish, polished workout!",
+    "Royal results await, champion!",
+    "Silver and smooth. Let's flow!",
+    "Precision in every rep!",
+  ],
+  'Reptile': [
+    "Green machine, mean routine!",
+    "Scales up, weight up!",
+    "Cold blooded, hot workout!",
+    "Slither into shape with me!",
+    "Lime time is grind time!",
+  ],
+  'Rhydon': [
+    "Red bull, no quit!",
+    "These horns point to victory!",
+    "Pink power, unstoppable force!",
+    "Built like a tank. You next!",
+    "Charge through with me!",
+  ],
+};
+
+const getRandomSaying = (avatarName: string): string => {
+  const sayings = AVATAR_SAYINGS[avatarName];
+  if (!sayings || sayings.length === 0) {
+    return "Let's get your pump on!";
+  }
+  const randomIndex = Math.floor(Math.random() * sayings.length);
+  return sayings[randomIndex];
 };
 
 export const useVoiceIntroduction = () => {
@@ -47,12 +110,11 @@ export const useVoiceIntroduction = () => {
         }
       }
       
-      // Get personality message for this avatar
-      const personalityMessage = AVATAR_PERSONALITIES[avatarName] || 
-        "Thanks for selecting me, let's get your pump on!";
+      // Get random saying for this avatar
+      const saying = getRandomSaying(avatarName);
       
-      // Generate the personalized introduction text
-      const introText = `Hey ${userName}, ${avatarName} here. ${personalityMessage}`;
+      // Generate short, punchy introduction
+      const introText = `Hey ${userName}! ${saying}`;
       
       console.log(`🔊 Playing introduction for ${avatarName} (${gender}) to user: ${userName}`);
       
