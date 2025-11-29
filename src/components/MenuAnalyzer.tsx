@@ -79,6 +79,7 @@ export const MenuAnalyzer = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationCard[]>([]);
   const [recommendationType, setRecommendationType] = useState<string>('');
+  const [activeFilter, setActiveFilter] = useState<{ id: string; label: string; emoji: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'menu' | 'favorites'>('menu');
   const [comparisonItems, setComparisonItems] = useState<MenuItem[]>([]);
   const [showComparison, setShowComparison] = useState(false);
@@ -238,8 +239,16 @@ export const MenuAnalyzer = () => {
     }
   };
 
-  const handleQuickAction = (prompt: string) => {
-    sendChatMessage(prompt);
+  const handleQuickAction = (action: typeof QUICK_ACTIONS[0]) => {
+    // Set the active filter to show which category is selected
+    setActiveFilter({ id: action.id, label: action.label, emoji: action.icon });
+    sendChatMessage(action.prompt);
+  };
+
+  const clearActiveFilter = () => {
+    setActiveFilter(null);
+    setRecommendations([]);
+    setRecommendationType('');
   };
 
   const getHealthScoreColor = (score?: number) => {
@@ -597,27 +606,59 @@ export const MenuAnalyzer = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Menu Items Column */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Recommended Items Section */}
+              {/* Active Filter Banner */}
+              {activeFilter && (
+                <Card className="border-2 border-primary/40 bg-gradient-to-r from-primary/10 to-primary/5">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{activeFilter.emoji}</span>
+                        <div>
+                          <h3 className="font-semibold text-lg">Filtering: {activeFilter.label}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {chatLoading ? 'Finding matching items...' : 
+                             recommendations.length > 0 ? `${recommendations.length} items found` : 
+                             'No results yet'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={clearActiveFilter}
+                        className="gap-2"
+                      >
+                        <X className="h-4 w-4" />
+                        Clear Filter
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Filtered Results Section */}
               {recommendations.length > 0 && (
                 <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
-                  <CardHeader>
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-primary" />
+                          <span className="text-xl">{activeFilter?.emoji || '✨'}</span>
                           {recommendationType || 'Recommended For You'}
                         </CardTitle>
                         <CardDescription className="mt-1">
-                          Based on your preferences
+                          {recommendations.length} {recommendations.length === 1 ? 'item' : 'items'} match your criteria
                         </CardDescription>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost"
-                        onClick={() => setRecommendations([])}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {!activeFilter && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => setRecommendations([])}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -625,7 +666,7 @@ export const MenuAnalyzer = () => {
                       {recommendations.map((rec, idx) => (
                         <Card 
                           key={idx} 
-                          className="cursor-pointer hover:shadow-md transition-all border-primary/20 bg-card"
+                          className="cursor-pointer hover:shadow-md transition-all border-primary/20 bg-card hover:border-primary/40"
                           onClick={() => {
                             const item = analysisResult.menuItems.find(i => i.name === rec.itemName);
                             if (item) {
@@ -636,9 +677,18 @@ export const MenuAnalyzer = () => {
                         >
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2 flex-1">
-                                <span className="text-2xl">{rec.emoji || '✨'}</span>
-                                <h4 className="text-base font-bold leading-tight">{rec.itemName}</h4>
+                              <div className="flex items-center gap-3 flex-1">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-xl">
+                                  {rec.emoji || '✨'}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="text-base font-bold leading-tight">{rec.itemName}</h4>
+                                  {rec.calories && (
+                                    <span className="text-sm text-orange-600 font-medium">
+                                      🔥 {rec.calories} cal
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex gap-2">
                                 <Button 
@@ -661,20 +711,24 @@ export const MenuAnalyzer = () => {
                               </div>
                             </div>
                             
-                            {rec.calories && (
-                              <Badge className="mb-3 bg-gradient-to-r from-orange-500 to-red-500 text-white border-0">
-                                🔥 {rec.calories} cal
-                              </Badge>
-                            )}
-                            
-                            <p className="text-sm text-foreground/80 leading-relaxed mb-3 font-medium">
+                            <p className="text-sm text-foreground/80 leading-relaxed mb-3 font-medium bg-muted/50 rounded-lg p-2">
                               {rec.reason}
                             </p>
                             
                             <div className="flex flex-wrap gap-2">
                               {rec.macros?.protein && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500/30">
                                   💪 {rec.macros.protein}g protein
+                                </Badge>
+                              )}
+                              {rec.macros?.carbs && (
+                                <Badge variant="outline" className="text-xs bg-yellow-500/10 border-yellow-500/30">
+                                  🍞 {rec.macros.carbs}g carbs
+                                </Badge>
+                              )}
+                              {rec.macros?.fat && (
+                                <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30">
+                                  🥑 {rec.macros.fat}g fat
                                 </Badge>
                               )}
                               {rec.price && (
@@ -690,6 +744,25 @@ export const MenuAnalyzer = () => {
                             </div>
                           </CardContent>
                         </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Loading skeleton when filtering */}
+              {chatLoading && activeFilter && recommendations.length === 0 && (
+                <Card className="border-2 border-primary/20">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Finding {activeFilter.label.toLowerCase()}...</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse">
+                          <div className="h-24 bg-muted rounded-lg"></div>
+                        </div>
                       ))}
                     </div>
                   </CardContent>
@@ -820,11 +893,13 @@ export const MenuAnalyzer = () => {
                     {QUICK_ACTIONS.map((action, idx) => (
                       <Button
                         key={idx}
-                        variant="outline"
+                        variant={activeFilter?.id === action.id ? "default" : "outline"}
                         size="sm"
-                        onClick={() => handleQuickAction(action.prompt)}
+                        onClick={() => handleQuickAction(action)}
                         disabled={chatLoading}
-                        className="h-auto py-3 flex flex-col items-center gap-1 text-xs"
+                        className={`h-auto py-3 flex flex-col items-center gap-1 text-xs transition-all ${
+                          activeFilter?.id === action.id ? 'ring-2 ring-primary/50' : ''
+                        }`}
                       >
                         <span className="text-lg">{action.icon}</span>
                         <span className="text-center leading-tight">{action.label}</span>
