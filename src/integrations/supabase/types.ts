@@ -406,6 +406,45 @@ export type Database = {
         }
         Relationships: []
       }
+      biometric_insights: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          data_source: string[] | null
+          expires_at: string | null
+          id: string
+          insight_text: string
+          insight_type: string
+          is_actionable: boolean | null
+          is_read: boolean | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          data_source?: string[] | null
+          expires_at?: string | null
+          id?: string
+          insight_text: string
+          insight_type: string
+          is_actionable?: boolean | null
+          is_read?: boolean | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          data_source?: string[] | null
+          expires_at?: string | null
+          id?: string
+          insight_text?: string
+          insight_type?: string
+          is_actionable?: boolean | null
+          is_read?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       body_scan_images: {
         Row: {
           created_at: string
@@ -1696,6 +1735,63 @@ export type Database = {
           template_data?: Json
           updated_at?: string
           week_structure?: Json
+        }
+        Relationships: []
+      }
+      mood_entries: {
+        Row: {
+          created_at: string | null
+          energy_level: number | null
+          entry_context: string | null
+          entry_date: string
+          entry_time: string | null
+          heart_rate_bpm: number | null
+          id: string
+          mood_score: number | null
+          mood_tags: string[] | null
+          motivation_level: number | null
+          notes: string | null
+          sleep_hours_last_night: number | null
+          sleep_quality_last_night: number | null
+          stress_level: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          energy_level?: number | null
+          entry_context?: string | null
+          entry_date?: string
+          entry_time?: string | null
+          heart_rate_bpm?: number | null
+          id?: string
+          mood_score?: number | null
+          mood_tags?: string[] | null
+          motivation_level?: number | null
+          notes?: string | null
+          sleep_hours_last_night?: number | null
+          sleep_quality_last_night?: number | null
+          stress_level?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          energy_level?: number | null
+          entry_context?: string | null
+          entry_date?: string
+          entry_time?: string | null
+          heart_rate_bpm?: number | null
+          id?: string
+          mood_score?: number | null
+          mood_tags?: string[] | null
+          motivation_level?: number | null
+          notes?: string | null
+          sleep_hours_last_night?: number | null
+          sleep_quality_last_night?: number | null
+          stress_level?: number | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -3638,6 +3734,78 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_performance_correlations: {
+        Row: {
+          best_workout_day: string | null
+          best_workout_time: string | null
+          confidence_level: string | null
+          created_at: string | null
+          data_points_count: number | null
+          energy_level_correlation: number | null
+          id: string
+          last_calculated: string | null
+          mood_score_correlation: number | null
+          optimal_energy_range: Json | null
+          optimal_mood_range: Json | null
+          optimal_resting_hr: Json | null
+          optimal_sleep_hours: number | null
+          optimal_sleep_quality: number | null
+          optimal_stress_range: Json | null
+          resting_hr_correlation: number | null
+          sleep_duration_correlation: number | null
+          sleep_quality_correlation: number | null
+          stress_level_correlation: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          best_workout_day?: string | null
+          best_workout_time?: string | null
+          confidence_level?: string | null
+          created_at?: string | null
+          data_points_count?: number | null
+          energy_level_correlation?: number | null
+          id?: string
+          last_calculated?: string | null
+          mood_score_correlation?: number | null
+          optimal_energy_range?: Json | null
+          optimal_mood_range?: Json | null
+          optimal_resting_hr?: Json | null
+          optimal_sleep_hours?: number | null
+          optimal_sleep_quality?: number | null
+          optimal_stress_range?: Json | null
+          resting_hr_correlation?: number | null
+          sleep_duration_correlation?: number | null
+          sleep_quality_correlation?: number | null
+          stress_level_correlation?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          best_workout_day?: string | null
+          best_workout_time?: string | null
+          confidence_level?: string | null
+          created_at?: string | null
+          data_points_count?: number | null
+          energy_level_correlation?: number | null
+          id?: string
+          last_calculated?: string | null
+          mood_score_correlation?: number | null
+          optimal_energy_range?: Json | null
+          optimal_mood_range?: Json | null
+          optimal_resting_hr?: Json | null
+          optimal_sleep_hours?: number | null
+          optimal_sleep_quality?: number | null
+          optimal_stress_range?: Json | null
+          resting_hr_correlation?: number | null
+          sleep_duration_correlation?: number | null
+          sleep_quality_correlation?: number | null
+          stress_level_correlation?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_plans: {
         Row: {
           created_at: string
@@ -3829,6 +3997,7 @@ export type Database = {
         }
         Returns: Json
       }
+      calculate_readiness_score: { Args: { _user_id: string }; Returns: Json }
       calculate_user_power_level: {
         Args: { _user_id: string }
         Returns: number
