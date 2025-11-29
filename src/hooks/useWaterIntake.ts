@@ -81,6 +81,9 @@ export const useWaterIntake = () => {
 
     const amountMl = Math.round(amountOz * ML_PER_OZ);
 
+    // Optimistic update - instant UI feedback
+    setTodaysIntake(prev => prev + amountMl);
+
     try {
       const { error } = await supabase.from('water_intake').insert({
         user_id: user.id,
@@ -94,6 +97,8 @@ export const useWaterIntake = () => {
       toast.success(`💧 ${amountOz}oz added!`);
       return true;
     } catch (error) {
+      // Rollback on error
+      setTodaysIntake(prev => prev - amountMl);
       console.error('Error adding water:', error);
       toast.error('Failed to add water intake');
       return false;

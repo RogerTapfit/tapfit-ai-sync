@@ -1,6 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Droplet, Trash2, GlassWater, Wine } from 'lucide-react';
 import { useWaterIntake } from '@/hooks/useWaterIntake';
 import { format } from 'date-fns';
@@ -47,7 +46,12 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
             <div className="text-sm text-muted-foreground">
               of {dailyGoal}oz daily goal
             </div>
-            <Progress value={progressPercent} className="h-3 bg-muted" />
+            <div className="relative h-4 w-full overflow-hidden rounded-full bg-muted">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
             <div className="text-xs text-muted-foreground">
               {progressPercent}% complete
             </div>
