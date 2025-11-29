@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,7 +17,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { message, avatarName, conversationHistory } = await req.json();
+    const { message, avatarName, conversationHistory, userId, includeInjuryContext } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
@@ -24,7 +25,97 @@ serve(async (req) => {
 
     const coachName = avatarName || 'Coach';
     
-    // Build system prompt with coach personality
+    // Build injury prevention context if user ID provided and requested
+    let injuryContext = '';
+    if (userId && includeInjuryContext) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // Fetch user profile for health conditions
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('previous_injuries, health_conditions, gender, age')
+          .eq('id', userId)
+          .single();
+
+        // Fetch muscle imbalances
+        const { data: imbalances } = await supabase
+          .from('muscle_imbalance_tracking')
+          .select('*')
+          .eq('user_id', userId);
+
+        // Fetch recent form analysis
+        const { data: formLogs } = await supabase
+          .from('form_analysis_logs')
+          .select('exercise_name, avg_form_score, injury_risk_level, flagged_patterns')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        // Calculate risk score
+        const { data: riskScore } = await supabase
+          .rpc('calculate_injury_risk_score', { _user_id: userId });
+
+        // Build context string
+        if (profile || imbalances?.length || formLogs?.length) {
+          injuryContext = `\n\nINJURY PREVENTION CONTEXT FOR THIS USER:`;
+          
+          if (riskScore !== null) {
+            const riskLevel = riskScore >= 60 ? 'HIGH' : riskScore >= 30 ? 'MEDIUM' : 'LOW';
+            injuryContext += `\n- Overall Injury Risk Score: ${riskScore}/100 (${riskLevel} RISK)`;
+          }
+
+          if (profile?.previous_injuries?.length) {
+            injuryContext += `\n- Previous Injuries: ${profile.previous_injuries.join(', ')}`;
+          }
+
+          if (profile?.health_conditions?.length) {
+            injuryContext += `\n- Health Conditions: ${profile.health_conditions.join(', ')}`;
+          }
+
+          if (imbalances?.length) {
+            const significantImbalances = imbalances.filter((i: any) => i.imbalance_percentage > 10);
+            if (significantImbalances.length > 0) {
+              injuryContext += `\n- Muscle Imbalances Detected:`;
+              significantImbalances.forEach((imb: any) => {
+                const weakSide = imb.dominant_side === 'left' ? 'right' : 'left';
+                injuryContext += `\n  • ${imb.muscle_group}: ${imb.imbalance_percentage.toFixed(0)}% (${weakSide} side weaker, ${imb.trend})`;
+              });
+            }
+          }
+
+          if (formLogs?.length) {
+            const avgFormScore = formLogs.reduce((sum: number, l: any) => sum + (l.avg_form_score || 0), 0) / formLogs.length;
+            const highRiskCount = formLogs.filter((l: any) => l.injury_risk_level === 'high').length;
+            const allPatterns = new Set<string>();
+            formLogs.forEach((l: any) => (l.flagged_patterns || []).forEach((p: string) => allPatterns.add(p)));
+
+            injuryContext += `\n- Recent Form Analysis (last ${formLogs.length} sessions):`;
+            injuryContext += `\n  • Average Form Score: ${avgFormScore.toFixed(0)}%`;
+            if (highRiskCount > 0) {
+              injuryContext += `\n  • High-risk sessions: ${highRiskCount}`;
+            }
+            if (allPatterns.size > 0) {
+              injuryContext += `\n  • Recurring patterns: ${Array.from(allPatterns).join(', ')}`;
+            }
+          }
+
+          injuryContext += `\n\nIMPORTANT SAFETY GUIDELINES:
+1. If injury risk is HIGH (>60), recommend recovery days or significantly lighter workouts
+2. Proactively address detected muscle imbalances with corrective exercise suggestions
+3. Warn about exercises that could aggravate previous injuries or health conditions
+4. If the user mentions ANY pain, take it seriously - recommend rest and professional consultation
+5. Adjust intensity recommendations based on form scores and risk patterns`;
+        }
+      } catch (contextError) {
+        console.error('Error fetching injury context:', contextError);
+        // Continue without injury context
+      }
+    }
+    
+    // Build system prompt with coach personality and injury context
     const systemPrompt = `You are ${coachName}, an expert AI fitness coach for TapFit, a smart gym platform. You're knowledgeable, motivating, and personalized.
 
 Key traits:
@@ -42,8 +133,9 @@ Specialties:
 - Recovery and injury prevention
 - Goal setting and progress tracking
 - Motivation and habit building
+${injuryContext}
 
-Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay.`;
+Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks or imbalances in the user's data, proactively mention them and offer solutions.`;
 
     // Build messages array with conversation history
     const messages = [

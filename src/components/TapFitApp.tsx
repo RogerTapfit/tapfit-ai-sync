@@ -42,6 +42,7 @@ const NutritionDashboard = lazyWithRetry(() => import("./NutritionDashboard"));
 const NFCTagWriter = lazyWithRetry(() => import("./NFCTagWriter"));
 const LogoGenerator = lazyWithRetry(() => import("./LogoGenerator").then(module => ({ default: module.LogoGenerator })));
 const UnitPreferenceSettings = lazyWithRetry(() => import("./UnitPreferenceSettings").then(module => ({ default: module.UnitPreferenceSettings })));
+const InjuryPreventionDashboard = lazyWithRetry(() => import("./InjuryPreventionDashboard"));
 
 // Error boundary to display a friendly fallback instead of blank screen
 class ChunkErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
@@ -212,6 +213,8 @@ const TapFitApp = () => {
           return renderSettingsPage();
         case 'subscription':
           return <SubscriptionPlans />;
+        case 'injury-prevention':
+          return <InjuryPreventionDashboard onBack={() => setCurrentPage('dashboard')} />;
         case 'avatar':
           console.log('Rendering AvatarGallery component');
           return (

@@ -18,7 +18,8 @@ import {
   Palette,
   Apple,
   RefreshCw,
-  User
+  User,
+  Shield
 } from "lucide-react";
 import heroImage from "@/assets/tapfit-hero-new.jpg";
 const HERO_MASCOT_URL = "/lovable-uploads/e3f47cfe-bdb8-47c1-a1d6-4df0229e046f.png";
@@ -560,7 +561,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Button 
           variant="outline" 
           className="glow-card h-16 text-lg"
@@ -568,6 +569,15 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         >
           <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
           Personal Records
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          className="glow-card h-16 text-lg"
+          onClick={() => onPageChange?.('injury-prevention')}
+        >
+          <Shield className="h-5 w-5 mr-2 text-green-500" />
+          Injury Prevention
         </Button>
         
         <Button variant="outline" className="glow-card h-16 text-lg">
