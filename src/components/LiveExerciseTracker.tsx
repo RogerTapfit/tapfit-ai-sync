@@ -433,8 +433,8 @@ export function LiveExerciseTracker({
           const crossedMid = avgTrackedY > MID_Y;
           const crossedBottom = avgTrackedY > BOTTOM_Y;
 
-          // Alarm mode: Track nose crossing bottom line to count reps
-          if (alarmMode && trackedLandmarks.length > 0) {
+          // Track nose crossing bottom line to count reps (ALL MODES)
+          if (trackedLandmarks.length > 0) {
             // Initialize tracking on first detection
             if (!visualCrossingRef.current.initialized) {
               visualCrossingRef.current.initialized = true;
@@ -447,14 +447,14 @@ export function LiveExerciseTracker({
             // Nose just crossed below the line - COUNT THE REP!
             if (!wasBelow && isNowBelow) {
               visualCrossingRef.current.below = true;
-              console.log('[Alarm Rep] Nose crossed BELOW line (turned GREEN) - counting rep!');
+              console.log('[Visual Rep] Nose crossed BELOW line (turned GREEN) - counting rep!');
               countRepNow(); // Count rep immediately when nose turns green
             }
 
             // Nose came back above the line - reset state for next rep
             if (wasBelow && !isNowBelow) {
               visualCrossingRef.current.below = false;
-              console.log('[Alarm Rep] Nose crossed ABOVE line - ready for next rep');
+              console.log('[Visual Rep] Nose crossed ABOVE line - ready for next rep');
             }
           }
 
