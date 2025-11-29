@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { message, avatarName, conversationHistory, userId, includeInjuryContext } = await req.json();
+    const { message, avatarName, conversationHistory, userId, includeInjuryContext, includeMoodContext } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
@@ -27,12 +27,14 @@ serve(async (req) => {
     
     // Build injury prevention context if user ID provided and requested
     let injuryContext = '';
+    let moodContext = '';
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     if (userId && includeInjuryContext) {
       try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
-
         // Fetch user profile for health conditions
         const { data: profile } = await supabase
           .from('profiles')
@@ -111,11 +113,102 @@ serve(async (req) => {
         }
       } catch (contextError) {
         console.error('Error fetching injury context:', contextError);
-        // Continue without injury context
       }
     }
     
-    // Build system prompt with coach personality and injury context
+    // Build biometric mood context if requested
+    if (userId && includeMoodContext) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Fetch today's mood
+        const { data: todayMood } = await supabase
+          .from('mood_entries')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('entry_date', today)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        // Fetch correlations
+        const { data: correlations } = await supabase
+          .from('workout_performance_correlations')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        // Fetch last night's sleep
+        const { data: lastSleep } = await supabase
+          .from('sleep_logs')
+          .select('duration_minutes, quality_score')
+          .eq('user_id', userId)
+          .order('sleep_date', { ascending: false })
+          .limit(1);
+
+        // Calculate readiness score
+        const { data: readiness } = await supabase
+          .rpc('calculate_readiness_score', { _user_id: userId });
+
+        moodContext = `\n\nBIOMETRIC MOOD CONTEXT:`;
+        
+        if (readiness && typeof readiness === 'object') {
+          const r = readiness as any;
+          moodContext += `\n- Today's Readiness Score: ${r.total}% (${r.status})`;
+          moodContext += `\n  • Sleep Score: ${r.sleep}%`;
+          moodContext += `\n  • Mood Score: ${r.mood}%`;
+          moodContext += `\n  • Stress Score: ${r.stress}% (higher = less stressed)`;
+          moodContext += `\n  • Recovery Score: ${r.recovery}%`;
+        }
+        
+        if (todayMood?.[0]) {
+          const mood = todayMood[0];
+          moodContext += `\n- Today's Self-Reported Mood:`;
+          moodContext += `\n  • Mood: ${mood.mood_score}/10`;
+          moodContext += `\n  • Energy: ${mood.energy_level}/10`;
+          moodContext += `\n  • Stress: ${mood.stress_level}/10`;
+          moodContext += `\n  • Motivation: ${mood.motivation_level}/10`;
+          if (mood.mood_tags?.length > 0) {
+            moodContext += `\n  • Feeling: ${mood.mood_tags.join(', ')}`;
+          }
+        }
+        
+        if (lastSleep?.[0]) {
+          const hours = (lastSleep[0].duration_minutes / 60).toFixed(1);
+          moodContext += `\n- Last Night's Sleep: ${hours} hours`;
+          if (lastSleep[0].quality_score) {
+            moodContext += `, Quality ${lastSleep[0].quality_score}/5`;
+          }
+        }
+        
+        if (correlations) {
+          moodContext += `\n\nDISCOVERED PATTERNS FOR THIS USER:`;
+          if (correlations.optimal_sleep_hours) {
+            moodContext += `\n- Optimal sleep for this user: ${correlations.optimal_sleep_hours} hours`;
+          }
+          if (correlations.best_workout_time) {
+            moodContext += `\n- Best workout time: ${correlations.best_workout_time}`;
+          }
+          if (correlations.best_workout_day) {
+            moodContext += `\n- Best workout day: ${correlations.best_workout_day}`;
+          }
+          if (correlations.confidence_level) {
+            moodContext += `\n- Pattern confidence: ${correlations.confidence_level} (${correlations.data_points_count} data points)`;
+          }
+        }
+        
+        moodContext += `\n\nMOOD-BASED RECOMMENDATIONS:
+1. If readiness is below 50%, suggest lighter workouts or active recovery
+2. If energy is low (< 5), recommend shorter, less intense sessions
+3. If stress is high (> 7), suggest mindfulness or stress-relieving exercises
+4. If sleep was poor (< 6 hours), recommend avoiding heavy compound lifts
+5. Adjust workout recommendations based on the user's current biometric state`;
+
+      } catch (moodError) {
+        console.error('Error fetching mood context:', moodError);
+      }
+    }
+    
+    // Build system prompt with coach personality and contexts
     const systemPrompt = `You are ${coachName}, an expert AI fitness coach for TapFit, a smart gym platform. You're knowledgeable, motivating, and personalized.
 
 Key traits:
@@ -133,9 +226,9 @@ Specialties:
 - Recovery and injury prevention
 - Goal setting and progress tracking
 - Motivation and habit building
-${injuryContext}
+${injuryContext}${moodContext}
 
-Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks or imbalances in the user's data, proactively mention them and offer solutions.`;
+Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks, imbalances, or low readiness in the user's data, proactively mention them and offer solutions.`;
 
     // Build messages array with conversation history
     const messages = [
