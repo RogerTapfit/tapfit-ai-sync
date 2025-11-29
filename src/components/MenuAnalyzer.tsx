@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShareMenuItemModal } from "@/components/ShareMenuItemModal";
@@ -69,6 +69,16 @@ const QUICK_ACTIONS = [
   { id: 'best-value', label: 'Best value', icon: '💰', emoji: '💰', prompt: 'What items give the best value for money?' }
 ];
 
+const ANALYSIS_STAGES = [
+  { progress: 10, text: 'Uploading menu images...', duration: 1500 },
+  { progress: 25, text: 'Processing image quality...', duration: 2000 },
+  { progress: 40, text: 'Detecting menu items...', duration: 3000 },
+  { progress: 55, text: 'Extracting names & prices...', duration: 3500 },
+  { progress: 70, text: 'Analyzing nutritional data...', duration: 4000 },
+  { progress: 85, text: 'Calculating health scores...', duration: 2000 },
+  { progress: 95, text: 'Generating recommendations...', duration: 2000 },
+];
+
 export const MenuAnalyzer = () => {
   const [menuImages, setMenuImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -92,8 +102,11 @@ export const MenuAnalyzer = () => {
   const [shareType, setShareType] = useState<'item' | 'comparison'>('item');
   const [showAddToLog, setShowAddToLog] = useState(false);
   const [selectedItemForLog, setSelectedItemForLog] = useState<MenuItem | null>(null);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const { 
     savedItems, 
@@ -178,6 +191,19 @@ export const MenuAnalyzer = () => {
     if (menuImages.length === 0) return;
 
     setAnalyzing(true);
+    setAnalysisProgress(ANALYSIS_STAGES[0].progress);
+    setAnalysisStage(ANALYSIS_STAGES[0].text);
+    
+    // Start progress simulation
+    let stageIndex = 0;
+    progressIntervalRef.current = setInterval(() => {
+      if (stageIndex < ANALYSIS_STAGES.length - 1) {
+        stageIndex++;
+        setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+        setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+      }
+    }, 2500);
+
     try {
       const { data, error } = await supabase.functions.invoke('analyzeMenu', {
         body: { 
@@ -185,6 +211,14 @@ export const MenuAnalyzer = () => {
           mode: 'analyze'
         }
       });
+
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
+      setAnalysisProgress(100);
+      setAnalysisStage('Complete!');
 
       if (error) throw error;
 
@@ -194,9 +228,26 @@ export const MenuAnalyzer = () => {
       console.error('Error analyzing menu:', error);
       toast.error('Failed to analyze menu. Please try again.');
     } finally {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setAnalyzing(false);
+      setTimeout(() => {
+        setAnalysisProgress(0);
+        setAnalysisStage('');
+      }, 500);
     }
   };
+  
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
 
   const sendChatMessage = async (message: string) => {
     if (menuImages.length === 0 || !message.trim()) return;
@@ -519,6 +570,48 @@ export const MenuAnalyzer = () => {
               </div>
             )}
             
+            {/* Analysis Progress Indicator */}
+            {analyzing && (
+              <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 mb-4">
+                <CardContent className="py-5">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-1 animate-pulse" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">Analyzing Menu</h3>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {menuImages.length} photo{menuImages.length > 1 ? 's' : ''} • Est. {Math.max(8, menuImages.length * 8)} seconds
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                        <div 
+                          className="h-full bg-primary transition-all duration-500 ease-out"
+                          style={{ width: `${analysisProgress}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-primary font-medium">{analysisStage}</span>
+                        <span className="text-muted-foreground">{analysisProgress}%</span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">
+                        💡 <span className="font-medium">Did you know?</span> Our AI analyzes menu item ingredients to estimate nutritional values and health scores.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="flex gap-3">
               <Button 
                 onClick={analyzeMenu} 
@@ -528,7 +621,7 @@ export const MenuAnalyzer = () => {
                 {analyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Analyzing {menuImages.length > 1 ? `${menuImages.length} photos` : 'menu'}...
+                    {analysisStage || 'Starting analysis...'}
                   </>
                 ) : (
                   <>
