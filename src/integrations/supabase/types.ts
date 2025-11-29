@@ -3155,6 +3155,36 @@ export type Database = {
           },
         ]
       }
+      water_intake: {
+        Row: {
+          amount_ml: number
+          created_at: string
+          id: string
+          logged_at: string
+          logged_date: string
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_ml: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_date?: string
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       weight_progressions: {
         Row: {
           created_at: string
