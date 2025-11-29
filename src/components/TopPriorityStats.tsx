@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -9,6 +9,8 @@ import { useHealthKit } from "@/hooks/useHealthKit";
 import { HeartRateScanModal } from "./HeartRateScanModal";
 import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
+import { useWaterIntake } from "@/hooks/useWaterIntake";
+import { WaterQuickAddModal } from "./WaterQuickAddModal";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
   onStartRun?: () => void;
@@ -23,7 +25,9 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const stats = useDailyStats(user?.id);
   const { scanHeartRate, isScanning, lastScanResult } = useHealthKit();
   const [showScanModal, setShowScanModal] = useState(false);
+  const [showWaterModal, setShowWaterModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
+  const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
   const handleHeartRateClick = async () => {
@@ -160,6 +164,28 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
 
         <div
           className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowWaterModal(true)}
+          role="button"
+          aria-label="Track water intake"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowWaterModal(true);
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all duration-200">
+            <Droplet className="size-6 block text-cyan-500" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            <AnimatedNumber finalValue={waterIntake} duration={1500} suffix="oz" />
+          </p>
+          <p className="text-sm text-muted-foreground">Water ({waterGoal}oz goal)</p>
+        </div>
+
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
           onClick={handleHeartRateClick}
           role="button"
           aria-label="Start live heart rate"
@@ -180,6 +206,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
           <p className="text-sm text-muted-foreground">Avg Heart Rate</p>
         </div>
       </div>
+
+      <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}
