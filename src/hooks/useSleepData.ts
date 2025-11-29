@@ -185,6 +185,7 @@ export const useSleepData = () => {
       if (error) throw error;
 
       toast.success('🌙 Sleep logged!');
+      window.dispatchEvent(new CustomEvent('sleepLogged'));
       fetchSleepData();
       return true;
     } catch (error) {
@@ -227,6 +228,7 @@ export const useSleepData = () => {
       if (error) throw error;
 
       toast.success('⌚ Sleep imported from Apple Watch!');
+      window.dispatchEvent(new CustomEvent('sleepLogged'));
       fetchSleepData();
       return true;
     } catch (error) {

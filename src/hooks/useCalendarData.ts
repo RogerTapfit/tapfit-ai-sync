@@ -7,6 +7,21 @@ import { useDailyStats } from './useDailyStats';
 import { useWorkoutPlan } from './useWorkoutPlan';
 import { useCycleTracking, type CyclePhaseInfo } from './useCycleTracking';
 
+export interface SleepActivity {
+  id: string;
+  sleepDate: string;
+  bedtime: string | null;
+  wakeTime: string | null;
+  durationMinutes: number | null;
+  qualityScore: number | null;
+  deepSleepMinutes: number | null;
+  remSleepMinutes: number | null;
+  lightSleepMinutes: number | null;
+  awakenings: number;
+  notes: string | null;
+  source: string;
+}
+
 export interface CalendarDay {
   date: Date;
   dateString: string;
@@ -15,6 +30,7 @@ export interface CalendarDay {
   foodEntries: FoodActivity[];
   alcoholEntries: AlcoholActivity[];
   tapCoins: TapCoinsActivity[];
+  sleepLog: SleepActivity | null;
   steps: number;
   calories: number;
   dailyStats: {
@@ -24,6 +40,8 @@ export interface CalendarDay {
     workoutDuration: number;
     tapCoinsEarned: number;
     alcoholDrinks: number;
+    sleepDuration: number;
+    sleepQuality: number;
   };
   hasActivity: boolean;
   cyclePhase?: CyclePhaseInfo | null;
@@ -107,7 +125,8 @@ export const useCalendarData = (userId?: string) => {
         alcoholEntriesResponse,
         dailyStepsResponse,
         tapCoinsResponse,
-        exerciseLogsResponse
+        exerciseLogsResponse,
+        sleepLogsResponse
       ] = await Promise.all([
         supabase
           .from('workout_logs')
@@ -175,7 +194,15 @@ export const useCalendarData = (userId?: string) => {
           .select('workout_log_id, exercise_name, machine_name, reps_completed, sets_completed, weight_used, completed_at')
           .eq('user_id', userId)
           .gte('completed_at', startDateStr)
-          .lte('completed_at', endDateStr + 'T23:59:59')
+          .lte('completed_at', endDateStr + 'T23:59:59'),
+          
+        // Sleep logs
+        supabase
+          .from('sleep_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('sleep_date', startDateStr)
+          .lte('sleep_date', endDateStr)
       ]);
 
       const newCalendarData = new Map<string, CalendarDay>();
@@ -188,6 +215,7 @@ export const useCalendarData = (userId?: string) => {
       const dailySteps = dailyStepsResponse.data || [];
       const tapCoinsTransactions = tapCoinsResponse.data || [];
       const exerciseLogs = exerciseLogsResponse.data || [] as any[];
+      const sleepLogs = sleepLogsResponse.data || [];
 
       // Build a quick index of exercise logs by workout_log_id with exercise names
       const exerciseByWorkout = new Map<string, {
@@ -373,6 +401,23 @@ export const useCalendarData = (userId?: string) => {
             time: new Date(transaction.created_at).toISOString()
           }));
         
+        // Get sleep log for this day
+        const daySleepLog = sleepLogs.find(log => log.sleep_date === dateString);
+        const sleepActivity: SleepActivity | null = daySleepLog ? {
+          id: daySleepLog.id,
+          sleepDate: daySleepLog.sleep_date,
+          bedtime: daySleepLog.bedtime,
+          wakeTime: daySleepLog.wake_time,
+          durationMinutes: daySleepLog.duration_minutes,
+          qualityScore: daySleepLog.quality_score,
+          deepSleepMinutes: daySleepLog.deep_sleep_minutes,
+          remSleepMinutes: daySleepLog.rem_sleep_minutes,
+          lightSleepMinutes: daySleepLog.light_sleep_minutes,
+          awakenings: daySleepLog.awakenings || 0,
+          notes: daySleepLog.notes,
+          source: daySleepLog.source || 'manual'
+        } : null;
+        
         // Calculate daily stats
         const totalWorkoutCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0);
         const totalCardioCalories = dayCardioSessions.reduce((sum, c) => sum + c.calories, 0);
@@ -387,7 +432,7 @@ export const useCalendarData = (userId?: string) => {
         
         // Calculate cycle phase for this day
         const cyclePhase = calculatePhaseInfo(currentDate);
-        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || (cyclePhase !== null);
+        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || (cyclePhase !== null);
         
         newCalendarData.set(dateString, {
           date: currentDate,
@@ -397,6 +442,7 @@ export const useCalendarData = (userId?: string) => {
           foodEntries: dayFoodEntries,
           alcoholEntries: dayAlcoholEntries,
           tapCoins: dayTapCoins,
+          sleepLog: sleepActivity,
           steps: dayStep?.step_count || 0,
           calories: totalWorkoutCalories + totalCardioCalories,
           dailyStats: {
@@ -405,7 +451,9 @@ export const useCalendarData = (userId?: string) => {
             exercisesCompleted: totalExercises,
             workoutDuration: totalWorkoutDuration + totalCardioDuration,
             tapCoinsEarned: totalTapCoinsEarned,
-            alcoholDrinks: totalAlcoholDrinks
+            alcoholDrinks: totalAlcoholDrinks,
+            sleepDuration: sleepActivity?.durationMinutes || 0,
+            sleepQuality: sleepActivity?.qualityScore || 0
           },
           hasActivity,
           cyclePhase
@@ -425,15 +473,17 @@ export const useCalendarData = (userId?: string) => {
     generateCalendarData(currentMonth);
   }, [userId, currentMonth]);
 
-  // Listen for workout completion events to refresh calendar data
+  // Listen for workout completion and sleep logged events to refresh calendar data
   useEffect(() => {
-    const handleWorkoutCompleted = () => {
+    const handleRefresh = () => {
       generateCalendarData(currentMonth);
     };
 
-    window.addEventListener('workoutCompleted', handleWorkoutCompleted);
+    window.addEventListener('workoutCompleted', handleRefresh);
+    window.addEventListener('sleepLogged', handleRefresh);
     return () => {
-      window.removeEventListener('workoutCompleted', handleWorkoutCompleted);
+      window.removeEventListener('workoutCompleted', handleRefresh);
+      window.removeEventListener('sleepLogged', handleRefresh);
     };
   }, [currentMonth]);
 
@@ -480,6 +530,7 @@ export const useCalendarData = (userId?: string) => {
             foodEntries: [],
             alcoholEntries: [],
             tapCoins: [],
+            sleepLog: null,
             steps: 0,
             calories: 0,
             dailyStats: {
@@ -488,7 +539,9 @@ export const useCalendarData = (userId?: string) => {
               exercisesCompleted: 0,
               workoutDuration: 0,
               tapCoinsEarned: 0,
-              alcoholDrinks: 0
+              alcoholDrinks: 0,
+              sleepDuration: 0,
+              sleepQuality: 0
             },
             hasActivity: cyclePhase !== null,
             cyclePhase
