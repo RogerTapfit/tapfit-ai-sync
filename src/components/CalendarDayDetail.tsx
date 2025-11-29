@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity } from '@/hooks/useCalendarData';
+import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity, SleepActivity } from '@/hooks/useCalendarData';
 import { useCycleTracking } from '@/hooks/useCycleTracking';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
 import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
@@ -28,7 +28,10 @@ import {
   Moon,
   Droplets,
   Heart,
-  TrendingUp
+  TrendingUp,
+  Star,
+  BedDouble,
+  Sun
 } from 'lucide-react';
 
 interface CalendarDayDetailProps {
@@ -117,6 +120,30 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
       default:
         return 'text-muted-foreground';
     }
+  };
+
+  // Format sleep duration
+  const formatSleepDuration = (minutes: number | null): string => {
+    if (!minutes) return '--';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  // Format time for display
+  const formatSleepTime = (isoString: string | null): string => {
+    if (!isoString) return '--';
+    return new Date(isoString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Calculate sleep stage percentage
+  const calculateSleepPercentage = (stageMinutes: number | null, totalMinutes: number | null): number => {
+    if (!stageMinutes || !totalMinutes || totalMinutes === 0) return 0;
+    return Math.round((stageMinutes / totalMinutes) * 100);
   };
 
   const isToday = day.dateString === getCurrentLocalDate();
@@ -405,6 +432,118 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                     </Card>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Sleep Log Section */}
+            {day.sleepLog && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Moon className="h-5 w-5 text-indigo-500" />
+                  Sleep Log
+                </h3>
+                <Card className="p-4 glow-card border-indigo-500/20">
+                  {/* Duration and Quality */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-2xl font-bold text-indigo-400">
+                      {formatSleepDuration(day.sleepLog.durationMinutes)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          className={`h-4 w-4 ${
+                            star <= (day.sleepLog?.qualityScore || 0) 
+                              ? 'text-yellow-400 fill-yellow-400' 
+                              : 'text-muted-foreground/30'
+                          }`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Bedtime and Wake time */}
+                  <div className="flex justify-between text-sm text-muted-foreground mb-4">
+                    <div className="flex items-center gap-2">
+                      <BedDouble className="h-4 w-4 text-indigo-400" />
+                      <span>Bedtime: {formatSleepTime(day.sleepLog.bedtime)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Sun className="h-4 w-4 text-yellow-400" />
+                      <span>Wake: {formatSleepTime(day.sleepLog.wakeTime)}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Sleep breakdown bars */}
+                  {(day.sleepLog.deepSleepMinutes || day.sleepLog.remSleepMinutes || day.sleepLog.lightSleepMinutes) && (
+                    <div className="space-y-2 mb-4">
+                      {day.sleepLog.deepSleepMinutes && day.sleepLog.deepSleepMinutes > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs w-12 text-muted-foreground">Deep</span>
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-indigo-600 rounded-full transition-all"
+                              style={{ width: `${calculateSleepPercentage(day.sleepLog.deepSleepMinutes, day.sleepLog.durationMinutes)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs w-8 text-muted-foreground">
+                            {calculateSleepPercentage(day.sleepLog.deepSleepMinutes, day.sleepLog.durationMinutes)}%
+                          </span>
+                        </div>
+                      )}
+                      {day.sleepLog.remSleepMinutes && day.sleepLog.remSleepMinutes > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs w-12 text-muted-foreground">REM</span>
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-purple-500 rounded-full transition-all"
+                              style={{ width: `${calculateSleepPercentage(day.sleepLog.remSleepMinutes, day.sleepLog.durationMinutes)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs w-8 text-muted-foreground">
+                            {calculateSleepPercentage(day.sleepLog.remSleepMinutes, day.sleepLog.durationMinutes)}%
+                          </span>
+                        </div>
+                      )}
+                      {day.sleepLog.lightSleepMinutes && day.sleepLog.lightSleepMinutes > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs w-12 text-muted-foreground">Light</span>
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-400 rounded-full transition-all"
+                              style={{ width: `${calculateSleepPercentage(day.sleepLog.lightSleepMinutes, day.sleepLog.durationMinutes)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs w-8 text-muted-foreground">
+                            {calculateSleepPercentage(day.sleepLog.lightSleepMinutes, day.sleepLog.durationMinutes)}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Awakenings */}
+                  {day.sleepLog.awakenings > 0 && (
+                    <div className="text-sm text-muted-foreground mb-3">
+                      Awakenings: {day.sleepLog.awakenings} time{day.sleepLog.awakenings > 1 ? 's' : ''}
+                    </div>
+                  )}
+                  
+                  {/* Notes - prominent display */}
+                  {day.sleepLog.notes && (
+                    <div className="p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                      <div className="text-xs text-indigo-400 mb-1 font-medium">Notes</div>
+                      <p className="text-sm">{day.sleepLog.notes}</p>
+                    </div>
+                  )}
+                  
+                  {/* Source badge */}
+                  <div className="mt-3">
+                    <Badge variant="outline" className="text-indigo-400 border-indigo-500/30">
+                      {day.sleepLog.source === 'healthkit' ? '⌚ Apple Watch' : '✏️ Manual Entry'}
+                    </Badge>
+                  </div>
+                </Card>
               </div>
             )}
 
