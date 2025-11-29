@@ -670,6 +670,51 @@ export type Database = {
         }
         Relationships: []
       }
+      corrective_exercises: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          difficulty: string | null
+          exercise_name: string
+          id: string
+          instructions: string | null
+          is_active: boolean | null
+          muscle_groups: string[] | null
+          reps: number | null
+          sets: number | null
+          target_issue: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          exercise_name: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          muscle_groups?: string[] | null
+          reps?: number | null
+          sets?: number | null
+          target_issue: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: string | null
+          exercise_name?: string
+          id?: string
+          instructions?: string | null
+          is_active?: boolean | null
+          muscle_groups?: string[] | null
+          reps?: number | null
+          sets?: number | null
+          target_issue?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       cycle_tracking: {
         Row: {
           average_cycle_length: number
@@ -1208,6 +1253,68 @@ export type Database = {
           },
         ]
       }
+      form_analysis_logs: {
+        Row: {
+          avg_form_score: number | null
+          created_at: string | null
+          exercise_log_id: string | null
+          exercise_name: string
+          flagged_patterns: string[] | null
+          form_issues: Json | null
+          id: string
+          imbalance_direction: string | null
+          imbalance_percentage: number | null
+          injury_risk_level: string | null
+          joint_warnings: Json | null
+          left_side_score: number | null
+          muscle_group: string | null
+          right_side_score: number | null
+          user_id: string
+        }
+        Insert: {
+          avg_form_score?: number | null
+          created_at?: string | null
+          exercise_log_id?: string | null
+          exercise_name: string
+          flagged_patterns?: string[] | null
+          form_issues?: Json | null
+          id?: string
+          imbalance_direction?: string | null
+          imbalance_percentage?: number | null
+          injury_risk_level?: string | null
+          joint_warnings?: Json | null
+          left_side_score?: number | null
+          muscle_group?: string | null
+          right_side_score?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_form_score?: number | null
+          created_at?: string | null
+          exercise_log_id?: string | null
+          exercise_name?: string
+          flagged_patterns?: string[] | null
+          form_issues?: Json | null
+          id?: string
+          imbalance_direction?: string | null
+          imbalance_percentage?: number | null
+          injury_risk_level?: string | null
+          joint_warnings?: Json | null
+          left_side_score?: number | null
+          muscle_group?: string | null
+          right_side_score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_analysis_logs_exercise_log_id_fkey"
+            columns: ["exercise_log_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_sessions: {
         Row: {
           created_at: string
@@ -1589,6 +1696,54 @@ export type Database = {
           template_data?: Json
           updated_at?: string
           week_structure?: Json
+        }
+        Relationships: []
+      }
+      muscle_imbalance_tracking: {
+        Row: {
+          avg_left_strength: number | null
+          avg_right_strength: number | null
+          created_at: string | null
+          data_points_count: number | null
+          dominant_side: string | null
+          id: string
+          imbalance_percentage: number | null
+          injury_risk_score: number | null
+          last_updated: string | null
+          muscle_group: string
+          recommended_focus: string | null
+          trend: string | null
+          user_id: string
+        }
+        Insert: {
+          avg_left_strength?: number | null
+          avg_right_strength?: number | null
+          created_at?: string | null
+          data_points_count?: number | null
+          dominant_side?: string | null
+          id?: string
+          imbalance_percentage?: number | null
+          injury_risk_score?: number | null
+          last_updated?: string | null
+          muscle_group: string
+          recommended_focus?: string | null
+          trend?: string | null
+          user_id: string
+        }
+        Update: {
+          avg_left_strength?: number | null
+          avg_right_strength?: number | null
+          created_at?: string | null
+          data_points_count?: number | null
+          dominant_side?: string | null
+          id?: string
+          imbalance_percentage?: number | null
+          injury_risk_score?: number | null
+          last_updated?: string | null
+          muscle_group?: string
+          recommended_focus?: string | null
+          trend?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -3661,6 +3816,10 @@ export type Database = {
         }
         Returns: number
       }
+      calculate_injury_risk_score: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       calculate_nutrition_goals: {
         Args: {
           _activity_level?: string
@@ -3833,6 +3992,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      update_muscle_imbalance: {
+        Args: {
+          _left_score: number
+          _muscle_group: string
+          _right_score: number
+          _user_id: string
+        }
+        Returns: undefined
       }
       update_user_power_level: { Args: { _user_id: string }; Returns: boolean }
       update_workout_streak: {
