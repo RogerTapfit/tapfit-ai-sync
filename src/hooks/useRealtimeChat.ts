@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getVoiceForGender } from '@/utils/elevenLabsVoices';
 
 interface Message {
   id: string;
@@ -17,6 +18,47 @@ interface VoiceState {
   coachGender?: string;
 }
 
+// Speech Recognition types
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+}
+
 export const useRealtimeChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [voiceState, setVoiceState] = useState<VoiceState>({
@@ -28,250 +70,266 @@ export const useRealtimeChat = () => {
     coachGender: undefined
   });
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const currentTranscriptRef = useRef<string>('');
+  const avatarNameRef = useRef<string>('Coach');
+  const avatarGenderRef = useRef<string>('neutral');
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isProcessingRef = useRef(false);
 
-  const connect = useCallback(async (avatarName?: string, avatarId?: string): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        console.log("Getting ElevenLabs session for avatar:", avatarName, avatarId);
-        setVoiceState(prev => ({ ...prev, error: null }));
-
-        // Get ElevenLabs session from edge function
-        const { data: sessionData, error: sessionError } = await supabase.functions.invoke('elevenlabs-session', {
-          body: { avatarName, avatarId }
-        });
-
-        if (sessionError || !sessionData) {
-          throw new Error(`Failed to create ElevenLabs session: ${sessionError?.message || 'Unknown error'}`);
-        }
-
-        console.log("ElevenLabs session created:", sessionData);
-
-        // Log voice configuration for testing
-        console.log('🎤 Voice Chat Configuration:', {
-          avatarName: sessionData.coach_name,
-          avatarId,
-          gender: sessionData.gender,
-          voiceName: sessionData.voice_name,
-          agentId: sessionData.agent_id
-        });
-        
-        console.log(`✨ Using ${sessionData.voice_name} voice (${sessionData.gender}) for ${sessionData.coach_name}`);
-
-        // Update voice state with coach details
-        setVoiceState(prev => ({
-          ...prev,
-          voiceName: sessionData.voice_name,
-          coachGender: sessionData.gender
-        }));
-
-        // Initialize audio context
-        if (!audioContextRef.current) {
-          audioContextRef.current = new AudioContext({ sampleRate: 16000 });
-        }
-
-        // Connect to ElevenLabs WebSocket using signed URL
-        const wsUrl = sessionData.signed_url;
-        console.log("Connecting to ElevenLabs WebSocket");
-        
-        const timeout = setTimeout(() => {
-          console.error("Connection timeout");
-          setVoiceState(prev => ({ 
-            ...prev, 
-            error: 'Connection timeout', 
-            isConnected: false 
-          }));
-          reject(new Error('Connection timeout'));
-        }, 10000);
-
-        wsRef.current = new WebSocket(wsUrl);
-
-        wsRef.current.onopen = () => {
-          console.log("ElevenLabs WebSocket opened");
-          clearTimeout(timeout);
-          setVoiceState(prev => ({ ...prev, isConnected: true, error: null }));
-          resolve();
-        };
-
-        wsRef.current.onmessage = async (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log("ElevenLabs message:", data.type);
-
-            // Handle ElevenLabs conversation events
-            if (data.type === 'conversation_initiation_metadata') {
-              console.log("ElevenLabs conversation ready");
-            } else if (data.type === 'audio') {
-              // AI is speaking - ElevenLabs sends PCM audio
-              setVoiceState(prev => ({ ...prev, isAISpeaking: true }));
-              
-              if (data.audio_event?.audio_base_64 && audioContextRef.current) {
-                // Decode base64 PCM audio
-                const binaryString = atob(data.audio_event.audio_base_64);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                  bytes[i] = binaryString.charCodeAt(i);
-                }
-                
-                // Play audio (16-bit PCM at 16kHz)
-                const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer);
-                const source = audioContextRef.current.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(audioContextRef.current.destination);
-                source.start(0);
-              }
-            } else if (data.type === 'agent_response') {
-              // AI finished speaking
-              setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-            } else if (data.type === 'user_transcript') {
-              // Update transcript in real-time
-              if (data.user_transcription_event?.user_transcript) {
-                currentTranscriptRef.current = data.user_transcription_event.user_transcript;
-              }
-            } else if (data.type === 'agent_response_correction' || data.type === 'agent_response') {
-              // Update AI response
-              if (data.agent_response_event?.agent_response) {
-                currentTranscriptRef.current = data.agent_response_event.agent_response;
-              }
-            } else if (data.type === 'user_transcript_done') {
-              // Finalize user message
-              const userText = currentTranscriptRef.current;
-              if (userText) {
-                setMessages(prev => [...prev, {
-                  id: Date.now().toString(),
-                  type: 'user',
-                  content: userText,
-                  timestamp: new Date()
-                }]);
-                currentTranscriptRef.current = '';
-              }
-            } else if (data.type === 'agent_response_done') {
-              // Finalize AI message
-              const aiText = currentTranscriptRef.current;
-              if (aiText) {
-                setMessages(prev => [...prev, {
-                  id: Date.now().toString(),
-                  type: 'assistant',
-                  content: aiText,
-                  timestamp: new Date()
-                }]);
-                currentTranscriptRef.current = '';
-              }
-            } else if (data.type === 'error') {
-              console.error("ElevenLabs error event:", data);
-              setVoiceState(prev => ({ ...prev, error: data.message || 'Unknown error' }));
-            }
-          } catch (error) {
-            console.error("Error parsing ElevenLabs message:", error);
-          }
-        };
-
-        wsRef.current.onerror = (error) => {
-          clearTimeout(timeout);
-          console.error("WebSocket connection error:", error);
-          setVoiceState(prev => ({ 
-            ...prev, 
-            error: 'Failed to connect to voice chat. Please try again.', 
-            isConnected: false 
-          }));
-          reject(new Error('WebSocket connection failed'));
-        };
-
-        wsRef.current.onclose = () => {
-          clearTimeout(timeout);
-          console.log("WebSocket closed");
-          setVoiceState(prev => ({ ...prev, isConnected: false, isRecording: false }));
-        };
-
-      } catch (error) {
-        console.error("Error connecting:", error);
-        setVoiceState(prev => ({ ...prev, error: 'Failed to connect' }));
-        reject(error);
-      }
-    });
-  }, []);
-
-  const startRecording = useCallback(async () => {
+  // Text-to-speech using ElevenLabs
+  const speakText = useCallback(async (text: string) => {
+    if (!text) return;
+    
+    setVoiceState(prev => ({ ...prev, isAISpeaking: true }));
+    
     try {
-      console.log("Starting microphone for ElevenLabs...");
+      const voice = getVoiceForGender(avatarGenderRef.current);
+      console.log(`🔊 Speaking with ${voice.name} voice (${avatarGenderRef.current}):`, text.substring(0, 50));
       
-      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-        throw new Error('Not connected to voice chat');
-      }
-
-      // Request microphone access with proper constraints for ElevenLabs
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { 
+          text, 
+          voice: voice.id,
+          gender: avatarGenderRef.current
         }
       });
 
-      console.log("Microphone access granted");
-      setVoiceState(prev => ({ ...prev, isRecording: true }));
-      
-      // ElevenLabs handles audio streaming automatically via WebRTC
-      // No need to manually send audio chunks
-      
+      if (error) {
+        console.error('TTS error:', error);
+        setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+        return;
+      }
+
+      if (data?.audioContent) {
+        // Play audio
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+        audioRef.current = audio;
+        
+        audio.onended = () => {
+          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+        };
+        
+        audio.onerror = () => {
+          console.error('Audio playback error');
+          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+        };
+        
+        await audio.play();
+      } else {
+        setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+      }
     } catch (error) {
-      console.error("Error starting recording:", error);
-      setVoiceState(prev => ({ ...prev, error: 'Microphone access failed' }));
+      console.error('Error in text-to-speech:', error);
+      setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
     }
   }, []);
 
-  const stopRecording = useCallback(() => {
-    console.log("Stopping recording...");
-    setVoiceState(prev => ({ ...prev, isRecording: false }));
-  }, []);
-
-  const sendTextMessage = useCallback((text: string) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket not connected");
-      return;
-    }
-
+  // Send message to AI and get response
+  const processMessage = useCallback(async (userText: string) => {
+    if (!userText.trim() || isProcessingRef.current) return;
+    
+    isProcessingRef.current = true;
+    
+    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
-      type: 'user', 
-      content: text,
+      type: 'user',
+      content: userText,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, userMessage]);
+    
+    setMessages(prev => {
+      const updated = [...prev, userMessage];
+      
+      // Call AI with conversation history
+      (async () => {
+        try {
+          const { data, error } = await supabase.functions.invoke('fitness-chat', {
+            body: {
+              message: userText,
+              avatarName: avatarNameRef.current,
+              conversationHistory: updated.slice(-10) // Last 10 messages for context
+            }
+          });
 
-    const event = {
-      type: 'conversation.item.create',
-      item: {
-        type: 'message',
-        role: 'user',
-        content: [
-          {
-            type: 'input_text',
-            text: text
+          if (error) {
+            console.error('Chat error:', error);
+            setVoiceState(prev => ({ ...prev, error: 'Failed to get response' }));
+            isProcessingRef.current = false;
+            return;
           }
-        ]
-      }
-    };
 
-    wsRef.current.send(JSON.stringify(event));
-    wsRef.current.send(JSON.stringify({ type: 'response.create' }));
+          const aiResponse = data?.response || "I couldn't process that. Please try again.";
+          
+          // Add AI message
+          const aiMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: 'assistant',
+            content: aiResponse,
+            timestamp: new Date()
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          
+          // Speak the response
+          await speakText(aiResponse);
+          
+        } catch (err) {
+          console.error('Error processing message:', err);
+          setVoiceState(prev => ({ ...prev, error: 'Connection error' }));
+        } finally {
+          isProcessingRef.current = false;
+        }
+      })();
+      
+      return updated;
+    });
+  }, [speakText]);
+
+  // Connect (initialize voice chat session)
+  const connect = useCallback(async (avatarName?: string, avatarId?: string): Promise<void> => {
+    try {
+      console.log("Initializing voice chat for:", avatarName);
+      setVoiceState(prev => ({ ...prev, error: null }));
+
+      // Fetch avatar gender from database if avatarId provided
+      let gender = 'neutral';
+      if (avatarId) {
+        const { data: avatar } = await supabase
+          .from('avatars')
+          .select('gender, name')
+          .eq('id', avatarId)
+          .single();
+        
+        if (avatar) {
+          gender = avatar.gender || 'neutral';
+          avatarNameRef.current = avatar.name || avatarName || 'Coach';
+        }
+      } else if (avatarName) {
+        const { data: avatar } = await supabase
+          .from('avatars')
+          .select('gender, name')
+          .ilike('name', avatarName)
+          .single();
+        
+        if (avatar) {
+          gender = avatar.gender || 'neutral';
+        }
+        avatarNameRef.current = avatarName;
+      }
+
+      avatarGenderRef.current = gender;
+      const voice = getVoiceForGender(gender);
+
+      console.log(`🎤 Voice Chat Ready: ${avatarNameRef.current} (${gender}) using ${voice.name} voice`);
+
+      setVoiceState(prev => ({
+        ...prev,
+        isConnected: true,
+        voiceName: voice.name,
+        coachGender: gender
+      }));
+
+    } catch (error) {
+      console.error("Error initializing chat:", error);
+      setVoiceState(prev => ({ ...prev, error: 'Failed to initialize chat' }));
+      throw error;
+    }
   }, []);
 
+  // Start voice recording using Web Speech API
+  const startRecording = useCallback(async () => {
+    try {
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognitionAPI) {
+        setVoiceState(prev => ({ 
+          ...prev, 
+          error: 'Speech recognition not supported in this browser' 
+        }));
+        return;
+      }
+
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          console.log('🎤 Speech recognized:', finalTranscript);
+          processMessage(finalTranscript);
+        }
+      };
+
+      recognition.onerror = (event: { error: string }) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error !== 'aborted') {
+          setVoiceState(prev => ({ ...prev, error: `Speech error: ${event.error}` }));
+        }
+        setVoiceState(prev => ({ ...prev, isRecording: false }));
+      };
+
+      recognition.onend = () => {
+        setVoiceState(prev => ({ ...prev, isRecording: false }));
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      
+      setVoiceState(prev => ({ ...prev, isRecording: true, error: null }));
+      console.log('🎤 Recording started...');
+      
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      setVoiceState(prev => ({ 
+        ...prev, 
+        error: 'Failed to start recording',
+        isRecording: false 
+      }));
+    }
+  }, [processMessage]);
+
+  // Stop voice recording
+  const stopRecording = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setVoiceState(prev => ({ ...prev, isRecording: false }));
+    console.log('🎤 Recording stopped');
+  }, []);
+
+  // Send text message
+  const sendTextMessage = useCallback((text: string) => {
+    if (!voiceState.isConnected) {
+      console.error("Not connected");
+      return;
+    }
+    processMessage(text);
+  }, [voiceState.isConnected, processMessage]);
+
+  // Disconnect
   const disconnect = useCallback(() => {
-    console.log("Disconnecting...");
+    console.log("Disconnecting voice chat...");
     
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+      recognitionRef.current = null;
     }
     
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
     
     setVoiceState({
@@ -282,6 +340,8 @@ export const useRealtimeChat = () => {
       voiceName: undefined,
       coachGender: undefined
     });
+    
+    setMessages([]);
   }, []);
 
   // Cleanup on unmount

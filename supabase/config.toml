@@ -36,57 +36,38 @@ additional_redirect_urls = ["https://127.0.0.1:3000"]
 jwt_expiry = 3600
 enable_signup = true
 
-# Enhanced security for edge functions
 [functions.analyzeFood]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.analyzeProduct]
 verify_jwt = false
-cpu = "auto" 
-memory = "auto"
 
 [functions.checkProductSafety]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.generateRecipes]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.realtime-voice-chat]
 verify_jwt = false
 
 [functions.generateRecipesFromChat]
 verify_jwt = true
-cpu = "auto"
-memory = "auto"
 
 [functions.analyzeShelfChoice]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.analyzeMenu]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.text-to-speech]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.elevenlabs-session]
 verify_jwt = false
-cpu = "auto"
-memory = "auto"
 
 [functions.adminUpsertAvatar]
 verify_jwt = true
-cpu = "auto"
-memory = "auto"
 
+[functions.fitness-chat]
+verify_jwt = false
