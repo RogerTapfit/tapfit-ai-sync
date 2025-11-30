@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock, Star } from "lucide-react";
+import { YelpReviewsModal } from "@/components/YelpReviewsModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShareMenuItemModal } from "@/components/ShareMenuItemModal";
@@ -104,6 +105,8 @@ export const MenuAnalyzer = () => {
   const [selectedItemForLog, setSelectedItemForLog] = useState<MenuItem | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStage, setAnalysisStage] = useState<string>('');
+  const [showYelpModal, setShowYelpModal] = useState(false);
+  const [selectedYelpRestaurant, setSelectedYelpRestaurant] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -1280,7 +1283,19 @@ export const MenuAnalyzer = () => {
                           <div className="flex-1">
                             <h3 className="font-semibold text-base">{item.item_name}</h3>
                             {item.restaurant_name && (
-                              <p className="text-sm text-muted-foreground">{item.restaurant_name}</p>
+                              <button
+                                onClick={() => {
+                                  setSelectedYelpRestaurant(item.restaurant_name || '');
+                                  setShowYelpModal(true);
+                                }}
+                                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+                              >
+                                <span className="group-hover:underline">{item.restaurant_name}</span>
+                                <Star className="h-3.5 w-3.5 text-yellow-500" />
+                                <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                                  Yelp Reviews
+                                </span>
+                              </button>
                             )}
                             {item.description && (
                               <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
@@ -1586,6 +1601,13 @@ export const MenuAnalyzer = () => {
           }}
         />
       )}
+
+      {/* Yelp Reviews Modal */}
+      <YelpReviewsModal
+        open={showYelpModal}
+        onOpenChange={setShowYelpModal}
+        restaurantName={selectedYelpRestaurant}
+      />
     </Tabs>
   );
 };
