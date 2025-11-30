@@ -870,7 +870,23 @@ export const MenuAnalyzer = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>{analysisResult.restaurantName || 'All Menu Items'}</CardTitle>
+                      <div className="flex items-center gap-3">
+                        <CardTitle>{analysisResult.restaurantName || 'All Menu Items'}</CardTitle>
+                        {analysisResult.restaurantName && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2 text-xs"
+                            onClick={() => {
+                              setSelectedYelpRestaurant(analysisResult.restaurantName!);
+                              setShowYelpModal(true);
+                            }}
+                          >
+                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            Yelp Reviews
+                          </Button>
+                        )}
+                      </div>
                       <CardDescription className="mt-1">
                         {analysisResult.menuItems.length} items found • Click any item for details
                       </CardDescription>
