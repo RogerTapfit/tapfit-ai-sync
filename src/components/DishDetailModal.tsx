@@ -7,6 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Star, ChevronLeft, ChevronRight, ExternalLink, ImageOff, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface DishImage {
+  url: string;
+  thumbnail: string;
+  title: string;
+  source: string;
+}
+
 interface DishReview {
   rating: number;
   text: string;
@@ -61,22 +68,64 @@ export const DishDetailModal = ({
 }: DishDetailModalProps) => {
   const [loading, setLoading] = useState(false);
   const [yelpData, setYelpData] = useState<YelpData | null>(null);
+  const [dishImages, setDishImages] = useState<DishImage[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     if (open && dishName) {
-      fetchYelpData();
+      fetchAllData();
     }
   }, [open, dishName, restaurantName]);
 
-  const fetchYelpData = async () => {
+  const fetchAllData = async () => {
     setLoading(true);
+    setImagesLoading(true);
     setError(null);
     setCurrentPhotoIndex(0);
+    setDishImages([]);
 
+    // Fetch dish-specific images and Yelp data in parallel
+    const [imagesResult, yelpResult] = await Promise.allSettled([
+      fetchDishImages(),
+      fetchYelpData()
+    ]);
+
+    if (imagesResult.status === 'rejected') {
+      console.error('Error fetching dish images:', imagesResult.reason);
+    }
+    if (yelpResult.status === 'rejected') {
+      console.error('Error fetching Yelp data:', yelpResult.reason);
+    }
+
+    setLoading(false);
+    setImagesLoading(false);
+  };
+
+  const fetchDishImages = async () => {
     try {
-      // Use dish name as search term if no restaurant name available
+      const { data, error: fnError } = await supabase.functions.invoke('search-dish-images', {
+        body: {
+          dishName,
+          restaurantName,
+        }
+      });
+
+      if (fnError) throw fnError;
+      
+      if (data?.images && data.images.length > 0) {
+        setDishImages(data.images);
+      }
+      return data;
+    } catch (err) {
+      console.error('Error fetching dish images:', err);
+      throw err;
+    }
+  };
+
+  const fetchYelpData = async () => {
+    try {
       const searchTerm = restaurantName || dishName;
       const { data, error: fnError } = await supabase.functions.invoke('yelp-reviews', {
         body: {
@@ -87,11 +136,11 @@ export const DishDetailModal = ({
 
       if (fnError) throw fnError;
       setYelpData(data);
+      return data;
     } catch (err) {
       console.error('Error fetching Yelp data:', err);
-      setError('Failed to load photos and reviews');
-    } finally {
-      setLoading(false);
+      setError('Failed to load reviews');
+      throw err;
     }
   };
 
@@ -114,7 +163,12 @@ export const DishDetailModal = ({
     );
   };
 
-  const photos = yelpData?.restaurant?.photos || [];
+  // Prioritize dish-specific images over generic restaurant photos
+  const photos = dishImages.length > 0 
+    ? dishImages.map(img => img.url) 
+    : (yelpData?.restaurant?.photos || []);
+
+  const isDishSpecificPhotos = dishImages.length > 0;
 
   const nextPhoto = () => {
     setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
@@ -132,7 +186,7 @@ export const DishDetailModal = ({
           <DialogDescription>
             {restaurantName 
               ? `Photos & reviews from ${restaurantName}` 
-              : 'Searching Yelp for photos & reviews...'}
+              : 'Searching for photos & reviews...'}
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +214,7 @@ export const DishDetailModal = ({
             )}
 
             {/* Loading State */}
-            {loading && (
+            {(loading || imagesLoading) && (
               <div className="space-y-4">
                 <Skeleton className="w-full h-64 rounded-lg" />
                 <div className="space-y-2">
@@ -171,27 +225,37 @@ export const DishDetailModal = ({
             )}
 
             {/* Error State */}
-            {error && !loading && (
+            {error && !loading && !imagesLoading && (
               <div className="text-center py-8 text-muted-foreground">
                 <ImageOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>{error}</p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={fetchYelpData}>
+                <Button variant="outline" size="sm" className="mt-2" onClick={fetchAllData}>
                   Retry
                 </Button>
               </div>
             )}
 
             {/* Photos Carousel */}
-            {!loading && yelpData?.found && photos.length > 0 && (
+            {!loading && !imagesLoading && photos.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold text-sm text-muted-foreground">
-                  📸 Restaurant Photos ({photos.length})
+                  {isDishSpecificPhotos 
+                    ? `🍽️ Photos of "${dishName}" (${photos.length})`
+                    : `📸 Restaurant Photos (${photos.length})`
+                  }
                 </h3>
                 <div className="relative rounded-lg overflow-hidden bg-muted">
                   <img
                     src={photos[currentPhotoIndex]}
-                    alt={`${restaurantName} photo ${currentPhotoIndex + 1}`}
+                    alt={`${dishName} photo ${currentPhotoIndex + 1}`}
                     className="w-full h-64 object-cover"
+                    onError={(e) => {
+                      // If image fails to load, try thumbnail or remove from list
+                      const target = e.target as HTMLImageElement;
+                      if (dishImages[currentPhotoIndex]?.thumbnail) {
+                        target.src = dishImages[currentPhotoIndex].thumbnail;
+                      }
+                    }}
                   />
                   {photos.length > 1 && (
                     <>
@@ -226,8 +290,19 @@ export const DishDetailModal = ({
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
-                  Real photos from Yelp users
+                  {isDishSpecificPhotos 
+                    ? `Real photos of this dish from the web`
+                    : `Photos from Yelp users`
+                  }
                 </p>
+              </div>
+            )}
+
+            {/* No Photos Found */}
+            {!loading && !imagesLoading && photos.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                <ImageOff className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No photos found for this dish</p>
               </div>
             )}
 
