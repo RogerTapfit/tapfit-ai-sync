@@ -21,6 +21,7 @@ interface YelpBusiness {
     zip_code: string;
   };
   image_url?: string;
+  photos?: string[];
   url: string;
 }
 
@@ -47,7 +48,7 @@ serve(async (req) => {
       throw new Error('YELP_API_KEY not configured');
     }
 
-    const { restaurantName, location } = await req.json();
+    const { restaurantName, location, dishName } = await req.json();
 
     if (!restaurantName) {
       return new Response(
@@ -56,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Searching Yelp for: ${restaurantName} in ${location || 'nearby'}`);
+    console.log(`Searching Yelp for: ${restaurantName} in ${location || 'nearby'}${dishName ? `, filtering for dish: ${dishName}` : ''}`);
 
     // Search for the restaurant
     const searchParams = new URLSearchParams({
@@ -68,7 +69,6 @@ serve(async (req) => {
     if (location) {
       searchParams.set('location', location);
     } else {
-      // Default to a broad search if no location provided
       searchParams.set('location', 'United States');
     }
 
@@ -105,9 +105,28 @@ serve(async (req) => {
     const business = businesses[0];
     console.log(`Found business: ${business.name} (${business.id})`);
 
-    // Fetch reviews for this business
+    // Fetch detailed business info (includes photos array)
+    const businessDetailsResponse = await fetch(
+      `https://api.yelp.com/v3/businesses/${business.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${YELP_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    let businessPhotos: string[] = [];
+    if (businessDetailsResponse.ok) {
+      const detailsData = await businessDetailsResponse.json();
+      businessPhotos = detailsData.photos || [];
+      console.log(`Found ${businessPhotos.length} photos for business`);
+    }
+
+    // Fetch reviews - get more to allow filtering
+    const reviewLimit = dishName ? 20 : 3;
     const reviewsResponse = await fetch(
-      `https://api.yelp.com/v3/businesses/${business.id}/reviews?limit=3&sort_by=yelp_sort`,
+      `https://api.yelp.com/v3/businesses/${business.id}/reviews?limit=${reviewLimit}&sort_by=yelp_sort`,
       {
         headers: {
           Authorization: `Bearer ${YELP_API_KEY}`,
@@ -120,9 +139,48 @@ serve(async (req) => {
     if (reviewsResponse.ok) {
       const reviewsData = await reviewsResponse.json();
       reviews = reviewsData.reviews || [];
+      console.log(`Fetched ${reviews.length} reviews`);
     } else {
       console.warn('Failed to fetch reviews:', reviewsResponse.status);
     }
+
+    // Filter reviews by dish name if provided
+    let filteredReviews = reviews;
+    if (dishName && dishName.trim()) {
+      const dishNameLower = dishName.toLowerCase().trim();
+      // Also try common variations
+      const dishWords = dishNameLower.split(' ').filter(w => w.length > 2);
+      
+      filteredReviews = reviews.filter(review => {
+        const reviewTextLower = review.text.toLowerCase();
+        // Check exact match
+        if (reviewTextLower.includes(dishNameLower)) {
+          return true;
+        }
+        // Check if most words match (for partial matches like "Original MeltBurger" -> "meltburger")
+        const matchingWords = dishWords.filter(word => reviewTextLower.includes(word));
+        return matchingWords.length >= Math.ceil(dishWords.length * 0.6);
+      });
+      
+      console.log(`Filtered to ${filteredReviews.length} reviews mentioning "${dishName}"`);
+    }
+
+    // Highlight matching text in reviews
+    const highlightedReviews = filteredReviews.map(review => {
+      let highlightedText = review.text;
+      if (dishName && dishName.trim()) {
+        const regex = new RegExp(`(${dishName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        highlightedText = review.text.replace(regex, '**$1**');
+      }
+      return {
+        rating: review.rating,
+        text: review.text,
+        highlightedText,
+        date: review.time_created,
+        userName: review.user.name,
+        userImage: review.user.image_url,
+      };
+    });
 
     // Format the response
     const result = {
@@ -135,15 +193,13 @@ serve(async (req) => {
         categories: business.categories.map(c => c.title),
         address: `${business.location.address1}, ${business.location.city}, ${business.location.state} ${business.location.zip_code}`,
         imageUrl: business.image_url,
+        photos: businessPhotos,
         yelpUrl: business.url,
       },
-      reviews: reviews.map(review => ({
-        rating: review.rating,
-        text: review.text,
-        date: review.time_created,
-        userName: review.user.name,
-        userImage: review.user.image_url,
-      })),
+      reviews: highlightedReviews,
+      dishName: dishName || null,
+      totalReviewsSearched: reviews.length,
+      matchingReviewsCount: filteredReviews.length,
     };
 
     console.log('Yelp data retrieved successfully');
