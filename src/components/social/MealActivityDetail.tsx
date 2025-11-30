@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { Award, Utensils, Clock, Calendar } from 'lucide-react';
 import { ActivityFeedItem } from '@/services/activityFeedService';
 import { getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
+import { EnhancedMealDetail } from '@/components/EnhancedMealDetail';
 
 interface MealActivityDetailProps {
   activity: ActivityFeedItem;
@@ -170,6 +172,17 @@ export const MealActivityDetail = ({ activity, isOpen, onClose }: MealActivityDe
                 <p className="text-sm font-medium mb-1">Notes:</p>
                 <p className="text-sm text-muted-foreground">{data.notes}</p>
               </div>
+            )}
+
+            {/* Enhanced Details Section */}
+            {isFoodEntry && (
+              <>
+                <Separator className="my-4" />
+                <EnhancedMealDetail 
+                  restaurantName={data.restaurant}
+                  foodItems={data.food_items}
+                />
+              </>
             )}
           </div>
         </ScrollArea>
