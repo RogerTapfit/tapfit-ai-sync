@@ -65,7 +65,7 @@ export const DishDetailModal = ({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
-    if (open && dishName && restaurantName) {
+    if (open && dishName) {
       fetchYelpData();
     }
   }, [open, dishName, restaurantName]);
@@ -76,9 +76,11 @@ export const DishDetailModal = ({
     setCurrentPhotoIndex(0);
 
     try {
+      // Use dish name as search term if no restaurant name available
+      const searchTerm = restaurantName || dishName;
       const { data, error: fnError } = await supabase.functions.invoke('yelp-reviews', {
         body: {
-          restaurantName,
+          restaurantName: searchTerm,
           dishName,
         }
       });
@@ -127,11 +129,11 @@ export const DishDetailModal = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">{dishName}</DialogTitle>
-          {restaurantName && (
-            <DialogDescription>
-              Photos & reviews from {restaurantName}
-            </DialogDescription>
-          )}
+          <DialogDescription>
+            {restaurantName 
+              ? `Photos & reviews from ${restaurantName}` 
+              : 'Searching Yelp for photos & reviews...'}
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-1 pr-4">
