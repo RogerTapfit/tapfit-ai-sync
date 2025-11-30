@@ -935,6 +935,25 @@ export const MenuAnalyzer = () => {
                                     {item.healthScore}/100
                                   </Badge>
                                 )}
+                                {analysisResult?.restaurantName && (
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDishForDetail(item);
+                                      setShowDishDetailModal(true);
+                                    }}
+                                    className="h-8 w-8"
+                                    title="View photos & reviews on Yelp"
+                                  >
+                                    <img 
+                                      src="https://www.yelp.com/favicon.ico" 
+                                      alt="Yelp" 
+                                      className="h-4 w-4"
+                                    />
+                                  </Button>
+                                )}
                                 <Button
                                   size="icon"
                                   variant={comparisonItems.find(i => i.name === item.name) ? "default" : "outline"}
@@ -980,26 +999,9 @@ export const MenuAnalyzer = () => {
                                 <Badge key={i} variant="secondary">{tag}</Badge>
                               ))}
                             </div>
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Info className="h-3 w-3" />
-                                Click for full details
-                              </div>
-                              {analysisResult?.restaurantName && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 gap-1.5 text-xs"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedDishForDetail(item);
-                                    setShowDishDetailModal(true);
-                                  }}
-                                >
-                                  <ImageIcon className="h-3 w-3" />
-                                  Photos & Reviews
-                                </Button>
-                              )}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3">
+                              <Info className="h-3 w-3" />
+                              Click for full details
                             </div>
                           </CardContent>
                         </Card>
