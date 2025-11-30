@@ -935,25 +935,24 @@ export const MenuAnalyzer = () => {
                                     {item.healthScore}/100
                                   </Badge>
                                 )}
-                                {analysisResult?.restaurantName && (
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedDishForDetail(item);
-                                      setShowDishDetailModal(true);
-                                    }}
-                                    className="h-8 w-8"
-                                    title="View photos & reviews on Yelp"
-                                  >
-                                    <img 
-                                      src="https://www.yelp.com/favicon.ico" 
-                                      alt="Yelp" 
-                                      className="h-4 w-4"
-                                    />
-                                  </Button>
-                                )}
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const searchTerm = `${item.name} ${analysisResult?.restaurantName || ''}`.trim();
+                                    const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(searchTerm)}`;
+                                    window.open(yelpUrl, '_blank');
+                                  }}
+                                  className="h-8 w-8"
+                                  title="Search on Yelp"
+                                >
+                                  <img 
+                                    src="https://www.yelp.com/favicon.ico" 
+                                    alt="Yelp" 
+                                    className="h-4 w-4"
+                                  />
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant={comparisonItems.find(i => i.name === item.name) ? "default" : "outline"}
