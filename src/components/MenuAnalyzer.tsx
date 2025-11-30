@@ -940,12 +940,11 @@ export const MenuAnalyzer = () => {
                                   variant="outline"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const searchTerm = `${item.name} ${analysisResult?.restaurantName || ''}`.trim();
-                                    const yelpUrl = `https://www.yelp.com/search?find_desc=${encodeURIComponent(searchTerm)}`;
-                                    window.open(yelpUrl, '_blank');
+                                    setSelectedDishForDetail(item);
+                                    setShowDishDetailModal(true);
                                   }}
                                   className="h-8 w-8"
-                                  title="Search on Yelp"
+                                  title="View photos & reviews on Yelp"
                                 >
                                   <img 
                                     src="https://www.yelp.com/favicon.ico" 
