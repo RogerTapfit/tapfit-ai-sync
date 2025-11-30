@@ -229,6 +229,26 @@ export const DishDetailModal = ({
               </div>
             )}
 
+            {/* Restaurant Rating - Always show when found */}
+            {!loading && yelpData?.found && yelpData.restaurant && (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-5 h-5" />
+                    <span className="font-semibold">{yelpData.restaurant.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {renderStars(yelpData.restaurant.rating)}
+                    <span className="text-sm font-medium">{yelpData.restaurant.rating}</span>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {yelpData.restaurant.reviewCount.toLocaleString()} reviews · {yelpData.restaurant.priceRange} · {yelpData.restaurant.categories.join(', ')}
+                </p>
+                <p className="text-xs text-muted-foreground">{yelpData.restaurant.address}</p>
+              </div>
+            )}
+
             {/* Reviews Section */}
             {!loading && yelpData?.found && (
               <div className="space-y-3">
@@ -237,7 +257,7 @@ export const DishDetailModal = ({
                     <MessageSquare className="h-4 w-4" />
                     Reviews {yelpData.dishName && `mentioning "${yelpData.dishName}"`}
                   </h3>
-                  {yelpData.dishName && (
+                  {yelpData.dishName && yelpData.reviews.length > 0 && (
                     <Badge variant="secondary" className="text-xs">
                       {yelpData.matchingReviewsCount} of {yelpData.totalReviewsSearched} reviews
                     </Badge>
@@ -245,9 +265,21 @@ export const DishDetailModal = ({
                 </div>
 
                 {yelpData.reviews.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground border rounded-lg">
-                    <p className="text-sm">No reviews found mentioning this dish</p>
-                    <p className="text-xs mt-1">Try viewing all restaurant reviews</p>
+                  <div className="text-center py-6 text-muted-foreground border rounded-lg space-y-3">
+                    <p className="text-sm">No reviews available via API</p>
+                    <p className="text-xs">Click below to see all reviews on Yelp</p>
+                    {yelpData.restaurant?.yelpUrl && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => window.open(yelpData.restaurant?.yelpUrl, '_blank')}
+                      >
+                        <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-4 h-4" />
+                        View All {yelpData.restaurant.reviewCount.toLocaleString()} Reviews on Yelp
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-3">
