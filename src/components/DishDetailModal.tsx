@@ -23,6 +23,12 @@ interface DishReview {
   userImage?: string;
 }
 
+interface DishReviewSnippet {
+  snippet: string;
+  source: string;
+  link: string;
+}
+
 interface YelpData {
   found: boolean;
   restaurant?: {
@@ -35,8 +41,11 @@ interface YelpData {
     imageUrl?: string;
     photos: string[];
     yelpUrl: string;
+    alias?: string;
   };
   reviews: DishReview[];
+  dishReviewSnippets?: DishReviewSnippet[];
+  yelpDishSearchUrl?: string;
   dishName?: string;
   totalReviewsSearched: number;
   matchingReviewsCount: number;
@@ -332,33 +341,37 @@ export const DishDetailModal = ({
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
-                    Reviews {yelpData.dishName && `mentioning "${yelpData.dishName}"`}
+                    Reviews of "{dishName}"
                   </h3>
-                  {yelpData.dishName && yelpData.reviews.length > 0 && (
+                  {yelpData.reviews.length > 0 && (
                     <Badge variant="secondary" className="text-xs">
-                      {yelpData.matchingReviewsCount} of {yelpData.totalReviewsSearched} reviews
+                      {yelpData.matchingReviewsCount} found
                     </Badge>
                   )}
                 </div>
 
-                {yelpData.reviews.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground border rounded-lg space-y-3">
-                    <p className="text-sm">No reviews available via API</p>
-                    <p className="text-xs">Click below to see all reviews on Yelp</p>
-                    {yelpData.restaurant?.yelpUrl && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => window.open(yelpData.restaurant?.yelpUrl, '_blank')}
-                      >
-                        <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-4 h-4" />
-                        View All {yelpData.restaurant.reviewCount.toLocaleString()} Reviews on Yelp
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    )}
+                {/* Dish-specific review snippets from SerpAPI */}
+                {yelpData.dishReviewSnippets && yelpData.dishReviewSnippets.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Review snippets mentioning this dish:</p>
+                    {yelpData.dishReviewSnippets.map((snippet, idx) => (
+                      <div key={idx} className="border rounded-lg p-3 space-y-1 bg-muted/30">
+                        <p className="text-sm text-foreground leading-relaxed">"{snippet.snippet}"</p>
+                        <a 
+                          href={snippet.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          Read full review <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    ))}
                   </div>
-                ) : (
+                )}
+
+                {/* Yelp API reviews */}
+                {yelpData.reviews.length > 0 ? (
                   <div className="space-y-3">
                     {yelpData.reviews.map((review, idx) => (
                       <div key={idx} className="border rounded-lg p-4 space-y-2">
@@ -395,6 +408,24 @@ export const DishDetailModal = ({
                         </p>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground border rounded-lg space-y-3">
+                    <p className="text-sm">No reviews mentioning "{dishName}" found via API</p>
+                    
+                    {/* Direct Yelp search link for dish-specific reviews */}
+                    {yelpData.yelpDishSearchUrl && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => window.open(yelpData.yelpDishSearchUrl!, '_blank')}
+                      >
+                        <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-4 h-4" />
+                        Search Yelp for "{dishName}" reviews
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
