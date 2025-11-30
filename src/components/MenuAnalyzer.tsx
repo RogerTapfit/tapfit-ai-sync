@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock, Star } from "lucide-react";
+import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock, Star, ImageIcon } from "lucide-react";
 import { YelpReviewsModal } from "@/components/YelpReviewsModal";
+import { DishDetailModal } from "@/components/DishDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ShareMenuItemModal } from "@/components/ShareMenuItemModal";
@@ -107,6 +108,8 @@ export const MenuAnalyzer = () => {
   const [analysisStage, setAnalysisStage] = useState<string>('');
   const [showYelpModal, setShowYelpModal] = useState(false);
   const [selectedYelpRestaurant, setSelectedYelpRestaurant] = useState<string>('');
+  const [showDishDetailModal, setShowDishDetailModal] = useState(false);
+  const [selectedDishForDetail, setSelectedDishForDetail] = useState<MenuItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -977,9 +980,26 @@ export const MenuAnalyzer = () => {
                                 <Badge key={i} variant="secondary">{tag}</Badge>
                               ))}
                             </div>
-                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                              <Info className="h-3 w-3" />
-                              Click for full details
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Info className="h-3 w-3" />
+                                Click for full details
+                              </div>
+                              {analysisResult?.restaurantName && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 gap-1.5 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedDishForDetail(item);
+                                    setShowDishDetailModal(true);
+                                  }}
+                                >
+                                  <ImageIcon className="h-3 w-3" />
+                                  Photos & Reviews
+                                </Button>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -1623,6 +1643,20 @@ export const MenuAnalyzer = () => {
         open={showYelpModal}
         onOpenChange={setShowYelpModal}
         restaurantName={selectedYelpRestaurant}
+      />
+
+      {/* Dish Detail Modal - Photos & Reviews per dish */}
+      <DishDetailModal
+        open={showDishDetailModal}
+        onOpenChange={setShowDishDetailModal}
+        dishName={selectedDishForDetail?.name || ''}
+        restaurantName={analysisResult?.restaurantName}
+        dishInfo={selectedDishForDetail ? {
+          calories: selectedDishForDetail.calories,
+          price: selectedDishForDetail.price,
+          description: selectedDishForDetail.description,
+          macros: selectedDishForDetail.macros,
+        } : undefined}
       />
     </Tabs>
   );
