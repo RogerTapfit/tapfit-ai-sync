@@ -122,11 +122,17 @@ serve(async (req) => {
       businessPhotos = detailsData.photos || [];
       console.log(`Found ${businessPhotos.length} photos for business`);
     }
+    
+    // Fallback to main image_url if no photos array
+    if (businessPhotos.length === 0 && business.image_url) {
+      businessPhotos = [business.image_url];
+      console.log('Using image_url as fallback photo');
+    }
 
-    // Fetch reviews - get more to allow filtering
+    // Fetch reviews - get more to allow filtering (removed invalid sort_by parameter)
     const reviewLimit = dishName ? 20 : 3;
     const reviewsResponse = await fetch(
-      `https://api.yelp.com/v3/businesses/${business.id}/reviews?limit=${reviewLimit}&sort_by=yelp_sort`,
+      `https://api.yelp.com/v3/businesses/${business.id}/reviews?limit=${reviewLimit}`,
       {
         headers: {
           Authorization: `Bearer ${YELP_API_KEY}`,
