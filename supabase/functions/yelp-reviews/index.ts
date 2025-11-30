@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const YELP_API_KEY = Deno.env.get('YELP_API_KEY');
+const SERPAPI_KEY = Deno.env.get('SERPAPI_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,7 @@ interface YelpBusiness {
   image_url?: string;
   photos?: string[];
   url: string;
+  alias?: string;
 }
 
 interface YelpReview {
@@ -34,6 +36,58 @@ interface YelpReview {
     name: string;
     image_url?: string;
   };
+}
+
+interface DishReviewSnippet {
+  snippet: string;
+  source: string;
+  link: string;
+}
+
+// Search for dish-specific reviews using SerpAPI
+async function searchDishReviews(dishName: string, restaurantName: string): Promise<DishReviewSnippet[]> {
+  if (!SERPAPI_KEY) {
+    console.log('SERPAPI_KEY not configured, skipping dish review search');
+    return [];
+  }
+
+  try {
+    // Search for Yelp reviews mentioning this specific dish
+    const searchQuery = `"${dishName}" "${restaurantName}" site:yelp.com review`;
+    console.log('Searching for dish-specific reviews:', searchQuery);
+
+    const url = `https://serpapi.com/search.json?q=${encodeURIComponent(searchQuery)}&api_key=${SERPAPI_KEY}&num=10`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error('SerpAPI review search error:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    const organicResults = data.organic_results || [];
+
+    // Extract snippets that mention the dish
+    const dishNameLower = dishName.toLowerCase();
+    const snippets: DishReviewSnippet[] = organicResults
+      .filter((result: any) => {
+        const snippet = (result.snippet || '').toLowerCase();
+        const title = (result.title || '').toLowerCase();
+        return snippet.includes(dishNameLower) || title.includes(dishNameLower);
+      })
+      .map((result: any) => ({
+        snippet: result.snippet || '',
+        source: result.source || 'Yelp',
+        link: result.link || '',
+      }))
+      .slice(0, 5);
+
+    console.log(`Found ${snippets.length} dish-specific review snippets`);
+    return snippets;
+  } catch (error) {
+    console.error('Error searching dish reviews:', error);
+    return [];
+  }
 }
 
 serve(async (req) => {
@@ -117,9 +171,11 @@ serve(async (req) => {
     );
 
     let businessPhotos: string[] = [];
+    let businessAlias: string = '';
     if (businessDetailsResponse.ok) {
       const detailsData = await businessDetailsResponse.json();
       businessPhotos = detailsData.photos || [];
+      businessAlias = detailsData.alias || '';
       console.log(`Found ${businessPhotos.length} photos for business`);
     }
     
@@ -129,7 +185,7 @@ serve(async (req) => {
       console.log('Using image_url as fallback photo');
     }
 
-    // Fetch reviews - get more to allow filtering (removed invalid sort_by parameter)
+    // Fetch reviews from Yelp API
     const reviewLimit = dishName ? 20 : 3;
     const reviewsResponse = await fetch(
       `https://api.yelp.com/v3/businesses/${business.id}/reviews?limit=${reviewLimit}`,
@@ -145,7 +201,7 @@ serve(async (req) => {
     if (reviewsResponse.ok) {
       const reviewsData = await reviewsResponse.json();
       reviews = reviewsData.reviews || [];
-      console.log(`Fetched ${reviews.length} reviews`);
+      console.log(`Fetched ${reviews.length} reviews from Yelp API`);
     } else {
       console.warn('Failed to fetch reviews:', reviewsResponse.status);
     }
@@ -154,21 +210,25 @@ serve(async (req) => {
     let filteredReviews = reviews;
     if (dishName && dishName.trim()) {
       const dishNameLower = dishName.toLowerCase().trim();
-      // Also try common variations
       const dishWords = dishNameLower.split(' ').filter(w => w.length > 2);
       
       filteredReviews = reviews.filter(review => {
         const reviewTextLower = review.text.toLowerCase();
-        // Check exact match
         if (reviewTextLower.includes(dishNameLower)) {
           return true;
         }
-        // Check if most words match (for partial matches like "Original MeltBurger" -> "meltburger")
         const matchingWords = dishWords.filter(word => reviewTextLower.includes(word));
         return matchingWords.length >= Math.ceil(dishWords.length * 0.6);
       });
       
-      console.log(`Filtered to ${filteredReviews.length} reviews mentioning "${dishName}"`);
+      console.log(`Filtered to ${filteredReviews.length} Yelp API reviews mentioning "${dishName}"`);
+    }
+
+    // If no dish-specific reviews from Yelp API, search using SerpAPI
+    let dishReviewSnippets: DishReviewSnippet[] = [];
+    if (dishName && filteredReviews.length === 0) {
+      console.log('No Yelp API reviews match dish, trying SerpAPI fallback...');
+      dishReviewSnippets = await searchDishReviews(dishName, business.name);
     }
 
     // Highlight matching text in reviews
@@ -188,6 +248,11 @@ serve(async (req) => {
       };
     });
 
+    // Build direct Yelp search URL for dish-specific reviews
+    const yelpDishSearchUrl = dishName && businessAlias
+      ? `https://www.yelp.com/biz/${businessAlias}?q=${encodeURIComponent(dishName)}`
+      : null;
+
     // Format the response
     const result = {
       found: true,
@@ -201,8 +266,11 @@ serve(async (req) => {
         imageUrl: business.image_url,
         photos: businessPhotos,
         yelpUrl: business.url,
+        alias: businessAlias,
       },
       reviews: highlightedReviews,
+      dishReviewSnippets, // From SerpAPI fallback
+      yelpDishSearchUrl, // Direct link to search Yelp for dish
       dishName: dishName || null,
       totalReviewsSearched: reviews.length,
       matchingReviewsCount: filteredReviews.length,
