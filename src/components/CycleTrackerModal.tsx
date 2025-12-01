@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Droplets, Zap, Dumbbell, Utensils, UserPlus } from 'lucide-react';
+import { Settings, Droplets, Zap, Dumbbell, Utensils, UserPlus, Loader2 } from 'lucide-react';
 import { useCycleTracking, CyclePhase } from '@/hooks/useCycleTracking';
 import { CycleCalendarView } from './CycleCalendarView';
 import { CycleTrackingSettings } from './CycleTrackingSettings';
@@ -19,7 +19,7 @@ interface CycleTrackerModalProps {
 
 export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps) => {
   const navigate = useNavigate();
-  const { isGuest } = useAuth();
+  const { isGuest, loading: authLoading } = useAuth();
   const { cycleData, isEnabled, calculatePhaseInfo, getCycleInsights, createOrUpdate, isUpdating } = useCycleTracking();
   const [showSettings, setShowSettings] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
@@ -109,6 +109,20 @@ export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps
     });
     setShowSetup(false);
   };
+
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+            <span className="ml-2 text-muted-foreground">Loading...</span>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Guest user prompt
   if (isGuest) {

@@ -66,10 +66,21 @@ export const useCycleTracking = () => {
   const createOrUpdateMutation = useMutation({
     mutationFn: async (data: Partial<CycleTracking> & { last_period_start: string }) => {
       // Get fresh session directly from Supabase to avoid race conditions
-      const { data: { session } } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
+      
+      // If no session, try refreshing the token
+      if (!session?.user) {
+        console.log('No session from getSession, attempting refresh...');
+        const refreshResult = await supabase.auth.refreshSession();
+        session = refreshResult.data.session;
+      }
+      
       const userId = session?.user?.id;
       
-      if (!userId) throw new Error('User not authenticated');
+      if (!userId) {
+        console.error('Authentication failed - no user ID after refresh attempt');
+        throw new Error('Session expired. Please refresh the page or log in again.');
+      }
 
       const payload = {
         user_id: userId,
@@ -89,9 +100,13 @@ export const useCycleTracking = () => {
       queryClient.invalidateQueries({ queryKey: ['cycle-tracking'] });
       toast.success('Cycle tracking settings updated');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error updating cycle tracking:', error);
-      toast.error('Failed to update cycle tracking settings');
+      if (error.message.includes('Session expired') || error.message.includes('not authenticated')) {
+        toast.error('Session expired. Please refresh the page or log in again.');
+      } else {
+        toast.error('Failed to save cycle settings. Please try again.');
+      }
     },
   });
 
