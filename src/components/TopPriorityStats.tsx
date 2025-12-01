@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -13,6 +13,9 @@ import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { WaterQuickAddModal } from "./WaterQuickAddModal";
 import { useSleepData } from "@/hooks/useSleepData";
 import { SleepTrackerModal } from "./SleepTrackerModal";
+import { useCycleTracking } from "@/hooks/useCycleTracking";
+import { CycleTrackerModal } from "./CycleTrackerModal";
+
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
   onStartRun?: () => void;
@@ -29,10 +32,14 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const [showScanModal, setShowScanModal] = useState(false);
   const [showWaterModal, setShowWaterModal] = useState(false);
   const [showSleepModal, setShowSleepModal] = useState(false);
+  const [showCycleModal, setShowCycleModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
   const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
+  const { isEnabled: cycleEnabled, calculatePhaseInfo } = useCycleTracking();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+  const cyclePhaseInfo = calculatePhaseInfo(new Date());
 
   const handleHeartRateClick = async () => {
     if (isIOSNative) {
@@ -45,6 +52,17 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const handleScan = () => {
     scanHeartRate();
   };
+
+  const getPhaseName = (phase: string | null) => {
+    switch (phase) {
+      case 'menstrual': return 'Period';
+      case 'follicular': return 'Follicular';
+      case 'ovulation': return 'Ovulation';
+      case 'luteal': return 'Luteal';
+      default: return 'Setup';
+    }
+  };
+
   return (
     <Card className="glow-card p-6 bg-stats-heart/10 border-stats-heart/30 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
@@ -91,7 +109,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
         <div
           className="text-center space-y-2 cursor-pointer select-none"
           onClick={() => onCaloriesBurnedClick?.()}
@@ -233,10 +251,36 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
           </p>
           <p className="text-sm text-muted-foreground">Sleep ({targetHours}h goal)</p>
         </div>
+
+        {/* Cycle Tracker Tile */}
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowCycleModal(true)}
+          role="button"
+          aria-label="Track cycle"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowCycleModal(true);
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-pink-500/10 hover:border-pink-500/30 transition-all duration-200">
+            <Droplets className="size-6 block text-pink-500" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {cycleEnabled && cyclePhaseInfo ? `Day ${cyclePhaseInfo.cycleDay}` : 'Setup'}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {cycleEnabled && cyclePhaseInfo ? getPhaseName(cyclePhaseInfo.phase) : 'Cycle'}
+          </p>
+        </div>
       </div>
 
       <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
       <SleepTrackerModal open={showSleepModal} onOpenChange={setShowSleepModal} />
+      <CycleTrackerModal open={showCycleModal} onOpenChange={setShowCycleModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}
