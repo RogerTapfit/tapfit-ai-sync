@@ -53,6 +53,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
     scanHeartRate();
   };
 
+  const { isGuest } = useAuth();
+
   const getPhaseName = (phase: string | null) => {
     switch (phase) {
       case 'menstrual': return 'Period';
@@ -270,10 +272,10 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             <Droplets className="size-6 block text-pink-500" />
           </div>
           <p className="text-2xl font-bold text-white">
-            {cycleEnabled && cyclePhaseInfo ? `Day ${cyclePhaseInfo.cycleDay}` : 'Setup'}
+            {isGuest ? 'Login' : (cycleEnabled && cyclePhaseInfo ? `Day ${cyclePhaseInfo.cycleDay}` : 'Setup')}
           </p>
           <p className="text-sm text-muted-foreground">
-            {cycleEnabled && cyclePhaseInfo ? getPhaseName(cyclePhaseInfo.phase) : 'Cycle'}
+            {isGuest ? 'to Track' : (cycleEnabled && cyclePhaseInfo ? getPhaseName(cyclePhaseInfo.phase) : 'Cycle')}
           </p>
         </div>
       </div>
