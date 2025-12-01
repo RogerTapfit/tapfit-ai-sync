@@ -191,7 +191,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         images: sortedImages, 
-        query: yelpPhotoQuery,
+        query: yelpPhotoPageQuery,
         exactMatch: sortedImages.length > 0 && sortedImages.some((img: any) => img.hasDishKeyword),
         dishName,
         restaurantName,
