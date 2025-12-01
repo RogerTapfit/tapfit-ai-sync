@@ -81,6 +81,7 @@ export const DishDetailModal = ({
   const [imagesLoading, setImagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [yelpPhotoSearchUrl, setYelpPhotoSearchUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && dishName) {
@@ -128,9 +129,17 @@ export const DishDetailModal = ({
 
       if (fnError) throw fnError;
       
+      console.log('Dish images response:', data);
+      
       if (data?.images && data.images.length > 0) {
         setDishImages(data.images);
       }
+      
+      // Store Yelp photo search URL for fallback
+      if (data?.yelpPhotoSearchUrl) {
+        setYelpPhotoSearchUrl(data.yelpPhotoSearchUrl);
+      }
+      
       return data;
     } catch (err) {
       console.error('Error fetching dish images:', err);
@@ -312,11 +321,23 @@ export const DishDetailModal = ({
               </div>
             )}
 
-            {/* No Photos Found */}
+            {/* No Photos Found - Show Yelp Photo Search Link */}
             {!loading && !imagesLoading && photos.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+              <div className="text-center py-8 text-muted-foreground border rounded-lg space-y-3">
                 <ImageOff className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No photos found for this dish</p>
+                <p className="text-sm">No exact photos found for "{dishName}"</p>
+                {yelpPhotoSearchUrl && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => window.open(yelpPhotoSearchUrl, '_blank')}
+                  >
+                    <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-4 h-4" />
+                    View "{dishName}" Photos on Yelp
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             )}
 
