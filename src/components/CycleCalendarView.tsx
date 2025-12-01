@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isAfter, startOfDay, isBefore } from 'date-fns';
 
 interface CycleDay {
   date: Date;
@@ -16,16 +16,22 @@ interface CycleCalendarViewProps {
   onDateClick?: (date: Date) => void;
   lastPeriodStart?: Date;
   onMonthChange?: (date: Date) => void;
+  selectionMode?: 'none' | 'start' | 'end';
+  selectedStart?: Date;
+  selectedEnd?: Date;
 }
 
 export const CycleCalendarView = ({ 
   cycleDays, 
   onDateClick,
   lastPeriodStart,
-  onMonthChange 
+  onMonthChange,
+  selectionMode = 'none',
+  selectedStart,
+  selectedEnd
 }: CycleCalendarViewProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const today = new Date();
+  const today = startOfDay(new Date());
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -53,30 +59,55 @@ export const CycleCalendarView = ({
     return cycleDays.find(cd => isSameDay(cd.date, date));
   };
 
+  const isInSelectedRange = (date: Date): boolean => {
+    if (!selectedStart || !selectedEnd) return false;
+    const d = startOfDay(date);
+    return !isBefore(d, selectedStart) && !isAfter(d, selectedEnd);
+  };
+
   const getDayClasses = (date: Date, cycleInfo?: CycleDay) => {
-    const isToday = isSameDay(date, today);
-    const isLastPeriodStart = lastPeriodStart && isSameDay(date, lastPeriodStart);
+    const dateStart = startOfDay(date);
+    const isToday = isSameDay(dateStart, today);
+    const isLastPeriodStart = lastPeriodStart && isSameDay(dateStart, lastPeriodStart);
+    const isFutureDate = isAfter(dateStart, today);
+    const isSelectedStart = selectedStart && isSameDay(dateStart, selectedStart);
+    const isSelectedEnd = selectedEnd && isSameDay(dateStart, selectedEnd);
+    const isInRange = isInSelectedRange(dateStart);
     
     let bgClass = 'bg-transparent';
     let textClass = 'text-foreground';
     let ringClass = '';
 
-    if (cycleInfo?.isOvulation) {
-      bgClass = 'bg-purple-500/30';
-      textClass = 'text-purple-200';
-    } else if (cycleInfo?.isPeriod) {
-      bgClass = cycleInfo.isPredicted ? 'bg-red-500/20' : 'bg-red-500/40';
-      textClass = 'text-red-200';
-    } else if (cycleInfo?.isFertile) {
-      bgClass = 'bg-pink-500/20';
-      textClass = 'text-pink-200';
+    // Selection mode styling takes priority
+    if (selectionMode !== 'none') {
+      if (isSelectedStart || isSelectedEnd) {
+        bgClass = 'bg-red-500';
+        textClass = 'text-white';
+      } else if (isInRange) {
+        bgClass = 'bg-red-500/30';
+        textClass = 'text-red-200';
+      } else if (isFutureDate) {
+        textClass = 'text-muted-foreground/40';
+      }
+    } else {
+      // Normal cycle day styling
+      if (cycleInfo?.isOvulation) {
+        bgClass = 'bg-purple-500/30';
+        textClass = 'text-purple-200';
+      } else if (cycleInfo?.isPeriod) {
+        bgClass = cycleInfo.isPredicted ? 'bg-red-500/20' : 'bg-red-500/40';
+        textClass = 'text-red-200';
+      } else if (cycleInfo?.isFertile) {
+        bgClass = 'bg-pink-500/20';
+        textClass = 'text-pink-200';
+      }
     }
 
     if (isToday) {
       ringClass = 'ring-2 ring-primary ring-offset-2 ring-offset-background';
     }
 
-    if (isLastPeriodStart) {
+    if (isLastPeriodStart && selectionMode === 'none') {
       ringClass = 'ring-2 ring-red-500';
     }
 
@@ -118,14 +149,19 @@ export const CycleCalendarView = ({
         {daysInMonth.map(date => {
           const cycleInfo = getCycleDayInfo(date);
           const isInMonth = isSameMonth(date, currentMonth);
+          const dateStart = startOfDay(date);
+          const isFutureDate = isAfter(dateStart, today);
+          const isDisabled = selectionMode !== 'none' && isFutureDate;
           
           return (
             <button
               key={date.toISOString()}
-              onClick={() => onDateClick?.(date)}
+              onClick={() => !isDisabled && onDateClick?.(date)}
+              disabled={isDisabled}
               className={`
                 aspect-square rounded-full flex items-center justify-center text-sm
-                transition-all duration-200 hover:bg-muted
+                transition-all duration-200 
+                ${isDisabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-muted cursor-pointer'}
                 ${isInMonth ? 'opacity-100' : 'opacity-30'}
                 ${getDayClasses(date, cycleInfo)}
               `}
@@ -136,21 +172,23 @@ export const CycleCalendarView = ({
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-red-500/40" />
-          <span className="text-muted-foreground">Period</span>
+      {/* Legend - only show when not in selection mode */}
+      {selectionMode === 'none' && (
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500/40" />
+            <span className="text-muted-foreground">Period</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-pink-500/30" />
+            <span className="text-muted-foreground">Fertile</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-purple-500/40" />
+            <span className="text-muted-foreground">Ovulation</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-pink-500/30" />
-          <span className="text-muted-foreground">Fertile</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-purple-500/40" />
-          <span className="text-muted-foreground">Ovulation</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

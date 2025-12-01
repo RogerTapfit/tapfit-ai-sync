@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Settings, Droplets, Zap, Dumbbell, Utensils } from 'lucide-react';
+import { Settings, Droplets, Zap, Dumbbell, Utensils } from 'lucide-react';
 import { useCycleTracking, CyclePhase } from '@/hooks/useCycleTracking';
 import { CycleCalendarView } from './CycleCalendarView';
 import { CycleTrackingSettings } from './CycleTrackingSettings';
-import { format, addDays, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
+import { CycleSetupFlow } from './CycleSetupFlow';
+import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 
 interface CycleTrackerModalProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface CycleTrackerModalProps {
 export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps) => {
   const { cycleData, isEnabled, calculatePhaseInfo, getCycleInsights, createOrUpdate, isUpdating } = useCycleTracking();
   const [showSettings, setShowSettings] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
   const [currentViewMonth, setCurrentViewMonth] = useState(new Date());
 
   const today = new Date();
@@ -94,11 +96,46 @@ export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps
     }
   };
 
+  const handleSetupComplete = (startDate: Date, periodLength: number) => {
+    createOrUpdate({
+      is_enabled: true,
+      last_period_start: format(startDate, 'yyyy-MM-dd'),
+      average_cycle_length: cycleData?.average_cycle_length || 28,
+      average_period_length: periodLength,
+    });
+    setShowSetup(false);
+  };
+
   if (showSettings) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <CycleTrackingSettings onClose={() => setShowSettings(false)} />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (showSetup || !isEnabled) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Droplets className="h-5 w-5 text-pink-500" />
+              Set Up Cycle Tracking
+            </DialogTitle>
+          </DialogHeader>
+          <CycleSetupFlow 
+            onComplete={handleSetupComplete}
+            onCancel={() => {
+              if (isEnabled) {
+                setShowSetup(false);
+              } else {
+                onOpenChange(false);
+              }
+            }}
+          />
         </DialogContent>
       </Dialog>
     );
@@ -119,27 +156,7 @@ export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps
           </div>
         </DialogHeader>
 
-        {!isEnabled ? (
-          // First-time setup
-          <div className="space-y-4 py-4">
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-pink-500/20 mx-auto flex items-center justify-center">
-                <Calendar className="h-8 w-8 text-pink-500" />
-              </div>
-              <h3 className="text-lg font-semibold">Track Your Cycle</h3>
-              <p className="text-sm text-muted-foreground">
-                Get personalized workout and nutrition insights based on your menstrual cycle.
-              </p>
-            </div>
-            <Button 
-              className="w-full bg-pink-500 hover:bg-pink-600"
-              onClick={() => setShowSettings(true)}
-            >
-              Set Up Cycle Tracking
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
+        <div className="space-y-4">
             {/* Current Status Card */}
             <Card className="p-4 bg-gradient-to-br from-pink-500/10 to-purple-500/10 border-pink-500/20">
               <div className="flex items-center justify-between mb-2">
@@ -233,7 +250,6 @@ export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps
               </Card>
             )}
           </div>
-        )}
       </DialogContent>
     </Dialog>
   );
