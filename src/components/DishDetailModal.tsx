@@ -95,29 +95,34 @@ export const DishDetailModal = ({
     setCurrentPhotoIndex(0);
     setDishImages([]);
 
-    // Fetch dish-specific images and Yelp data in parallel
-    const [imagesResult, yelpResult] = await Promise.allSettled([
-      fetchDishImages(),
-      fetchYelpData()
-    ]);
-
-    if (imagesResult.status === 'rejected') {
-      console.error('Error fetching dish images:', imagesResult.reason);
+    // Step 1: Fetch Yelp data FIRST to discover the restaurant name
+    let discoveredRestaurantName = restaurantName;
+    try {
+      const yelpResult = await fetchYelpData();
+      if (yelpResult?.restaurant?.name) {
+        discoveredRestaurantName = yelpResult.restaurant.name;
+        console.log('Discovered restaurant from Yelp:', discoveredRestaurantName);
+      }
+    } catch (err) {
+      console.error('Error fetching Yelp data:', err);
     }
-    if (yelpResult.status === 'rejected') {
-      console.error('Error fetching Yelp data:', yelpResult.reason);
-    }
-
     setLoading(false);
+
+    // Step 2: Now search for images WITH the discovered restaurant name
+    try {
+      await fetchDishImages(discoveredRestaurantName);
+    } catch (err) {
+      console.error('Error fetching dish images:', err);
+    }
     setImagesLoading(false);
   };
 
-  const fetchDishImages = async () => {
+  const fetchDishImages = async (restaurant?: string) => {
     try {
       const { data, error: fnError } = await supabase.functions.invoke('search-dish-images', {
         body: {
           dishName,
-          restaurantName,
+          restaurantName: restaurant || restaurantName,
         }
       });
 
