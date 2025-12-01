@@ -744,6 +744,21 @@ export const MenuAnalyzer = () => {
                         <CardTitle className="flex items-center gap-2">
                           <span className="text-xl">{activeFilter?.emoji || '✨'}</span>
                           {recommendationType || 'Recommended For You'}
+                          {analysisResult?.restaurantName && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-2 text-xs ml-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedYelpRestaurant(analysisResult.restaurantName!);
+                                setShowYelpModal(true);
+                              }}
+                            >
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              Yelp Reviews
+                            </Button>
+                          )}
                         </CardTitle>
                         <CardDescription className="mt-1">
                           {recommendations.length} {recommendations.length === 1 ? 'item' : 'items'} match your criteria
