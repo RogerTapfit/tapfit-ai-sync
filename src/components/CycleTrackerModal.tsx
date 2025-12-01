@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Droplets, Zap, Dumbbell, Utensils } from 'lucide-react';
+import { Settings, Droplets, Zap, Dumbbell, Utensils, UserPlus } from 'lucide-react';
 import { useCycleTracking, CyclePhase } from '@/hooks/useCycleTracking';
 import { CycleCalendarView } from './CycleCalendarView';
 import { CycleTrackingSettings } from './CycleTrackingSettings';
 import { CycleSetupFlow } from './CycleSetupFlow';
+import { useAuth } from './AuthGuard';
 import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 
 interface CycleTrackerModalProps {
@@ -16,6 +18,8 @@ interface CycleTrackerModalProps {
 }
 
 export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps) => {
+  const navigate = useNavigate();
+  const { isGuest } = useAuth();
   const { cycleData, isEnabled, calculatePhaseInfo, getCycleInsights, createOrUpdate, isUpdating } = useCycleTracking();
   const [showSettings, setShowSettings] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
@@ -105,6 +109,41 @@ export const CycleTrackerModal = ({ open, onOpenChange }: CycleTrackerModalProps
     });
     setShowSetup(false);
   };
+
+  // Guest user prompt
+  if (isGuest) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Droplets className="h-5 w-5 text-pink-500" />
+              Cycle Tracking
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-6 space-y-4">
+            <div className="size-16 rounded-full bg-pink-500/10 mx-auto flex items-center justify-center">
+              <UserPlus className="h-8 w-8 text-pink-500" />
+            </div>
+            <h3 className="font-semibold text-lg">Create an Account to Track Your Cycle</h3>
+            <p className="text-muted-foreground text-sm">
+              Sign up to get personalized cycle insights, workout recommendations, and nutrition tips based on your cycle phase.
+            </p>
+            <Button 
+              className="bg-pink-500 hover:bg-pink-600 text-white"
+              onClick={() => {
+                onOpenChange(false);
+                navigate('/auth');
+              }}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Create Free Account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (showSettings) {
     return (
