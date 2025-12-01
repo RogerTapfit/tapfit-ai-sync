@@ -41,12 +41,16 @@ export const useCycleTracking = () => {
   const { data: cycleData, isLoading } = useQuery({
     queryKey: ['cycle-tracking', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      // Get fresh session directly from Supabase to avoid race conditions
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      
+      if (!userId) return null;
       
       const { data, error } = await supabase
         .from('cycle_tracking')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error) {
@@ -61,10 +65,14 @@ export const useCycleTracking = () => {
 
   const createOrUpdateMutation = useMutation({
     mutationFn: async (data: Partial<CycleTracking> & { last_period_start: string }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      // Get fresh session directly from Supabase to avoid race conditions
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      
+      if (!userId) throw new Error('User not authenticated');
 
       const payload = {
-        user_id: user.id,
+        user_id: userId,
         ...data,
       };
 
