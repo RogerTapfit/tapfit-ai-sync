@@ -262,7 +262,7 @@ export const DishDetailModal = ({
                   <img
                     src={photos[currentPhotoIndex]}
                     alt={`${dishName} photo ${currentPhotoIndex + 1}`}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-64 object-contain"
                     onError={(e) => {
                       // If image fails to load, try thumbnail or remove from list
                       const target = e.target as HTMLImageElement;
