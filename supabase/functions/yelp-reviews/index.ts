@@ -252,6 +252,11 @@ serve(async (req) => {
     const yelpDishSearchUrl = dishName && businessAlias
       ? `https://www.yelp.com/biz/${businessAlias}?q=${encodeURIComponent(dishName)}`
       : null;
+    
+    // Build Yelp photo search URL using actual business alias
+    const yelpPhotoSearchUrl = businessAlias
+      ? `https://www.yelp.com/biz_photos/${businessAlias}?q=${encodeURIComponent(dishName || '')}`
+      : null;
 
     // Format the response
     const result = {
@@ -271,12 +276,13 @@ serve(async (req) => {
       reviews: highlightedReviews,
       dishReviewSnippets, // From SerpAPI fallback
       yelpDishSearchUrl, // Direct link to search Yelp for dish
+      yelpPhotoSearchUrl, // Direct link to Yelp photo search for this dish
       dishName: dishName || null,
       totalReviewsSearched: reviews.length,
       matchingReviewsCount: filteredReviews.length,
     };
 
-    console.log('Yelp data retrieved successfully');
+    console.log('Yelp data retrieved successfully, photo search URL:', yelpPhotoSearchUrl);
 
     return new Response(
       JSON.stringify(result),

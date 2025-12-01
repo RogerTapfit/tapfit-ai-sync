@@ -63,17 +63,18 @@ serve(async (req) => {
     // Build Yelp photo search URL for fallback
     const yelpPhotoSearchUrl = `https://www.yelp.com/biz_photos/${restaurantSlug}?q=${encodeURIComponent(dishName)}`;
     
-    // Search queries - prioritize Yelp photo pages
-    const yelpPhotoQuery = `"${dishName}" site:yelp.com/biz_photos`;
+    // Search queries - prioritize Yelp photo pages with looser matching
+    const yelpPhotoPageQuery = `"${dishName}" site:yelp.com/biz_photos`;
+    const yelpBizPhotosQuery = `${dishName} ${restaurantName} site:yelp.com/biz_photos`;
     const yelpBizQuery = `"${dishName}" "${restaurantName}" site:yelp.com`;
     const foodPlatformQuery = `"${dishName}" "${restaurantName}" (site:yelp.com OR site:doordash.com OR site:ubereats.com)`;
     
-    console.log('Searching with queries:', { yelpPhotoQuery, yelpBizQuery, restaurantSlug, dishKeywords });
+    console.log('Searching with queries:', { yelpPhotoPageQuery, yelpBizPhotosQuery, restaurantSlug, dishKeywords });
 
     let allImages: any[] = [];
     
-    // Try Yelp photo pages first
-    const queries = [yelpPhotoQuery, yelpBizQuery, foodPlatformQuery];
+    // Try Yelp photo pages first (biz_photos URLs are more likely to be dish-specific)
+    const queries = [yelpPhotoPageQuery, yelpBizPhotosQuery, yelpBizQuery, foodPlatformQuery];
     
     for (const query of queries) {
       if (allImages.length >= 5) break; // Stop if we have enough good images
@@ -125,18 +126,28 @@ serve(async (req) => {
               continue;
             }
             
+            // Check if from Yelp biz_photos URL (these are more likely dish-tagged)
+            const isFromYelpBizPhotos = link.includes('yelp.com/biz_photos');
+            
             // Calculate priority score
             let priority = 1000;
             if (hasDishKeyword && isFromRestaurant) {
               priority = 1 + (dishKeywords.length - matchedKeywords.length); // Best: dish keyword + restaurant
+            } else if (hasDishKeyword && isFromYelpBizPhotos) {
+              priority = 5; // Very good: has dish keyword + from Yelp photo pages
+            } else if (isFromYelpBizPhotos && isFromRestaurant) {
+              priority = 10; // Good: from Yelp biz_photos of the restaurant (likely dish-tagged)
             } else if (hasDishKeyword) {
               priority = 50 + (dishKeywords.length - matchedKeywords.length); // Good: has dish keyword
+            } else if (isFromYelpBizPhotos) {
+              priority = 75; // OK: from any Yelp biz_photos (could be dish-tagged)
             } else if (isFromRestaurant) {
-              priority = 100; // OK: from restaurant but no dish keyword
+              priority = 100; // Lower: from restaurant but not photo page
             }
             
-            // Only add images with dish keywords or from restaurant
-            if (hasDishKeyword || isFromRestaurant) {
+            // Accept images from Yelp biz_photos more loosely (they're usually dish-tagged)
+            const shouldInclude = hasDishKeyword || isFromRestaurant || isFromYelpBizPhotos;
+            if (shouldInclude) {
               // Check for duplicates
               const isDuplicate = allImages.some(existing => existing.url === img.original);
               if (!isDuplicate) {
@@ -151,7 +162,8 @@ serve(async (req) => {
                   priority,
                   matchedKeywords,
                   hasDishKeyword,
-                  isFromRestaurant
+                  isFromRestaurant,
+                  isFromYelpBizPhotos
                 });
               }
             }
