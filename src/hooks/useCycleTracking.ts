@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
+import { format, addDays } from 'date-fns';
 
 export interface CycleTracking {
   id: string;
@@ -167,6 +168,32 @@ export const useCycleTracking = () => {
     return insights[phase];
   };
 
+  // Helper: Get next predicted period date
+  const getNextPeriodDate = (): Date | null => {
+    if (!cycleData || !cycleData.is_enabled) return null;
+    
+    const lastPeriodStart = new Date(cycleData.last_period_start);
+    const today = new Date();
+    const daysSincePeriod = Math.floor(
+      (today.getTime() - lastPeriodStart.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
+    const currentCycleNumber = Math.floor(daysSincePeriod / cycleData.average_cycle_length);
+    const nextPeriodStart = addDays(lastPeriodStart, (currentCycleNumber + 1) * cycleData.average_cycle_length);
+    
+    return nextPeriodStart;
+  };
+
+  // Helper: Log period start on a specific date
+  const logPeriodStart = (date: Date) => {
+    createOrUpdateMutation.mutate({
+      is_enabled: true,
+      last_period_start: format(date, 'yyyy-MM-dd'),
+      average_cycle_length: cycleData?.average_cycle_length || 28,
+      average_period_length: cycleData?.average_period_length || 5,
+    });
+  };
+
   return {
     cycleData,
     isLoading,
@@ -175,5 +202,7 @@ export const useCycleTracking = () => {
     isUpdating: createOrUpdateMutation.isPending,
     calculatePhaseInfo,
     getCycleInsights,
+    getNextPeriodDate,
+    logPeriodStart,
   };
 };
