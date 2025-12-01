@@ -44,6 +44,47 @@ interface DishReviewSnippet {
   link: string;
 }
 
+interface TopReview {
+  text: string;
+  link: string;
+  source: string;
+}
+
+// Clean up raw search snippets to extract meaningful review text
+function cleanSnippet(snippet: string, dishName: string): string {
+  let cleaned = snippet
+    // Remove common Yelp metadata patterns
+    .replace(/Photo of \w+\s*\w*\.\s*\w*\s*\.\.\./gi, '')
+    .replace(/\d+\s*Photos?\s*\d*\s*Reviews?/gi, '')
+    .replace(/Recommended Reviews.*?trust is our.../gi, '')
+    .replace(/Reviews in Other Languages.*/gi, '')
+    .replace(/See all \d+ photos/gi, '')
+    .replace(/Updated \d{4}/gi, '')
+    .replace(/Last Updated.*/gi, '')
+    .replace(/TOP \d+ BEST.*/gi, '')
+    // Remove price patterns like "$XX.XX"
+    .replace(/\$\d+\.\d{2}/g, '')
+    // Remove repetitive site references
+    .replace(/site:yelp\.com/gi, '')
+    .replace(/yelp\.com/gi, '')
+    // Clean up excess whitespace and ellipsis
+    .replace(/\s+/g, ' ')
+    .replace(/\.{3,}/g, '...')
+    .replace(/^\s*\.\.\.\s*/g, '')
+    .replace(/\s*\.\.\.\s*$/g, '')
+    .trim();
+
+  // If it's too short after cleaning, return empty
+  if (cleaned.length < 20) return '';
+
+  // Truncate to ~150 chars at word boundary
+  if (cleaned.length > 150) {
+    cleaned = cleaned.substring(0, 150).replace(/\s+\S*$/, '') + '...';
+  }
+
+  return cleaned;
+}
+
 // Search for dish-specific reviews using SerpAPI
 async function searchDishReviews(dishName: string, restaurantName: string): Promise<DishReviewSnippet[]> {
   if (!SERPAPI_KEY) {
@@ -226,9 +267,27 @@ serve(async (req) => {
 
     // If no dish-specific reviews from Yelp API, search using SerpAPI
     let dishReviewSnippets: DishReviewSnippet[] = [];
+    let topReview: TopReview | null = null;
+    
     if (dishName && filteredReviews.length === 0) {
       console.log('No Yelp API reviews match dish, trying SerpAPI fallback...');
       dishReviewSnippets = await searchDishReviews(dishName, business.name);
+      
+      // Clean snippets and find the best one for topReview
+      if (dishReviewSnippets.length > 0) {
+        for (const snippet of dishReviewSnippets) {
+          const cleanedText = cleanSnippet(snippet.snippet, dishName);
+          if (cleanedText && cleanedText.length > 30) {
+            topReview = {
+              text: cleanedText,
+              link: snippet.link,
+              source: 'Yelp'
+            };
+            console.log('Selected top review:', cleanedText.substring(0, 50) + '...');
+            break;
+          }
+        }
+      }
     }
 
     // Highlight matching text in reviews
@@ -274,7 +333,7 @@ serve(async (req) => {
         alias: businessAlias,
       },
       reviews: highlightedReviews,
-      dishReviewSnippets, // From SerpAPI fallback
+      topReview, // Single cleaned top review
       yelpDishSearchUrl, // Direct link to search Yelp for dish
       yelpPhotoSearchUrl, // Direct link to Yelp photo search for this dish
       dishName: dishName || null,
