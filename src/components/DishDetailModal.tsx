@@ -23,10 +23,10 @@ interface DishReview {
   userImage?: string;
 }
 
-interface DishReviewSnippet {
-  snippet: string;
-  source: string;
+interface TopReview {
+  text: string;
   link: string;
+  source: string;
 }
 
 interface YelpData {
@@ -44,7 +44,7 @@ interface YelpData {
     alias?: string;
   };
   reviews: DishReview[];
-  dishReviewSnippets?: DishReviewSnippet[];
+  topReview?: TopReview;
   yelpDishSearchUrl?: string;
   dishName?: string;
   totalReviewsSearched: number;
@@ -389,23 +389,24 @@ export const DishDetailModal = ({
                   )}
                 </div>
 
-                {/* Dish-specific review snippets from SerpAPI */}
-                {yelpData.dishReviewSnippets && yelpData.dishReviewSnippets.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Review snippets mentioning this dish:</p>
-                    {yelpData.dishReviewSnippets.map((snippet, idx) => (
-                      <div key={idx} className="border rounded-lg p-3 space-y-1 bg-muted/30">
-                        <p className="text-sm text-foreground leading-relaxed">"{snippet.snippet}"</p>
-                        <a 
-                          href={snippet.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline flex items-center gap-1"
-                        >
-                          Read full review <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    ))}
+                {/* Top Review - Single prominent card */}
+                {yelpData.topReview && (
+                  <div className="border-2 border-primary/20 rounded-xl p-4 bg-gradient-to-br from-primary/5 to-transparent space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">⭐</span>
+                      <span className="font-semibold text-sm">Top Review</span>
+                    </div>
+                    <p className="text-base text-foreground leading-relaxed italic">
+                      "{yelpData.topReview.text}"
+                    </p>
+                    <a 
+                      href={yelpData.topReview.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1 font-medium"
+                    >
+                      Read full review on Yelp <ExternalLink className="h-4 w-4" />
+                    </a>
                   </div>
                 )}
 
