@@ -135,7 +135,7 @@ export const DishDetailModal = ({
         setDishImages(data.images);
       }
       
-      // Store Yelp photo search URL for fallback
+      // Store Yelp photo search URL for fallback (from edge function or build from alias)
       if (data?.yelpPhotoSearchUrl) {
         setYelpPhotoSearchUrl(data.yelpPhotoSearchUrl);
       }
@@ -159,6 +159,12 @@ export const DishDetailModal = ({
 
       if (fnError) throw fnError;
       setYelpData(data);
+      
+      // Also store Yelp photo search URL from yelp-reviews (uses actual business alias)
+      if (data?.yelpPhotoSearchUrl && !yelpPhotoSearchUrl) {
+        setYelpPhotoSearchUrl(data.yelpPhotoSearchUrl);
+      }
+      
       return data;
     } catch (err) {
       console.error('Error fetching Yelp data:', err);
@@ -186,11 +192,9 @@ export const DishDetailModal = ({
     );
   };
 
-  // Prioritize dish-specific images over generic restaurant photos
-  const photos = dishImages.length > 0 
-    ? dishImages.map(img => img.url) 
-    : (yelpData?.restaurant?.photos || []);
-
+  // ONLY show dish-specific images - NO generic restaurant photo fallback
+  // This ensures users only see photos actually related to the dish they clicked
+  const photos = dishImages.map(img => img.url);
   const isDishSpecificPhotos = dishImages.length > 0;
 
   const nextPhoto = () => {
@@ -321,21 +325,30 @@ export const DishDetailModal = ({
               </div>
             )}
 
-            {/* No Photos Found - Show Yelp Photo Search Link */}
+            {/* No Photos Found - Show Prominent Yelp Photo Search Link */}
             {!loading && !imagesLoading && photos.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground border rounded-lg space-y-3">
-                <ImageOff className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No exact photos found for "{dishName}"</p>
-                {yelpPhotoSearchUrl && (
+              <div className="text-center py-10 border-2 border-dashed rounded-lg space-y-4 bg-muted/30">
+                <ImageOff className="h-12 w-12 mx-auto opacity-40" />
+                <div className="space-y-2">
+                  <p className="font-medium">No photos tagged as "{dishName}" found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Search Yelp directly to see user-uploaded photos of this dish
+                  </p>
+                </div>
+                {(yelpPhotoSearchUrl || yelpData?.restaurant?.alias) && (
                   <Button
                     variant="default"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => window.open(yelpPhotoSearchUrl, '_blank')}
+                    size="lg"
+                    className="gap-2 mt-2"
+                    onClick={() => {
+                      const url = yelpPhotoSearchUrl || 
+                        `https://www.yelp.com/biz_photos/${yelpData?.restaurant?.alias}?q=${encodeURIComponent(dishName)}`;
+                      window.open(url, '_blank');
+                    }}
                   >
-                    <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-4 h-4" />
+                    <img src="https://www.yelp.com/favicon.ico" alt="Yelp" className="w-5 h-5" />
                     View "{dishName}" Photos on Yelp
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-4 w-4" />
                   </Button>
                 )}
               </div>
