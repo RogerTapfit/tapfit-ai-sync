@@ -32,7 +32,7 @@ serve(async (req) => {
       );
     }
 
-    // Build search query - REQUIRE restaurant name for accurate results
+    // REQUIRE restaurant name for accurate results
     if (!restaurantName) {
       console.log('No restaurant name provided, returning empty results to avoid generic images');
       return new Response(
@@ -42,126 +42,149 @@ serve(async (req) => {
           exactMatch: false,
           dishName,
           restaurantName: null,
+          yelpPhotoSearchUrl: null,
           message: 'Restaurant name required for accurate dish photos'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create restaurant slug for Yelp URL filtering
+    // Create restaurant slug for Yelp URL
     const restaurantSlug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
     
-    // Build multiple search queries for better coverage
-    // Primary: Exact dish + restaurant on Yelp specifically
-    const yelpQuery = `"${dishName}" site:yelp.com/biz/${restaurantSlug}`;
-    // Fallback: Exact dish + exact restaurant on food platforms
-    const broadQuery = `"${dishName}" "${restaurantName}" (site:yelp.com OR site:doordash.com OR site:ubereats.com OR site:grubhub.com)`;
+    // Extract dish keywords for filtering (remove common words)
+    const commonWords = ['with', 'and', 'the', 'a', 'an', 'of', 'in', 'on', 'for', '+', '&', '-'];
+    const dishKeywords = dishName.toLowerCase()
+      .split(/[\s+&-]+/)
+      .filter((word: string) => word.length > 2 && !commonWords.includes(word));
     
-    console.log('Searching for exact dish images with queries:', { yelpQuery, broadQuery, restaurantSlug });
+    console.log('Dish keywords for filtering:', dishKeywords);
+    
+    // Build Yelp photo search URL for fallback
+    const yelpPhotoSearchUrl = `https://www.yelp.com/biz_photos/${restaurantSlug}?q=${encodeURIComponent(dishName)}`;
+    
+    // Search queries - prioritize Yelp photo pages
+    const yelpPhotoQuery = `"${dishName}" site:yelp.com/biz_photos`;
+    const yelpBizQuery = `"${dishName}" "${restaurantName}" site:yelp.com`;
+    const foodPlatformQuery = `"${dishName}" "${restaurantName}" (site:yelp.com OR site:doordash.com OR site:ubereats.com)`;
+    
+    console.log('Searching with queries:', { yelpPhotoQuery, yelpBizQuery, restaurantSlug, dishKeywords });
 
-    // Try Yelp-specific search first
-    let data: any = null;
-    let usedQuery = yelpQuery;
+    let allImages: any[] = [];
     
-    const yelpUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(yelpQuery)}&tbm=isch&api_key=${SERPAPI_KEY}&num=20`;
-    const yelpResponse = await fetch(yelpUrl);
+    // Try Yelp photo pages first
+    const queries = [yelpPhotoQuery, yelpBizQuery, foodPlatformQuery];
     
-    if (yelpResponse.ok) {
-      data = await yelpResponse.json();
-    }
-    
-    // If Yelp search returned few results, try broader search
-    if (!data?.images_results || data.images_results.length < 3) {
-      console.log('Yelp-specific search returned few results, trying broader search...');
-      usedQuery = broadQuery;
-      const broadUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(broadQuery)}&tbm=isch&api_key=${SERPAPI_KEY}&num=20`;
-      const broadResponse = await fetch(broadUrl);
+    for (const query of queries) {
+      if (allImages.length >= 5) break; // Stop if we have enough good images
       
-      if (broadResponse.ok) {
-        const broadData = await broadResponse.json();
-        // Merge results, preferring Yelp results
-        const existingUrls = new Set((data?.images_results || []).map((img: any) => img.original));
-        const newResults = (broadData.images_results || []).filter((img: any) => !existingUrls.has(img.original));
-        data = {
-          images_results: [...(data?.images_results || []), ...newResults]
-        };
+      const url = `https://serpapi.com/search.json?q=${encodeURIComponent(query)}&tbm=isch&api_key=${SERPAPI_KEY}&num=20`;
+      console.log('Fetching:', query);
+      
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          const results = data.images_results || [];
+          
+          // Process and filter results
+          for (const img of results) {
+            if (!img.original || !img.thumbnail) continue;
+            
+            const title = (img.title || '').toLowerCase();
+            const source = (img.source || '').toLowerCase();
+            const link = (img.link || '').toLowerCase();
+            
+            // Check if image title/source contains dish keywords
+            const matchedKeywords = dishKeywords.filter((keyword: string) => 
+              title.includes(keyword) || source.includes(keyword)
+            );
+            
+            // Require at least one keyword match for dish-specific images
+            const hasDishKeyword = matchedKeywords.length > 0;
+            
+            // Check if from restaurant's pages
+            const isFromRestaurant = 
+              link.includes(restaurantSlug) ||
+              source.includes(restaurantName.toLowerCase()) ||
+              title.includes(restaurantName.toLowerCase());
+            
+            // Reject obvious promotional/generic images
+            const isPromotional = 
+              title.includes('logo') ||
+              title.includes('promotional') ||
+              title.includes('banner') ||
+              title.includes('spread') ||
+              title.includes('menu cover') ||
+              (img.original_width && img.original_height && 
+               Math.abs(img.original_width - img.original_height) < 50 && 
+               img.original_width < 200); // Small square images are usually logos
+            
+            if (isPromotional) {
+              console.log('Rejected promotional image:', title);
+              continue;
+            }
+            
+            // Calculate priority score
+            let priority = 1000;
+            if (hasDishKeyword && isFromRestaurant) {
+              priority = 1 + (dishKeywords.length - matchedKeywords.length); // Best: dish keyword + restaurant
+            } else if (hasDishKeyword) {
+              priority = 50 + (dishKeywords.length - matchedKeywords.length); // Good: has dish keyword
+            } else if (isFromRestaurant) {
+              priority = 100; // OK: from restaurant but no dish keyword
+            }
+            
+            // Only add images with dish keywords or from restaurant
+            if (hasDishKeyword || isFromRestaurant) {
+              // Check for duplicates
+              const isDuplicate = allImages.some(existing => existing.url === img.original);
+              if (!isDuplicate) {
+                allImages.push({
+                  url: img.original,
+                  thumbnail: img.thumbnail,
+                  title: img.title || '',
+                  source: img.source || '',
+                  link: img.link || '',
+                  width: img.original_width,
+                  height: img.original_height,
+                  priority,
+                  matchedKeywords,
+                  hasDishKeyword,
+                  isFromRestaurant
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Search error for query:', query, err);
       }
     }
     
-    if (!data) {
-      console.error('All image searches failed');
-      return new Response(
-        JSON.stringify({ error: 'Failed to search for images', images: [] }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Sort by priority and take top results
+    const sortedImages = allImages
+      .sort((a, b) => a.priority - b.priority)
+      .slice(0, 8)
+      .map(({ priority, matchedKeywords, hasDishKeyword, isFromRestaurant, ...img }) => img);
 
-    // Priority domains and restaurant name matching
-    const priorityDomains = ['yelp.com', 'doordash.com', 'ubereats.com', 'grubhub.com', 'tripadvisor.com'];
-    const restaurantLower = restaurantName.toLowerCase();
-    
-    const allImages = (data.images_results || [])
-      .map((img: any) => {
-        const source = (img.source || '').toLowerCase();
-        const link = (img.link || '').toLowerCase();
-        const title = (img.title || '').toLowerCase();
-        
-        // Check if image is from this specific restaurant
-        const isFromRestaurant = 
-          source.includes(restaurantLower) || 
-          link.includes(restaurantSlug) ||
-          title.includes(restaurantLower) ||
-          link.includes(restaurantLower.replace(/[^a-z0-9]/g, ''));
-        
-        // Priority: Restaurant-specific images from food platforms > Other food platform images
-        let priority = 999;
-        const domainIndex = priorityDomains.findIndex(d => source.includes(d) || link.includes(d));
-        
-        if (isFromRestaurant && domainIndex !== -1) {
-          priority = domainIndex; // Best: from restaurant + food platform
-        } else if (isFromRestaurant) {
-          priority = 10; // Good: from restaurant
-        } else if (domainIndex !== -1) {
-          priority = 100 + domainIndex; // OK: from food platform but not verified restaurant
-        }
-        
-        return {
-          url: img.original,
-          thumbnail: img.thumbnail,
-          title: img.title || '',
-          source: img.source || '',
-          link: img.link || '',
-          width: img.original_width,
-          height: img.original_height,
-          priority,
-          isFromRestaurant
-        };
-      })
-      .filter((img: any) => img.url && img.thumbnail);
-    
-    // Filter to ONLY show images from this restaurant (priority < 100)
-    const restaurantImages = allImages.filter((img: any) => img.isFromRestaurant);
-    
-    // If we have restaurant-specific images, use those; otherwise fall back to food platform images
-    const imagesToUse = restaurantImages.length >= 2 
-      ? restaurantImages 
-      : allImages.filter((img: any) => img.priority < 200); // At least from a food platform
-    
-    // Sort by priority and limit
-    const sortedImages = imagesToUse
-      .sort((a: any, b: any) => a.priority - b.priority)
-      .slice(0, 10)
-      .map(({ priority, isFromRestaurant, ...img }: any) => img);
-
-    console.log(`Found ${sortedImages.length} images for "${dishName}" at "${restaurantName}" (${restaurantImages.length} restaurant-specific)`);
+    console.log(`Found ${sortedImages.length} dish-specific images for "${dishName}" at "${restaurantName}"`);
+    console.log('Image priorities:', allImages.slice(0, 8).map(img => ({ 
+      title: img.title?.substring(0, 50), 
+      priority: img.priority,
+      hasDishKeyword: img.hasDishKeyword,
+      matchedKeywords: img.matchedKeywords
+    })));
 
     return new Response(
       JSON.stringify({ 
         images: sortedImages, 
-        query: searchQuery,
-        exactMatch: true,
+        query: yelpPhotoQuery,
+        exactMatch: sortedImages.length > 0 && sortedImages.some((img: any) => img.hasDishKeyword),
         dishName,
-        restaurantName 
+        restaurantName,
+        yelpPhotoSearchUrl,
+        dishKeywords
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
