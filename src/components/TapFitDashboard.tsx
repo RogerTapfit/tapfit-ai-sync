@@ -565,39 +565,45 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Button 
           variant="outline" 
-          className="glow-card h-16 text-lg"
+          className="glow-card h-16 text-base flex items-center justify-center gap-2"
           onClick={() => navigate('/pr-leaderboard')}
         >
-          <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
-          Personal Records
+          <Trophy className="h-4 w-4 shrink-0 text-yellow-500" />
+          <span className="truncate">Personal Records</span>
         </Button>
         
         <Button 
           variant="outline" 
-          className="glow-card h-16 text-lg"
+          className="glow-card h-16 text-base flex items-center justify-center gap-2"
           onClick={() => onPageChange?.('injury-prevention')}
         >
-          <Shield className="h-5 w-5 mr-2 text-green-500" />
-          Injury Prevention
+          <Shield className="h-4 w-4 shrink-0 text-green-500" />
+          <span className="truncate">Injury Prevention</span>
         </Button>
         
         <Button 
           variant="outline" 
-          className="glow-card h-16 text-lg"
+          className="glow-card h-16 text-base flex items-center justify-center gap-2"
           onClick={() => onPageChange?.('biometric-mood')}
         >
-          <Smile className="h-5 w-5 mr-2 text-yellow-500" />
-          Mood & Readiness
+          <Smile className="h-4 w-4 shrink-0 text-yellow-500" />
+          <span className="truncate">Mood & Readiness</span>
         </Button>
         
-        <Button variant="outline" className="glow-card h-16 text-lg">
-          <Users className="h-5 w-5 mr-2" />
-          Social
+        <Button 
+          variant="outline" 
+          className="glow-card h-16 text-base flex items-center justify-center gap-2"
+        >
+          <Users className="h-4 w-4 shrink-0" />
+          <span className="truncate">Social</span>
         </Button>
         
-        <Button variant="outline" className="glow-card h-16 text-lg">
-          <Target className="h-5 w-5 mr-2 text-primary" />
-          View Challenges
+        <Button 
+          variant="outline" 
+          className="glow-card h-16 text-base flex items-center justify-center gap-2"
+        >
+          <Target className="h-4 w-4 shrink-0 text-primary" />
+          <span className="truncate">View Challenges</span>
         </Button>
       </div>
 
