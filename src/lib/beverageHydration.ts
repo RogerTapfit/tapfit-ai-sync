@@ -153,13 +153,31 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     calories: 200, carbs: 15, protein: 0, fat: 0, sugar: 12, servingOz: 8
   },
   spirits: { 
-    name: 'Spirits/Liquor', 
+    name: 'Spirits', 
     icon: GlassWater, 
     hydrationFactor: -1.0, 
     color: 'text-slate-500',
     isAlcohol: true,
     category: 'alcohol',
     calories: 97, carbs: 0, protein: 0, fat: 0, sugar: 0, servingOz: 1.5
+  },
+  hard_cider: { 
+    name: 'Hard Cider', 
+    icon: Beer, 
+    hydrationFactor: -0.4, 
+    color: 'text-amber-500',
+    isAlcohol: true,
+    category: 'alcohol',
+    calories: 200, carbs: 24, protein: 0, fat: 0, sugar: 20, servingOz: 12
+  },
+  hard_seltzer: { 
+    name: 'Seltzer', 
+    icon: Sparkles, 
+    hydrationFactor: -0.3, 
+    color: 'text-sky-400',
+    isAlcohol: true,
+    category: 'alcohol',
+    calories: 100, carbs: 2, protein: 0, fat: 0, sugar: 2, servingOz: 12
   },
 };
 
