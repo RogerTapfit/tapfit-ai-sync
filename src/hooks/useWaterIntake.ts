@@ -251,7 +251,7 @@ export const useWaterIntake = () => {
         .from('hydration_streaks')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle() as any;
 
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -309,7 +309,7 @@ export const useWaterIntake = () => {
             last_hydration_date: today,
             total_hydration_days: streakData.total_hydration_days + 1,
             updated_at: new Date().toISOString(),
-          })
+          } as any)
           .eq('user_id', user.id);
       } else {
         // Create new streak record
@@ -321,7 +321,7 @@ export const useWaterIntake = () => {
             longest_streak: 1,
             last_hydration_date: today,
             total_hydration_days: 1,
-          });
+          } as any);
       }
     } catch (error) {
       console.error('Error checking hydration streak:', error);

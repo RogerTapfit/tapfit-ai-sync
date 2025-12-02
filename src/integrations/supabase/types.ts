@@ -1452,6 +1452,39 @@ export type Database = {
           },
         ]
       }
+      hydration_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_hydration_date: string
+          longest_streak: number
+          total_hydration_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_hydration_date: string
+          longest_streak?: number
+          total_hydration_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_hydration_date?: string
+          longest_streak?: number
+          total_hydration_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loot_boxes: {
         Row: {
           created_at: string
