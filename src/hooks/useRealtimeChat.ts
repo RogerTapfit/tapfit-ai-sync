@@ -75,10 +75,17 @@ export const useRealtimeChat = () => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isProcessingRef = useRef(false);
+  const shouldListenRef = useRef(false); // Track if we want continuous listening
 
   // Text-to-speech using ElevenLabs
   const speakText = useCallback(async (text: string) => {
     if (!text) return;
+    
+    // Pause recognition while AI speaks to prevent echo
+    if (recognitionRef.current) {
+      recognitionRef.current.abort();
+      console.log('🎤 Pausing listening while AI speaks...');
+    }
     
     setVoiceState(prev => ({ ...prev, isAISpeaking: true }));
     
@@ -97,6 +104,10 @@ export const useRealtimeChat = () => {
       if (error) {
         console.error('TTS error:', error);
         setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+        // Resume listening after error
+        if (shouldListenRef.current) {
+          startRecording();
+        }
         return;
       }
 
@@ -107,20 +118,37 @@ export const useRealtimeChat = () => {
         
         audio.onended = () => {
           setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+          // Resume listening after AI finishes speaking
+          if (shouldListenRef.current) {
+            console.log('🎤 Resuming listening after AI finished...');
+            startRecording();
+          }
         };
         
         audio.onerror = () => {
           console.error('Audio playback error');
           setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+          // Resume listening after error
+          if (shouldListenRef.current) {
+            startRecording();
+          }
         };
         
         await audio.play();
       } else {
         setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+        // Resume listening if no audio
+        if (shouldListenRef.current) {
+          startRecording();
+        }
       }
     } catch (error) {
       console.error('Error in text-to-speech:', error);
       setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+      // Resume listening after error
+      if (shouldListenRef.current) {
+        startRecording();
+      }
     }
   }, []);
 
@@ -240,6 +268,8 @@ export const useRealtimeChat = () => {
   // Start voice recording using Web Speech API
   const startRecording = useCallback(async () => {
     try {
+      shouldListenRef.current = true; // Mark that we want continuous listening
+      
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
       
       if (!SpeechRecognitionAPI) {
@@ -251,7 +281,7 @@ export const useRealtimeChat = () => {
       }
 
       const recognition = new SpeechRecognitionAPI();
-      recognition.continuous = false;
+      recognition.continuous = true; // Enable continuous recognition
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
@@ -280,14 +310,28 @@ export const useRealtimeChat = () => {
       };
 
       recognition.onend = () => {
-        setVoiceState(prev => ({ ...prev, isRecording: false }));
+        console.log('🎤 Recognition ended');
+        // Auto-restart if chat is connected and not speaking
+        if (shouldListenRef.current && !voiceState.isAISpeaking) {
+          setTimeout(() => {
+            try {
+              recognition.start();
+              console.log('🎤 Auto-restarted listening...');
+            } catch (e) {
+              console.log('Could not restart recognition:', e);
+              setVoiceState(prev => ({ ...prev, isRecording: false }));
+            }
+          }, 300); // Small delay before restarting
+        } else {
+          setVoiceState(prev => ({ ...prev, isRecording: false }));
+        }
       };
 
       recognitionRef.current = recognition;
       recognition.start();
       
       setVoiceState(prev => ({ ...prev, isRecording: true, error: null }));
-      console.log('🎤 Recording started...');
+      console.log('🎤 Recording started (continuous mode)...');
       
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -297,12 +341,13 @@ export const useRealtimeChat = () => {
         isRecording: false 
       }));
     }
-  }, [processMessage]);
+  }, [processMessage, voiceState.isAISpeaking]);
 
   // Stop voice recording
   const stopRecording = useCallback(() => {
+    shouldListenRef.current = false; // Mark that we want to stop continuous listening
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      recognitionRef.current.abort(); // Use abort() to prevent auto-restart
       recognitionRef.current = null;
     }
     setVoiceState(prev => ({ ...prev, isRecording: false }));
@@ -321,6 +366,8 @@ export const useRealtimeChat = () => {
   // Disconnect
   const disconnect = useCallback(() => {
     console.log("Disconnecting voice chat...");
+    
+    shouldListenRef.current = false; // Stop continuous listening
     
     if (recognitionRef.current) {
       recognitionRef.current.abort();
