@@ -189,10 +189,20 @@ export const useWaterIntake = () => {
   };
 
   const deleteEntry = async (entryId: string) => {
+    const entry = todaysEntries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    // Optimistic update - remove immediately from UI
+    setTodaysEntries(prev => prev.filter(e => e.id !== entryId));
+    const effectiveHydration = entry.effective_hydration_ml || entry.amount_ml;
+    const totalAmount = entry.total_amount_ml || entry.amount_ml;
+    setTodaysIntake(prev => prev - effectiveHydration);
+    setTotalLiquids(prev => prev - totalAmount);
+    if (entry.is_dehydrating) {
+      setDehydrationAmount(prev => prev - Math.abs(effectiveHydration));
+    }
+
     try {
-      // Find the entry to get its beverage type
-      const entry = todaysEntries.find(e => e.id === entryId);
-      
       // Delete from water_intake
       const { error } = await supabase
         .from('water_intake')
@@ -202,7 +212,7 @@ export const useWaterIntake = () => {
       if (error) throw error;
 
       // Also delete associated food_entry if beverage had calories
-      if (entry && entry.beverage_type && entry.beverage_type !== 'water') {
+      if (entry.beverage_type && entry.beverage_type !== 'water') {
         const beverage = BEVERAGE_HYDRATION[entry.beverage_type];
         if (beverage && beverage.calories > 0) {
           await supabase
@@ -216,6 +226,15 @@ export const useWaterIntake = () => {
       
       toast.success('Entry removed');
     } catch (error) {
+      // Rollback on error
+      setTodaysEntries(prev => [...prev, entry].sort((a, b) => 
+        new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()
+      ));
+      setTodaysIntake(prev => prev + effectiveHydration);
+      setTotalLiquids(prev => prev + totalAmount);
+      if (entry.is_dehydrating) {
+        setDehydrationAmount(prev => prev + Math.abs(effectiveHydration));
+      }
       console.error('Error deleting entry:', error);
       toast.error('Failed to delete entry');
     }
