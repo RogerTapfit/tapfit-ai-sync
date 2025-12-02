@@ -197,19 +197,20 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
                     Tip: Drink 8oz water for each alcoholic beverage.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {alcoholBeverages.map(({ key, name, icon: Icon, hydrationFactor, color }) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {alcoholBeverages.map(({ key, name, icon: Icon, hydrationFactor, color, servingOz }) => (
                     <Button
                       key={key}
                       variant="outline"
                       size="sm"
-                      className="flex flex-col h-16 gap-1 text-xs border-destructive/30 hover:bg-destructive/10"
-                      onClick={() => handleQuickAdd(12, key)}
+                      className="flex flex-col h-20 gap-0.5 text-xs border-destructive/30 hover:bg-destructive/10 px-1"
+                      onClick={() => handleQuickAdd(servingOz, key)}
                     >
                       <Icon className={`h-4 w-4 ${color}`} />
-                      <span className="font-medium">+12oz</span>
-                      <span className="text-destructive text-[10px]">
-                        {name} ({Math.round(Math.abs(hydrationFactor) * 100)}% dehydration)
+                      <span className="font-medium">+{servingOz}oz</span>
+                      <span className="text-destructive truncate w-full text-center">{name}</span>
+                      <span className="text-[9px] text-muted-foreground">
+                        {Math.round(Math.abs(hydrationFactor) * 100)}% dehyd.
                       </span>
                     </Button>
                   ))}
