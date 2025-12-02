@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
 import { calculateEffectiveHydration, calculateBeverageNutrition, BEVERAGE_HYDRATION } from '@/lib/beverageHydration';
+import { useTapCoins } from './useTapCoins';
 
 export interface WaterEntry {
   id: string;
@@ -19,12 +20,14 @@ const ML_PER_OZ = 29.5735;
 
 export const useWaterIntake = () => {
   const { user } = useAuth();
+  const { awardCoins } = useTapCoins();
   const [todaysIntake, setTodaysIntake] = useState(0); // effective hydration in ml
   const [totalLiquids, setTotalLiquids] = useState(0); // total liquids consumed in ml
   const [dehydrationAmount, setDehydrationAmount] = useState(0); // dehydration from alcohol in ml
   const [todaysEntries, setTodaysEntries] = useState<WaterEntry[]>([]);
   const [dailyGoalMl, setDailyGoalMl] = useState(1893); // ~64 oz
   const [loading, setLoading] = useState(true);
+  const [goalReachedToday, setGoalReachedToday] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -189,6 +192,30 @@ export const useWaterIntake = () => {
         }
       }
 
+      // Check if daily goal was reached and award coins
+      const newEffectiveHydration = todaysIntake + effectiveMl;
+      const goalReached = newEffectiveHydration >= dailyGoalMl && !goalReachedToday;
+      
+      if (goalReached) {
+        setGoalReachedToday(true);
+        
+        // Award 3 coins for reaching daily hydration goal
+        const coinsAwarded = await awardCoins(
+          3,
+          'hydration_goal',
+          '💧 Daily hydration goal reached!'
+        );
+        
+        if (coinsAwarded) {
+          toast.success('💧 Hydration goal reached! +3 Tap Coins', {
+            duration: 5000,
+          });
+        }
+        
+        // Check and update hydration streak
+        await checkHydrationStreak();
+      }
+
       // Toast message based on beverage type
       if (isDehydrating) {
         toast.warning(`⚠️ ${amountOz}oz ${beverage.name} logged (${Math.abs(effectiveOz).toFixed(1)}oz dehydration, +${nutrition.calories} cal)`);
@@ -211,6 +238,93 @@ export const useWaterIntake = () => {
       console.error('Error adding beverage:', error);
       toast.error('Failed to add beverage');
       return false;
+    }
+  };
+
+  // Check hydration streak and award milestone coins
+  const checkHydrationStreak = async () => {
+    if (!user) return;
+
+    try {
+      // Get or create streak record
+      const { data: streakData } = await supabase
+        .from('hydration_streaks')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      let currentStreak = 1;
+      let longestStreak = 1;
+      let milestoneCoinMap: Record<number, number> = {
+        7: 30,
+        14: 60,
+        30: 150,
+      };
+
+      if (streakData) {
+        const lastDate = streakData.last_hydration_date;
+        
+        // Check if consecutive
+        if (lastDate === yesterdayStr) {
+          currentStreak = streakData.current_streak + 1;
+          longestStreak = Math.max(currentStreak, streakData.longest_streak);
+        } else if (lastDate !== today) {
+          // Streak broken, reset
+          currentStreak = 1;
+          longestStreak = streakData.longest_streak;
+        } else {
+          // Same day, don't update
+          return;
+        }
+
+        // Check for milestone
+        const milestones = [7, 14, 30];
+        for (const milestone of milestones) {
+          if (currentStreak === milestone) {
+            const coins = milestoneCoinMap[milestone];
+            const awarded = await awardCoins(
+              coins,
+              'hydration_streak',
+              `${milestone}-day hydration streak!`
+            );
+            
+            if (awarded) {
+              toast.success(`🔥 ${milestone}-day hydration streak! +${coins} Tap Coins`, {
+                duration: 6000,
+              });
+            }
+          }
+        }
+
+        // Update streak
+        await supabase
+          .from('hydration_streaks')
+          .update({
+            current_streak: currentStreak,
+            longest_streak: longestStreak,
+            last_hydration_date: today,
+            total_hydration_days: streakData.total_hydration_days + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+      } else {
+        // Create new streak record
+        await supabase
+          .from('hydration_streaks')
+          .insert({
+            user_id: user.id,
+            current_streak: 1,
+            longest_streak: 1,
+            last_hydration_date: today,
+            total_hydration_days: 1,
+          });
+      }
+    } catch (error) {
+      console.error('Error checking hydration streak:', error);
     }
   };
 
