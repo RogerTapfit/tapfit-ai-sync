@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity, SleepActivity } from '@/hooks/useCalendarData';
+import { CalendarDay, WorkoutActivity, FoodActivity, TapCoinsActivity, AlcoholActivity, SleepActivity, WaterActivity } from '@/hooks/useCalendarData';
 import { useCycleTracking } from '@/hooks/useCycleTracking';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
 import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
@@ -287,6 +287,21 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                     <div className="text-xs text-muted-foreground">Tap Coins</div>
                   </div>
                 </Button>
+                
+                {/* Water Intake */}
+                <Button
+                  variant="ghost"
+                  className="h-auto p-3 flex flex-col items-center space-y-2 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 transition-all duration-200"
+                  disabled
+                >
+                  <div className="flex items-center space-x-2">
+                    <Droplets className="h-4 w-4 text-cyan-500" />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-cyan-500">{day.dailyStats.waterIntakeOz}oz</div>
+                    <div className="text-xs text-muted-foreground">Hydration</div>
+                  </div>
+                </Button>
               </div>
             </Card>
 
@@ -427,6 +442,47 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                           {alcohol.notes && (
                             <p className="text-xs text-muted-foreground mt-1">{alcohol.notes}</p>
                           )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Water Intake Section */}
+            {day.waterEntries.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Droplets className="h-5 w-5 text-cyan-500" />
+                  Hydration Log ({day.waterEntries.length} entries)
+                </h3>
+                <div className="space-y-3">
+                  {day.waterEntries.map((water) => (
+                    <Card key={water.id} className={`p-4 glow-card ${water.isDehydrating ? 'border-red-500/20' : 'border-cyan-500/20'}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Droplets className={`h-4 w-4 ${water.isDehydrating ? 'text-red-500' : 'text-cyan-500'}`} />
+                            <span className="font-semibold capitalize">{water.beverageType.replace('_', ' ')}</span>
+                            {water.isDehydrating && (
+                              <Badge variant="outline" className="text-red-500 border-red-500/30">
+                                Dehydrating
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(water.time).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                            <div className={`${water.isDehydrating ? 'text-red-600' : 'text-cyan-600'} font-medium`}>
+                              {water.amountOz}oz {water.isDehydrating && `(${Math.abs(water.effectiveOz)}oz dehydration)`}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </Card>
