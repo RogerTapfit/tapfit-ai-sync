@@ -152,16 +152,19 @@ export const usePowerLevel = () => {
     if (score < 400) {
       suggestions.push('Complete 3+ workouts this week to boost your consistency score');
       suggestions.push('Log your meals daily to improve your nutrition score');
+      suggestions.push('Track your water intake daily for hydration points');
     }
     
     if (score < 600) {
       suggestions.push('Join a challenge to earn extra points');
       suggestions.push('Maintain a 7-day workout streak for maximum consistency');
+      suggestions.push('Log water intake for 25+ days this month for max hydration score');
     }
     
     if (score < 800) {
       suggestions.push('Complete advanced challenges for bonus points');
       suggestions.push('Track nutrition for 20+ days this month');
+      suggestions.push('Stay hydrated: log water intake every day');
     }
     
     return suggestions;
