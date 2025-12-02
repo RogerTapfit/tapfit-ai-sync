@@ -29,6 +29,7 @@ export interface CalendarDay {
   cardioSessions: CardioActivity[];
   foodEntries: FoodActivity[];
   alcoholEntries: AlcoholActivity[];
+  waterEntries: WaterActivity[];
   tapCoins: TapCoinsActivity[];
   sleepLog: SleepActivity | null;
   steps: number;
@@ -40,6 +41,7 @@ export interface CalendarDay {
     workoutDuration: number;
     tapCoinsEarned: number;
     alcoholDrinks: number;
+    waterIntakeOz: number;
     sleepDuration: number;
     sleepQuality: number;
   };
@@ -84,6 +86,15 @@ export interface AlcoholActivity {
   notes?: string;
 }
 
+export interface WaterActivity {
+  id: string;
+  beverageType: string;
+  amountOz: number;
+  effectiveOz: number;
+  time: string;
+  isDehydrating: boolean;
+}
+
 export interface CardioActivity {
   id: string;
   type: 'run' | 'ride' | 'swim';
@@ -123,6 +134,7 @@ export const useCalendarData = (userId?: string) => {
         swimSessionsResponse,
         foodEntriesResponse,
         alcoholEntriesResponse,
+        waterIntakeResponse,
         dailyStepsResponse,
         tapCoinsResponse,
         exerciseLogsResponse,
@@ -174,6 +186,13 @@ export const useCalendarData = (userId?: string) => {
           .lte('logged_date', endDateStr),
           
         supabase
+          .from('water_intake')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('logged_date', startDateStr)
+          .lte('logged_date', endDateStr),
+          
+        supabase
           .from('daily_steps')
           .select('*')
           .eq('user_id', userId)
@@ -212,6 +231,7 @@ export const useCalendarData = (userId?: string) => {
       const swimSessions = swimSessionsResponse.data || [];
       const fetchedFoodEntries = foodEntriesResponse.data || [];
       const alcoholEntries = alcoholEntriesResponse.data || [];
+      const waterIntakeEntries = waterIntakeResponse.data || [];
       const dailySteps = dailyStepsResponse.data || [];
       const tapCoinsTransactions = tapCoinsResponse.data || [];
       const exerciseLogs = exerciseLogsResponse.data || [] as any[];
@@ -387,6 +407,19 @@ export const useCalendarData = (userId?: string) => {
             notes: alcohol.notes
           }));
         
+        // Get water intake entries for this day
+        const ML_PER_OZ = 29.5735;
+        const dayWaterEntries: WaterActivity[] = waterIntakeEntries
+          .filter(water => water.logged_date === dateString)
+          .map(water => ({
+            id: water.id,
+            beverageType: water.beverage_type || 'water',
+            amountOz: Math.round((water.total_amount_ml || water.amount_ml) / ML_PER_OZ),
+            effectiveOz: Math.round((water.effective_hydration_ml || water.amount_ml) / ML_PER_OZ),
+            time: new Date(water.logged_at).toISOString(),
+            isDehydrating: water.is_dehydrating || false
+          }));
+        
         // Get steps for this day
         const dayStep = dailySteps.find(step => step.recorded_date === dateString);
         
@@ -429,10 +462,11 @@ export const useCalendarData = (userId?: string) => {
           .filter(coin => coin.amount > 0)
           .reduce((sum, coin) => sum + coin.amount, 0);
         const totalAlcoholDrinks = dayAlcoholEntries.reduce((sum, alcohol) => sum + alcohol.quantity, 0);
+        const totalWaterIntakeOz = dayWaterEntries.reduce((sum, water) => sum + water.effectiveOz, 0);
         
         // Calculate cycle phase for this day
         const cyclePhase = calculatePhaseInfo(currentDate);
-        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || (cyclePhase !== null);
+        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || dayWaterEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || (cyclePhase !== null);
         
         newCalendarData.set(dateString, {
           date: currentDate,
@@ -441,6 +475,7 @@ export const useCalendarData = (userId?: string) => {
           cardioSessions: dayCardioSessions,
           foodEntries: dayFoodEntries,
           alcoholEntries: dayAlcoholEntries,
+          waterEntries: dayWaterEntries,
           tapCoins: dayTapCoins,
           sleepLog: sleepActivity,
           steps: dayStep?.step_count || 0,
@@ -452,6 +487,7 @@ export const useCalendarData = (userId?: string) => {
             workoutDuration: totalWorkoutDuration + totalCardioDuration,
             tapCoinsEarned: totalTapCoinsEarned,
             alcoholDrinks: totalAlcoholDrinks,
+            waterIntakeOz: totalWaterIntakeOz,
             sleepDuration: sleepActivity?.durationMinutes || 0,
             sleepQuality: sleepActivity?.qualityScore || 0
           },
@@ -529,6 +565,7 @@ export const useCalendarData = (userId?: string) => {
             cardioSessions: [],
             foodEntries: [],
             alcoholEntries: [],
+            waterEntries: [],
             tapCoins: [],
             sleepLog: null,
             steps: 0,
@@ -540,6 +577,7 @@ export const useCalendarData = (userId?: string) => {
               workoutDuration: 0,
               tapCoinsEarned: 0,
               alcoholDrinks: 0,
+              waterIntakeOz: 0,
               sleepDuration: 0,
               sleepQuality: 0
             },

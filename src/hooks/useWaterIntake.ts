@@ -108,7 +108,21 @@ export const useWaterIntake = () => {
     const effectiveMl = Math.round(effectiveOz * ML_PER_OZ);
     const isDehydrating = beverage.hydrationFactor < 0;
 
+    // Create optimistic entry
+    const tempId = `temp-${Date.now()}`;
+    const optimisticEntry: WaterEntry = {
+      id: tempId,
+      amount_ml: effectiveMl,
+      total_amount_ml: totalMl,
+      effective_hydration_ml: effectiveMl,
+      beverage_type: beverageType,
+      is_dehydrating: isDehydrating,
+      logged_at: new Date().toISOString(),
+      source: 'manual',
+    };
+
     // Optimistic update - instant UI feedback
+    setTodaysEntries(prev => [optimisticEntry, ...prev]);
     setTodaysIntake(prev => prev + effectiveMl);
     setTotalLiquids(prev => prev + totalMl);
     if (isDehydrating) {
@@ -116,18 +130,34 @@ export const useWaterIntake = () => {
     }
 
     try {
-      const { error } = await supabase.from('water_intake').insert({
-        user_id: user.id,
-        amount_ml: effectiveMl, // Store effective for backwards compatibility
-        total_amount_ml: totalMl,
-        effective_hydration_ml: effectiveMl,
-        beverage_type: beverageType,
-        is_dehydrating: isDehydrating,
-        logged_date: today,
-        source: 'manual',
-      });
+      const { data, error } = await supabase.from('water_intake')
+        .insert({
+          user_id: user.id,
+          amount_ml: effectiveMl, // Store effective for backwards compatibility
+          total_amount_ml: totalMl,
+          effective_hydration_ml: effectiveMl,
+          beverage_type: beverageType,
+          is_dehydrating: isDehydrating,
+          logged_date: today,
+          source: 'manual',
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Replace temp entry with real entry from database
+      if (data) {
+        setTodaysEntries(prev => 
+          prev.map(e => e.id === tempId ? { 
+            ...data,
+            beverage_type: beverageType,
+            total_amount_ml: totalMl,
+            effective_hydration_ml: effectiveMl,
+            is_dehydrating: isDehydrating
+          } : e)
+        );
+      }
 
       // Log calories to food_entries if beverage has calories
       const nutrition = calculateBeverageNutrition(amountOz, beverageType);
@@ -171,7 +201,8 @@ export const useWaterIntake = () => {
       
       return true;
     } catch (error) {
-      // Rollback on error
+      // Rollback on error - remove optimistic entry
+      setTodaysEntries(prev => prev.filter(e => e.id !== tempId));
       setTodaysIntake(prev => prev - effectiveMl);
       setTotalLiquids(prev => prev - totalMl);
       if (isDehydrating) {
