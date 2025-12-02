@@ -3466,29 +3466,41 @@ export type Database = {
       water_intake: {
         Row: {
           amount_ml: number
+          beverage_type: string | null
           created_at: string
+          effective_hydration_ml: number | null
           id: string
+          is_dehydrating: boolean | null
           logged_at: string
           logged_date: string
           source: string | null
+          total_amount_ml: number | null
           user_id: string
         }
         Insert: {
           amount_ml: number
+          beverage_type?: string | null
           created_at?: string
+          effective_hydration_ml?: number | null
           id?: string
+          is_dehydrating?: boolean | null
           logged_at?: string
           logged_date?: string
           source?: string | null
+          total_amount_ml?: number | null
           user_id: string
         }
         Update: {
           amount_ml?: number
+          beverage_type?: string | null
           created_at?: string
+          effective_hydration_ml?: number | null
           id?: string
+          is_dehydrating?: boolean | null
           logged_at?: string
           logged_date?: string
           source?: string | null
+          total_amount_ml?: number | null
           user_id?: string
         }
         Relationships: []
