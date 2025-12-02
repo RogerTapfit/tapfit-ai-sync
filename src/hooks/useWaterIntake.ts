@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
-import { calculateEffectiveHydration, BEVERAGE_HYDRATION } from '@/lib/beverageHydration';
+import { calculateEffectiveHydration, calculateBeverageNutrition, BEVERAGE_HYDRATION } from '@/lib/beverageHydration';
 
 export interface WaterEntry {
   id: string;
@@ -129,12 +129,44 @@ export const useWaterIntake = () => {
 
       if (error) throw error;
 
+      // Log calories to food_entries if beverage has calories
+      const nutrition = calculateBeverageNutrition(amountOz, beverageType);
+      
+      if (nutrition.calories > 0) {
+        const { error: foodError } = await supabase.from('food_entries').insert({
+          user_id: user.id,
+          meal_type: 'snack',
+          food_items: [{
+            name: `${beverage.name} (${amountOz}oz)`,
+            quantity: `${amountOz}oz`,
+            calories: nutrition.calories,
+            protein: nutrition.protein,
+            carbs: nutrition.carbs,
+            fat: nutrition.fat,
+          }],
+          total_calories: nutrition.calories,
+          total_protein: nutrition.protein,
+          total_carbs: nutrition.carbs,
+          total_fat: nutrition.fat,
+          ai_analyzed: false,
+          user_confirmed: true,
+          logged_date: today,
+          notes: `Beverage: ${beverageType}`,
+        });
+        
+        if (foodError) {
+          console.error('Error logging beverage calories:', foodError);
+        }
+      }
+
       // Toast message based on beverage type
       if (isDehydrating) {
-        toast.warning(`⚠️ ${amountOz}oz ${beverage.name} logged (${Math.abs(effectiveOz).toFixed(1)}oz dehydration)`);
+        toast.warning(`⚠️ ${amountOz}oz ${beverage.name} logged (${Math.abs(effectiveOz).toFixed(1)}oz dehydration, +${nutrition.calories} cal)`);
+      } else if (nutrition.calories > 0) {
+        const icon = '🥤';
+        toast.success(`${icon} ${amountOz}oz ${beverage.name} added (+${nutrition.calories} cal)`);
       } else {
-        const icon = beverageType === 'water' ? '💧' : '🥤';
-        toast.success(`${icon} ${amountOz}oz ${beverage.name} added!`);
+        toast.success(`💧 ${amountOz}oz ${beverage.name} added!`);
       }
       
       return true;
@@ -158,12 +190,30 @@ export const useWaterIntake = () => {
 
   const deleteEntry = async (entryId: string) => {
     try {
+      // Find the entry to get its beverage type
+      const entry = todaysEntries.find(e => e.id === entryId);
+      
+      // Delete from water_intake
       const { error } = await supabase
         .from('water_intake')
         .delete()
         .eq('id', entryId);
 
       if (error) throw error;
+
+      // Also delete associated food_entry if beverage had calories
+      if (entry && entry.beverage_type && entry.beverage_type !== 'water') {
+        const beverage = BEVERAGE_HYDRATION[entry.beverage_type];
+        if (beverage && beverage.calories > 0) {
+          await supabase
+            .from('food_entries')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('logged_date', today)
+            .ilike('notes', `%Beverage: ${entry.beverage_type}%`);
+        }
+      }
+      
       toast.success('Entry removed');
     } catch (error) {
       console.error('Error deleting entry:', error);
