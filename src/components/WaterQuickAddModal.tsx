@@ -1,8 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Droplet, Trash2, GlassWater, Wine } from 'lucide-react';
+import { Droplet, Trash2, GlassWater, Wine, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { useWaterIntake } from '@/hooks/useWaterIntake';
 import { format } from 'date-fns';
+import { BEVERAGE_HYDRATION, getBeveragesByCategory } from '@/lib/beverageHydration';
+import { useState } from 'react';
 
 interface WaterQuickAddModalProps {
   open: boolean;
@@ -18,19 +20,36 @@ const QUICK_ADD_OPTIONS = [
 const ML_PER_OZ = 29.5735;
 
 export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalProps) => {
-  const { todaysIntake, todaysEntries, dailyGoal, progressPercent, addWater, deleteEntry, loading } = useWaterIntake();
+  const { 
+    todaysIntake, 
+    totalLiquids,
+    dehydrationFromAlcohol,
+    todaysEntries, 
+    dailyGoal, 
+    progressPercent, 
+    addBeverage, 
+    deleteEntry, 
+    loading 
+  } = useWaterIntake();
+  
+  const [showOtherBeverages, setShowOtherBeverages] = useState(false);
+  const [showAlcohol, setShowAlcohol] = useState(false);
 
-  const handleQuickAdd = async (oz: number) => {
-    await addWater(oz);
+  const handleQuickAdd = async (oz: number, beverageType: string = 'water') => {
+    await addBeverage(oz, beverageType);
   };
+
+  const highHydrationBeverages = getBeveragesByCategory('high');
+  const moderateHydrationBeverages = getBeveragesByCategory('moderate');
+  const alcoholBeverages = getBeveragesByCategory('alcohol');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card border-border">
+      <DialogContent className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <Droplet className="h-5 w-5 text-cyan-500" />
-            Water Intake
+            Hydration Tracker
           </DialogTitle>
         </DialogHeader>
 
@@ -52,25 +71,151 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <div className="text-xs text-muted-foreground">
-              {progressPercent}% complete
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{progressPercent}% complete</span>
+              {totalLiquids > todaysIntake && (
+                <span className="text-muted-foreground">
+                  {totalLiquids}oz total liquids
+                </span>
+              )}
+            </div>
+            
+            {/* Dehydration Warning */}
+            {dehydrationFromAlcohol > 0 && (
+              <div className="flex items-center justify-center gap-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span className="text-sm text-amber-500">
+                  Alcohol reduced hydration by {dehydrationFromAlcohol}oz today
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Add Water Buttons */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Quick Add Water:</h4>
+            <div className="grid grid-cols-3 gap-3">
+              {QUICK_ADD_OPTIONS.map(({ oz, label, icon: Icon }) => (
+                <Button
+                  key={oz}
+                  variant="outline"
+                  className="flex flex-col h-20 gap-1 hover:bg-cyan-500/10 hover:border-cyan-500/50"
+                  onClick={() => handleQuickAdd(oz, 'water')}
+                >
+                  <Icon className="h-5 w-5 text-cyan-500" />
+                  <span className="text-sm font-medium">+{oz}oz</span>
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                </Button>
+              ))}
             </div>
           </div>
 
-          {/* Quick Add Buttons */}
-          <div className="grid grid-cols-3 gap-3">
-            {QUICK_ADD_OPTIONS.map(({ oz, label, icon: Icon }) => (
-              <Button
-                key={oz}
-                variant="outline"
-                className="flex flex-col h-20 gap-1 hover:bg-cyan-500/10 hover:border-cyan-500/50"
-                onClick={() => handleQuickAdd(oz)}
-              >
-                <Icon className="h-5 w-5 text-cyan-500" />
-                <span className="text-sm font-medium">+{oz}oz</span>
-                <span className="text-xs text-muted-foreground">{label}</span>
-              </Button>
-            ))}
+          {/* Other Beverages Section */}
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full flex items-center justify-between p-2 hover:bg-muted"
+              onClick={() => setShowOtherBeverages(!showOtherBeverages)}
+            >
+              <span className="text-sm font-medium text-foreground">Other Beverages</span>
+              {showOtherBeverages ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+            
+            {showOtherBeverages && (
+              <div className="space-y-3 p-2 bg-muted/30 rounded-lg">
+                {/* High Hydration */}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium">High Hydration (85-95%)</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {highHydrationBeverages.map(({ key, name, icon: Icon, hydrationFactor, color }) => (
+                      <Button
+                        key={key}
+                        variant="outline"
+                        size="sm"
+                        className="flex flex-col h-16 gap-1 text-xs"
+                        onClick={() => handleQuickAdd(8, key)}
+                      >
+                        <Icon className={`h-4 w-4 ${color}`} />
+                        <span className="font-medium">+8oz</span>
+                        <span className="text-muted-foreground">{name} ({Math.round(hydrationFactor * 100)}%)</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Moderate Hydration */}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium">Moderate Hydration (65-90%)</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {moderateHydrationBeverages.map(({ key, name, icon: Icon, hydrationFactor, color }) => (
+                      <Button
+                        key={key}
+                        variant="outline"
+                        size="sm"
+                        className="flex flex-col h-16 gap-1 text-xs"
+                        onClick={() => handleQuickAdd(8, key)}
+                      >
+                        <Icon className={`h-4 w-4 ${color}`} />
+                        <span className="font-medium">+8oz</span>
+                        <span className="text-muted-foreground">{name} ({Math.round(hydrationFactor * 100)}%)</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Alcohol Section */}
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full flex items-center justify-between p-2 hover:bg-destructive/10"
+              onClick={() => setShowAlcohol(!showAlcohol)}
+            >
+              <span className="text-sm font-medium text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Alcohol (Dehydrating)
+              </span>
+              {showAlcohol ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+            
+            {showAlcohol && (
+              <div className="space-y-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+                <div className="flex items-start gap-2 mb-3">
+                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    Alcohol has a dehydrating effect. Track your drinks to monitor hydration impact.
+                    Tip: Drink 8oz water for each alcoholic beverage.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {alcoholBeverages.map(({ key, name, icon: Icon, hydrationFactor, color }) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      size="sm"
+                      className="flex flex-col h-16 gap-1 text-xs border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => handleQuickAdd(12, key)}
+                    >
+                      <Icon className={`h-4 w-4 ${color}`} />
+                      <span className="font-medium">+12oz</span>
+                      <span className="text-destructive text-[10px]">
+                        {name} ({Math.round(Math.abs(hydrationFactor) * 100)}% dehydration)
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Today's Log */}
@@ -78,30 +223,48 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-foreground">Today's Log</h4>
               <div className="max-h-32 overflow-y-auto space-y-2">
-                {todaysEntries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Droplet className="h-4 w-4 text-cyan-500" />
-                      <span className="text-sm text-foreground">
-                        {Math.round(entry.amount_ml / ML_PER_OZ)}oz
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(entry.logged_at), 'h:mm a')}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => deleteEntry(entry.id)}
+                {todaysEntries.map((entry) => {
+                  const beverageType = entry.beverage_type || 'water';
+                  const beverage = BEVERAGE_HYDRATION[beverageType];
+                  const Icon = beverage?.icon || Droplet;
+                  const totalOz = Math.round((entry.total_amount_ml || entry.amount_ml) / ML_PER_OZ);
+                  const effectiveOz = Math.round((entry.effective_hydration_ml || entry.amount_ml) / ML_PER_OZ);
+                  const isDehydrating = entry.is_dehydrating || false;
+                  
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`flex items-center justify-between p-2 rounded-lg ${
+                        isDehydrating ? 'bg-destructive/5 border border-destructive/20' : 'bg-muted/50'
+                      }`}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-2">
+                        <Icon className={`h-4 w-4 ${beverage?.color || 'text-cyan-500'}`} />
+                        <div className="flex flex-col">
+                          <span className="text-sm text-foreground">
+                            {totalOz}oz {beverage?.name || 'Water'}
+                          </span>
+                          {totalOz !== effectiveOz && (
+                            <span className={`text-xs ${isDehydrating ? 'text-destructive' : 'text-muted-foreground'}`}>
+                              {isDehydrating ? '→ ' : '≈ '}{Math.abs(effectiveOz)}oz {isDehydrating ? 'dehydration' : 'hydration'}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {format(new Date(entry.logged_at), 'h:mm a')}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteEntry(entry.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
