@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Camera, Upload, Loader2, Sparkles } from 'lucide-react';
 import { FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -15,6 +16,35 @@ interface AIPhotoScannerProps {
 
 export const AIPhotoScanner: React.FC<AIPhotoScannerProps> = ({ onAiFoodItemsFound }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
+
+  const ANALYSIS_STAGES = [
+    { progress: 20, text: 'Processing image...', duration: 1500 },
+    { progress: 50, text: 'Detecting food items...', duration: 2500 },
+    { progress: 80, text: 'Estimating nutrition...', duration: 2000 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
+
+  React.useEffect(() => {
+    if (isAnalyzing) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAnalyzing]);
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -158,10 +188,24 @@ export const AIPhotoScanner: React.FC<AIPhotoScannerProps> = ({ onAiFoodItemsFou
         </div>
 
         {isAnalyzing && (
-          <div className="flex items-center justify-center gap-2 py-4">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-muted-foreground">Analyzing photo with AI...</span>
-          </div>
+          <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+            <CardContent className="py-5">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Analyzing Photo</h3>
+                    <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                  </div>
+                </div>
+                <Progress value={analysisProgress} className="h-2" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-primary font-medium">{analysisStage}</span>
+                  <span className="text-muted-foreground">{analysisProgress}%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </CardContent>
     </Card>

@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Upload, Star, TrendingUp, Award, Coins, CheckCircle2, XCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Camera, Upload, Star, TrendingUp, Award, Coins, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import { useTapCoins } from '@/hooks/useTapCoins';
@@ -43,9 +44,40 @@ export const FoodGraderAI = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
   const [showResults, setShowResults] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+
+  const ANALYSIS_STAGES = [
+    { progress: 25, text: 'Analyzing image...', duration: 1500 },
+    { progress: 50, text: 'Identifying food items...', duration: 2000 },
+    { progress: 75, text: 'Calculating health grade...', duration: 2000 },
+    { progress: 90, text: 'Generating recommendations...', duration: 1500 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
+
+  React.useEffect(() => {
+    if (isAnalyzing) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAnalyzing]);
 
   const { analyzeFoodImage, saveFoodEntry, loading } = useNutrition();
   const { awardCoins } = useTapCoins();
@@ -226,18 +258,35 @@ export const FoodGraderAI = () => {
           </div>
 
           {/* Analyze Button */}
-          <Button
-            onClick={handleAnalyzeFood}
-            disabled={!selectedImage || isAnalyzing || loading}
-            className="w-full glow-button h-12 text-lg font-semibold"
-          >
-            {isAnalyzing || loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground mr-2" />
-            ) : (
+          {!isAnalyzing ? (
+            <Button
+              onClick={handleAnalyzeFood}
+              disabled={!selectedImage || loading}
+              className="w-full glow-button h-12 text-lg font-semibold"
+            >
               <Star className="h-5 w-5 mr-2" />
-            )}
-            {isAnalyzing || loading ? 'Analyzing Food...' : 'Grade My Food'}
-          </Button>
+              Grade My Food
+            </Button>
+          ) : (
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+              <CardContent className="py-5">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div>
+                      <h3 className="font-semibold text-lg">Analyzing Food</h3>
+                      <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                    </div>
+                  </div>
+                  <Progress value={analysisProgress} className="h-2" />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-primary font-medium">{analysisStage}</span>
+                    <span className="text-muted-foreground">{analysisProgress}%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
 

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, X, CheckCircle, Upload, Settings, Target, Activity } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Camera, X, CheckCircle, Upload, Settings, Target, Activity, Loader2 } from 'lucide-react';
 import { useMachineScan } from '@/hooks/useMachineScan';
 import { RecognitionResult } from '@/types/machine';
 import { WorkoutPrescriptionService, UserProfile, SessionRequest } from '@/services/workoutPrescriptionService';
@@ -26,6 +27,16 @@ export const EnhancedMachineScanner: React.FC<EnhancedMachineScannerProps> = ({
   const [sessionRequest, setSessionRequest] = useState<SessionRequest | undefined>(initialSessionRequest);
   const [showSettings, setShowSettings] = useState(false);
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
+
+  const ANALYSIS_STAGES = [
+    { progress: 10, text: 'Initializing scanner...', duration: 1500 },
+    { progress: 30, text: 'Capturing frame...', duration: 2000 },
+    { progress: 60, text: 'Identifying machine...', duration: 2500 },
+    { progress: 85, text: 'Generating workout plan...', duration: 2000 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
 
   const {
     isScanning,
@@ -44,6 +55,26 @@ export const EnhancedMachineScanner: React.FC<EnhancedMachineScannerProps> = ({
     videoRef,
     canvasRef
   } = useMachineScan({ autoStop: autoNavigate });
+
+  useEffect(() => {
+    if (isProcessing || isGeneratingWorkout) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isProcessing, isGeneratingWorkout]);
 
   useEffect(() => {
     if (autoNavigate && isHighConfidence && bestMatch) {
@@ -247,11 +278,26 @@ export const EnhancedMachineScanner: React.FC<EnhancedMachineScannerProps> = ({
 
               {/* Processing state */}
               {(isProcessing || isGeneratingWorkout) && (
-                <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                  <p className="text-sm text-primary">
-                    {isGeneratingWorkout ? 'Generating workout plan...' : 'Analyzing machine...'}
-                  </p>
-                </div>
+                <Card className="mt-4 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                  <CardContent className="py-5">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {isGeneratingWorkout ? 'Generating Plan' : 'Analyzing Machine'}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                        </div>
+                      </div>
+                      <Progress value={analysisProgress} className="h-2" />
+                      <div className="flex justify-between text-sm">
+                        <span className="text-primary font-medium">{analysisStage}</span>
+                        <span className="text-muted-foreground">{analysisProgress}%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Results for uploaded images */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   Camera, Upload, Loader2, X, Zap, Star, AlertTriangle,
   CheckCircle, Info, Sparkles, Shield, Utensils, Settings,
@@ -183,6 +184,8 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   embedded = false
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
   const [analysisResult, setAnalysisResult] = useState<ProductAnalysis | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showFoodLogModal, setShowFoodLogModal] = useState(false);
@@ -191,6 +194,35 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [isCheckingSafety, setIsCheckingSafety] = useState(false);
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
+
+  const ANALYSIS_STAGES = [
+    { progress: 10, text: 'Uploading image...', duration: 1500 },
+    { progress: 30, text: 'Reading product labels...', duration: 2000 },
+    { progress: 50, text: 'Analyzing nutrition facts...', duration: 2500 },
+    { progress: 70, text: 'Checking ingredients safety...', duration: 2000 },
+    { progress: 90, text: 'Calculating health grade...', duration: 1500 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
+
+  React.useEffect(() => {
+    if (isAnalyzing) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2200);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAnalyzing]);
 
   // Fetch user profile for running calculation
   useEffect(() => {
@@ -540,33 +572,36 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="text-center space-y-6 py-8 bg-gradient-to-br from-primary/5 via-stats-duration/5 to-stats-calories/5 rounded-2xl border border-primary/20"
+                  className="space-y-6 py-8 bg-gradient-to-br from-primary/5 via-stats-duration/5 to-stats-calories/5 rounded-2xl border border-primary/20"
                 >
-                  <div className="relative">
-                    <Loader2 className="h-16 w-16 animate-spin mx-auto text-primary animate-pulse-glow" />
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute inset-0 h-16 w-16 mx-auto rounded-full bg-primary/20 blur-md"
-                    />
-                  </div>
-                  <div>
-                    <motion.h3 
-                      animate={{ opacity: [0.7, 1, 0.7] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className="font-bold text-xl bg-gradient-to-r from-primary to-stats-calories bg-clip-text text-transparent"
-                    >
-                      🔍 Analyzing Product...
-                    </motion.h3>
-                    <p className="text-muted-foreground mt-2">
-                      Our AI is examining nutrition facts, ingredients, and health impact
-                    </p>
+                  <div className="space-y-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary animate-pulse-glow" />
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="absolute inset-0 rounded-full bg-primary/20 blur-md"
+                        />
+                      </div>
+                      <div className="text-left flex-1">
+                        <h3 className="font-bold text-xl bg-gradient-to-r from-primary to-stats-calories bg-clip-text text-transparent">
+                          Analyzing Product
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                      </div>
+                    </div>
+                    <Progress value={analysisProgress} className="h-2" />
+                    <div className="flex justify-between text-sm">
+                      <span className="text-primary font-medium">{analysisStage}</span>
+                      <span className="text-muted-foreground">{analysisProgress}%</span>
+                    </div>
                   </div>
                   {selectedImage && (
                     <motion.div 
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
-                      className="flex justify-center"
+                      className="flex justify-center px-6"
                     >
                       <img
                         src={selectedImage}

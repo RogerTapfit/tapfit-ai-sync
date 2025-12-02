@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle, 
   Lightbulb, Target, MessageCircle, Package, Sparkles, RefreshCw, Clock, Plus, Minus 
@@ -45,7 +46,38 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [mealType, setMealType] = useState<string>('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  const ANALYSIS_STAGES = [
+    { progress: 15, text: 'Processing photos...', duration: 1500 },
+    { progress: 35, text: 'Detecting food items...', duration: 2000 },
+    { progress: 55, text: 'Analyzing portions...', duration: 2500 },
+    { progress: 75, text: 'Calculating nutrition...', duration: 2000 },
+    { progress: 90, text: 'Generating insights...', duration: 1500 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
+
+  React.useEffect(() => {
+    if (analyzing) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2200);
+      
+      return () => clearInterval(interval);
+    }
+  }, [analyzing]);
   const [editingItems, setEditingItems] = useState<FoodItem[]>([]);
   const [portionMultipliers, setPortionMultipliers] = useState<{ [key: number]: number }>({});
   const [notes, setNotes] = useState('');
@@ -772,14 +804,7 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
               className="w-full glow-button bg-gradient-to-r from-primary to-primary/80 border-0 text-lg py-6 shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
             >
-              {analyzing ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                  <span className="animate-pulse">
-                    Analyzing {photos.length} Photo{photos.length > 1 ? 's' : ''}...
-                  </span>
-                </>
-              ) : (
+              {!analyzing && (
                 <>
                   <motion.div
                     animate={{ rotate: [0, 360] }}
@@ -799,6 +824,27 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
                 </>
               )}
             </Button>
+
+            {analyzing && (
+              <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardContent className="py-5">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <div>
+                        <h3 className="font-semibold text-lg">Analyzing Photos</h3>
+                        <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                      </div>
+                    </div>
+                    <Progress value={analysisProgress} className="h-2" />
+                    <div className="flex justify-between text-sm">
+                      <span className="text-primary font-medium">{analysisStage}</span>
+                      <span className="text-muted-foreground">{analysisProgress}%</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {analysisResult && (
               <Button

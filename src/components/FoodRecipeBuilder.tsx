@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -60,8 +61,38 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
   const [mode, setMode] = useState<'photo' | 'chat'>('photo');
   const [photos, setPhotos] = useState<IngredientPhoto[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
   const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
   const [recommendations, setRecommendations] = useState<RecipeRecommendation[]>([]);
+
+  const ANALYSIS_STAGES = [
+    { progress: 25, text: 'Scanning ingredients...', duration: 2000 },
+    { progress: 50, text: 'Identifying items...', duration: 2500 },
+    { progress: 75, text: 'Finding recipes...', duration: 2500 },
+    { progress: 90, text: 'Preparing suggestions...', duration: 2000 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
+
+  React.useEffect(() => {
+    if (analyzing) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2400);
+      
+      return () => clearInterval(interval);
+    }
+  }, [analyzing]);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeRecommendation | null>(null);
   const [adjustedServings, setAdjustedServings] = useState<number>(1);
   const [calculatedNutrition, setCalculatedNutrition] = useState<RecipeNutrition | null>(null);
@@ -593,12 +624,34 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
 
               <Button onClick={analyzeIngredientsAndGetRecipes} disabled={photos.length === 0 || analyzing} 
                       className="w-full glow-button" size="lg">
-                {analyzing ? (
-                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Analyzing Ingredients...</>
-                ) : (
-                  <><Sparkles className="h-5 w-5 mr-2" />Find Recipe Magic ✨</>
-                )}
+                {!analyzing ? (
+                  <>
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Find Recipe Magic ✨
+                  </>
+                ) : null}
               </Button>
+
+              {analyzing && (
+                <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                  <CardContent className="py-5">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <div>
+                          <h3 className="font-semibold text-lg">Analyzing Ingredients</h3>
+                          <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                        </div>
+                      </div>
+                      <Progress value={analysisProgress} className="h-2" />
+                      <div className="flex justify-between text-sm">
+                        <span className="text-primary font-medium">{analysisStage}</span>
+                        <span className="text-muted-foreground">{analysisProgress}%</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

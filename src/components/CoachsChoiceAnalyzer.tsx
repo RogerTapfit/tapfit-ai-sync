@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Camera, Zap, Dumbbell, Droplet, Timer, Activity, Apple, Leaf, MessageSquare, Target, Sparkles } from 'lucide-react';
+import { Camera, Zap, Dumbbell, Droplet, Timer, Activity, Apple, Leaf, MessageSquare, Target, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -55,9 +56,40 @@ export const CoachsChoiceAnalyzer = () => {
   const [selectedIntent, setSelectedIntent] = useState<string | null>(null);
   const [customIntent, setCustomIntent] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState('');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [showChat, setShowChat] = useState(false);
   const { toast } = useToast();
+
+  const ANALYSIS_STAGES = [
+    { progress: 20, text: 'Scanning shelf products...', duration: 2000 },
+    { progress: 40, text: 'Reading labels and prices...', duration: 2500 },
+    { progress: 60, text: 'Analyzing nutritional data...', duration: 2500 },
+    { progress: 80, text: 'Finding best match...', duration: 2000 },
+    { progress: 95, text: 'Generating recommendation...', duration: 1500 },
+    { progress: 100, text: 'Complete!', duration: 500 }
+  ];
+
+  React.useEffect(() => {
+    if (isAnalyzing) {
+      setAnalysisProgress(0);
+      setAnalysisStage(ANALYSIS_STAGES[0].text);
+      
+      let stageIndex = 0;
+      const interval = setInterval(() => {
+        if (stageIndex < ANALYSIS_STAGES.length - 1) {
+          stageIndex++;
+          setAnalysisProgress(ANALYSIS_STAGES[stageIndex].progress);
+          setAnalysisStage(ANALYSIS_STAGES[stageIndex].text);
+        } else {
+          clearInterval(interval);
+        }
+      }, 2300);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAnalyzing]);
 
   const handlePhotoCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -270,25 +302,36 @@ export const CoachsChoiceAnalyzer = () => {
                   </div>
                 )}
 
-                {selectedIntent && (
+                {selectedIntent && !isAnalyzing && (
                   <Button
                     size="lg"
                     className="w-full"
                     onClick={analyzeShelf}
-                    disabled={isAnalyzing}
                   >
-                    {isAnalyzing ? (
-                      <>
-                        <Sparkles className="h-5 w-5 mr-2 animate-spin" />
-                        Analyzing Shelf...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-5 w-5 mr-2" />
-                        Analyze & Get Recommendation
-                      </>
-                    )}
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Analyze & Get Recommendation
                   </Button>
+                )}
+
+                {isAnalyzing && (
+                  <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                    <CardContent className="py-5">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <div>
+                            <h3 className="font-semibold text-lg">Analyzing Shelf</h3>
+                            <p className="text-sm text-muted-foreground">{analysisStage}</p>
+                          </div>
+                        </div>
+                        <Progress value={analysisProgress} className="h-2" />
+                        <div className="flex justify-between text-sm">
+                          <span className="text-primary font-medium">{analysisStage}</span>
+                          <span className="text-muted-foreground">{analysisProgress}%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </Card>
