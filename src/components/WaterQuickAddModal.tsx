@@ -99,7 +99,7 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
                 <Button
                   key={oz}
                   variant="outline"
-                  className="flex flex-col h-20 gap-1 hover:bg-cyan-500/10 hover:border-cyan-500/50"
+                  className="flex flex-col h-20 gap-1 hover:bg-green-500/10 hover:border-green-500/50 hover:text-green-500 hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all duration-200"
                   onClick={() => handleQuickAdd(oz, 'water')}
                 >
                   <Icon className="h-5 w-5 text-cyan-500" />
