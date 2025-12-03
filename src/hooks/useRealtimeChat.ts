@@ -93,6 +93,7 @@ export const useRealtimeChat = (userId?: string) => {
 
   // Audio context for reliable playback
   const audioContextRef = useRef<AudioContext | null>(null);
+  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   // Unlock audio on user interaction (required for autoplay policy)
   const unlockAudio = useCallback(async () => {
@@ -212,8 +213,12 @@ export const useRealtimeChat = (userId?: string) => {
             source.buffer = audioBuffer;
             source.connect(audioContextRef.current.destination);
             
+            // Store source for potential stopping
+            currentSourceRef.current = source;
+            
             source.onended = () => {
               console.log('🔊 AudioContext playback completed');
+              currentSourceRef.current = null;
               setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
               if (shouldListenRef.current) {
                 console.log('🎤 Resuming listening after AI finished...');
@@ -279,6 +284,37 @@ export const useRealtimeChat = (userId?: string) => {
       if (shouldListenRef.current) {
         startRecordingRef.current?.();
       }
+    }
+  }, []);
+
+  // Stop AI speech mid-playback
+  const stopSpeaking = useCallback(() => {
+    console.log('🔇 Stopping speech...');
+    
+    // Stop HTML Audio element
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    
+    // Stop AudioContext source
+    if (currentSourceRef.current) {
+      try {
+        currentSourceRef.current.stop();
+      } catch (e) {
+        // Already stopped
+      }
+      currentSourceRef.current = null;
+    }
+    
+    // Update state
+    setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+    
+    // Resume listening if voice mode is active
+    if (shouldListenRef.current) {
+      console.log('🎤 Resuming listening after stop...');
+      setTimeout(() => startRecordingRef.current?.(), 300);
     }
   }, []);
 
@@ -579,6 +615,7 @@ export const useRealtimeChat = (userId?: string) => {
     startRecording,
     stopRecording,
     sendTextMessage,
+    stopSpeaking,
     clearMessages: () => setMessages([])
   };
 };
