@@ -54,7 +54,7 @@ export interface BiometricInsight {
 }
 
 export function useBiometricMood() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [todaysMood, setTodaysMood] = useState<MoodEntry | null>(null);
   const [weeklyMoods, setWeeklyMoods] = useState<MoodEntry[]>([]);
   const [readinessScore, setReadinessScore] = useState<ReadinessScore | null>(null);
@@ -186,7 +186,11 @@ export function useBiometricMood() {
   }, [user?.id]);
 
   const logMood = useCallback(async (entry: Omit<MoodEntry, 'id' | 'entryDate' | 'createdAt'>) => {
-    if (!user?.id) return false;
+    if (!user?.id) {
+      console.error('Cannot save mood: User not authenticated');
+      toast.error('Please sign in to save your mood');
+      return false;
+    }
 
     const today = getLocalDateString();
     const now = new Date().toTimeString().split(' ')[0];
@@ -312,6 +316,7 @@ export function useBiometricMood() {
     correlations,
     insights,
     isLoading,
+    authLoading,
     logMood,
     markInsightRead,
     getPerformancePrediction,
