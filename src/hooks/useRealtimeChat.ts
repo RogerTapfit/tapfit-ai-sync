@@ -76,10 +76,11 @@ export const useRealtimeChat = (userId?: string) => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isProcessingRef = useRef(false);
-  const shouldListenRef = useRef(false); // Track if we want continuous listening
-  const isAISpeakingRef = useRef(false); // Track AI speaking state without stale closures
-  const startRecordingRef = useRef<() => Promise<void>>(); // Ref to avoid stale closure in speakText
-  const userIdRef = useRef<string | undefined>(userId); // Track userId for metrics access
+  const shouldListenRef = useRef(false);
+  const isAISpeakingRef = useRef(false);
+  const startRecordingRef = useRef<() => Promise<void>>();
+  const userIdRef = useRef<string | undefined>(userId);
+  const audioUnlockedRef = useRef(false);
 
   // Keep refs in sync with props/state
   useEffect(() => {
@@ -89,6 +90,33 @@ export const useRealtimeChat = (userId?: string) => {
   useEffect(() => {
     isAISpeakingRef.current = voiceState.isAISpeaking;
   }, [voiceState.isAISpeaking]);
+
+  // Unlock audio on user interaction (required for autoplay policy)
+  const unlockAudio = useCallback(async () => {
+    if (audioUnlockedRef.current) return;
+    
+    try {
+      // Create and play a short silent audio to unlock
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const buffer = audioContext.createBuffer(1, 1, 22050);
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioContext.destination);
+      source.start(0);
+      
+      // Also try playing a silent audio element
+      const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+      silentAudio.volume = 0.01;
+      await silentAudio.play();
+      
+      audioUnlockedRef.current = true;
+      console.log('🔊 Audio unlocked successfully');
+    } catch (e) {
+      console.log('🔊 Audio unlock attempt:', e);
+      // Even if this fails, mark as attempted
+      audioUnlockedRef.current = true;
+    }
+  }, []);
 
   // Text-to-speech using ElevenLabs
   const speakText = useCallback(async (text: string) => {
@@ -305,6 +333,9 @@ export const useRealtimeChat = (userId?: string) => {
   // Start voice recording using Web Speech API
   const startRecording = useCallback(async () => {
     try {
+      // Unlock audio on user interaction (crucial for autoplay policy)
+      await unlockAudio();
+      
       shouldListenRef.current = true; // Mark that we want continuous listening
       
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -391,7 +422,7 @@ export const useRealtimeChat = (userId?: string) => {
         isRecording: false 
       }));
     }
-  }, [processMessage]);
+  }, [processMessage, unlockAudio]);
 
   // Keep startRecordingRef updated with the latest startRecording function
   useEffect(() => {
