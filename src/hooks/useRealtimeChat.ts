@@ -127,10 +127,9 @@ export const useRealtimeChat = (userId?: string) => {
       if (data?.audioContent) {
         console.log('🔊 TTS audio received, length:', data.audioContent.length);
         
-        // Play audio
+        // Play audio - use direct play() for base64 data URLs
         const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
         audio.volume = 1.0;
-        audio.preload = 'auto';
         audioRef.current = audio;
         
         audio.onended = () => {
@@ -139,43 +138,36 @@ export const useRealtimeChat = (userId?: string) => {
           // Resume listening after AI finishes speaking
           if (shouldListenRef.current) {
             console.log('🎤 Resuming listening after AI finished...');
-            startRecordingRef.current?.();
+            setTimeout(() => startRecordingRef.current?.(), 300);
           }
         };
         
         audio.onerror = (e) => {
           console.error('🔊 Audio playback error:', e);
           setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-          // Resume listening after error
           if (shouldListenRef.current) {
-            startRecordingRef.current?.();
+            setTimeout(() => startRecordingRef.current?.(), 300);
           }
         };
 
-        audio.oncanplaythrough = async () => {
-          console.log('🔊 Audio ready to play');
-          try {
-            await audio.play();
-            console.log('🔊 Audio playing successfully');
-          } catch (playError) {
-            console.error('🔊 Audio playback blocked:', playError);
-            toast.error('🔇 Audio blocked. Tap anywhere to enable sound, then try again.');
-            setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-            if (shouldListenRef.current) {
-              setTimeout(() => {
-                startRecordingRef.current?.();
-              }, 100);
-            }
+        // Play directly - base64 data URLs don't need preloading
+        try {
+          console.log('🔊 Attempting to play audio...');
+          await audio.play();
+          console.log('🔊 Audio started playing');
+        } catch (playError) {
+          console.error('🔊 Audio play() failed:', playError);
+          // Don't show toast - just silently fail and continue listening
+          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+          if (shouldListenRef.current) {
+            setTimeout(() => startRecordingRef.current?.(), 300);
           }
-        };
-        
-        // Trigger load
-        audio.load();
+        }
       } else {
+        console.log('🔊 No audio content received');
         setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-        // Resume listening if no audio
         if (shouldListenRef.current) {
-          startRecordingRef.current?.();
+          setTimeout(() => startRecordingRef.current?.(), 300);
         }
       }
     } catch (error) {
@@ -347,28 +339,41 @@ export const useRealtimeChat = (userId?: string) => {
       };
 
       recognition.onerror = (event: { error: string }) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error !== 'aborted') {
+        // Only log non-aborted errors and avoid spamming
+        if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          console.error('Speech recognition error:', event.error);
           setVoiceState(prev => ({ ...prev, error: `Speech error: ${event.error}` }));
         }
-        setVoiceState(prev => ({ ...prev, isRecording: false }));
       };
 
       recognition.onend = () => {
         console.log('🎤 Recognition ended, shouldListen:', shouldListenRef.current, 'isAISpeaking:', isAISpeakingRef.current);
-        // Auto-restart if chat is connected and not speaking (use ref to avoid stale closure)
+        setVoiceState(prev => ({ ...prev, isRecording: false }));
+        
+        // Auto-restart if chat is connected and not speaking
         if (shouldListenRef.current && !isAISpeakingRef.current) {
+          // Use longer delay to prevent rapid restart loops
           setTimeout(() => {
+            if (!shouldListenRef.current || isAISpeakingRef.current) return;
+            
             try {
-              recognition.start();
+              // Create a new recognition instance to avoid issues
+              const newRecognition = new SpeechRecognitionAPI();
+              newRecognition.continuous = true;
+              newRecognition.interimResults = true;
+              newRecognition.lang = 'en-US';
+              newRecognition.onresult = recognition.onresult;
+              newRecognition.onerror = recognition.onerror;
+              newRecognition.onend = recognition.onend;
+              
+              recognitionRef.current = newRecognition;
+              newRecognition.start();
+              setVoiceState(prev => ({ ...prev, isRecording: true }));
               console.log('🎤 Auto-restarted listening...');
             } catch (e) {
               console.log('Could not restart recognition:', e);
-              setVoiceState(prev => ({ ...prev, isRecording: false }));
             }
-          }, 300); // Small delay before restarting
-        } else {
-          setVoiceState(prev => ({ ...prev, isRecording: false }));
+          }, 500);
         }
       };
 
