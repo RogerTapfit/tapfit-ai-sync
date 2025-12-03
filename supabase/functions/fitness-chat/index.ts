@@ -235,7 +235,7 @@ serve(async (req) => {
           // Workout logs with exercises
           supabase
             .from('workout_logs')
-            .select('id, workout_name, muscle_group, started_at, ended_at, duration_minutes, calories_burned, total_exercises, total_sets')
+            .select('id, workout_name, muscle_group, started_at, completed_at, duration_minutes, calories_burned, total_exercises')
             .eq('user_id', userId)
             .gte('started_at', thirtyDaysAgoStr)
             .order('started_at', { ascending: false }),
@@ -251,10 +251,10 @@ serve(async (req) => {
           // Hydration
           supabase
             .from('water_intake')
-            .select('intake_date, beverage_type, amount_ml, effective_hydration_ml, is_dehydrating')
+            .select('logged_date, beverage_type, total_amount_ml, effective_hydration_ml, is_dehydrating')
             .eq('user_id', userId)
-            .gte('intake_date', thirtyDaysAgoStr)
-            .order('intake_date', { ascending: false }),
+            .gte('logged_date', thirtyDaysAgoStr)
+            .order('logged_date', { ascending: false }),
           
           // Sleep
           supabase
@@ -275,7 +275,7 @@ serve(async (req) => {
           // Run sessions
           supabase
             .from('run_sessions')
-            .select('started_at, total_distance_m, elapsed_time_s, calories, avg_heart_rate, avg_pace_min_km')
+            .select('started_at, total_distance_m, elapsed_time_s, calories, avg_heart_rate, avg_pace_sec_per_km')
             .eq('user_id', userId)
             .gte('started_at', thirtyDaysAgoStr)
             .order('started_at', { ascending: false }),
