@@ -269,6 +269,73 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           onCaloriesBurnedClick={handleCaloriesBurnedClick}
         />
 
+      {/* 3. Feature Buttons - SEE FOOD, BODY SCAN, FITNESS ALARM, CHOOSE COACH */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* SEE FOOD */}
+        <Button
+          size="lg"
+          onClick={() => navigate('/food-scanner')}
+          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 hover:transition-transform hover:duration-200 animate-food-glow border-0 rounded-2xl w-full"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative flex items-center gap-4 justify-center">
+            <Camera className="h-8 w-8" />
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black">SEE FOOD</span>
+              <span className="text-sm font-normal opacity-90">AI Food Scanner</span>
+            </div>
+          </div>
+        </Button>
+
+        {/* BODY SCAN */}
+        <Button
+          size="lg"
+          onClick={() => navigate('/body-scan')}
+          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-2xl hover:shadow-blue-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="relative flex items-center gap-4 justify-center">
+            <Camera className="h-8 w-8" />
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black">BODY SCAN</span>
+              <span className="text-sm font-normal opacity-90">AI Body Analyzer</span>
+            </div>
+          </div>
+        </Button>
+
+        {/* FITNESS ALARM - spans full width */}
+        <Button
+          size="lg"
+          onClick={() => navigate('/fitness-alarm')}
+          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-2xl hover:shadow-green-500/40 transform hover:scale-105 transition-transform duration-200 border-0 rounded-2xl w-full sm:col-span-2"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity"></div>
+          <div className="relative flex items-center gap-4 justify-center">
+            <Clock className="h-8 w-8" />
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black">FITNESS ALARM</span>
+              <span className="text-sm font-normal opacity-90">Wake Up & Push Up</span>
+            </div>
+          </div>
+        </Button>
+      </div>
+
+      {/* Choose Coach */}
+      <Button
+        size="lg"
+        onClick={() => navigate('/avatars')}
+        className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-2xl hover:shadow-purple-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="relative flex items-center gap-4 justify-center">
+          <User className="h-8 w-8" />
+          <div className="flex flex-col items-start">
+            <span className="text-2xl font-black">CHOOSE COACH</span>
+            <span className="text-sm font-normal opacity-90">Customize Your Coach</span>
+          </div>
+        </div>
+      </Button>
+
       {/* 3. AI Workout Plan Button */}
       <Card className="glow-card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
@@ -365,72 +432,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Card>
 
-      {/* SEE FOOD, BODY SCAN, and FITNESS ALARM - grid layout */}
-      <div className="my-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* SEE FOOD */}
-        <Button
-          size="lg"
-          onClick={() => navigate('/food-scanner')}
-          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-2xl hover:shadow-orange-500/50 transform hover:scale-105 hover:transition-transform hover:duration-200 animate-food-glow border-0 rounded-2xl w-full"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center gap-4 justify-center">
-            <Camera className="h-8 w-8" />
-            <div className="flex flex-col items-start">
-              <span className="text-2xl font-black">SEE FOOD</span>
-              <span className="text-sm font-normal opacity-90">AI Food Scanner</span>
-            </div>
-          </div>
-        </Button>
-
-        {/* BODY SCAN */}
-        <Button
-          size="lg"
-          onClick={() => navigate('/body-scan')}
-          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-2xl hover:shadow-blue-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center gap-4 justify-center">
-            <Camera className="h-8 w-8" />
-            <div className="flex flex-col items-start">
-              <span className="text-2xl font-black">BODY SCAN</span>
-              <span className="text-sm font-normal opacity-90">AI Body Analyzer</span>
-            </div>
-          </div>
-        </Button>
-
-        {/* FITNESS ALARM - spans full width on mobile, single cell on desktop */}
-        <Button
-          size="lg"
-          onClick={() => navigate('/fitness-alarm')}
-          className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-2xl hover:shadow-green-500/40 transform hover:scale-105 transition-transform duration-200 border-0 rounded-2xl w-full sm:col-span-2"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative flex items-center gap-4 justify-center">
-            <Clock className="h-8 w-8" />
-            <div className="flex flex-col items-start">
-              <span className="text-2xl font-black">FITNESS ALARM</span>
-              <span className="text-sm font-normal opacity-90">Wake Up & Push Up</span>
-            </div>
-          </div>
-        </Button>
-      </div>
-
-      {/* Choose Avatar */}
-      <Button
-        size="lg"
-        onClick={() => navigate('/avatars')}
-        className="relative group h-20 px-12 text-xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-2xl hover:shadow-purple-500/40 transform hover:scale-105 hover:transition-transform hover:duration-200 border-0 rounded-2xl w-full my-4"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl blur opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
-        <div className="relative flex items-center gap-4 justify-center">
-          <User className="h-8 w-8" />
-          <div className="flex flex-col items-start">
-            <span className="text-2xl font-black">CHOOSE COACH</span>
-            <span className="text-sm font-normal opacity-90">Customize Your Coach</span>
-          </div>
-        </div>
-      </Button>
 
       {/* 3. Weekly Progress */}
       <Card className="glow-card animate-slide-up">
