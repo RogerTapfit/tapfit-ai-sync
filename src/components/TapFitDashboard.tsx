@@ -26,6 +26,7 @@ import heroImage from "@/assets/tapfit-hero-new.jpg";
 const HERO_MASCOT_URL = "/lovable-uploads/e3f47cfe-bdb8-47c1-a1d6-4df0229e046f.png";
 import { TapCoinsWidget } from "./TapCoinsWidget";
 import { WorkoutStreakTracker } from "./WorkoutStreakTracker";
+import { GamerScoreWidget } from "./GamerScoreWidget";
 import { AvatarDisplay } from "./AvatarDisplay";
 import { AvatarBuilder } from "./AvatarBuilder";
 import { TodaysPerformance } from "./TopPriorityStats";
@@ -305,7 +306,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           onCaloriesBurnedClick={handleCaloriesBurnedClick}
         />
 
-      {/* 2. Tap Coins Widget */}
+      {/* 2. Gamer Score Widget - CoD Style Ranking */}
+      <GamerScoreWidget />
+
+      {/* 3. Tap Coins Widget */}
       <TapCoinsWidget />
 
       {/* Workout Streak Tracker */}
