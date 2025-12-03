@@ -1354,6 +1354,51 @@ export type Database = {
           },
         ]
       }
+      gamer_achievements: {
+        Row: {
+          badge_emoji: string
+          category: string
+          coin_reward: number
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+          rarity: string
+          trigger_type: string
+          trigger_value: number
+          xp_reward: number
+        }
+        Insert: {
+          badge_emoji?: string
+          category: string
+          coin_reward?: number
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity?: string
+          trigger_type: string
+          trigger_value?: number
+          xp_reward?: number
+        }
+        Update: {
+          badge_emoji?: string
+          category?: string
+          coin_reward?: number
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity?: string
+          trigger_type?: string
+          trigger_value?: number
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       guest_sessions: {
         Row: {
           created_at: string
@@ -3348,6 +3393,83 @@ export type Database = {
           },
         ]
       }
+      user_gamer_achievements: {
+        Row: {
+          achievement_id: string
+          coins_awarded: number
+          id: string
+          unlocked_at: string
+          user_id: string
+          xp_awarded: number
+        }
+        Insert: {
+          achievement_id: string
+          coins_awarded?: number
+          id?: string
+          unlocked_at?: string
+          user_id: string
+          xp_awarded?: number
+        }
+        Update: {
+          achievement_id?: string
+          coins_awarded?: number
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+          xp_awarded?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_gamer_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "gamer_achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_gamer_stats: {
+        Row: {
+          created_at: string
+          current_level: number
+          current_level_xp: number
+          id: string
+          prestige_level: number
+          rank_icon: string
+          rank_title: string
+          total_xp: number
+          updated_at: string
+          user_id: string
+          xp_to_next_level: number
+        }
+        Insert: {
+          created_at?: string
+          current_level?: number
+          current_level_xp?: number
+          id?: string
+          prestige_level?: number
+          rank_icon?: string
+          rank_title?: string
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+          xp_to_next_level?: number
+        }
+        Update: {
+          created_at?: string
+          current_level?: number
+          current_level_xp?: number
+          id?: string
+          prestige_level?: number
+          rank_icon?: string
+          rank_title?: string
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+          xp_to_next_level?: number
+        }
+        Relationships: []
+      }
       user_loot_openings: {
         Row: {
           id: string
@@ -4019,6 +4141,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      award_xp: {
+        Args: { p_source?: string; p_user_id: string; p_xp_amount: number }
+        Returns: Json
       }
       calculate_bmr: {
         Args: {

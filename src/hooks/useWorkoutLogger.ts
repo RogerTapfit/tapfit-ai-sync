@@ -5,6 +5,7 @@ import { useToast } from './use-toast';
 import { useTapCoins } from './useTapCoins';
 import { isGuestMode } from '@/lib/utils';
 import { getLocalDateString, getLocalTomorrowString } from '@/utils/dateUtils';
+import { XP_ACTIONS } from '@/config/gamerRanks';
 
 interface WorkoutProgress {
   total_exercises: number;
@@ -434,6 +435,28 @@ export const useWorkoutLogger = () => {
         _user_id: user.id,
         _workout_date: getLocalDateString()
       });
+
+      // Award XP for completing workout
+      try {
+        const xpResult = await supabase.rpc('award_xp', {
+          p_user_id: user.id,
+          p_xp_amount: XP_ACTIONS.WORKOUT_COMPLETE,
+          p_source: 'workout'
+        });
+        
+        // Dispatch event for XP gain toast
+        if (xpResult.data) {
+          window.dispatchEvent(new CustomEvent('xpAwarded', { 
+            detail: { 
+              amount: XP_ACTIONS.WORKOUT_COMPLETE, 
+              source: 'workout',
+              result: xpResult.data 
+            } 
+          }));
+        }
+      } catch (xpError) {
+        console.error('Error awarding XP:', xpError);
+      }
 
       await fetchTodaysProgress();
       setCurrentWorkoutLog(null);
