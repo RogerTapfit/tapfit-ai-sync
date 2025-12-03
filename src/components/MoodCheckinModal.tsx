@@ -38,7 +38,7 @@ export function MoodCheckinModal({ trigger, context = 'general', onComplete }: M
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { logMood, todaysMood, readinessScore } = useBiometricMood();
+  const { logMood, todaysMood, readinessScore, authLoading } = useBiometricMood();
   const { lastNightSleep } = useSleepData();
 
   // Pre-fill with today's mood if exists
@@ -270,9 +270,9 @@ export function MoodCheckinModal({ trigger, context = 'general', onComplete }: M
           <Button 
             onClick={handleSave} 
             className="w-full" 
-            disabled={saving}
+            disabled={saving || authLoading}
           >
-            {saving ? 'Saving...' : todaysMood ? 'Update Mood' : 'Save Mood'}
+            {authLoading ? 'Loading...' : saving ? 'Saving...' : todaysMood ? 'Update Mood' : 'Save Mood'}
           </Button>
         </div>
       </DialogContent>
