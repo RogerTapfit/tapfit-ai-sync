@@ -311,11 +311,10 @@ export const useRealtimeChat = (userId?: string) => {
     // Update state
     setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
     
-    // Resume listening if voice mode is active
-    if (shouldListenRef.current) {
-      console.log('🎤 Resuming listening after stop...');
-      setTimeout(() => startRecordingRef.current?.(), 300);
-    }
+    // ALWAYS start listening after stopping - user wants to talk!
+    shouldListenRef.current = true;
+    console.log('🎤 Starting listening after stop...');
+    setTimeout(() => startRecordingRef.current?.(), 300);
   }, []);
 
   // Send message to AI and get response
