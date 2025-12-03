@@ -12,7 +12,6 @@ import { useNutrition } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
 import type { FoodItem, FoodEntry, AlcoholEntry } from '@/hooks/useNutrition';
 import VoiceInterface from './VoiceInterface';
-import FitnessChatbot from './FitnessChatbot';
 import { useAvatar } from '@/lib/avatarState';
 import { FoodPhotoUploadService } from '@/services/foodPhotoUploadService';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
@@ -106,7 +105,6 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'saving'>('idle');
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [shareToFeed, setShareToFeed] = useState(false);
   const { saveFoodEntry, saveAlcoholEntry } = useNutrition();
   const { avatar } = useAvatar();
@@ -706,45 +704,6 @@ export const AddToFoodLogModal: React.FC<AddToFoodLogModalProps> = ({
               </div>
             </motion.div>
           )}
-
-          {/* AI Assistant Chatbot */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="space-y-3 p-4 rounded-lg border-2 border-red-500/50 bg-red-500/5 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {avatar?.mini_image_url && (
-                  <div className="w-6 h-6 rounded-full overflow-hidden border border-red-500/30">
-                    <img
-                      src={avatar.mini_image_url}
-                      alt={`${avatarName} avatar`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <Label className="text-base font-semibold">{avatarName}</Label>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsChatbotOpen(!isChatbotOpen)}
-                className="text-xs px-3 py-1 h-7 border-2 border-blue-500/60 bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.4)] hover:border-blue-400/80 hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all duration-200"
-              >
-                {isChatbotOpen ? `Hide ${avatarName}` : `Ask ${avatarName}`}
-              </Button>
-            </div>
-            {isChatbotOpen && (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <FitnessChatbot
-                  isOpen={true}
-                  onToggle={() => setIsChatbotOpen(!isChatbotOpen)}
-                />
-              </div>
-            )}
-          </motion.div>
 
           {/* Notes */}
           <motion.div 

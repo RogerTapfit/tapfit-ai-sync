@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { message, avatarName, conversationHistory, userId, includeInjuryContext, includeMoodContext } = await req.json();
+    const { message, avatarName, conversationHistory, userId, includeInjuryContext, includeMoodContext, pageContext } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
@@ -611,6 +611,19 @@ serve(async (req) => {
       }
     }
     
+    // Build page context section if provided
+    let pageContextSection = '';
+    if (pageContext) {
+      pageContextSection = `\n\n📍 CURRENT PAGE CONTEXT:
+The user is currently viewing: ${pageContext.currentPage || 'Unknown Page'}
+Page description: ${pageContext.description || 'No description'}
+Route: ${pageContext.route || 'Unknown route'}
+${pageContext.visibleContent ? `\nVisible Content on Screen:\n${pageContext.visibleContent}` : ''}
+
+IMPORTANT: When the user says "this", "these", "the exercises", "what I'm looking at", or similar references, 
+they are referring to the content described above. Use this context to provide relevant, specific answers.`;
+    }
+    
     // Build system prompt with coach personality and contexts
     const systemPrompt = `You are ${coachName}, an expert AI fitness coach for TapFit, a smart gym platform. You're knowledgeable, motivating, and personalized.
 
@@ -629,6 +642,7 @@ Specialties:
 - Recovery and injury prevention
 - Goal setting and progress tracking
 - Motivation and habit building
+${pageContextSection}
 
 IMPORTANT: You have access to the user's COMPLETE 30-day history below. When users ask questions like:
 - "What did I eat last Tuesday?" → Look up their food history for that date

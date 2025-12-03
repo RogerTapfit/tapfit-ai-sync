@@ -7,6 +7,8 @@ import { useEffect } from "react";
 import { Capacitor } from '@capacitor/core';
 import { nfcService } from "./services/nfcService";
 import { App as CapacitorApp } from '@capacitor/app';
+import { ChatbotProvider } from "./contexts/ChatbotContext";
+import GlobalChatbot from "./components/GlobalChatbot";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -117,10 +119,11 @@ const App = () => {
         <Toaster />
         <Sonner />
       <HashRouter>
-        <ScrollToTop />
-        <NFCHandler />
-        <AlarmSchedulerProvider />
-        <Routes>
+        <ChatbotProvider>
+          <ScrollToTop />
+          <NFCHandler />
+          <AlarmSchedulerProvider />
+          <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <AuthGuard fallback={<Auth />}>
@@ -257,7 +260,9 @@ const App = () => {
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </HashRouter>
+          <GlobalChatbot />
+        </ChatbotProvider>
+      </HashRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );

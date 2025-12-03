@@ -6,17 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, MessageCircle, Phone, ChevronDown, Calendar } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, ChevronDown, Calendar } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useMuscleGroupAnalysis } from "@/hooks/useMuscleGroupAnalysis";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
-import FitnessChatbot from "@/components/FitnessChatbot";
 import VoiceInterface from "@/components/VoiceInterface";
 import { DailyWorkoutSection } from "@/components/DailyWorkoutSection";
 import { supabase } from "@/integrations/supabase/client";
 import { MachineRegistryService } from "@/services/machineRegistryService";
 import { toast } from "sonner";
 import { getLocalDateString } from "@/utils/dateUtils";
+import { usePageContext } from "@/hooks/usePageContext";
 
 interface WorkoutMachine {
   id: string;
@@ -44,8 +44,18 @@ const WorkoutList = () => {
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutMachine[]>([]);
   const [completedExtraExercises, setCompletedExtraExercises] = useState<WorkoutMachine[]>([]);
   const [currentMuscleGroup, setCurrentMuscleGroup] = useState<string>('chest');
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
+
+  // Register page context for global chatbot
+  const workoutContent = todaysWorkouts.length > 0 
+    ? `${workoutMode === 'custom' ? 'Custom' : 'Scheduled'} ${currentMuscleGroup} workout with ${todaysWorkouts.length} exercises: ${todaysWorkouts.map(w => `${w.name}${w.completed ? ' (completed)' : ''}`).join(', ')}`
+    : 'No exercises in workout yet';
+  
+  usePageContext({
+    pageName: workoutMode === 'custom' ? 'Custom Workout' : "Today's Workout",
+    pageDescription: `User's ${workoutMode} workout session targeting ${currentMuscleGroup}`,
+    visibleContent: workoutContent
+  });
 
   // Helper function to determine if a workout is cardio
   const isCardio = (workout: WorkoutMachine) => {
@@ -922,35 +932,7 @@ const WorkoutList = () => {
         </div>
       )}
 
-      {/* Floating Chat Buttons */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
-        {/* Voice Chat Button */}
-        <Button
-          onClick={() => setIsVoiceChatOpen(true)}
-          className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg"
-          size="icon"
-          aria-label="Voice chat with Petrie"
-        >
-          <Phone className="h-5 w-5 text-white" />
-        </Button>
-        
-        {/* Text Chat Button */}
-        <Button
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className="h-12 w-12 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg"
-          size="icon"
-          aria-label="Chat with Petrie"
-        >
-          <MessageCircle className="h-5 w-5 text-white" />
-        </Button>
-      </div>
-
-      {/* Chat Components */}
-      <FitnessChatbot 
-        isOpen={isChatOpen} 
-        onToggle={() => setIsChatOpen(!isChatOpen)}
-      />
-      
+      {/* Voice Interface */}
       <VoiceInterface 
         isOpen={isVoiceChatOpen} 
         onToggle={() => setIsVoiceChatOpen(false)}
