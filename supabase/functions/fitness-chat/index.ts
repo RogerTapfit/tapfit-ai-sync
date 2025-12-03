@@ -28,10 +28,16 @@ serve(async (req) => {
     // Build injury prevention context if user ID provided and requested
     let injuryContext = '';
     let moodContext = '';
+    let historyContext = '';
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Calculate date 30 days ago for history queries
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
     
     if (userId && includeInjuryContext) {
       try {
@@ -208,7 +214,322 @@ serve(async (req) => {
       }
     }
     
-    // Build comprehensive user metrics context
+    // Build comprehensive 30-day history context (ALWAYS included when userId provided)
+    if (userId) {
+      try {
+        console.log('Fetching 30-day history for user:', userId);
+        
+        // Fetch all data in parallel for efficiency
+        const [
+          workoutHistoryResult,
+          foodHistoryResult,
+          hydrationHistoryResult,
+          sleepHistoryResult,
+          alcoholHistoryResult,
+          runSessionsResult,
+          rideSessionsResult,
+          swimSessionsResult,
+          personalRecordsResult,
+          profileResult
+        ] = await Promise.all([
+          // Workout logs with exercises
+          supabase
+            .from('workout_logs')
+            .select('id, workout_name, muscle_group, started_at, ended_at, duration_minutes, calories_burned, total_exercises, total_sets')
+            .eq('user_id', userId)
+            .gte('started_at', thirtyDaysAgoStr)
+            .order('started_at', { ascending: false }),
+          
+          // Food entries
+          supabase
+            .from('food_entries')
+            .select('logged_date, meal_type, food_items, total_calories, total_protein, total_carbs, total_fat, health_grade')
+            .eq('user_id', userId)
+            .gte('logged_date', thirtyDaysAgoStr)
+            .order('logged_date', { ascending: false }),
+          
+          // Hydration
+          supabase
+            .from('water_intake')
+            .select('intake_date, beverage_type, amount_ml, effective_hydration_ml, is_dehydrating')
+            .eq('user_id', userId)
+            .gte('intake_date', thirtyDaysAgoStr)
+            .order('intake_date', { ascending: false }),
+          
+          // Sleep
+          supabase
+            .from('sleep_logs')
+            .select('sleep_date, bedtime, wake_time, duration_minutes, quality_score, notes')
+            .eq('user_id', userId)
+            .gte('sleep_date', thirtyDaysAgoStr)
+            .order('sleep_date', { ascending: false }),
+          
+          // Alcohol
+          supabase
+            .from('alcohol_entries')
+            .select('logged_date, drink_type, quantity, alcohol_content')
+            .eq('user_id', userId)
+            .gte('logged_date', thirtyDaysAgoStr)
+            .order('logged_date', { ascending: false }),
+          
+          // Run sessions
+          supabase
+            .from('run_sessions')
+            .select('started_at, total_distance_m, elapsed_time_s, calories, avg_heart_rate, avg_pace_min_km')
+            .eq('user_id', userId)
+            .gte('started_at', thirtyDaysAgoStr)
+            .order('started_at', { ascending: false }),
+          
+          // Ride sessions
+          supabase
+            .from('ride_sessions')
+            .select('started_at, total_distance_m, elapsed_time_s, calories, avg_heart_rate, avg_speed_kmh')
+            .eq('user_id', userId)
+            .gte('started_at', thirtyDaysAgoStr)
+            .order('started_at', { ascending: false }),
+          
+          // Swim sessions
+          supabase
+            .from('swim_sessions')
+            .select('started_at, total_distance_m, elapsed_time_s, calories, laps_completed')
+            .eq('user_id', userId)
+            .gte('started_at', thirtyDaysAgoStr)
+            .order('started_at', { ascending: false }),
+          
+          // Personal records (all time)
+          supabase
+            .from('personal_records')
+            .select('exercise_name, machine_name, weight_lbs, reps, sets, achieved_at')
+            .eq('user_id', userId)
+            .order('achieved_at', { ascending: false })
+            .limit(50),
+          
+          // Profile for context
+          supabase
+            .from('profiles')
+            .select('primary_goal, experience_level, weight_kg, height_cm, gender, age, target_daily_calories, target_protein_grams')
+            .eq('id', userId)
+            .single()
+        ]);
+        
+        const workoutHistory = workoutHistoryResult.data || [];
+        const foodHistory = foodHistoryResult.data || [];
+        const hydrationHistory = hydrationHistoryResult.data || [];
+        const sleepHistory = sleepHistoryResult.data || [];
+        const alcoholHistory = alcoholHistoryResult.data || [];
+        const runSessions = runSessionsResult.data || [];
+        const rideSessions = rideSessionsResult.data || [];
+        const swimSessions = swimSessionsResult.data || [];
+        const personalRecords = personalRecordsResult.data || [];
+        const profile = profileResult.data;
+        
+        // Fetch exercise logs for workouts
+        let exercisesByWorkout: Record<string, any[]> = {};
+        if (workoutHistory.length > 0) {
+          const workoutIds = workoutHistory.map(w => w.id);
+          const { data: exerciseLogs } = await supabase
+            .from('exercise_logs')
+            .select('workout_log_id, exercise_name, machine_name, weight_used, reps_completed, sets_completed')
+            .in('workout_log_id', workoutIds);
+          
+          if (exerciseLogs) {
+            exerciseLogs.forEach(ex => {
+              if (!exercisesByWorkout[ex.workout_log_id]) {
+                exercisesByWorkout[ex.workout_log_id] = [];
+              }
+              exercisesByWorkout[ex.workout_log_id].push(ex);
+            });
+          }
+        }
+        
+        // Build comprehensive history context
+        historyContext = `\n\n📊 COMPLETE 30-DAY HISTORY (Use this to answer questions about past data):`;
+        
+        // Profile summary
+        if (profile) {
+          historyContext += `\n\n👤 USER PROFILE:`;
+          historyContext += `\n- Goal: ${profile.primary_goal || 'Not set'}`;
+          historyContext += `\n- Experience: ${profile.experience_level || 'Not set'}`;
+          if (profile.weight_kg) historyContext += `\n- Weight: ${profile.weight_kg}kg`;
+          if (profile.height_cm) historyContext += `\n- Height: ${profile.height_cm}cm`;
+          if (profile.target_daily_calories) historyContext += `\n- Daily calorie goal: ${profile.target_daily_calories}`;
+          if (profile.target_protein_grams) historyContext += `\n- Daily protein goal: ${profile.target_protein_grams}g`;
+        }
+        
+        // Workout history
+        historyContext += `\n\n🏋️ WORKOUT HISTORY (${workoutHistory.length} sessions):`;
+        if (workoutHistory.length > 0) {
+          // Group by date
+          const workoutsByDate: Record<string, any[]> = {};
+          workoutHistory.forEach(w => {
+            const date = new Date(w.started_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            if (!workoutsByDate[date]) workoutsByDate[date] = [];
+            workoutsByDate[date].push(w);
+          });
+          
+          Object.entries(workoutsByDate).forEach(([date, workouts]) => {
+            workouts.forEach(w => {
+              historyContext += `\n${date}: ${w.workout_name || w.muscle_group || 'Workout'} (${w.duration_minutes || 0}min, ${w.calories_burned || 0} cal)`;
+              const exercises = exercisesByWorkout[w.id] || [];
+              if (exercises.length > 0) {
+                exercises.forEach(ex => {
+                  historyContext += `\n  • ${ex.exercise_name}: ${ex.weight_used || 0}lbs × ${ex.reps_completed} reps × ${ex.sets_completed} sets`;
+                });
+              }
+            });
+          });
+        } else {
+          historyContext += `\n  No workouts logged in the last 30 days`;
+        }
+        
+        // Cardio sessions
+        const totalCardio = runSessions.length + rideSessions.length + swimSessions.length;
+        if (totalCardio > 0) {
+          historyContext += `\n\n🏃 CARDIO SESSIONS (${totalCardio} total):`;
+          
+          runSessions.forEach(r => {
+            const date = new Date(r.started_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const km = ((r.total_distance_m || 0) / 1000).toFixed(2);
+            const mins = Math.round((r.elapsed_time_s || 0) / 60);
+            historyContext += `\n${date}: Run - ${km}km in ${mins}min, ${r.calories || 0} cal`;
+          });
+          
+          rideSessions.forEach(r => {
+            const date = new Date(r.started_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const km = ((r.total_distance_m || 0) / 1000).toFixed(2);
+            const mins = Math.round((r.elapsed_time_s || 0) / 60);
+            historyContext += `\n${date}: Bike - ${km}km in ${mins}min, ${r.calories || 0} cal`;
+          });
+          
+          swimSessions.forEach(s => {
+            const date = new Date(s.started_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const meters = s.total_distance_m || 0;
+            const mins = Math.round((s.elapsed_time_s || 0) / 60);
+            historyContext += `\n${date}: Swim - ${meters}m in ${mins}min, ${s.laps_completed || 0} laps`;
+          });
+        }
+        
+        // Food history
+        historyContext += `\n\n🍽️ FOOD HISTORY (${foodHistory.length} meals):`;
+        if (foodHistory.length > 0) {
+          // Group by date
+          const foodByDate: Record<string, any[]> = {};
+          foodHistory.forEach(f => {
+            if (!foodByDate[f.logged_date]) foodByDate[f.logged_date] = [];
+            foodByDate[f.logged_date].push(f);
+          });
+          
+          Object.entries(foodByDate).slice(0, 14).forEach(([date, meals]) => {
+            const dateStr = new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const dayTotals = meals.reduce((acc, m) => ({
+              cal: acc.cal + (m.total_calories || 0),
+              protein: acc.protein + (m.total_protein || 0),
+              carbs: acc.carbs + (m.total_carbs || 0),
+              fat: acc.fat + (m.total_fat || 0)
+            }), { cal: 0, protein: 0, carbs: 0, fat: 0 });
+            
+            historyContext += `\n${dateStr}: ${dayTotals.cal} cal, ${Math.round(dayTotals.protein)}g protein, ${Math.round(dayTotals.carbs)}g carbs, ${Math.round(dayTotals.fat)}g fat`;
+            meals.forEach(m => {
+              const foodNames = Array.isArray(m.food_items) 
+                ? m.food_items.map((item: any) => item.name || item).join(', ')
+                : typeof m.food_items === 'object' && m.food_items?.name 
+                  ? m.food_items.name 
+                  : 'meal';
+              historyContext += `\n  • ${m.meal_type}: ${foodNames} (${m.total_calories} cal)`;
+            });
+          });
+        } else {
+          historyContext += `\n  No meals logged in the last 30 days`;
+        }
+        
+        // Hydration history
+        historyContext += `\n\n💧 HYDRATION HISTORY:`;
+        if (hydrationHistory.length > 0) {
+          // Group by date
+          const hydrationByDate: Record<string, { total: number, effective: number, drinks: any[] }> = {};
+          hydrationHistory.forEach(h => {
+            if (!hydrationByDate[h.intake_date]) {
+              hydrationByDate[h.intake_date] = { total: 0, effective: 0, drinks: [] };
+            }
+            hydrationByDate[h.intake_date].total += h.amount_ml || 0;
+            hydrationByDate[h.intake_date].effective += h.effective_hydration_ml || 0;
+            hydrationByDate[h.intake_date].drinks.push(h);
+          });
+          
+          Object.entries(hydrationByDate).slice(0, 14).forEach(([date, data]) => {
+            const dateStr = new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            historyContext += `\n${dateStr}: ${data.total}ml total, ${data.effective}ml effective hydration`;
+          });
+        } else {
+          historyContext += `\n  No hydration logged in the last 30 days`;
+        }
+        
+        // Sleep history
+        historyContext += `\n\n😴 SLEEP HISTORY:`;
+        if (sleepHistory.length > 0) {
+          sleepHistory.slice(0, 14).forEach(s => {
+            const dateStr = new Date(s.sleep_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const hours = ((s.duration_minutes || 0) / 60).toFixed(1);
+            historyContext += `\n${dateStr}: ${hours} hours, Quality: ${s.quality_score || '?'}/5`;
+            if (s.notes) historyContext += ` - ${s.notes}`;
+          });
+        } else {
+          historyContext += `\n  No sleep logged in the last 30 days`;
+        }
+        
+        // Alcohol history
+        if (alcoholHistory.length > 0) {
+          historyContext += `\n\n🍺 ALCOHOL HISTORY:`;
+          const alcoholByDate: Record<string, any[]> = {};
+          alcoholHistory.forEach(a => {
+            if (!alcoholByDate[a.logged_date]) alcoholByDate[a.logged_date] = [];
+            alcoholByDate[a.logged_date].push(a);
+          });
+          
+          Object.entries(alcoholByDate).slice(0, 14).forEach(([date, drinks]) => {
+            const dateStr = new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const drinkList = drinks.map(d => `${d.quantity}× ${d.drink_type}`).join(', ');
+            historyContext += `\n${dateStr}: ${drinkList}`;
+          });
+        }
+        
+        // Personal records
+        historyContext += `\n\n🏆 PERSONAL RECORDS:`;
+        if (personalRecords.length > 0) {
+          personalRecords.slice(0, 20).forEach(pr => {
+            const dateStr = new Date(pr.achieved_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            historyContext += `\n- ${pr.exercise_name}: ${pr.weight_lbs}lbs × ${pr.reps} reps (${dateStr})`;
+          });
+        } else {
+          historyContext += `\n  No personal records yet`;
+        }
+        
+        // Add summary stats
+        const totalWorkoutMinutes = workoutHistory.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
+        const totalCaloriesBurned = workoutHistory.reduce((sum, w) => sum + (w.calories_burned || 0), 0);
+        const avgSleepHours = sleepHistory.length > 0 
+          ? (sleepHistory.reduce((sum, s) => sum + (s.duration_minutes || 0), 0) / sleepHistory.length / 60).toFixed(1)
+          : 0;
+        
+        historyContext += `\n\n📈 30-DAY SUMMARY:`;
+        historyContext += `\n- Total workouts: ${workoutHistory.length}`;
+        historyContext += `\n- Total workout time: ${totalWorkoutMinutes} minutes`;
+        historyContext += `\n- Total calories burned: ${totalCaloriesBurned}`;
+        historyContext += `\n- Total cardio sessions: ${totalCardio}`;
+        historyContext += `\n- Average sleep: ${avgSleepHours} hours/night`;
+        historyContext += `\n- Personal records achieved: ${personalRecords.filter(pr => {
+          const prDate = new Date(pr.achieved_at);
+          return prDate >= thirtyDaysAgo;
+        }).length}`;
+        
+        console.log(`History context built: ${workoutHistory.length} workouts, ${foodHistory.length} meals, ${sleepHistory.length} sleep logs`);
+        
+      } catch (historyError) {
+        console.error('Error fetching history context:', historyError);
+      }
+    }
+    
+    // Build comprehensive user metrics context (TODAY's data)
     let userMetricsContext = '';
     if (userId) {
       try {
@@ -229,14 +550,6 @@ serve(async (req) => {
           .gte('created_at', `${today}T00:00:00`)
           .order('created_at', { ascending: false });
           
-        // Fetch recent exercise logs
-        const { data: recentExercises } = await supabase
-          .from('exercise_logs')
-          .select('exercise_name, machine_name, weight_used, reps_completed, sets_completed')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(10);
-          
         // Fetch today's hydration
         const { data: hydration } = await supabase
           .from('water_intake')
@@ -251,14 +564,6 @@ serve(async (req) => {
           .eq('user_id', userId)
           .eq('logged_date', today);
           
-        // Fetch sleep data
-        const { data: sleepData } = await supabase
-          .from('sleep_logs')
-          .select('duration_minutes, quality_score, sleep_date')
-          .eq('user_id', userId)
-          .order('sleep_date', { ascending: false })
-          .limit(3);
-          
         // Fetch nutrition goals
         const { data: nutritionGoals } = await supabase
           .from('nutrition_goals')
@@ -267,33 +572,22 @@ serve(async (req) => {
           .eq('is_active', true)
           .single();
         
-        userMetricsContext = `\n\nUSER METRICS & DATA:`;
-        
-        if (profile) {
-          userMetricsContext += `\n- Profile: Goal: ${profile.primary_goal || 'Not set'}, Experience: ${profile.experience_level || 'Not set'}`;
-          if (profile.weight_kg) userMetricsContext += `, Weight: ${profile.weight_kg}kg`;
-          if (profile.height_cm) userMetricsContext += `, Height: ${profile.height_cm}cm`;
-        }
+        userMetricsContext = `\n\n📅 TODAY'S STATS:`;
         
         if (todayWorkouts?.length) {
           const totalCalories = todayWorkouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0);
           const totalMinutes = todayWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
-          userMetricsContext += `\n- Today's Workouts: ${todayWorkouts.length} session(s), ${totalMinutes} minutes, ${totalCalories} calories burned`;
-          userMetricsContext += `\n  Workouts: ${todayWorkouts.map(w => w.workout_name).join(', ')}`;
+          userMetricsContext += `\n- Workouts: ${todayWorkouts.length} session(s), ${totalMinutes} minutes, ${totalCalories} calories burned`;
         } else {
-          userMetricsContext += `\n- Today's Workouts: None yet`;
-        }
-        
-        if (recentExercises?.length) {
-          userMetricsContext += `\n- Recent Exercises: ${recentExercises.slice(0, 5).map(e => `${e.exercise_name} (${e.weight_used || 0}lbs x ${e.reps_completed} reps)`).join(', ')}`;
+          userMetricsContext += `\n- Workouts: None yet today`;
         }
         
         if (hydration?.length) {
           const totalWater = hydration.reduce((sum, h) => sum + (h.amount_ml || 0), 0);
           const effectiveHydration = hydration.reduce((sum, h) => sum + (h.effective_hydration_ml || 0), 0);
-          userMetricsContext += `\n- Today's Hydration: ${totalWater}ml total, ${effectiveHydration}ml effective`;
+          userMetricsContext += `\n- Hydration: ${totalWater}ml total, ${effectiveHydration}ml effective`;
         } else {
-          userMetricsContext += `\n- Today's Hydration: No water logged yet`;
+          userMetricsContext += `\n- Hydration: No water logged yet`;
         }
         
         if (nutrition?.length) {
@@ -303,23 +597,14 @@ serve(async (req) => {
             carbs: acc.carbs + (n.total_carbs || 0),
             fat: acc.fat + (n.total_fat || 0)
           }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
-          userMetricsContext += `\n- Today's Nutrition: ${totals.calories} cal, ${totals.protein}g protein, ${totals.carbs}g carbs, ${totals.fat}g fat`;
-          userMetricsContext += ` (${nutrition.length} meals logged)`;
+          userMetricsContext += `\n- Nutrition: ${totals.calories} cal, ${Math.round(totals.protein)}g protein, ${Math.round(totals.carbs)}g carbs, ${Math.round(totals.fat)}g fat (${nutrition.length} meals)`;
         } else {
-          userMetricsContext += `\n- Today's Nutrition: No meals logged yet`;
+          userMetricsContext += `\n- Nutrition: No meals logged yet`;
         }
         
         if (nutritionGoals) {
-          userMetricsContext += `\n- Daily Goals: ${nutritionGoals.daily_calories} cal, ${nutritionGoals.protein_grams}g protein (${nutritionGoals.goal_type})`;
+          userMetricsContext += `\n- Daily Goals: ${nutritionGoals.daily_calories} cal, ${nutritionGoals.protein_grams}g protein`;
         }
-        
-        if (sleepData?.length) {
-          const lastSleep = sleepData[0];
-          const hours = (lastSleep.duration_minutes / 60).toFixed(1);
-          userMetricsContext += `\n- Last Sleep: ${hours} hours, Quality: ${lastSleep.quality_score}/5`;
-        }
-        
-        userMetricsContext += `\n\nWhen the user asks about their data, refer to these specific metrics. Be conversational and helpful!`;
         
       } catch (metricsError) {
         console.error('Error fetching user metrics:', metricsError);
@@ -344,9 +629,19 @@ Specialties:
 - Recovery and injury prevention
 - Goal setting and progress tracking
 - Motivation and habit building
-${injuryContext}${moodContext}${userMetricsContext}
 
-Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks, imbalances, or low readiness in the user's data, proactively mention them and offer solutions. When users ask about their stats, workouts, hydration, or nutrition, use the provided user metrics data to give accurate answers.`;
+IMPORTANT: You have access to the user's COMPLETE 30-day history below. When users ask questions like:
+- "What did I eat last Tuesday?" → Look up their food history for that date
+- "How many workouts this week?" → Count from workout history
+- "What's my squat PR?" → Check personal records
+- "How much water did I drink yesterday?" → Look up hydration history
+- "How did I sleep this week?" → Reference sleep history
+- "Show me my progress" → Summarize from the 30-day stats
+
+Use the specific data provided to give ACCURATE, PERSONALIZED answers. If data isn't logged, kindly mention that.
+${historyContext}${userMetricsContext}${injuryContext}${moodContext}
+
+Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks, imbalances, or low readiness in the user's data, proactively mention them and offer solutions.`;
 
     // Build messages array with conversation history
     const messages = [
