@@ -128,9 +128,39 @@ export const useRealtimeChat = (userId?: string) => {
     }
   }, []);
 
+  // Strip markdown formatting for natural speech
+  const stripMarkdown = (text: string): string => {
+    return text
+      // Remove bold/italic: **text**, __text__, *text*, _text_
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/__([^_]+)__/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/_([^_]+)_/g, '$1')
+      // Remove headers: # text, ## text, etc.
+      .replace(/^#{1,6}\s+/gm, '')
+      // Remove code blocks: ```code```
+      .replace(/```[\s\S]*?```/g, '')
+      // Remove inline code: `code`
+      .replace(/`([^`]+)`/g, '$1')
+      // Remove links: [text](url) -> text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Remove strikethrough: ~~text~~
+      .replace(/~~([^~]+)~~/g, '$1')
+      // Remove bullet points at start of lines
+      .replace(/^[\s]*[-*+]\s+/gm, '')
+      // Remove numbered lists
+      .replace(/^[\s]*\d+\.\s+/gm, '')
+      // Clean up extra whitespace
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  };
+
   // Text-to-speech using ElevenLabs
   const speakText = useCallback(async (text: string) => {
     if (!text) return;
+    
+    // Strip markdown for natural speech
+    const cleanText = stripMarkdown(text);
     
     // Pause recognition while AI speaks to prevent echo
     if (recognitionRef.current) {
@@ -142,11 +172,11 @@ export const useRealtimeChat = (userId?: string) => {
     
     try {
       const voice = getVoiceForGender(avatarGenderRef.current);
-      console.log(`🔊 Speaking with ${voice.name} voice (${avatarGenderRef.current}):`, text.substring(0, 50));
+      console.log(`🔊 Speaking with ${voice.name} voice (${avatarGenderRef.current}):`, cleanText.substring(0, 50));
       
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { 
-          text, 
+          text: cleanText,  // Use cleaned text without markdown
           voice: voice.name,  // Send voice name (e.g., 'Aria'), not ID
           gender: avatarGenderRef.current
         }
