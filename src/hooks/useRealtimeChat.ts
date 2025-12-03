@@ -59,7 +59,7 @@ interface SpeechRecognition extends EventTarget {
   onend: (() => void) | null;
 }
 
-export const useRealtimeChat = () => {
+export const useRealtimeChat = (userId?: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [voiceState, setVoiceState] = useState<VoiceState>({
     isRecording: false,
@@ -78,8 +78,13 @@ export const useRealtimeChat = () => {
   const shouldListenRef = useRef(false); // Track if we want continuous listening
   const isAISpeakingRef = useRef(false); // Track AI speaking state without stale closures
   const startRecordingRef = useRef<() => Promise<void>>(); // Ref to avoid stale closure in speakText
+  const userIdRef = useRef<string | undefined>(userId); // Track userId for metrics access
 
-  // Keep isAISpeakingRef in sync with state
+  // Keep refs in sync with props/state
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
+
   useEffect(() => {
     isAISpeakingRef.current = voiceState.isAISpeaking;
   }, [voiceState.isAISpeaking]);
@@ -141,7 +146,18 @@ export const useRealtimeChat = () => {
           }
         };
         
-        await audio.play();
+        try {
+          await audio.play();
+        } catch (playError) {
+          console.error('Audio playback blocked or failed:', playError);
+          // If autoplay blocked, still set speaking to false and resume listening
+          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+          if (shouldListenRef.current) {
+            setTimeout(() => {
+              startRecordingRef.current?.();
+            }, 100);
+          }
+        }
       } else {
         setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
         // Resume listening if no audio
@@ -176,14 +192,17 @@ export const useRealtimeChat = () => {
     setMessages(prev => {
       const updated = [...prev, userMessage];
       
-      // Call AI with conversation history
+      // Call AI with conversation history and user context for metrics
       (async () => {
         try {
           const { data, error } = await supabase.functions.invoke('fitness-chat', {
             body: {
               message: userText,
               avatarName: avatarNameRef.current,
-              conversationHistory: updated.slice(-10) // Last 10 messages for context
+              conversationHistory: updated.slice(-10), // Last 10 messages for context
+              userId: userIdRef.current, // Pass userId for metrics access
+              includeInjuryContext: true, // Include injury prevention data
+              includeMoodContext: true // Include mood/readiness data
             }
           });
 
