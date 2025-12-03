@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { DailyNutritionSummary } from '@/hooks/useNutrition';
+import { getLocalDateString, getLocalDateDaysAgo } from '@/utils/dateUtils';
 
 export interface CalorieAdaptationRule {
   trigger: 'excess' | 'deficit' | 'poor_quality' | 'excellent';
@@ -139,7 +140,7 @@ export class CalorieWorkoutAdapterService {
       // Create adaptation trigger
       const adaptationTrigger: AdaptationTrigger = {
         user_id: userId,
-        trigger_date: new Date().toISOString().split('T')[0],
+        trigger_date: getLocalDateString(),
         nutrition_data: nutritionData[0], // Most recent day
         calorie_variance: analysis.calorieVariance,
         health_grade: analysis.healthGrade,
@@ -161,14 +162,13 @@ export class CalorieWorkoutAdapterService {
    * Get recent nutrition data for analysis
    */
   private static async getRecentNutritionData(userId: string, days: number): Promise<DailyNutritionSummary[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const startDateStr = getLocalDateDaysAgo(days);
 
     const { data, error } = await supabase
       .from('daily_nutrition_summary')
       .select('*')
       .eq('user_id', userId)
-      .gte('summary_date', startDate.toISOString().split('T')[0])
+      .gte('summary_date', startDateStr)
       .order('summary_date', { ascending: false });
 
     if (error) {
@@ -421,7 +421,7 @@ export class CalorieWorkoutAdapterService {
    * Check if user needs adaptation today
    */
   static async shouldAdaptToday(userId: string): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     
     // Check if already adapted today
     const { data, error } = await supabase

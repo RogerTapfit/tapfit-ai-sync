@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 export interface NutritionChallenge {
   id: string;
@@ -42,7 +43,7 @@ class NutritionChallengeService {
       .from('nutrition_challenges')
       .select('*')
       .eq('is_active', true)
-      .gte('end_date', new Date().toISOString().split('T')[0])
+      .gte('end_date', getLocalDateString())
       .order('start_date', { ascending: true });
 
     if (error) {

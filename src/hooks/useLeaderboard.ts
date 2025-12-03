@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDateDaysAgo, getLocalDateMonthsAgo } from '@/utils/dateUtils';
 
 export type LeaderboardType = 'coins' | 'workouts' | 'calories';
 export type LeaderboardPeriod = 'all_time' | 'month' | 'week';
@@ -33,13 +34,9 @@ export const useLeaderboard = (type: LeaderboardType, period: LeaderboardPeriod 
       // Calculate date range based on period
       let dateFilter = '';
       if (period === 'week') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        dateFilter = weekAgo.toISOString().split('T')[0];
+        dateFilter = getLocalDateDaysAgo(7);
       } else if (period === 'month') {
-        const monthAgo = new Date();
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        dateFilter = monthAgo.toISOString().split('T')[0];
+        dateFilter = getLocalDateMonthsAgo(1);
       }
 
       // Fetch profiles

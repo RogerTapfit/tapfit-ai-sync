@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
+import { getLocalDateString, getLocalDateDaysAgo } from '@/utils/dateUtils';
 
 export interface MoodEntry {
   id?: string;
@@ -64,7 +65,7 @@ export function useBiometricMood() {
   const fetchTodaysMood = useCallback(async () => {
     if (!user?.id) return;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const { data, error } = await supabase
       .from('mood_entries')
       .select('*')
@@ -98,14 +99,13 @@ export function useBiometricMood() {
   const fetchWeeklyMoods = useCallback(async () => {
     if (!user?.id) return;
 
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = getLocalDateDaysAgo(7);
 
     const { data, error } = await supabase
       .from('mood_entries')
       .select('*')
       .eq('user_id', user.id)
-      .gte('entry_date', weekAgo.toISOString().split('T')[0])
+      .gte('entry_date', weekAgoStr)
       .order('entry_date', { ascending: true });
 
     if (data && !error) {
@@ -188,7 +188,7 @@ export function useBiometricMood() {
   const logMood = useCallback(async (entry: Omit<MoodEntry, 'id' | 'entryDate' | 'createdAt'>) => {
     if (!user?.id) return false;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const now = new Date().toTimeString().split(' ')[0];
 
     const { error } = await supabase

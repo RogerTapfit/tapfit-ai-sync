@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDateDaysAgo } from '@/utils/dateUtils';
 
 export interface UserProfile {
   id: string;
@@ -208,14 +209,13 @@ class SocialService {
    */
   async getUserWorkoutStats(userId: string): Promise<UserWorkoutStats | null> {
     // Get last 30 days of activity
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = getLocalDateDaysAgo(30);
     
     const { data, error } = await supabase
       .from('daily_activity_summary')
       .select('total_calories_burned, workouts_completed, total_workout_minutes, total_exercises')
       .eq('user_id', userId)
-      .gte('activity_date', thirtyDaysAgo.toISOString().split('T')[0]);
+      .gte('activity_date', thirtyDaysAgoStr);
 
     if (error) {
       console.error('Error fetching workout stats:', error);

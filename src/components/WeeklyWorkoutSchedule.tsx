@@ -16,6 +16,7 @@ import {
 import { useWorkoutPlan, ScheduledWorkout } from '@/hooks/useWorkoutPlan';
 import WorkoutBreakdown from './WorkoutBreakdown';
 import { format, isToday, isPast } from 'date-fns';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 const WeeklyWorkoutSchedule = () => {
   const { currentPlan, weeklySchedule, markWorkoutComplete, rescheduleWorkout } = useWorkoutPlan();
@@ -156,7 +157,7 @@ const WeeklyWorkoutSchedule = () => {
                             tomorrow.setDate(tomorrow.getDate() + 1);
                             workout.id && rescheduleWorkout(
                               workout.id, 
-                              tomorrow.toISOString().split('T')[0], 
+                              getLocalDateString(tomorrow), 
                               workout.time
                             );
                           }}
