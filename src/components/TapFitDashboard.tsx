@@ -36,11 +36,11 @@ import { useAvatar } from "@/lib/avatarState";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useAuth } from "./AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
-import FitnessChatbot from "./FitnessChatbot";
 import { useAIInsights } from "@/hooks/useAIInsights";
 import { useRecentWorkouts } from "@/hooks/useRecentWorkouts";
 import { Camera, Calendar } from "lucide-react";
 import { ComprehensiveCalendar } from "./ComprehensiveCalendar";
+import { usePageContext } from "@/hooks/usePageContext";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -52,7 +52,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
   const [userProfile, setUserProfile] = useState<{ full_name?: string; username?: string; id?: string } | null>(null);
-  const [showChatbot, setShowChatbot] = useState(false);
   
   // Use the new AI insights hook
   const { insights: aiInsights, loading: insightsLoading, lastUpdated, refetch: refetchInsights } = useAIInsights(userProfile?.id);
@@ -81,6 +80,13 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
     if (profileName) return profileName.split(' ')[0];
     return '';
   })();
+
+  // Register page context for global chatbot
+  usePageContext({
+    pageName: 'Dashboard',
+    pageDescription: 'Main TapFit dashboard showing daily performance, workouts, nutrition, and fitness stats',
+    visibleContent: `User: ${greetingName || 'Guest'}. Today's stats: ${todayStats.exercises} exercises, ${todayStats.calories} calories burned. Recent workouts available. Features: AI Workout Plan, Social, Today's Performance, Calendar, Body Scan, Food Scanner.`
+  });
 
   // Fetch user profile data
   useEffect(() => {
@@ -607,13 +613,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </Button>
       </div>
 
-
-      {/* AI Fitness Chatbot */}
-      <FitnessChatbot 
-        isOpen={showChatbot}
-        onToggle={() => setShowChatbot(!showChatbot)}
-        userId={userProfile?.id}
-      />
     </div>
   );
 };

@@ -33,13 +33,21 @@ interface Message {
   timestamp: Date;
 }
 
+interface PageContext {
+  route: string;
+  pageName: string;
+  pageDescription: string;
+  visibleContent?: string;
+}
+
 interface FitnessChatbotProps {
   isOpen: boolean;
   onToggle: () => void;
   userId?: string;
+  pageContext?: PageContext;
 }
 
-const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userId: propUserId }) => {
+const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userId: propUserId, pageContext }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -221,7 +229,13 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
       const { data, error } = await supabase.functions.invoke('fitness-chat', {
         body: { 
           message: messageText,
-          userId: userId 
+          userId: userId,
+          pageContext: pageContext ? {
+            currentPage: pageContext.pageName,
+            description: pageContext.pageDescription,
+            visibleContent: pageContext.visibleContent,
+            route: pageContext.route
+          } : undefined
         }
       });
 
