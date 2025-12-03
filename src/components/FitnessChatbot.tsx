@@ -17,7 +17,8 @@ import {
   Target,
   Mic,
   MicOff,
-  Volume2
+  Volume2,
+  Square
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -86,7 +87,8 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
     disconnect: disconnectVoice,
     startRecording,
     stopRecording,
-    sendTextMessage: sendVoiceText
+    sendTextMessage: sendVoiceText,
+    stopSpeaking
   } = useRealtimeChat(userId);
 
   // Initialize messages with dynamic avatar name
@@ -386,9 +388,20 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 ))}
                 {(isLoading || voiceState.isAISpeaking) && (
                   <div className="flex gap-2 justify-start">
-                    <div className="bg-muted p-3 rounded-lg text-sm">
+                    <div className="bg-muted p-3 rounded-lg text-sm flex items-center gap-2">
                       {voiceState.isAISpeaking ? (
-                        <p className="text-muted-foreground">{avatarName} is speaking...</p>
+                        <>
+                          <p className="text-muted-foreground">{avatarName} is speaking...</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={stopSpeaking}
+                            className="h-6 px-2 bg-destructive/20 hover:bg-destructive/40 text-destructive"
+                          >
+                            <Square className="h-3 w-3 mr-1" />
+                            Stop
+                          </Button>
+                        </>
                       ) : (
                         <div className="flex gap-1">
                           <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
