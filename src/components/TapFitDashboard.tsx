@@ -256,7 +256,20 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </div>
 
-      {/* AI Workout Plan Button */}
+      {/* 1. Gamer Score Widget - Iron Man Armor Ranking */}
+      <GamerScoreWidget />
+
+      {/* 2. Today's Performance */}
+        <TodaysPerformance 
+          onStartWorkout={handleStartWorkout}
+          onStartRun={handleStartRun}
+          onStartRide={handleStartRide}
+          onStartSwim={handleStartSwim}
+          onCaloriesConsumedClick={handleCaloriesConsumedClick}
+          onCaloriesBurnedClick={handleCaloriesBurnedClick}
+        />
+
+      {/* 3. AI Workout Plan Button */}
       <Card className="glow-card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
         <div className="relative p-6">
@@ -281,7 +294,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Card>
 
-      {/* Social Button */}
+      {/* 4. Social Button */}
       <Card 
         className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30"
         onClick={() => navigate('/social')}
@@ -296,20 +309,7 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Card>
 
-      {/* 1. Today's Performance - Right after hero image */}
-        <TodaysPerformance 
-          onStartWorkout={handleStartWorkout}
-          onStartRun={handleStartRun}
-          onStartRide={handleStartRide}
-          onStartSwim={handleStartSwim}
-          onCaloriesConsumedClick={handleCaloriesConsumedClick}
-          onCaloriesBurnedClick={handleCaloriesBurnedClick}
-        />
-
-      {/* 2. Gamer Score Widget - CoD Style Ranking */}
-      <GamerScoreWidget />
-
-      {/* 3. Tap Coins Widget */}
+      {/* 5. Tap Coins Widget */}
       <TapCoinsWidget />
 
       {/* Workout Streak Tracker */}
