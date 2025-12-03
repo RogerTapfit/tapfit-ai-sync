@@ -135,8 +135,8 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
         });
 
         // Wait for WebSocket connection to fully establish
-        console.log("Connecting to voice chat...");
-        await connectVoice(avatarName, avatarId);
+        console.log("Connecting to voice chat with gender:", avatarGender);
+        await connectVoice(avatarName, avatarId, avatarGender);
         console.log("Voice connection established, starting microphone...");
 
         // Only start recording after connection is established

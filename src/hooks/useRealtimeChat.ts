@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getVoiceForGender } from '@/utils/elevenLabsVoices';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -124,11 +125,16 @@ export const useRealtimeChat = (userId?: string) => {
       }
 
       if (data?.audioContent) {
+        console.log('🔊 TTS audio received, length:', data.audioContent.length);
+        
         // Play audio
         const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+        audio.volume = 1.0;
+        audio.preload = 'auto';
         audioRef.current = audio;
         
         audio.onended = () => {
+          console.log('🔊 Audio playback completed');
           setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
           // Resume listening after AI finishes speaking
           if (shouldListenRef.current) {
@@ -137,27 +143,34 @@ export const useRealtimeChat = (userId?: string) => {
           }
         };
         
-        audio.onerror = () => {
-          console.error('Audio playback error');
+        audio.onerror = (e) => {
+          console.error('🔊 Audio playback error:', e);
           setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
           // Resume listening after error
           if (shouldListenRef.current) {
             startRecordingRef.current?.();
           }
         };
-        
-        try {
-          await audio.play();
-        } catch (playError) {
-          console.error('Audio playback blocked or failed:', playError);
-          // If autoplay blocked, still set speaking to false and resume listening
-          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-          if (shouldListenRef.current) {
-            setTimeout(() => {
-              startRecordingRef.current?.();
-            }, 100);
+
+        audio.oncanplaythrough = async () => {
+          console.log('🔊 Audio ready to play');
+          try {
+            await audio.play();
+            console.log('🔊 Audio playing successfully');
+          } catch (playError) {
+            console.error('🔊 Audio playback blocked:', playError);
+            toast.error('🔇 Audio blocked. Tap anywhere to enable sound, then try again.');
+            setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+            if (shouldListenRef.current) {
+              setTimeout(() => {
+                startRecordingRef.current?.();
+              }, 100);
+            }
           }
-        }
+        };
+        
+        // Trigger load
+        audio.load();
       } else {
         setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
         // Resume listening if no audio
@@ -241,35 +254,41 @@ export const useRealtimeChat = (userId?: string) => {
   }, [speakText]);
 
   // Connect (initialize voice chat session)
-  const connect = useCallback(async (avatarName?: string, avatarId?: string): Promise<void> => {
+  const connect = useCallback(async (avatarName?: string, avatarId?: string, avatarGender?: string): Promise<void> => {
     try {
-      console.log("Initializing voice chat for:", avatarName);
+      console.log("Initializing voice chat for:", avatarName, "gender:", avatarGender);
       setVoiceState(prev => ({ ...prev, error: null }));
 
-      // Fetch avatar gender from database if avatarId provided
-      let gender = 'neutral';
-      if (avatarId) {
-        const { data: avatar } = await supabase
-          .from('avatars')
-          .select('gender, name')
-          .eq('id', avatarId)
-          .single();
-        
-        if (avatar) {
-          gender = avatar.gender || 'neutral';
-          avatarNameRef.current = avatar.name || avatarName || 'Coach';
+      // Use passed gender directly if provided, otherwise fetch from database
+      let gender = avatarGender || 'neutral';
+      
+      if (!avatarGender) {
+        // Only fetch from database if gender wasn't provided
+        if (avatarId) {
+          const { data: avatar } = await supabase
+            .from('avatars')
+            .select('gender, name')
+            .eq('id', avatarId)
+            .single();
+          
+          if (avatar) {
+            gender = avatar.gender || 'neutral';
+            avatarNameRef.current = avatar.name || avatarName || 'Coach';
+          }
+        } else if (avatarName) {
+          const { data: avatar } = await supabase
+            .from('avatars')
+            .select('gender, name')
+            .ilike('name', avatarName)
+            .single();
+          
+          if (avatar) {
+            gender = avatar.gender || 'neutral';
+          }
+          avatarNameRef.current = avatarName;
         }
-      } else if (avatarName) {
-        const { data: avatar } = await supabase
-          .from('avatars')
-          .select('gender, name')
-          .ilike('name', avatarName)
-          .single();
-        
-        if (avatar) {
-          gender = avatar.gender || 'neutral';
-        }
-        avatarNameRef.current = avatarName;
+      } else {
+        avatarNameRef.current = avatarName || 'Coach';
       }
 
       avatarGenderRef.current = gender;
