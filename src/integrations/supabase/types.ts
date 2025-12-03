@@ -4169,6 +4169,7 @@ export type Database = {
         Returns: Json
       }
       calculate_readiness_score: { Args: { _user_id: string }; Returns: Json }
+      calculate_retroactive_xp: { Args: never; Returns: undefined }
       calculate_user_power_level: {
         Args: { _user_id: string }
         Returns: number
