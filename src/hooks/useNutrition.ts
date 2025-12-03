@@ -382,7 +382,7 @@ export const useNutrition = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getCurrentLocalDate();
       
       const { data, error } = await supabase
         .from('food_entries')
