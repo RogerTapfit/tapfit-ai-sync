@@ -336,7 +336,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Button>
 
-      {/* 3. AI Workout Plan Button */}
+      {/* Tap Coins Widget */}
+      <TapCoinsWidget />
+
+      {/* AI Workout Plan Button */}
       <Card className="glow-card relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
         <div className="relative p-6">
@@ -375,9 +378,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           </div>
         </div>
       </Card>
-
-      {/* 5. Tap Coins Widget */}
-      <TapCoinsWidget />
 
       {/* Workout Streak Tracker */}
       <WorkoutStreakTracker showMilestones={true} />
