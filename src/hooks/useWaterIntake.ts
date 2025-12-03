@@ -4,6 +4,7 @@ import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
 import { calculateEffectiveHydration, calculateBeverageNutrition, BEVERAGE_HYDRATION } from '@/lib/beverageHydration';
 import { useTapCoins } from './useTapCoins';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 export interface WaterEntry {
   id: string;
@@ -29,7 +30,7 @@ export const useWaterIntake = () => {
   const [loading, setLoading] = useState(true);
   const [goalReachedToday, setGoalReachedToday] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   const fetchTodaysIntake = useCallback(async () => {
     if (!user) return;
@@ -255,7 +256,7 @@ export const useWaterIntake = () => {
 
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayStr = getLocalDateString(yesterday);
 
       let currentStreak = 1;
       let longestStreak = 1;

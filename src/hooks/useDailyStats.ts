@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useHealthKit } from './useHealthKit';
 import { useNutrition } from './useNutrition';
 import { CalorieCalculationService } from '@/services/calorieCalculationService';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 interface DailyStats {
   caloriesBurned: number;
@@ -69,7 +70,7 @@ export const useDailyStats = (userId?: string): DailyStats => {
       }
 
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         
         // Get today's workout logs and cardio sessions in parallel
         // Include both completed and in-progress workouts
