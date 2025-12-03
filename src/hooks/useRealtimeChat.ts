@@ -91,23 +91,40 @@ export const useRealtimeChat = (userId?: string) => {
     isAISpeakingRef.current = voiceState.isAISpeaking;
   }, [voiceState.isAISpeaking]);
 
+  // Audio context for reliable playback
+  const audioContextRef = useRef<AudioContext | null>(null);
+
   // Unlock audio on user interaction (required for autoplay policy)
-  const unlockAudio = useCallback(() => {
+  const unlockAudio = useCallback(async () => {
     if (audioUnlockedRef.current) return;
     
     try {
-      // Create and play a short silent audio to unlock
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const buffer = audioContext.createBuffer(1, 1, 22050);
-      const source = audioContext.createBufferSource();
+      // Create persistent audio context
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      // Resume if suspended
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
+      // Play a silent buffer to fully unlock
+      const buffer = audioContextRef.current.createBuffer(1, 1, 22050);
+      const source = audioContextRef.current.createBufferSource();
       source.buffer = buffer;
-      source.connect(audioContext.destination);
+      source.connect(audioContextRef.current.destination);
       source.start(0);
       
+      // Also create and play a silent HTML audio element
+      const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+      silentAudio.volume = 0.01;
+      await silentAudio.play().catch(() => {});
+      
       audioUnlockedRef.current = true;
-      console.log('🔊 Audio context unlocked');
+      console.log('🔊 Audio fully unlocked');
     } catch (e) {
-      console.log('🔊 Audio unlock failed (will try again on play):', e);
+      console.log('🔊 Audio unlock attempt:', e);
     }
   }, []);
 
@@ -148,40 +165,74 @@ export const useRealtimeChat = (userId?: string) => {
       if (data?.audioContent) {
         console.log('🔊 TTS audio received, length:', data.audioContent.length);
         
-        // Play audio - use direct play() for base64 data URLs
-        const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
-        audio.volume = 1.0;
-        audioRef.current = audio;
+        // Try AudioContext playback first (more reliable)
+        let played = false;
         
-        audio.onended = () => {
-          console.log('🔊 Audio playback completed');
-          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-          // Resume listening after AI finishes speaking
-          if (shouldListenRef.current) {
-            console.log('🎤 Resuming listening after AI finished...');
-            setTimeout(() => startRecordingRef.current?.(), 300);
+        if (audioContextRef.current && audioContextRef.current.state === 'running') {
+          try {
+            // Decode and play via AudioContext
+            const binaryString = atob(data.audioContent);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer);
+            const source = audioContextRef.current.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContextRef.current.destination);
+            
+            source.onended = () => {
+              console.log('🔊 AudioContext playback completed');
+              setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+              if (shouldListenRef.current) {
+                console.log('🎤 Resuming listening after AI finished...');
+                setTimeout(() => startRecordingRef.current?.(), 300);
+              }
+            };
+            
+            source.start(0);
+            console.log('🔊 Playing via AudioContext');
+            played = true;
+          } catch (ctxError) {
+            console.log('🔊 AudioContext playback failed, falling back to Audio element:', ctxError);
           }
-        };
+        }
         
-        audio.onerror = (e) => {
-          console.error('🔊 Audio playback error:', e);
-          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-          if (shouldListenRef.current) {
-            setTimeout(() => startRecordingRef.current?.(), 300);
-          }
-        };
+        // Fallback to HTML Audio element
+        if (!played) {
+          const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+          audio.volume = 1.0;
+          audioRef.current = audio;
+          
+          audio.onended = () => {
+            console.log('🔊 Audio playback completed');
+            setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+            if (shouldListenRef.current) {
+              console.log('🎤 Resuming listening after AI finished...');
+              setTimeout(() => startRecordingRef.current?.(), 300);
+            }
+          };
+          
+          audio.onerror = (e) => {
+            console.error('🔊 Audio playback error:', e);
+            setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+            if (shouldListenRef.current) {
+              setTimeout(() => startRecordingRef.current?.(), 300);
+            }
+          };
 
-        // Play directly - base64 data URLs don't need preloading
-        try {
-          console.log('🔊 Attempting to play audio...');
-          await audio.play();
-          console.log('🔊 Audio started playing');
-        } catch (playError) {
-          console.error('🔊 Audio play() failed:', playError);
-          // Don't show toast - just silently fail and continue listening
-          setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
-          if (shouldListenRef.current) {
-            setTimeout(() => startRecordingRef.current?.(), 300);
+          try {
+            console.log('🔊 Attempting to play audio via Audio element...');
+            await audio.play();
+            console.log('🔊 Audio started playing');
+          } catch (playError) {
+            console.error('🔊 Audio play() failed:', playError);
+            toast.error('Tap the mic button again to enable audio');
+            setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+            if (shouldListenRef.current) {
+              setTimeout(() => startRecordingRef.current?.(), 300);
+            }
           }
         }
       } else {
