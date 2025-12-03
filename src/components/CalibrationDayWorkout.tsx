@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDateString } from '@/utils/dateUtils';
 import { 
   Zap, 
   Target, 
@@ -217,7 +218,7 @@ export const CalibrationDayWorkout: React.FC<CalibrationDayWorkoutProps> = ({
         .from('user_calibration_results')
         .upsert({
           user_id: user.id,
-          calibration_date: new Date().toISOString().split('T')[0],
+          calibration_date: getLocalDateString(),
           strength_metrics: strengthMetrics,
           endurance_metrics: enduranceMetrics,
           baseline_weights: finalResults.reduce((acc, r) => {

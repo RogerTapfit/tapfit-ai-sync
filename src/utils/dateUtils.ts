@@ -24,6 +24,33 @@ export const getCurrentLocalDate = (): string => {
 };
 
 /**
+ * Get tomorrow's date in local timezone as YYYY-MM-DD string
+ */
+export const getLocalTomorrowString = (): string => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return getLocalDateString(tomorrow);
+};
+
+/**
+ * Get a date N days ago in local timezone as YYYY-MM-DD string
+ */
+export const getLocalDateDaysAgo = (days: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return getLocalDateString(date);
+};
+
+/**
+ * Get a date N months ago in local timezone as YYYY-MM-DD string
+ */
+export const getLocalDateMonthsAgo = (months: number): string => {
+  const date = new Date();
+  date.setMonth(date.getMonth() - months);
+  return getLocalDateString(date);
+};
+
+/**
  * Convert a Date object to local date string for database queries
  * Ensures consistent date formatting across the app
  */

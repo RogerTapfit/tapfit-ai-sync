@@ -5,6 +5,7 @@ import { MonthlyWorkoutService } from '@/services/monthlyWorkoutService';
 import { CalorieWorkoutAdapterService } from '@/services/calorieWorkoutAdapterService';
 import { FitnessPreferences } from './useWorkoutPlan';
 import { UserWeightProfile } from '@/services/weightCalculationService';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 export interface MonthlyWorkoutPlan {
   id?: string;
@@ -171,7 +172,7 @@ export const useMonthlyWorkoutPlan = () => {
       const recentAdaptations = await CalorieWorkoutAdapterService.getRecentAdaptations(user.id, 7);
       
       const adaptationSummaries: AdaptationSummary[] = recentAdaptations.map((adaptation: any) => ({
-        date: new Date(adaptation.created_at).toISOString().split('T')[0],
+        date: getLocalDateString(new Date(adaptation.created_at)),
         trigger_type: adaptation.nutrition_trigger ? 'nutrition' : 'performance',
         adaptations_applied: adaptation.adaptation_applied?.adaptations?.map((a: any) => a.description) || [],
         reasoning: adaptation.adaptation_reason || 'Automatic adaptation'
@@ -291,15 +292,15 @@ export const useMonthlyWorkoutPlan = () => {
             const workoutDate = new Date(today);
             workoutDate.setDate(today.getDate() + weekOffset + dayOffset);
 
-            scheduledWorkouts.push({
-              workout_plan_id: planId,
-              user_id: userId,
-              scheduled_date: workoutDate.toISOString().split('T')[0],
-              scheduled_time: workout.time,
-              target_muscle_group: workout.muscle_group,
-              estimated_duration: workout.duration,
-              status: 'scheduled'
-            });
+              scheduledWorkouts.push({
+                workout_plan_id: planId,
+                user_id: userId,
+                scheduled_date: getLocalDateString(workoutDate),
+                scheduled_time: workout.time,
+                target_muscle_group: workout.muscle_group,
+                estimated_duration: workout.duration,
+                status: 'scheduled'
+              });
           }
         }
       }

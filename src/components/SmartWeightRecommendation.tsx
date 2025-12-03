@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDateString } from '@/utils/dateUtils';
 import { 
   Zap, 
   CheckCircle, 
@@ -193,7 +194,7 @@ export const SmartWeightRecommendation: React.FC<SmartWeightRecommendationProps>
       }, {} as any);
 
       // Save to database
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
 
       // Check if we already have a calibration result for today
       const { data: existing } = await supabase

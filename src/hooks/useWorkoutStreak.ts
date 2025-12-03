@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 interface WorkoutStreak {
   currentStreak: number;
@@ -108,7 +109,7 @@ export const useWorkoutStreak = () => {
       if (!user) return null;
 
       const dateToUse = workoutDate || new Date();
-      const dateString = dateToUse.toISOString().split('T')[0];
+      const dateString = getLocalDateString(dateToUse);
 
       const { data, error } = await supabase.rpc('update_workout_streak', {
         _user_id: user.id,
@@ -173,12 +174,11 @@ export const useWorkoutStreak = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const fmt = (d: Date) => d.toISOString().split('T')[0];
       const today = new Date();
       const yesterday = new Date();
       yesterday.setDate(today.getDate() - 1);
-      const todayStr = fmt(today);
-      const yStr = fmt(yesterday);
+      const todayStr = getLocalDateString(today);
+      const yStr = getLocalDateString(yesterday);
 
       const hasWorkoutOn = async (dateStr: string) => {
         const [wl, el] = await Promise.all([

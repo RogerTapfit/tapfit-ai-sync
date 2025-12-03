@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useTapCoins } from './useTapCoins';
 import { isGuestMode } from '@/lib/utils';
+import { getLocalDateString, getLocalTomorrowString } from '@/utils/dateUtils';
 
 interface WorkoutProgress {
   total_exercises: number;
@@ -103,12 +104,15 @@ export const useWorkoutLogger = () => {
 
     console.log("Checking for today's active workout log");
     
+    const today = getLocalDateString();
+    const tomorrow = getLocalTomorrowString();
+    
     const { data, error } = await supabase
       .from('workout_logs')
       .select('*')
       .eq('user_id', user.id)
-      .gte('started_at', new Date().toISOString().split('T')[0])
-      .lt('started_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      .gte('started_at', today)
+      .lt('started_at', tomorrow)
       .is('completed_at', null)
       .order('created_at', { ascending: false })
       .limit(1);
@@ -428,7 +432,7 @@ export const useWorkoutLogger = () => {
       // Update workout streak
       await supabase.rpc('update_workout_streak', {
         _user_id: user.id,
-        _workout_date: new Date().toISOString().split('T')[0]
+        _workout_date: getLocalDateString()
       });
 
       await fetchTodaysProgress();
@@ -484,9 +488,11 @@ export const useWorkoutLogger = () => {
       query = query.eq('workout_log_id', workoutLogId);
     } else {
       // Get today's exercises
+      const today = getLocalDateString();
+      const tomorrow = getLocalTomorrowString();
       query = query
-        .gte('completed_at', new Date().toISOString().split('T')[0])
-        .lt('completed_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        .gte('completed_at', today)
+        .lt('completed_at', tomorrow);
     }
 
     const { data: exercises, error } = await query;
@@ -561,12 +567,15 @@ export const useWorkoutLogger = () => {
     }
 
     console.log("Fetching today's completed exercises for user:", user.id);
+    const today = getLocalDateString();
+    const tomorrow = getLocalTomorrowString();
+    
     const { data, error } = await supabase
       .from('exercise_logs')
       .select('exercise_name')
       .eq('user_id', user.id)
-      .gte('completed_at', new Date().toISOString().split('T')[0]) // Today's date
-      .lt('completed_at', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // Tomorrow's date
+      .gte('completed_at', today)
+      .lt('completed_at', tomorrow);
 
     if (error) {
       console.error('Error fetching completed exercises:', error);

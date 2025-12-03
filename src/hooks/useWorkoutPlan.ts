@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 export interface FitnessPreferences {
   current_fitness_level: 'beginner' | 'intermediate' | 'advanced';
@@ -137,8 +138,8 @@ export const useWorkoutPlan = () => {
             workout_exercises (*)
           `)
           .eq('workout_plan_id', planData.id)
-          .gte('scheduled_date', startOfWeek.toISOString().split('T')[0])
-          .lte('scheduled_date', endOfWeek.toISOString().split('T')[0]);
+          .gte('scheduled_date', getLocalDateString(startOfWeek))
+          .lte('scheduled_date', getLocalDateString(endOfWeek));
 
         if (workoutsError) {
           console.error('Error loading workouts:', workoutsError);
@@ -265,7 +266,7 @@ export const useWorkoutPlan = () => {
           scheduledWorkouts.push({
             workout_plan_id: planData.id,
             user_id: user.id,
-            scheduled_date: targetDate.toISOString().split('T')[0],
+            scheduled_date: getLocalDateString(targetDate),
             scheduled_time: workout.time,
             target_muscle_group: workout.muscle_group,
             estimated_duration: workout.duration,

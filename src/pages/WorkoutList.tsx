@@ -16,6 +16,7 @@ import { DailyWorkoutSection } from "@/components/DailyWorkoutSection";
 import { supabase } from "@/integrations/supabase/client";
 import { MachineRegistryService } from "@/services/machineRegistryService";
 import { toast } from "sonner";
+import { getLocalDateString } from "@/utils/dateUtils";
 
 interface WorkoutMachine {
   id: string;
@@ -74,7 +75,7 @@ const WorkoutList = () => {
     if (!user) return;
 
     // Try to get scheduled workout for today
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const { data: scheduledWorkouts } = await supabase
       .from('scheduled_workouts')
       .select(`
