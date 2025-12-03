@@ -308,13 +308,28 @@ export const useRealtimeChat = (userId?: string) => {
       currentSourceRef.current = null;
     }
     
-    // Update state
-    setVoiceState(prev => ({ ...prev, isAISpeaking: false }));
+    // Clear any existing recognition to avoid conflicts
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (e) {
+        // Already aborted
+      }
+      recognitionRef.current = null;
+    }
+    
+    // Update BOTH state AND ref directly to avoid race condition
+    isAISpeakingRef.current = false;
+    setVoiceState(prev => ({ ...prev, isAISpeaking: false, isRecording: false }));
     
     // ALWAYS start listening after stopping - user wants to talk!
     shouldListenRef.current = true;
     console.log('🎤 Starting listening after stop...');
-    setTimeout(() => startRecordingRef.current?.(), 300);
+    setTimeout(() => {
+      if (shouldListenRef.current) {
+        startRecordingRef.current?.();
+      }
+    }, 300);
   }, []);
 
   // Send message to AI and get response
