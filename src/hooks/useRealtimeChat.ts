@@ -92,7 +92,7 @@ export const useRealtimeChat = (userId?: string) => {
   }, [voiceState.isAISpeaking]);
 
   // Unlock audio on user interaction (required for autoplay policy)
-  const unlockAudio = useCallback(async () => {
+  const unlockAudio = useCallback(() => {
     if (audioUnlockedRef.current) return;
     
     try {
@@ -104,17 +104,10 @@ export const useRealtimeChat = (userId?: string) => {
       source.connect(audioContext.destination);
       source.start(0);
       
-      // Also try playing a silent audio element
-      const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-      silentAudio.volume = 0.01;
-      await silentAudio.play();
-      
       audioUnlockedRef.current = true;
-      console.log('🔊 Audio unlocked successfully');
+      console.log('🔊 Audio context unlocked');
     } catch (e) {
-      console.log('🔊 Audio unlock attempt:', e);
-      // Even if this fails, mark as attempted
-      audioUnlockedRef.current = true;
+      console.log('🔊 Audio unlock failed (will try again on play):', e);
     }
   }, []);
 
@@ -333,14 +326,17 @@ export const useRealtimeChat = (userId?: string) => {
   // Start voice recording using Web Speech API
   const startRecording = useCallback(async () => {
     try {
+      console.log('🎤 Starting recording...');
+      
       // Unlock audio on user interaction (crucial for autoplay policy)
-      await unlockAudio();
+      unlockAudio();
       
       shouldListenRef.current = true; // Mark that we want continuous listening
       
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
       
       if (!SpeechRecognitionAPI) {
+        console.error('🎤 Speech recognition not supported');
         setVoiceState(prev => ({ 
           ...prev, 
           error: 'Speech recognition not supported in this browser' 
@@ -348,8 +344,9 @@ export const useRealtimeChat = (userId?: string) => {
         return;
       }
 
+      console.log('🎤 Creating speech recognition instance...');
       const recognition = new SpeechRecognitionAPI();
-      recognition.continuous = true; // Enable continuous recognition
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
@@ -409,18 +406,27 @@ export const useRealtimeChat = (userId?: string) => {
       };
 
       recognitionRef.current = recognition;
-      recognition.start();
+      console.log('🎤 Calling recognition.start()...');
+      
+      try {
+        recognition.start();
+        console.log('🎤 recognition.start() succeeded');
+      } catch (startError) {
+        console.error('🎤 recognition.start() failed:', startError);
+        throw startError;
+      }
       
       setVoiceState(prev => ({ ...prev, isRecording: true, error: null }));
       console.log('🎤 Recording started (continuous mode)...');
       
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('🎤 Error starting recording:', error);
       setVoiceState(prev => ({ 
         ...prev, 
         error: 'Failed to start recording',
         isRecording: false 
       }));
+      throw error; // Re-throw so FitnessChatbot knows it failed
     }
   }, [processMessage, unlockAudio]);
 
