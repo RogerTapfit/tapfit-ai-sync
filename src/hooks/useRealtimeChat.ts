@@ -109,7 +109,7 @@ export const useRealtimeChat = (userId?: string) => {
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { 
           text, 
-          voice: voice.id,
+          voice: voice.name,  // Send voice name (e.g., 'Aria'), not ID
           gender: avatarGenderRef.current
         }
       });
