@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAvatar as useSelectedAvatar } from '@/lib/avatarState';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
+import { useAuth } from '@/components/AuthGuard';
 
 interface Message {
   id: string;
@@ -37,7 +38,7 @@ interface FitnessChatbotProps {
   userId?: string;
 }
 
-const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userId }) => {
+const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userId: propUserId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +46,10 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const [voiceMode, setVoiceMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Get userId from auth context if not provided via props
+  const { user } = useAuth();
+  const userId = propUserId || user?.id;
 
   // Selected avatar (mini) for bot identity
   const { avatar } = useSelectedAvatar();
@@ -73,7 +78,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
     }
   }, [avatar, avatarName, avatarId, avatarGender, expectedVoice]);
 
-  // Voice chat integration
+  // Voice chat integration - pass userId for metrics access
   const {
     messages: voiceMessages,
     voiceState,
@@ -82,7 +87,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
     startRecording,
     stopRecording,
     sendTextMessage: sendVoiceText
-  } = useRealtimeChat();
+  } = useRealtimeChat(userId);
 
   // Initialize messages with dynamic avatar name
   useEffect(() => {

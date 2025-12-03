@@ -208,6 +208,124 @@ serve(async (req) => {
       }
     }
     
+    // Build comprehensive user metrics context
+    let userMetricsContext = '';
+    if (userId) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Fetch user profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('primary_goal, experience_level, weight_kg, height_cm, gender, age')
+          .eq('id', userId)
+          .single();
+          
+        // Fetch today's workouts
+        const { data: todayWorkouts } = await supabase
+          .from('workout_logs')
+          .select('workout_name, duration_minutes, total_exercises, total_sets, calories_burned')
+          .eq('user_id', userId)
+          .gte('created_at', `${today}T00:00:00`)
+          .order('created_at', { ascending: false });
+          
+        // Fetch recent exercise logs
+        const { data: recentExercises } = await supabase
+          .from('exercise_logs')
+          .select('exercise_name, machine_name, weight_used, reps_completed, sets_completed')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+          
+        // Fetch today's hydration
+        const { data: hydration } = await supabase
+          .from('water_intake')
+          .select('amount_ml, effective_hydration_ml')
+          .eq('user_id', userId)
+          .eq('intake_date', today);
+          
+        // Fetch today's nutrition
+        const { data: nutrition } = await supabase
+          .from('food_entries')
+          .select('total_calories, total_protein, total_carbs, total_fat, meal_type')
+          .eq('user_id', userId)
+          .eq('logged_date', today);
+          
+        // Fetch sleep data
+        const { data: sleepData } = await supabase
+          .from('sleep_logs')
+          .select('duration_minutes, quality_score, sleep_date')
+          .eq('user_id', userId)
+          .order('sleep_date', { ascending: false })
+          .limit(3);
+          
+        // Fetch nutrition goals
+        const { data: nutritionGoals } = await supabase
+          .from('nutrition_goals')
+          .select('daily_calories, protein_grams, carbs_grams, fat_grams, goal_type')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .single();
+        
+        userMetricsContext = `\n\nUSER METRICS & DATA:`;
+        
+        if (profile) {
+          userMetricsContext += `\n- Profile: Goal: ${profile.primary_goal || 'Not set'}, Experience: ${profile.experience_level || 'Not set'}`;
+          if (profile.weight_kg) userMetricsContext += `, Weight: ${profile.weight_kg}kg`;
+          if (profile.height_cm) userMetricsContext += `, Height: ${profile.height_cm}cm`;
+        }
+        
+        if (todayWorkouts?.length) {
+          const totalCalories = todayWorkouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0);
+          const totalMinutes = todayWorkouts.reduce((sum, w) => sum + (w.duration_minutes || 0), 0);
+          userMetricsContext += `\n- Today's Workouts: ${todayWorkouts.length} session(s), ${totalMinutes} minutes, ${totalCalories} calories burned`;
+          userMetricsContext += `\n  Workouts: ${todayWorkouts.map(w => w.workout_name).join(', ')}`;
+        } else {
+          userMetricsContext += `\n- Today's Workouts: None yet`;
+        }
+        
+        if (recentExercises?.length) {
+          userMetricsContext += `\n- Recent Exercises: ${recentExercises.slice(0, 5).map(e => `${e.exercise_name} (${e.weight_used || 0}lbs x ${e.reps_completed} reps)`).join(', ')}`;
+        }
+        
+        if (hydration?.length) {
+          const totalWater = hydration.reduce((sum, h) => sum + (h.amount_ml || 0), 0);
+          const effectiveHydration = hydration.reduce((sum, h) => sum + (h.effective_hydration_ml || 0), 0);
+          userMetricsContext += `\n- Today's Hydration: ${totalWater}ml total, ${effectiveHydration}ml effective`;
+        } else {
+          userMetricsContext += `\n- Today's Hydration: No water logged yet`;
+        }
+        
+        if (nutrition?.length) {
+          const totals = nutrition.reduce((acc, n) => ({
+            calories: acc.calories + (n.total_calories || 0),
+            protein: acc.protein + (n.total_protein || 0),
+            carbs: acc.carbs + (n.total_carbs || 0),
+            fat: acc.fat + (n.total_fat || 0)
+          }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          userMetricsContext += `\n- Today's Nutrition: ${totals.calories} cal, ${totals.protein}g protein, ${totals.carbs}g carbs, ${totals.fat}g fat`;
+          userMetricsContext += ` (${nutrition.length} meals logged)`;
+        } else {
+          userMetricsContext += `\n- Today's Nutrition: No meals logged yet`;
+        }
+        
+        if (nutritionGoals) {
+          userMetricsContext += `\n- Daily Goals: ${nutritionGoals.daily_calories} cal, ${nutritionGoals.protein_grams}g protein (${nutritionGoals.goal_type})`;
+        }
+        
+        if (sleepData?.length) {
+          const lastSleep = sleepData[0];
+          const hours = (lastSleep.duration_minutes / 60).toFixed(1);
+          userMetricsContext += `\n- Last Sleep: ${hours} hours, Quality: ${lastSleep.quality_score}/5`;
+        }
+        
+        userMetricsContext += `\n\nWhen the user asks about their data, refer to these specific metrics. Be conversational and helpful!`;
+        
+      } catch (metricsError) {
+        console.error('Error fetching user metrics:', metricsError);
+      }
+    }
+    
     // Build system prompt with coach personality and contexts
     const systemPrompt = `You are ${coachName}, an expert AI fitness coach for TapFit, a smart gym platform. You're knowledgeable, motivating, and personalized.
 
@@ -226,9 +344,9 @@ Specialties:
 - Recovery and injury prevention
 - Goal setting and progress tracking
 - Motivation and habit building
-${injuryContext}${moodContext}
+${injuryContext}${moodContext}${userMetricsContext}
 
-Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks, imbalances, or low readiness in the user's data, proactively mention them and offer solutions.`;
+Always provide practical, evidence-based fitness advice. Keep your responses brief and conversational - you're having a voice chat, not writing an essay. If you notice injury risks, imbalances, or low readiness in the user's data, proactively mention them and offer solutions. When users ask about their stats, workouts, hydration, or nutrition, use the provided user metrics data to give accurate answers.`;
 
     // Build messages array with conversation history
     const messages = [
