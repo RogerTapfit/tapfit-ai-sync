@@ -90,9 +90,10 @@ interface ProductAnalysis {
   };
   nutrition: {
     serving_size: string;
-    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'ai_extracted';
+    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted';
     database_name?: string | null;
     confidence_score?: number;
+    original_database_serving?: string;
     per_serving: {
       calories: number;
       protein_g: number;
@@ -262,6 +263,10 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [isCheckingSafety, setIsCheckingSafety] = useState(false);
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
+  
+  // Package size selector state
+  const [packageSize, setPackageSize] = useState<'single' | 'regular' | 'large' | 'custom'>('single');
+  const [customServings, setCustomServings] = useState<number>(1);
   
   const { setPageContext } = useChatbotContext();
   
@@ -989,6 +994,13 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                             AI extracted
                           </Badge>
                         );
+                      } else if (dataSource === 'database_scaled') {
+                        return (
+                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ✓ {databaseName} (scaled)
+                          </Badge>
+                        );
                       } else if (dataSource === 'partial_label') {
                         return (
                           <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30 text-xs">
@@ -1045,6 +1057,88 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       <div className="text-xs font-medium text-stats-exercises/80">🥑 Fat</div>
                     </motion.div>
                   </div>
+
+                  {/* Package Size Selector */}
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-4 pt-4 border-t border-border"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-muted-foreground">📦 Package Size</span>
+                      <div className="flex gap-1">
+                        {(['single', 'regular', 'large', 'custom'] as const).map((size) => (
+                          <Button
+                            key={size}
+                            variant={packageSize === size ? 'default' : 'outline'}
+                            size="sm"
+                            className={`text-xs px-2 py-1 h-7 ${packageSize === size ? 'bg-primary text-primary-foreground' : ''}`}
+                            onClick={() => {
+                              setPackageSize(size);
+                              if (size !== 'custom') setCustomServings(size === 'single' ? 1 : size === 'regular' ? 2 : 4);
+                            }}
+                          >
+                            {size === 'single' ? '1x' : size === 'regular' ? '2x' : size === 'large' ? '4x' : 'Custom'}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {packageSize === 'custom' && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs text-muted-foreground">Servings:</span>
+                        <input
+                          type="number"
+                          min="0.5"
+                          max="20"
+                          step="0.5"
+                          value={customServings}
+                          onChange={(e) => setCustomServings(parseFloat(e.target.value) || 1)}
+                          className="w-16 h-7 text-center text-sm border border-border rounded-md bg-background"
+                        />
+                      </div>
+                    )}
+
+                    {/* Show total if more than 1 serving */}
+                    {(() => {
+                      const multiplier = packageSize === 'single' ? 1 : packageSize === 'regular' ? 2 : packageSize === 'large' ? 4 : customServings;
+                      if (multiplier > 1) {
+                        const total = {
+                          calories: Math.round(analysisResult.nutrition.per_serving.calories * multiplier),
+                          protein: Math.round(analysisResult.nutrition.per_serving.protein_g * multiplier * 10) / 10,
+                          carbs: Math.round(analysisResult.nutrition.per_serving.carbs_g * multiplier * 10) / 10,
+                          fat: Math.round(analysisResult.nutrition.per_serving.fat_g * multiplier * 10) / 10,
+                        };
+                        return (
+                          <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                            <div className="text-xs font-medium text-muted-foreground mb-2">
+                              📊 Total for {multiplier}x servings:
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 text-center">
+                              <div>
+                                <div className="font-bold text-stats-calories">{total.calories}</div>
+                                <div className="text-[10px] text-muted-foreground">cal</div>
+                              </div>
+                              <div>
+                                <div className="font-bold text-stats-heart">{total.protein}g</div>
+                                <div className="text-[10px] text-muted-foreground">protein</div>
+                              </div>
+                              <div>
+                                <div className="font-bold text-stats-duration">{total.carbs}g</div>
+                                <div className="text-[10px] text-muted-foreground">carbs</div>
+                              </div>
+                              <div>
+                                <div className="font-bold text-stats-exercises">{total.fat}g</div>
+                                <div className="text-[10px] text-muted-foreground">fat</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </motion.div>
 
                   {/* Running Equivalent Section */}
                   {(() => {

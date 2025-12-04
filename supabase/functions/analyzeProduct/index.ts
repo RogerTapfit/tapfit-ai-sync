@@ -464,11 +464,22 @@ Return ONLY valid JSON, no markdown formatting.`;
 
     console.log('AI identified product:', analysisResult.product?.name, 'Brand:', analysisResult.product?.brand);
 
-    // ===== DATABASE-FIRST NUTRITION LOOKUP =====
+    // ===== SMART DATABASE-FIRST NUTRITION LOOKUP =====
     // Only for food and beverage products
     if (['food', 'beverage'].includes(analysisResult.product_type)) {
       const productName = analysisResult.product?.name;
       const brand = analysisResult.product?.brand;
+      
+      // Extract AI serving weight in grams for comparison
+      const parseServingWeight = (servingStr: string): number | null => {
+        if (!servingStr) return null;
+        // Match patterns like "30g", "28 g", "1 package (28g)", "100g"
+        const match = servingStr.match(/(\d+(?:\.\d+)?)\s*g(?:rams?)?/i);
+        return match ? parseFloat(match[1]) : null;
+      };
+      
+      const aiServingWeight = parseServingWeight(analysisResult.nutrition?.serving_size);
+      console.log('AI extracted serving size:', analysisResult.nutrition?.serving_size, '→', aiServingWeight, 'g');
       
       if (productName) {
         console.log('Searching nutrition databases for:', productName, 'by', brand);
@@ -481,31 +492,72 @@ Return ONLY valid JSON, no markdown formatting.`;
           databaseResult = await searchUSDA(productName, brand);
         }
         
-        // If database found, override AI nutrition with verified data
+        // If database found, apply smart comparison logic
         if (databaseResult && databaseResult.nutrition) {
-          console.log(`✅ Found verified nutrition in ${databaseResult.source}:`, databaseResult.nutrition);
+          console.log(`Found nutrition in ${databaseResult.source}:`, databaseResult.nutrition);
           
-          // Only override if database has actual calorie data
+          const dbServingWeight = parseServingWeight(databaseResult.serving_size);
+          console.log('Database serving size:', databaseResult.serving_size, '→', dbServingWeight, 'g');
+          
+          // Only use database if it has actual calorie data
           if (databaseResult.nutrition.calories && databaseResult.nutrition.calories > 0) {
+            
+            // SMART SERVING SIZE COMPARISON
+            // If both have weight data, check if they match
+            let scaleFactor = 1;
+            let shouldScaleDatabase = false;
+            let servingSizeMismatch = false;
+            
+            if (aiServingWeight && dbServingWeight && aiServingWeight !== dbServingWeight) {
+              const sizeDifference = Math.abs(aiServingWeight - dbServingWeight) / Math.max(aiServingWeight, dbServingWeight);
+              console.log('Serving size difference:', (sizeDifference * 100).toFixed(1) + '%');
+              
+              if (sizeDifference > 0.20) { // More than 20% difference
+                servingSizeMismatch = true;
+                
+                // Check if AI has higher confidence extraction (visible label)
+                const aiConfidence = analysisResult.nutrition?.confidence_score || 0.85;
+                const aiCalories = analysisResult.nutrition?.per_serving?.calories || 0;
+                
+                // If AI found good data and database serving is different, scale database
+                if (aiCalories > 0 && aiServingWeight) {
+                  scaleFactor = aiServingWeight / dbServingWeight;
+                  shouldScaleDatabase = true;
+                  console.log(`Scaling database nutrition by ${scaleFactor.toFixed(2)}x (${dbServingWeight}g → ${aiServingWeight}g)`);
+                }
+              }
+            }
+            
+            // Apply database nutrition (scaled if needed)
+            const applyScale = (value: number) => Math.round(value * scaleFactor * 10) / 10;
+            
             analysisResult.nutrition = {
               ...analysisResult.nutrition,
-              serving_size: databaseResult.serving_size || analysisResult.nutrition?.serving_size,
-              data_source: 'database_verified',
+              // Keep AI serving size if it's more accurate for this product
+              serving_size: aiServingWeight ? analysisResult.nutrition?.serving_size : (databaseResult.serving_size || analysisResult.nutrition?.serving_size),
+              data_source: shouldScaleDatabase ? 'database_scaled' : 'database_verified',
               database_name: databaseResult.source === 'openfoodfacts' ? 'OpenFoodFacts' : 'USDA FoodData Central',
-              confidence_score: 0.99,
+              confidence_score: shouldScaleDatabase ? 0.90 : 0.99,
+              original_database_serving: databaseResult.serving_size,
               per_serving: {
-                calories: Math.round(databaseResult.nutrition.calories) || 0,
-                protein_g: Math.round(databaseResult.nutrition.protein_g * 10) / 10 || 0,
-                carbs_g: Math.round(databaseResult.nutrition.carbs_g * 10) / 10 || 0,
-                fat_g: Math.round(databaseResult.nutrition.fat_g * 10) / 10 || 0,
-                fiber_g: Math.round((databaseResult.nutrition.fiber_g || 0) * 10) / 10,
-                sugars_g: Math.round((databaseResult.nutrition.sugars_g || 0) * 10) / 10,
-                sodium_mg: Math.round(databaseResult.nutrition.sodium_mg) || 0,
+                calories: Math.round(databaseResult.nutrition.calories * scaleFactor) || 0,
+                protein_g: applyScale(databaseResult.nutrition.protein_g) || 0,
+                carbs_g: applyScale(databaseResult.nutrition.carbs_g) || 0,
+                fat_g: applyScale(databaseResult.nutrition.fat_g) || 0,
+                fiber_g: applyScale(databaseResult.nutrition.fiber_g || 0),
+                sugars_g: applyScale(databaseResult.nutrition.sugars_g || 0),
+                sodium_mg: Math.round((databaseResult.nutrition.sodium_mg || 0) * scaleFactor),
               }
             };
             
+            if (shouldScaleDatabase) {
+              console.log(`✅ Scaled database nutrition from ${dbServingWeight}g to ${aiServingWeight}g`);
+            } else {
+              console.log(`✅ Using verified nutrition from ${databaseResult.source}`);
+            }
+            
             // Add note about data being per 100g if not per serving
-            if (!databaseResult.is_per_serving) {
+            if (!databaseResult.is_per_serving && !aiServingWeight) {
               analysisResult.nutrition.serving_size = `100g (adjust for your serving)`;
             }
             
