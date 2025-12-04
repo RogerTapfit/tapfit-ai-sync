@@ -82,6 +82,8 @@ interface SupplementAnalysis {
 
 interface ProductAnalysis {
   product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin';
+  barcode?: string | null;
+  barcode_type?: string | null;
   product: {
     name: string;
     brand?: string;
@@ -94,7 +96,7 @@ interface ProductAnalysis {
     serving_size: string;
     serving_size_grams?: number;
     servings_per_container?: number;
-    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted' | 'multi_verified';
+    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted' | 'multi_verified' | 'upc_verified' | 'user_verified';
     database_name?: string | null;
     confidence_score?: number;
     original_database_serving?: string;
@@ -106,6 +108,7 @@ interface ProductAnalysis {
       calories: number;
       serving_grams: number | null;
       confidence: number;
+      is_exact_match?: boolean;
     }>;
     per_serving: {
       calories: number;
@@ -280,6 +283,19 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   // Package size selector state - auto-populated from detected servings
   const [packageSize, setPackageSize] = useState<'single' | 'regular' | 'large' | 'custom'>('single');
   const [customServings, setCustomServings] = useState<number>(1);
+  
+  // Manual nutrition edit state
+  const [isEditingNutrition, setIsEditingNutrition] = useState(false);
+  const [editedNutrition, setEditedNutrition] = useState({
+    calories: 0,
+    protein_g: 0,
+    carbs_g: 0,
+    fat_g: 0,
+    fiber_g: 0,
+    sugars_g: 0,
+    sodium_mg: 0,
+    serving_size: ''
+  });
   
   // Auto-set package size based on detected servings per container
   useEffect(() => {
@@ -1003,12 +1019,53 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       </span>
                     </div>
                     {/* Quality Badge with Multi-Source Verification */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => {
+                          setEditedNutrition({
+                            calories: analysisResult.nutrition.per_serving.calories,
+                            protein_g: analysisResult.nutrition.per_serving.protein_g,
+                            carbs_g: analysisResult.nutrition.per_serving.carbs_g,
+                            fat_g: analysisResult.nutrition.per_serving.fat_g,
+                            fiber_g: analysisResult.nutrition.per_serving.fiber_g || 0,
+                            sugars_g: analysisResult.nutrition.per_serving.sugars_g || 0,
+                            sodium_mg: analysisResult.nutrition.per_serving.sodium_mg || 0,
+                            serving_size: analysisResult.nutrition.serving_size
+                          });
+                          setIsEditingNutrition(true);
+                        }}
+                      >
+                        ✏️ Edit
+                      </Button>
                     {(() => {
                       const dataSource = analysisResult.nutrition.data_source;
                       const databaseName = analysisResult.nutrition.database_name;
                       const qualityLabel = analysisResult.nutrition.quality_label;
                       const matchingSources = analysisResult.nutrition.matching_sources || [];
                       const consensusReached = analysisResult.nutrition.consensus_reached;
+                      
+                      // UPC verified (exact barcode match)
+                      if (dataSource === 'upc_verified') {
+                        return (
+                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ⭐⭐⭐ UPC Verified
+                          </Badge>
+                        );
+                      }
+                      
+                      // User manually verified
+                      if (dataSource === 'user_verified') {
+                        return (
+                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ✓ User Verified
+                          </Badge>
+                        );
+                      }
                       
                       // Multi-verified (2+ sources agree)
                       if (dataSource === 'multi_verified' || consensusReached) {
@@ -1095,7 +1152,120 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       
                       return null;
                     })()}
+                    </div>
                   </motion.h4>
+                  
+                  {/* Manual Nutrition Edit Form */}
+                  {isEditingNutrition && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-xl"
+                    >
+                      <div className="text-sm font-medium mb-3 flex items-center gap-2">
+                        ✏️ Edit Nutrition Values
+                        <span className="text-xs text-muted-foreground">(per serving)</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <label className="text-xs text-muted-foreground">Serving Size</label>
+                          <input
+                            type="text"
+                            value={editedNutrition.serving_size}
+                            onChange={(e) => setEditedNutrition(prev => ({ ...prev, serving_size: e.target.value }))}
+                            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Calories</label>
+                          <input
+                            type="number"
+                            value={editedNutrition.calories}
+                            onChange={(e) => setEditedNutrition(prev => ({ ...prev, calories: Number(e.target.value) }))}
+                            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Protein (g)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editedNutrition.protein_g}
+                            onChange={(e) => setEditedNutrition(prev => ({ ...prev, protein_g: Number(e.target.value) }))}
+                            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Carbs (g)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editedNutrition.carbs_g}
+                            onChange={(e) => setEditedNutrition(prev => ({ ...prev, carbs_g: Number(e.target.value) }))}
+                            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Fat (g)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editedNutrition.fat_g}
+                            onChange={(e) => setEditedNutrition(prev => ({ ...prev, fat_g: Number(e.target.value) }))}
+                            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground">Sugars (g)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editedNutrition.sugars_g}
+                            onChange={(e) => setEditedNutrition(prev => ({ ...prev, sugars_g: Number(e.target.value) }))}
+                            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (analysisResult) {
+                              setAnalysisResult({
+                                ...analysisResult,
+                                nutrition: {
+                                  ...analysisResult.nutrition,
+                                  serving_size: editedNutrition.serving_size,
+                                  data_source: 'user_verified',
+                                  quality_label: 'verified',
+                                  per_serving: {
+                                    calories: editedNutrition.calories,
+                                    protein_g: editedNutrition.protein_g,
+                                    carbs_g: editedNutrition.carbs_g,
+                                    fat_g: editedNutrition.fat_g,
+                                    fiber_g: editedNutrition.fiber_g,
+                                    sugars_g: editedNutrition.sugars_g,
+                                    sodium_mg: editedNutrition.sodium_mg,
+                                  }
+                                }
+                              });
+                              toast.success('Nutrition values updated!');
+                              setIsEditingNutrition(false);
+                            }
+                          }}
+                        >
+                          ✓ Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsEditingNutrition(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
