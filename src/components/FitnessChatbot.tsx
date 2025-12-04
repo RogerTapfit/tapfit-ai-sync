@@ -230,6 +230,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
         body: { 
           message: messageText,
           userId: userId,
+          avatarName: avatarName,
           pageContext: pageContext ? {
             currentPage: pageContext.pageName,
             description: pageContext.pageDescription,
@@ -458,7 +459,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder={`Chat with ${avatarName} about anything fitness, nutrition, or motivation...`}
+                  placeholder={`Ask ${avatarName} about fitness, nutrition, supplements...`}
                   className="flex-1 text-sm"
                   disabled={isLoading}
                 />
