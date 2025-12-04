@@ -2091,7 +2091,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                                       emulsifier.safety_rating === 'moderate_concern' ? 'bg-orange-500/80 text-white' :
                                       'bg-yellow-500/80 text-white'
                                     }`}>
-                                      {emulsifier.safety_rating.replace('_', ' ')}
+                                      {(emulsifier.safety_rating || 'unknown').replace('_', ' ')}
                                     </Badge>
                                   </div>
                                   <p className="text-sm text-foreground mb-2">
