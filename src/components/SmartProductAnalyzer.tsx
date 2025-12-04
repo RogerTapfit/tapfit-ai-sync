@@ -17,6 +17,7 @@ import { FoodItem } from '@/hooks/useNutrition';
 import { AddToFoodLogModal } from './AddToFoodLogModal';
 import { processImageFile } from '../utils/heicConverter';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useChatbotContext } from '@/contexts/ChatbotContext';
 
 interface SupplementAnalysis {
   dosage_form?: string;
@@ -258,6 +259,69 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [isCheckingSafety, setIsCheckingSafety] = useState(false);
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
+  
+  const { setPageContext } = useChatbotContext();
+  
+  // Register scanned product with AI coach context
+  useEffect(() => {
+    if (analysisResult) {
+      const productType = analysisResult.product_type || 'food';
+      const supp = analysisResult.supplement_analysis;
+      
+      let visibleContent = `SCANNED PRODUCT: ${analysisResult.product.name}
+Brand: ${analysisResult.product.brand || 'Unknown'}
+Type: ${productType}
+Health Score: ${analysisResult.health_grade?.letter} (${analysisResult.health_grade?.score}/100)
+
+NUTRITION (per ${analysisResult.nutrition?.serving_size}):
+- Calories: ${analysisResult.nutrition?.per_serving?.calories}
+- Protein: ${analysisResult.nutrition?.per_serving?.protein_g}g
+- Carbs: ${analysisResult.nutrition?.per_serving?.carbs_g}g
+- Fat: ${analysisResult.nutrition?.per_serving?.fat_g}g`;
+
+      // Add supplement-specific info if applicable
+      if (supp) {
+        visibleContent += `
+
+SUPPLEMENT ANALYSIS:
+Quality Rating: ${supp.quality_rating?.grade || 'N/A'} (${supp.quality_rating?.score || 'N/A'}/100)
+Reasoning: ${supp.quality_rating?.reasoning || 'Not available'}
+
+Active Ingredients:
+${supp.active_ingredients?.map(i => `- ${i.name}: ${i.amount || ''}${i.unit || ''}, Bioavailability: ${i.bioavailability || 'Unknown'}`).join('\n') || 'Not listed'}
+
+Drug Interactions:
+${supp.drug_interactions?.map(d => `- ${d.medication}: ${d.severity || 'Unknown'} severity - ${d.effect || 'See details'}`).join('\n') || 'None detected'}
+
+Safety Info:
+- Max Safe Dose: ${supp.safety_info?.max_safe_dose || 'Not specified'}
+- Overdose Risk: ${supp.safety_info?.overdose_risk || 'Unknown'}
+- Take with food: ${supp.recommendations?.take_with_food ? 'Yes' : 'No'}
+- Best time: ${supp.recommendations?.best_time_to_take || 'Any time'}`;
+      }
+
+      // Add food-specific concerns if applicable
+      if (analysisResult.analysis?.concerns?.length) {
+        visibleContent += `
+
+HEALTH CONCERNS:
+${analysisResult.analysis.concerns.map(c => `- ${c}`).join('\n')}`;
+      }
+
+      if (analysisResult.chemical_analysis?.food_dyes?.length) {
+        visibleContent += `
+
+FOOD DYES DETECTED:
+${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_concerns?.join(', ') || 'None noted'}`).join('\n')}`;
+      }
+
+      setPageContext({
+        pageName: 'Universal Product Analyzer',
+        pageDescription: `User just scanned a ${productType}: ${analysisResult.product.name}`,
+        visibleContent
+      });
+    }
+  }, [analysisResult, setPageContext]);
 
   const ANALYSIS_STAGES = [
     { progress: 10, text: 'Uploading image...', duration: 1500 },
@@ -486,6 +550,13 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     setExpandedChemicalSection(null);
     setSafetyData(null);
     setIsCheckingSafety(false);
+    
+    // Clear product context from chatbot
+    setPageContext({
+      pageName: 'Food Scanner',
+      pageDescription: 'Universal Product Analyzer - ready to scan',
+      visibleContent: undefined
+    });
   };
 
   const handleOpenFoodLogModal = () => {
