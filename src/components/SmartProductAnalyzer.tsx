@@ -90,7 +90,8 @@ interface ProductAnalysis {
   };
   nutrition: {
     serving_size: string;
-    data_source?: 'label_extracted' | 'estimated' | 'partial_label';
+    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'ai_extracted';
+    database_name?: string | null;
     confidence_score?: number;
     per_serving: {
       calories: number;
@@ -948,12 +949,26 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     {/* Confidence Badge */}
                     {(() => {
                       const dataSource = analysisResult.nutrition.data_source;
-                      const confidence = analysisResult.nutrition.confidence_score;
-                      if (dataSource === 'label_extracted') {
+                      const databaseName = analysisResult.nutrition.database_name;
+                      if (dataSource === 'database_verified') {
+                        return (
+                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ✓ {databaseName || 'Database'}
+                          </Badge>
+                        );
+                      } else if (dataSource === 'label_extracted') {
                         return (
                           <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Verified from label
+                          </Badge>
+                        );
+                      } else if (dataSource === 'ai_extracted') {
+                        return (
+                          <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30 text-xs">
+                            <Info className="h-3 w-3 mr-1" />
+                            AI extracted
                           </Badge>
                         );
                       } else if (dataSource === 'partial_label') {

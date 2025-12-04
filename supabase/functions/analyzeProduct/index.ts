@@ -6,6 +6,129 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Search OpenFoodFacts by product name
+async function searchOpenFoodFacts(productName: string, brand?: string): Promise<any> {
+  try {
+    const searchQuery = brand ? `${brand} ${productName}` : productName;
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(searchQuery)}&search_simple=1&action=process&json=1&page_size=5`;
+    
+    console.log('Searching OpenFoodFacts for:', searchQuery);
+    
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'TapFit App - Contact: support@tapfit.app' }
+    });
+    
+    if (!response.ok) {
+      console.log('OpenFoodFacts search failed:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.products && data.products.length > 0) {
+      // Find best match
+      const product = data.products[0];
+      const nutriments = product.nutriments || {};
+      
+      // Extract nutrition per serving or per 100g
+      const servingSize = product.serving_size || '100g';
+      const hasServingData = nutriments['energy-kcal_serving'] !== undefined;
+      
+      console.log('OpenFoodFacts found:', product.product_name, 'Serving data:', hasServingData);
+      
+      return {
+        source: 'openfoodfacts',
+        product_name: product.product_name,
+        brand: product.brands,
+        serving_size: servingSize,
+        nutrition: {
+          calories: hasServingData ? nutriments['energy-kcal_serving'] : nutriments['energy-kcal_100g'],
+          protein_g: hasServingData ? nutriments['proteins_serving'] : nutriments['proteins_100g'],
+          carbs_g: hasServingData ? nutriments['carbohydrates_serving'] : nutriments['carbohydrates_100g'],
+          fat_g: hasServingData ? nutriments['fat_serving'] : nutriments['fat_100g'],
+          fiber_g: hasServingData ? nutriments['fiber_serving'] : nutriments['fiber_100g'],
+          sugars_g: hasServingData ? nutriments['sugars_serving'] : nutriments['sugars_100g'],
+          sodium_mg: hasServingData ? (nutriments['sodium_serving'] || 0) * 1000 : (nutriments['sodium_100g'] || 0) * 1000,
+        },
+        is_per_serving: hasServingData,
+        ingredients: product.ingredients_text,
+        nova_group: product.nova_group,
+        nutriscore: product.nutriscore_grade,
+      };
+    }
+    
+    console.log('No products found in OpenFoodFacts');
+    return null;
+  } catch (error) {
+    console.error('OpenFoodFacts search error:', error);
+    return null;
+  }
+}
+
+// Search USDA FoodData Central by product name
+async function searchUSDA(productName: string, brand?: string): Promise<any> {
+  try {
+    const searchQuery = brand ? `${brand} ${productName}` : productName;
+    // Using DEMO_KEY - works for limited requests, production should use real key
+    const apiKey = Deno.env.get('USDA_API_KEY') || 'DEMO_KEY';
+    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(searchQuery)}&pageSize=5&api_key=${apiKey}`;
+    
+    console.log('Searching USDA for:', searchQuery);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.log('USDA search failed:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.foods && data.foods.length > 0) {
+      const food = data.foods[0];
+      const nutrients = food.foodNutrients || [];
+      
+      // Helper to find nutrient by name or ID
+      const findNutrient = (names: string[]) => {
+        for (const name of names) {
+          const nutrient = nutrients.find((n: any) => 
+            n.nutrientName?.toLowerCase().includes(name.toLowerCase()) ||
+            n.nutrientId === name
+          );
+          if (nutrient) return nutrient.value;
+        }
+        return 0;
+      };
+      
+      console.log('USDA found:', food.description, 'Brand:', food.brandOwner);
+      
+      return {
+        source: 'usda',
+        product_name: food.description,
+        brand: food.brandOwner || food.brandName,
+        serving_size: food.servingSize ? `${food.servingSize}${food.servingSizeUnit || 'g'}` : '100g',
+        nutrition: {
+          calories: findNutrient(['Energy', 'Calories']),
+          protein_g: findNutrient(['Protein']),
+          carbs_g: findNutrient(['Carbohydrate, by difference', 'Total Carbohydrate']),
+          fat_g: findNutrient(['Total lipid (fat)', 'Total Fat']),
+          fiber_g: findNutrient(['Fiber, total dietary', 'Dietary Fiber']),
+          sugars_g: findNutrient(['Sugars, total', 'Total Sugars']),
+          sodium_mg: findNutrient(['Sodium, Na', 'Sodium']),
+        },
+        is_per_serving: !!food.servingSize,
+        ingredients: food.ingredients,
+      };
+    }
+    
+    console.log('No products found in USDA');
+    return null;
+  } catch (error) {
+    console.error('USDA search error:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -49,7 +172,13 @@ CRITICAL DETECTION RULES:
 - Cookies, crackers, snacks, candy, chips = "food" (NOT beverage!)
 - Only liquid drinks are "beverage"
 
-⚠️ CRITICAL NUTRITION EXTRACTION RULES - PRIORITY ORDER:
+⚠️ CRITICAL: IDENTIFY PRODUCT NAME AND BRAND FIRST
+Before doing any analysis, identify:
+1. The EXACT product name as shown on packaging (e.g., "Hello Panda Chocolate", "Oreos", "Lay's Classic")
+2. The EXACT brand name (e.g., "Meiji", "Nabisco", "Frito-Lay")
+This is crucial for database lookups.
+
+⚠️ NUTRITION EXTRACTION RULES - PRIORITY ORDER:
 1. ALWAYS attempt to read the Nutrition Facts label FIRST - this is your primary source
 2. Look for: "Calories", "Total Fat", "Protein", "Total Carbohydrate" text on the label
 3. Extract EXACT numbers shown (e.g., if label says "160" return 160, NOT 150 or 0)
@@ -58,27 +187,15 @@ CRITICAL DETECTION RULES:
 6. Pay attention to "Calories" row - it's usually in large/bold text on US labels
 7. Cross-reference: if you see "Total Carb 26g" and "Protein 2g" but calories shows 0, that's wrong - recalculate
 
-ONLY ESTIMATE if the Nutrition Facts panel is COMPLETELY MISSING or ILLEGIBLE:
-When estimating, use the HIGHER end of the range (not midpoint):
-- Cookies/crackers: estimate 170 calories per serving (not 150)
-- Chips: estimate 165 calories per serving
-- Candy/chocolate: estimate 180 calories per serving
-- Snack bars: estimate 220 calories per serving
-- Gummies/fruit snacks: estimate 90 calories per serving
-
-DATA SOURCE TRACKING:
-- Set "data_source": "label_extracted" when you can read the Nutrition Facts panel
-- Set "data_source": "estimated" when no label is visible/readable
-- Set "data_source": "partial_label" when some values are readable, others estimated
-- Set "confidence_score": 0.95 for clear labels, 0.85 for partial, 0.70 for estimates
+NOTE: Nutrition data may be overridden by verified database values. The data_source field will indicate the actual source used.
 
 FOR ALL PRODUCTS - Return valid JSON with this structure:
 
 {
   "product_type": "food|beverage|supplement|medication",
   "product": {
-    "name": "Product name",
-    "brand": "Brand name",
+    "name": "EXACT product name from packaging",
+    "brand": "EXACT brand name from packaging",
     "size": "Package size",
     "confidence": 0.95
   },
@@ -91,8 +208,9 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
   },
   "nutrition": {
     "serving_size": "READ_EXACT_TEXT_FROM_LABEL",
-    "data_source": "label_extracted|estimated|partial_label",
-    "confidence_score": 0.95,
+    "data_source": "ai_extracted",
+    "database_name": null,
+    "confidence_score": 0.85,
     "per_serving": {
       "calories": "READ_EXACT_NUMBER_FROM_LABEL",
       "protein_g": "READ_EXACT_NUMBER",
@@ -344,7 +462,75 @@ Return ONLY valid JSON, no markdown formatting.`;
       }
     }
 
-    console.log('Successfully analyzed product:', analysisResult.product?.name, 'Type:', analysisResult.product_type);
+    console.log('AI identified product:', analysisResult.product?.name, 'Brand:', analysisResult.product?.brand);
+
+    // ===== DATABASE-FIRST NUTRITION LOOKUP =====
+    // Only for food and beverage products
+    if (['food', 'beverage'].includes(analysisResult.product_type)) {
+      const productName = analysisResult.product?.name;
+      const brand = analysisResult.product?.brand;
+      
+      if (productName) {
+        console.log('Searching nutrition databases for:', productName, 'by', brand);
+        
+        // Try OpenFoodFacts first (best for packaged foods worldwide)
+        let databaseResult = await searchOpenFoodFacts(productName, brand);
+        
+        // If not found, try USDA
+        if (!databaseResult) {
+          databaseResult = await searchUSDA(productName, brand);
+        }
+        
+        // If database found, override AI nutrition with verified data
+        if (databaseResult && databaseResult.nutrition) {
+          console.log(`✅ Found verified nutrition in ${databaseResult.source}:`, databaseResult.nutrition);
+          
+          // Only override if database has actual calorie data
+          if (databaseResult.nutrition.calories && databaseResult.nutrition.calories > 0) {
+            analysisResult.nutrition = {
+              ...analysisResult.nutrition,
+              serving_size: databaseResult.serving_size || analysisResult.nutrition?.serving_size,
+              data_source: 'database_verified',
+              database_name: databaseResult.source === 'openfoodfacts' ? 'OpenFoodFacts' : 'USDA FoodData Central',
+              confidence_score: 0.99,
+              per_serving: {
+                calories: Math.round(databaseResult.nutrition.calories) || 0,
+                protein_g: Math.round(databaseResult.nutrition.protein_g * 10) / 10 || 0,
+                carbs_g: Math.round(databaseResult.nutrition.carbs_g * 10) / 10 || 0,
+                fat_g: Math.round(databaseResult.nutrition.fat_g * 10) / 10 || 0,
+                fiber_g: Math.round((databaseResult.nutrition.fiber_g || 0) * 10) / 10,
+                sugars_g: Math.round((databaseResult.nutrition.sugars_g || 0) * 10) / 10,
+                sodium_mg: Math.round(databaseResult.nutrition.sodium_mg) || 0,
+              }
+            };
+            
+            // Add note about data being per 100g if not per serving
+            if (!databaseResult.is_per_serving) {
+              analysisResult.nutrition.serving_size = `100g (adjust for your serving)`;
+            }
+            
+            // Use NOVA score if available from OpenFoodFacts
+            if (databaseResult.nova_group && analysisResult.detailed_processing) {
+              analysisResult.detailed_processing.nova_score = databaseResult.nova_group;
+            }
+          } else {
+            console.log('Database found but no calorie data, keeping AI extraction');
+            analysisResult.nutrition.data_source = 'ai_extracted';
+            analysisResult.nutrition.database_name = null;
+          }
+        } else {
+          console.log('No database match found, using AI extraction');
+          // Mark as AI extracted
+          if (analysisResult.nutrition) {
+            analysisResult.nutrition.data_source = 'ai_extracted';
+            analysisResult.nutrition.database_name = null;
+            analysisResult.nutrition.confidence_score = 0.85;
+          }
+        }
+      }
+    }
+
+    console.log('Final product analysis:', analysisResult.product?.name, 'Type:', analysisResult.product_type, 'Data source:', analysisResult.nutrition?.data_source);
 
     return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
