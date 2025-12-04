@@ -49,17 +49,28 @@ CRITICAL DETECTION RULES:
 - Cookies, crackers, snacks, candy, chips = "food" (NOT beverage!)
 - Only liquid drinks are "beverage"
 
-⚠️ CRITICAL NUTRITION EXTRACTION RULES:
-1. READ ACTUAL VALUES from the Nutrition Facts label - do NOT use zeros as defaults
-2. If the label shows 160 calories, return 160 - NOT 0
-3. Extract EXACT values for: calories, protein, carbs, fat, fiber, sugars, sodium
-4. Look carefully at the serving size and per-serving values on the label
+⚠️ CRITICAL NUTRITION EXTRACTION RULES - PRIORITY ORDER:
+1. ALWAYS attempt to read the Nutrition Facts label FIRST - this is your primary source
+2. Look for: "Calories", "Total Fat", "Protein", "Total Carbohydrate" text on the label
+3. Extract EXACT numbers shown (e.g., if label says "160" return 160, NOT 150 or 0)
+4. Read the serving size exactly as printed (e.g., "1 package (28g)")
 5. NEVER return 0 for calories unless the product truly has 0 calories (like water or diet soda)
-6. If nutrition label is NOT clearly visible, ESTIMATE based on product type:
-   - Cookies/crackers: 120-180 calories per serving
-   - Chips: 140-170 calories per serving
-   - Candy: 100-200 calories per serving
-   - Snack bars: 150-250 calories per serving
+6. Pay attention to "Calories" row - it's usually in large/bold text on US labels
+7. Cross-reference: if you see "Total Carb 26g" and "Protein 2g" but calories shows 0, that's wrong - recalculate
+
+ONLY ESTIMATE if the Nutrition Facts panel is COMPLETELY MISSING or ILLEGIBLE:
+When estimating, use the HIGHER end of the range (not midpoint):
+- Cookies/crackers: estimate 170 calories per serving (not 150)
+- Chips: estimate 165 calories per serving
+- Candy/chocolate: estimate 180 calories per serving
+- Snack bars: estimate 220 calories per serving
+- Gummies/fruit snacks: estimate 90 calories per serving
+
+DATA SOURCE TRACKING:
+- Set "data_source": "label_extracted" when you can read the Nutrition Facts panel
+- Set "data_source": "estimated" when no label is visible/readable
+- Set "data_source": "partial_label" when some values are readable, others estimated
+- Set "confidence_score": 0.95 for clear labels, 0.85 for partial, 0.70 for estimates
 
 FOR ALL PRODUCTS - Return valid JSON with this structure:
 
@@ -79,15 +90,17 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
     "visual_alcohol_text": ""
   },
   "nutrition": {
-    "serving_size": "Extract from label or estimate",
+    "serving_size": "READ_EXACT_TEXT_FROM_LABEL",
+    "data_source": "label_extracted|estimated|partial_label",
+    "confidence_score": 0.95,
     "per_serving": {
-      "calories": "EXTRACT_FROM_LABEL_OR_ESTIMATE",
-      "protein_g": "EXTRACT_FROM_LABEL",
-      "carbs_g": "EXTRACT_FROM_LABEL",
-      "fat_g": "EXTRACT_FROM_LABEL",
-      "fiber_g": "EXTRACT_FROM_LABEL",
-      "sugars_g": "EXTRACT_FROM_LABEL",
-      "sodium_mg": "EXTRACT_FROM_LABEL"
+      "calories": "READ_EXACT_NUMBER_FROM_LABEL",
+      "protein_g": "READ_EXACT_NUMBER",
+      "carbs_g": "READ_EXACT_NUMBER",
+      "fat_g": "READ_EXACT_NUMBER",
+      "fiber_g": "READ_EXACT_NUMBER",
+      "sugars_g": "READ_EXACT_NUMBER",
+      "sodium_mg": "READ_EXACT_NUMBER"
     }
   },
   "health_grade": {
