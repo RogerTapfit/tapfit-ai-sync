@@ -94,10 +94,19 @@ interface ProductAnalysis {
     serving_size: string;
     serving_size_grams?: number;
     servings_per_container?: number;
-    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted';
+    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted' | 'multi_verified';
     database_name?: string | null;
     confidence_score?: number;
     original_database_serving?: string;
+    quality_label?: 'verified' | 'likely_accurate' | 'estimated';
+    matching_sources?: string[];
+    consensus_reached?: boolean;
+    all_sources?: Array<{
+      name: string;
+      calories: number;
+      serving_grams: number | null;
+      confidence: number;
+    }>;
     per_serving: {
       calories: number;
       protein_g: number;
@@ -993,53 +1002,97 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                         🥄 Nutrition per {analysisResult.nutrition.serving_size}
                       </span>
                     </div>
-                    {/* Confidence Badge */}
+                    {/* Quality Badge with Multi-Source Verification */}
                     {(() => {
                       const dataSource = analysisResult.nutrition.data_source;
                       const databaseName = analysisResult.nutrition.database_name;
+                      const qualityLabel = analysisResult.nutrition.quality_label;
+                      const matchingSources = analysisResult.nutrition.matching_sources || [];
+                      const consensusReached = analysisResult.nutrition.consensus_reached;
+                      
+                      // Multi-verified (2+ sources agree)
+                      if (dataSource === 'multi_verified' || consensusReached) {
+                        return (
+                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ⭐⭐⭐ Verified ({matchingSources.length > 0 ? matchingSources.join(' + ') : 'Multi-source'})
+                          </Badge>
+                        );
+                      }
+                      
+                      // Quality label based verification
+                      if (qualityLabel === 'verified') {
+                        return (
+                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ⭐⭐⭐ Verified
+                          </Badge>
+                        );
+                      }
+                      
+                      if (qualityLabel === 'likely_accurate') {
+                        return (
+                          <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ⭐⭐ {databaseName || 'Likely Accurate'}
+                          </Badge>
+                        );
+                      }
+                      
                       if (dataSource === 'database_verified') {
                         return (
                           <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            ✓ {databaseName || 'Database'}
+                            ⭐⭐ {databaseName || 'Database'}
                           </Badge>
                         );
-                      } else if (dataSource === 'label_extracted') {
+                      }
+                      
+                      if (dataSource === 'database_scaled') {
                         return (
                           <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Verified from label
+                            ⭐⭐ {databaseName} (scaled)
                           </Badge>
                         );
-                      } else if (dataSource === 'ai_extracted') {
+                      }
+                      
+                      if (dataSource === 'label_extracted') {
+                        return (
+                          <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            ⭐⭐ Label verified
+                          </Badge>
+                        );
+                      }
+                      
+                      if (dataSource === 'ai_extracted') {
                         return (
                           <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30 text-xs">
                             <Info className="h-3 w-3 mr-1" />
-                            AI extracted
+                            ⭐ AI extracted
                           </Badge>
                         );
-                      } else if (dataSource === 'database_scaled') {
+                      }
+                      
+                      if (dataSource === 'partial_label') {
                         return (
-                          <Badge className="bg-emerald-500/20 text-emerald-600 border-emerald-500/30 text-xs">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            ✓ {databaseName} (scaled)
-                          </Badge>
-                        );
-                      } else if (dataSource === 'partial_label') {
-                        return (
-                          <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30 text-xs">
+                          <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">
                             <Info className="h-3 w-3 mr-1" />
                             Partial data
                           </Badge>
                         );
-                      } else if (dataSource === 'estimated') {
+                      }
+                      
+                      if (dataSource === 'estimated' || qualityLabel === 'estimated') {
                         return (
                           <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">
                             <AlertTriangle className="h-3 w-3 mr-1" />
-                            Estimated values
+                            ⭐ Estimated
                           </Badge>
                         );
                       }
+                      
                       return null;
                     })()}
                   </motion.h4>
