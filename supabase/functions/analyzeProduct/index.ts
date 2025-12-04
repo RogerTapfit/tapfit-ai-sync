@@ -601,13 +601,81 @@ CRITICAL:
     
     if (result.label_visible === false || result.confidence < 0.5) {
       console.log('Low confidence or no label visible in second pass');
-      return null;
+      return { ...result, label_not_visible: true };
     }
     
     return result;
   } catch (error) {
     console.error('Nutrition extraction error:', error);
     return null;
+  }
+}
+
+// Detect if nutrition label is visible in image
+async function detectNutritionLabelVisibility(imageBase64: string, apiKey: string): Promise<{ visible: boolean; confidence: number; side_detected: string }> {
+  console.log('🔍 Checking if nutrition label is visible...');
+  
+  const detectPrompt = `Look at this product image and determine if a NUTRITION FACTS LABEL is visible.
+
+Return ONLY this JSON:
+{
+  "nutrition_label_visible": true/false,
+  "confidence": 0.0-1.0,
+  "side_detected": "front|back|side|unknown",
+  "can_read_calories": true/false,
+  "notes": "what you can see"
+}
+
+- "nutrition_label_visible" = true ONLY if you can see the actual Nutrition Facts panel with calorie/macro values
+- "side_detected" = which side of the package is shown
+- "can_read_calories" = true if you can clearly see and read the calorie number`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: detectPrompt },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                }
+              },
+              { type: "text", text: "Is the nutrition facts label visible? Return JSON." }
+            ]
+          }
+        ],
+        max_tokens: 300,
+      }),
+    });
+
+    if (!response.ok) return { visible: false, confidence: 0, side_detected: 'unknown' };
+
+    const data = await response.json();
+    let content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) return { visible: false, confidence: 0, side_detected: 'unknown' };
+    
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const result = JSON.parse(content);
+    
+    console.log('Label visibility check:', result);
+    return {
+      visible: result.nutrition_label_visible && result.can_read_calories,
+      confidence: result.confidence || 0,
+      side_detected: result.side_detected || 'unknown'
+    };
+  } catch (error) {
+    console.error('Label visibility detection error:', error);
+    return { visible: false, confidence: 0, side_detected: 'unknown' };
   }
 }
 
@@ -932,7 +1000,7 @@ Return ONLY valid JSON, no markdown formatting.`;
             ]
           }
         ],
-        max_tokens: 12000, // Increased to prevent truncation
+        max_tokens: 16000, // Increased to prevent truncation
       }),
     });
 
@@ -1006,35 +1074,57 @@ Return ONLY valid JSON, no markdown formatting.`;
                                      preDetectedBarcode.length === 8 ? 'UPC-E' : 'unknown';
     }
 
+    // ===== NUTRITION LABEL VISIBILITY CHECK =====
+    const labelVisibility = await detectNutritionLabelVisibility(imageBase64, LOVABLE_API_KEY);
+    console.log('Label visibility:', labelVisibility);
+    
+    // Add visibility info to result
+    analysisResult.nutrition_label_visible = labelVisibility.visible;
+    analysisResult.side_detected = labelVisibility.side_detected;
+    analysisResult.needs_nutrition_scan = !labelVisibility.visible && ['food', 'beverage'].includes(analysisResult.product_type);
+
     // ===== RESPONSE VALIDATION & RETRY =====
     const validation = validateNutritionResponse(analysisResult);
+    const nutritionLabelNotVisible = !labelVisibility.visible || labelVisibility.confidence < 0.5;
+    
     if (!validation.isValid && ['food', 'beverage'].includes(analysisResult.product_type)) {
       console.log('⚠️ Nutrition validation failed:', validation.issues.join(', '));
-      console.log('🔄 Running second-pass nutrition extraction...');
       
-      const secondPassNutrition = await extractNutritionOnly(
-        imageBase64, 
-        LOVABLE_API_KEY, 
-        analysisResult.product?.name
-      );
-      
-      if (secondPassNutrition && secondPassNutrition.calories > 0) {
-        console.log('✅ Second pass succeeded, applying nutrition data');
-        analysisResult.nutrition = {
-          ...analysisResult.nutrition,
-          serving_size: secondPassNutrition.serving_size || analysisResult.nutrition?.serving_size,
-          serving_size_grams: secondPassNutrition.serving_size_grams || analysisResult.nutrition?.serving_size_grams,
-          label_confidence: secondPassNutrition.confidence,
-          per_serving: {
-            calories: secondPassNutrition.calories,
-            protein_g: secondPassNutrition.protein_g || 0,
-            carbs_g: secondPassNutrition.carbs_g || 0,
-            fat_g: secondPassNutrition.fat_g || 0,
-            fiber_g: secondPassNutrition.fiber_g || 0,
-            sugars_g: secondPassNutrition.sugars_g || 0,
-            sodium_mg: secondPassNutrition.sodium_mg || 0,
-          }
-        };
+      // Only try second pass if label might be partially visible
+      if (!nutritionLabelNotVisible) {
+        console.log('🔄 Running second-pass nutrition extraction...');
+        
+        const secondPassNutrition = await extractNutritionOnly(
+          imageBase64, 
+          LOVABLE_API_KEY, 
+          analysisResult.product?.name
+        );
+        
+        if (secondPassNutrition && !secondPassNutrition.label_not_visible && secondPassNutrition.calories > 0) {
+          console.log('✅ Second pass succeeded, applying nutrition data');
+          analysisResult.nutrition = {
+            ...analysisResult.nutrition,
+            serving_size: secondPassNutrition.serving_size || analysisResult.nutrition?.serving_size,
+            serving_size_grams: secondPassNutrition.serving_size_grams || analysisResult.nutrition?.serving_size_grams,
+            label_confidence: secondPassNutrition.confidence,
+            per_serving: {
+              calories: secondPassNutrition.calories,
+              protein_g: secondPassNutrition.protein_g || 0,
+              carbs_g: secondPassNutrition.carbs_g || 0,
+              fat_g: secondPassNutrition.fat_g || 0,
+              fiber_g: secondPassNutrition.fiber_g || 0,
+              sugars_g: secondPassNutrition.sugars_g || 0,
+              sodium_mg: secondPassNutrition.sodium_mg || 0,
+            }
+          };
+          analysisResult.needs_nutrition_scan = false;
+        } else if (secondPassNutrition?.label_not_visible) {
+          console.log('📋 Nutrition label not visible - user needs to scan back of package');
+          analysisResult.needs_nutrition_scan = true;
+        }
+      } else {
+        console.log('📋 Nutrition label not visible - skipping second pass, will prompt user');
+        analysisResult.needs_nutrition_scan = true;
       }
     }
 
@@ -1071,11 +1161,20 @@ Return ONLY valid JSON, no markdown formatting.`;
         let openFoodFactsResult = null;
         let usdaResult = null;
         
-        if (!upcResult) {
+        // IMPORTANT: Only use database lookups if:
+        // 1. We have a UPC barcode (exact match), OR
+        // 2. The nutrition label IS visible (so we can validate against it)
+        // If nutrition label is NOT visible, database lookups are risky (could get wrong generic product)
+        const shouldUseDatabaseFallback = upcResult || labelVisibility.visible || analysisResult.barcode;
+        
+        if (!upcResult && shouldUseDatabaseFallback) {
           [openFoodFactsResult, usdaResult] = await Promise.all([
             searchOpenFoodFacts(productName, brand),
             searchUSDA(productName, brand)
           ]);
+        } else if (!upcResult && !shouldUseDatabaseFallback) {
+          console.log('⚠️ Skipping database lookups - no barcode and nutrition label not visible');
+          console.log('   User should scan back of package for accurate nutrition');
         }
         
         // Build sources array for consensus voting
