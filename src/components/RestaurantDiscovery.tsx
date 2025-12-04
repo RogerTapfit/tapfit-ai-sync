@@ -11,9 +11,9 @@ import { useChatbotContext } from '@/contexts/ChatbotContext';
 
 export const RestaurantDiscovery = () => {
   const { popularMeals, popularRestaurants, loading } = useRestaurantDiscovery();
-  const { setPageContext } = useChatbotContext();
+  const { setAnalysisContext } = useChatbotContext();
 
-  // Register restaurant data with AI coach context
+  // Register restaurant data with AI coach context (uses analysisContext to avoid being overwritten)
   useEffect(() => {
     if (popularMeals.length > 0 || popularRestaurants.length > 0) {
       let visibleContent = `RESTAURANT DISCOVERY - Popular from your network:`;
@@ -32,13 +32,13 @@ ${popularRestaurants.slice(0, 5).map(r =>
 ).join('\n')}`;
       }
 
-      setPageContext({
-        pageName: 'AI Food Hub - Restaurant Discovery',
-        pageDescription: 'Showing popular meals and restaurants from the user\'s social network',
+      setAnalysisContext({
+        type: 'restaurant',
+        timestamp: Date.now(),
         visibleContent
       });
     }
-  }, [popularMeals, popularRestaurants, setPageContext]);
+  }, [popularMeals, popularRestaurants, setAnalysisContext]);
 
   const getGradeColor = (grade: string | null) => {
     if (!grade) return 'bg-muted text-muted-foreground';
