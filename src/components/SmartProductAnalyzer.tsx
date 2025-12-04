@@ -440,16 +440,24 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
         toast.error('Failed to capture image');
       }
     } else {
-      // Web fallback
+      // Web fallback - create and append input to DOM for browser compatibility
+      console.log('Opening file picker for:', source);
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*'; // Accept all image formats including HEIC
+      input.style.display = 'none'; // Hide the input
+      
       if (source === 'camera') {
         input.setAttribute('capture', 'environment');
       }
       
+      // Append to document body for browser compatibility
+      document.body.appendChild(input);
+      
       input.onchange = async (event) => {
         const file = (event.target as HTMLInputElement).files?.[0];
+        console.log('File selected:', file?.name, file?.type, file?.size);
+        
         if (file) {
           try {
             // Convert HEIC files if needed
@@ -464,9 +472,19 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
             toast.error('Failed to process image. Please try again.');
           }
         }
+        
+        // Clean up - remove from DOM
+        document.body.removeChild(input);
       };
       
-      input.click();
+      // Also remove input if user cancels the file picker
+      input.addEventListener('cancel', () => {
+        console.log('File picker cancelled');
+        document.body.removeChild(input);
+      });
+      
+      // Trigger click after slight delay to ensure DOM attachment
+      setTimeout(() => input.click(), 0);
     }
   };
 
