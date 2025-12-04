@@ -896,8 +896,13 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                         {(() => {
                           const grade = analysisResult.health_grade.letter.toUpperCase();
                           const nova = analysisResult.detailed_processing.nova_score;
+                          const productType = analysisResult.product_type || 'food';
                           if (grade === 'D' || grade === 'F') {
-                            if (nova >= 4) return "⚠️ Ultra-processed beverage";
+                            if (nova >= 4) {
+                              if (productType === 'beverage') return "⚠️ Ultra-processed beverage";
+                              if (productType === 'supplement' || productType === 'medication') return "⚠️ Highly processed supplement";
+                              return "⚠️ Ultra-processed food";
+                            }
                             if (analysisResult.chemical_analysis.artificial_ingredients.length > 0) return "⚠️ Contains artificial ingredients";
                             return "⚠️ Highly processed food";
                           }

@@ -35,17 +35,31 @@ serve(async (req) => {
     const systemPrompt = `You are an expert product analyst combining food science, pharmacology, and nutritional expertise. Analyze ANY product - food, beverages, supplements, vitamins, or medications.
 
 FIRST: Detect the product type from the image:
-- "food" = edible food items
-- "beverage" = drinks (including alcoholic)
+- "food" = edible food items (cookies, snacks, candy, chips, meals, etc.)
+- "beverage" = drinks ONLY (water, soda, juice, milk, coffee, tea, alcohol)
 - "supplement" = vitamins, minerals, herbal supplements
 - "medication" = prescription/OTC drugs, medicines
 
 CRITICAL DETECTION RULES:
 - Look for "Supplement Facts" label → supplement/vitamin
 - Look for "Drug Facts" label → medication
-- Look for "Nutrition Facts" label → food/beverage
+- Look for "Nutrition Facts" label → food OR beverage (determine by product itself)
 - Look for pill bottles, capsules, tablets → supplement or medication
 - Look for vitamin names (D3, B12, C, etc.) → supplement
+- Cookies, crackers, snacks, candy, chips = "food" (NOT beverage!)
+- Only liquid drinks are "beverage"
+
+⚠️ CRITICAL NUTRITION EXTRACTION RULES:
+1. READ ACTUAL VALUES from the Nutrition Facts label - do NOT use zeros as defaults
+2. If the label shows 160 calories, return 160 - NOT 0
+3. Extract EXACT values for: calories, protein, carbs, fat, fiber, sugars, sodium
+4. Look carefully at the serving size and per-serving values on the label
+5. NEVER return 0 for calories unless the product truly has 0 calories (like water or diet soda)
+6. If nutrition label is NOT clearly visible, ESTIMATE based on product type:
+   - Cookies/crackers: 120-180 calories per serving
+   - Chips: 140-170 calories per serving
+   - Candy: 100-200 calories per serving
+   - Snack bars: 150-250 calories per serving
 
 FOR ALL PRODUCTS - Return valid JSON with this structure:
 
@@ -65,15 +79,15 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
     "visual_alcohol_text": ""
   },
   "nutrition": {
-    "serving_size": "1 serving",
+    "serving_size": "Extract from label or estimate",
     "per_serving": {
-      "calories": 0,
-      "protein_g": 0,
-      "carbs_g": 0,
-      "fat_g": 0,
-      "fiber_g": 0,
-      "sugars_g": 0,
-      "sodium_mg": 0
+      "calories": "EXTRACT_FROM_LABEL_OR_ESTIMATE",
+      "protein_g": "EXTRACT_FROM_LABEL",
+      "carbs_g": "EXTRACT_FROM_LABEL",
+      "fat_g": "EXTRACT_FROM_LABEL",
+      "fiber_g": "EXTRACT_FROM_LABEL",
+      "sugars_g": "EXTRACT_FROM_LABEL",
+      "sodium_mg": "EXTRACT_FROM_LABEL"
     }
   },
   "health_grade": {
