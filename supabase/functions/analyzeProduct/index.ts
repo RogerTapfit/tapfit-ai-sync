@@ -14,6 +14,75 @@ const parseServingWeight = (servingStr: string): number | null => {
   return match ? parseFloat(match[1]) : null;
 };
 
+// Dedicated barcode pre-detection pass - runs BEFORE main analysis
+async function detectBarcodeOnly(imageBase64: string, apiKey: string): Promise<string | null> {
+  console.log('🔍 Running dedicated barcode detection pass...');
+  
+  const barcodePrompt = `You are a barcode/UPC reader. ONLY look for barcode numbers in this image.
+
+Look for:
+1. UPC-A: 12 digits under barcode bars (e.g., "049000000443")
+2. EAN-13: 13 digits under barcode bars
+3. UPC-E: 8 digits (compact)
+4. The numbers are usually printed BELOW the barcode lines
+
+If you see a barcode, return ONLY the digits (e.g., "810051807981").
+If no barcode is visible, return "NONE".
+
+Return ONLY the digits or "NONE", nothing else.`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: barcodePrompt },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                }
+              },
+              { type: "text", text: "Extract the barcode digits from this image." }
+            ]
+          }
+        ],
+        max_tokens: 100,
+      }),
+    });
+
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    let content = data.choices?.[0]?.message?.content?.trim();
+    
+    if (!content || content === 'NONE' || content.length < 8) {
+      console.log('No barcode detected in dedicated pass');
+      return null;
+    }
+    
+    // Clean to digits only
+    const digits = content.replace(/[^0-9]/g, '');
+    if (digits.length >= 8 && digits.length <= 14) {
+      console.log('✅ Barcode detected in dedicated pass:', digits);
+      return digits;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Barcode detection pass error:', error);
+    return null;
+  }
+}
+
 // Direct UPC/Barcode lookup on OpenFoodFacts (most accurate for branded products)
 async function lookupByUPC(barcode: string): Promise<any> {
   try {
@@ -72,12 +141,71 @@ async function lookupByUPC(barcode: string): Promise<any> {
       };
     }
     
-    console.log('UPC not found in database');
+    console.log('UPC not found in OpenFoodFacts');
     return null;
   } catch (error) {
     console.error('UPC lookup error:', error);
     return null;
   }
+}
+
+// Fallback UPC lookup using UPCitemDB (free tier)
+async function lookupUPCitemDB(barcode: string): Promise<any> {
+  try {
+    console.log('Trying UPCitemDB for:', barcode);
+    const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`;
+    
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    if (!response.ok) {
+      console.log('UPCitemDB failed:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.code === 'OK' && data.items?.length > 0) {
+      const item = data.items[0];
+      console.log('✅ UPCitemDB found:', item.title);
+      
+      return {
+        source: 'upcitemdb',
+        exact_match: true,
+        product_name: item.title,
+        brand: item.brand,
+        barcode: barcode,
+        // UPCitemDB doesn't provide nutrition, just product info
+        nutrition: null,
+        category: item.category,
+        image_url: item.images?.[0],
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('UPCitemDB error:', error);
+    return null;
+  }
+}
+
+// Multi-database UPC lookup with fallbacks
+async function lookupUPCMultiple(barcode: string): Promise<any> {
+  // Try OpenFoodFacts first (has nutrition data)
+  let result = await lookupByUPC(barcode);
+  if (result?.nutrition?.calories > 0) {
+    return result;
+  }
+  
+  // Try UPCitemDB as fallback (product info but no nutrition)
+  const upcItemDbResult = await lookupUPCitemDB(barcode);
+  if (upcItemDbResult) {
+    console.log('Found product in UPCitemDB (no nutrition data)');
+    return upcItemDbResult;
+  }
+  
+  return result; // Return OpenFoodFacts result even if no calories
 }
 
 // Search OpenFoodFacts by product name
@@ -771,6 +899,12 @@ IMPORTANT: Only populate supplement_analysis fields when product_type is "supple
 
 Return ONLY valid JSON, no markdown formatting.`;
 
+    // Run dedicated barcode detection pass FIRST (safety net)
+    const preDetectedBarcode = await detectBarcodeOnly(imageBase64, LOVABLE_API_KEY);
+    if (preDetectedBarcode) {
+      console.log('✅ Pre-detected barcode:', preDetectedBarcode);
+    }
+
     // First pass - full product analysis
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -798,7 +932,7 @@ Return ONLY valid JSON, no markdown formatting.`;
             ]
           }
         ],
-        max_tokens: 8000, // Increased to prevent truncation
+        max_tokens: 12000, // Increased to prevent truncation
       }),
     });
 
@@ -821,6 +955,12 @@ Return ONLY valid JSON, no markdown formatting.`;
     console.log('Raw AI response length:', content.length);
     console.log('Raw AI response preview:', content.substring(0, 500));
 
+    // Check for truncation (response ends mid-word or incomplete JSON)
+    const isTruncated = !content.endsWith('}') && !content.endsWith('}\n') && !content.endsWith('```');
+    if (isTruncated) {
+      console.log('⚠️ Response appears truncated, attempting repair...');
+    }
+
     // Clean up response - remove markdown code blocks if present
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
@@ -829,9 +969,26 @@ Return ONLY valid JSON, no markdown formatting.`;
       analysisResult = JSON.parse(content);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
+      // Try to extract valid JSON
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        analysisResult = JSON.parse(jsonMatch[0]);
+        try {
+          analysisResult = JSON.parse(jsonMatch[0]);
+        } catch (innerError) {
+          // Try to fix common truncation issues
+          let fixedContent = jsonMatch[0];
+          // Count open braces and close missing ones
+          const openBraces = (fixedContent.match(/\{/g) || []).length;
+          const closeBraces = (fixedContent.match(/\}/g) || []).length;
+          const openBrackets = (fixedContent.match(/\[/g) || []).length;
+          const closeBrackets = (fixedContent.match(/\]/g) || []).length;
+          
+          for (let i = 0; i < openBrackets - closeBrackets; i++) fixedContent += ']';
+          for (let i = 0; i < openBraces - closeBraces; i++) fixedContent += '}';
+          
+          analysisResult = JSON.parse(fixedContent);
+          console.log('✅ Fixed truncated JSON');
+        }
       } else {
         throw new Error('Failed to parse AI response as JSON');
       }
@@ -839,6 +996,15 @@ Return ONLY valid JSON, no markdown formatting.`;
 
     console.log('AI identified product:', analysisResult.product?.name, 'Brand:', analysisResult.product?.brand);
     console.log('Barcode detected:', analysisResult.barcode, 'Type:', analysisResult.barcode_type);
+    
+    // Use pre-detected barcode if main analysis missed it
+    if (!analysisResult.barcode && preDetectedBarcode) {
+      console.log('✅ Using pre-detected barcode:', preDetectedBarcode);
+      analysisResult.barcode = preDetectedBarcode;
+      analysisResult.barcode_type = preDetectedBarcode.length === 12 ? 'UPC-A' : 
+                                     preDetectedBarcode.length === 13 ? 'EAN-13' : 
+                                     preDetectedBarcode.length === 8 ? 'UPC-E' : 'unknown';
+    }
 
     // ===== RESPONSE VALIDATION & RETRY =====
     const validation = validateNutritionResponse(analysisResult);
@@ -875,8 +1041,8 @@ Return ONLY valid JSON, no markdown formatting.`;
     // ===== UPC BARCODE LOOKUP (HIGHEST PRIORITY) =====
     let upcResult = null;
     if (analysisResult.barcode) {
-      console.log('🔍 Attempting UPC lookup for:', analysisResult.barcode);
-      upcResult = await lookupByUPC(analysisResult.barcode);
+      console.log('🔍 Attempting multi-database UPC lookup for:', analysisResult.barcode);
+      upcResult = await lookupUPCMultiple(analysisResult.barcode);
     }
 
     // ===== MULTI-SOURCE NUTRITION VERIFICATION =====
@@ -930,15 +1096,43 @@ Return ONLY valid JSON, no markdown formatting.`;
         }
         
         // Add AI Label Reading as a source
+        // PRIORITIZE confident AI reading that conflicts >50% with database results
         if (aiCalories > 0 && aiServingWeight) {
+          let aiPriority = 3; // Default low priority
+          
+          if (aiLabelConfidence >= 0.9) {
+            aiPriority = 1; // High priority if very confident
+            
+            // Check if database sources differ by >50% from AI reading
+            const checkConflict = (dbCals: number, dbServingGrams: number) => {
+              if (!dbCals || !dbServingGrams) return false;
+              const aiCalsPerGram = aiCalories / aiServingWeight;
+              const dbCalsPerGram = dbCals / dbServingGrams;
+              const diff = Math.abs(aiCalsPerGram - dbCalsPerGram) / Math.max(aiCalsPerGram, dbCalsPerGram);
+              return diff > 0.5; // >50% difference
+            };
+            
+            // If there's a major conflict and AI is confident, trust AI
+            if (openFoodFactsResult?.nutrition?.calories > 0 && 
+                checkConflict(openFoodFactsResult.nutrition.calories, openFoodFactsResult.serving_size_grams)) {
+              console.log('⚠️ AI Label conflicts >50% with OpenFoodFacts - prioritizing AI reading');
+              aiPriority = 0; // Give AI highest priority
+            }
+            if (usdaResult?.nutrition?.calories > 0 && 
+                checkConflict(usdaResult.nutrition.calories, usdaResult.serving_size_grams)) {
+              console.log('⚠️ AI Label conflicts >50% with USDA - prioritizing AI reading');
+              aiPriority = 0;
+            }
+          }
+          
           nutritionSources.push({
             name: 'AI Label Reading',
-            priority: aiLabelConfidence >= 0.9 ? 1 : 3, // High priority if confident
+            priority: aiPriority,
             nutrition: analysisResult.nutrition.per_serving,
             servingGrams: aiServingWeight,
             confidence: aiLabelConfidence
           });
-          console.log('AI Label source added:', aiCalories, 'cal per', aiServingWeight, 'g');
+          console.log('AI Label source added:', aiCalories, 'cal per', aiServingWeight, 'g, priority:', aiPriority);
         }
         
         // Add OpenFoodFacts
