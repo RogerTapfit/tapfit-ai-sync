@@ -14,6 +14,72 @@ const parseServingWeight = (servingStr: string): number | null => {
   return match ? parseFloat(match[1]) : null;
 };
 
+// Direct UPC/Barcode lookup on OpenFoodFacts (most accurate for branded products)
+async function lookupByUPC(barcode: string): Promise<any> {
+  try {
+    const cleanBarcode = barcode.replace(/[^0-9]/g, '');
+    if (!cleanBarcode || cleanBarcode.length < 8) {
+      console.log('Invalid barcode format:', barcode);
+      return null;
+    }
+    
+    console.log('Looking up UPC directly:', cleanBarcode);
+    const url = `https://world.openfoodfacts.org/api/v0/product/${cleanBarcode}.json`;
+    
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'TapFit App - Contact: support@tapfit.app' }
+    });
+    
+    if (!response.ok) {
+      console.log('UPC lookup failed:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.status === 1 && data.product) {
+      const product = data.product;
+      const nutriments = product.nutriments || {};
+      
+      const servingSize = product.serving_size || '100g';
+      const hasServingData = nutriments['energy-kcal_serving'] !== undefined;
+      
+      console.log('✅ UPC EXACT MATCH:', product.product_name, 'by', product.brands);
+      
+      return {
+        source: 'upc_lookup',
+        exact_match: true,
+        product_name: product.product_name,
+        brand: product.brands,
+        barcode: cleanBarcode,
+        serving_size: servingSize,
+        serving_size_grams: parseServingWeight(servingSize),
+        nutrition: {
+          calories: hasServingData ? nutriments['energy-kcal_serving'] : nutriments['energy-kcal_100g'],
+          protein_g: hasServingData ? nutriments['proteins_serving'] : nutriments['proteins_100g'],
+          carbs_g: hasServingData ? nutriments['carbohydrates_serving'] : nutriments['carbohydrates_100g'],
+          fat_g: hasServingData ? nutriments['fat_serving'] : nutriments['fat_100g'],
+          fiber_g: hasServingData ? nutriments['fiber_serving'] : nutriments['fiber_100g'],
+          sugars_g: hasServingData ? nutriments['sugars_serving'] : nutriments['sugars_100g'],
+          sodium_mg: hasServingData ? (nutriments['sodium_serving'] || 0) * 1000 : (nutriments['sodium_100g'] || 0) * 1000,
+        },
+        is_per_serving: hasServingData,
+        is_per_100g: !hasServingData,
+        ingredients: product.ingredients_text,
+        nova_group: product.nova_group,
+        nutriscore: product.nutriscore_grade,
+        image_url: product.image_url,
+      };
+    }
+    
+    console.log('UPC not found in database');
+    return null;
+  } catch (error) {
+    console.error('UPC lookup error:', error);
+    return null;
+  }
+}
+
 // Search OpenFoodFacts by product name
 async function searchOpenFoodFacts(productName: string, brand?: string): Promise<any> {
   try {
@@ -163,6 +229,7 @@ interface NutritionSource {
   nutrition: any;
   servingGrams: number | null;
   confidence: number;
+  isExactMatch?: boolean;
 }
 
 function findConsensusNutrition(sources: NutritionSource[]): {
@@ -187,6 +254,19 @@ function findConsensusNutrition(sources: NutritionSource[]): {
       matchingSources: [],
       qualityScore: 50,
       qualityLabel: 'estimated'
+    };
+  }
+  
+  // UPC lookup is always highest priority (exact match)
+  const upcSource = validSources.find(s => s.isExactMatch);
+  if (upcSource) {
+    console.log('✅ Using UPC exact match - highest accuracy');
+    return {
+      bestSource: upcSource,
+      consensusReached: true,
+      matchingSources: [upcSource.name],
+      qualityScore: 99,
+      qualityLabel: 'verified'
     };
   }
   
@@ -272,6 +352,137 @@ function findConsensusNutrition(sources: NutritionSource[]): {
   };
 }
 
+// Validate AI response has complete nutrition data
+function validateNutritionResponse(result: any): { isValid: boolean; issues: string[] } {
+  const issues: string[] = [];
+  
+  if (!result?.nutrition) {
+    issues.push('Missing nutrition object');
+    return { isValid: false, issues };
+  }
+  
+  const nutrition = result.nutrition;
+  const perServing = nutrition.per_serving || nutrition;
+  
+  // Check for truncated/null values
+  if (nutrition.serving_size === null || nutrition.serving_size === undefined) {
+    issues.push('Serving size is null');
+  }
+  
+  if (perServing.calories === null || perServing.calories === undefined || perServing.calories === 0) {
+    // Allow 0 calories for water/diet drinks
+    if (!result.product?.name?.toLowerCase().includes('water') && 
+        !result.product?.name?.toLowerCase().includes('diet')) {
+      issues.push('Calories is null or 0');
+    }
+  }
+  
+  // Check for obviously wrong values (negative, NaN)
+  if (typeof perServing.calories === 'number' && (isNaN(perServing.calories) || perServing.calories < 0)) {
+    issues.push('Invalid calorie value');
+  }
+  
+  // Check if macros are all 0 (suspicious for food)
+  if (perServing.protein_g === 0 && perServing.carbs_g === 0 && perServing.fat_g === 0 && perServing.calories > 50) {
+    issues.push('All macros are 0 but calories > 50');
+  }
+  
+  return { 
+    isValid: issues.length === 0,
+    issues 
+  };
+}
+
+// Second-pass focused nutrition extraction
+async function extractNutritionOnly(imageBase64: string, apiKey: string, productName?: string): Promise<any> {
+  console.log('🔄 Running focused nutrition extraction pass...');
+  
+  const nutritionPrompt = `You are a nutrition label reader. ONLY extract exact numbers from the Nutrition Facts label in this image.
+
+Product name for context: ${productName || 'Unknown'}
+
+Look for the Nutrition Facts panel and extract EXACT values. Read carefully - do not estimate or guess.
+
+Return ONLY this JSON (no markdown):
+{
+  "serving_size": "exact text from label (e.g., '1 package (28g)')",
+  "serving_size_grams": number,
+  "calories": number,
+  "protein_g": number,
+  "carbs_g": number,
+  "fat_g": number,
+  "fiber_g": number,
+  "sugars_g": number,
+  "sodium_mg": number,
+  "confidence": 0.0-1.0,
+  "label_visible": true/false,
+  "notes": "any issues reading the label"
+}
+
+CRITICAL:
+- Return EXACT numbers from the label, not estimates
+- If you can't see a value clearly, use null instead of guessing
+- confidence should reflect how clearly you can read the label
+- label_visible should be false if no nutrition facts panel is visible`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: nutritionPrompt },
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                }
+              },
+              {
+                type: "text",
+                text: "Extract the exact nutrition values from this label. Return ONLY valid JSON."
+              }
+            ]
+          }
+        ],
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      console.log('Nutrition extraction pass failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    let content = data.choices?.[0]?.message?.content;
+    
+    if (!content) return null;
+    
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    const result = JSON.parse(content);
+    console.log('Nutrition extraction result:', result);
+    
+    if (result.label_visible === false || result.confidence < 0.5) {
+      console.log('Low confidence or no label visible in second pass');
+      return null;
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Nutrition extraction error:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -315,6 +526,14 @@ CRITICAL DETECTION RULES:
 - Cookies, crackers, snacks, candy, chips = "food" (NOT beverage!)
 - Only liquid drinks are "beverage"
 
+⚠️ BARCODE/UPC DETECTION - EXTREMELY IMPORTANT:
+Look for ANY barcode (UPC, EAN, QR code) visible in the image:
+1. Standard UPC-A: 12 digits under barcode bars (e.g., "049000000443")
+2. EAN-13: 13 digits under barcode bars (e.g., "4902777273501")
+3. UPC-E: 8 digits (compact version)
+4. The numbers are usually printed BELOW the barcode lines
+5. Return the EXACT digits you see - this enables 100% accurate database lookup
+
 ⚠️ CRITICAL: IDENTIFY PRODUCT NAME AND BRAND FIRST
 Before doing any analysis, identify:
 1. The EXACT product name as shown on packaging (e.g., "Hello Panda Chocolate", "Oreos", "Lay's Classic")
@@ -342,6 +561,8 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
 
 {
   "product_type": "food|beverage|supplement|medication",
+  "barcode": "EXACT digits from UPC/EAN barcode if visible, or null if not visible",
+  "barcode_type": "UPC-A|EAN-13|UPC-E|null",
   "product": {
     "name": "EXACT product name from packaging",
     "brand": "EXACT brand name from packaging",
@@ -550,6 +771,7 @@ IMPORTANT: Only populate supplement_analysis fields when product_type is "supple
 
 Return ONLY valid JSON, no markdown formatting.`;
 
+    // First pass - full product analysis
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -571,11 +793,12 @@ Return ONLY valid JSON, no markdown formatting.`;
               },
               {
                 type: "text",
-                text: "Analyze this product comprehensively. Detect if it's food, beverage, supplement, or medication. Provide complete analysis including quality rating, ingredients, safety, and recommendations. Return ONLY valid JSON."
+                text: "Analyze this product comprehensively. FIRST look for any barcode/UPC numbers. Detect if it's food, beverage, supplement, or medication. Provide complete analysis including quality rating, ingredients, safety, and recommendations. Return ONLY valid JSON."
               }
             ]
           }
         ],
+        max_tokens: 8000, // Increased to prevent truncation
       }),
     });
 
@@ -595,7 +818,8 @@ Return ONLY valid JSON, no markdown formatting.`;
       throw new Error("No response from AI");
     }
 
-    console.log('Raw AI response:', content.substring(0, 500));
+    console.log('Raw AI response length:', content.length);
+    console.log('Raw AI response preview:', content.substring(0, 500));
 
     // Clean up response - remove markdown code blocks if present
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -614,6 +838,46 @@ Return ONLY valid JSON, no markdown formatting.`;
     }
 
     console.log('AI identified product:', analysisResult.product?.name, 'Brand:', analysisResult.product?.brand);
+    console.log('Barcode detected:', analysisResult.barcode, 'Type:', analysisResult.barcode_type);
+
+    // ===== RESPONSE VALIDATION & RETRY =====
+    const validation = validateNutritionResponse(analysisResult);
+    if (!validation.isValid && ['food', 'beverage'].includes(analysisResult.product_type)) {
+      console.log('⚠️ Nutrition validation failed:', validation.issues.join(', '));
+      console.log('🔄 Running second-pass nutrition extraction...');
+      
+      const secondPassNutrition = await extractNutritionOnly(
+        imageBase64, 
+        LOVABLE_API_KEY, 
+        analysisResult.product?.name
+      );
+      
+      if (secondPassNutrition && secondPassNutrition.calories > 0) {
+        console.log('✅ Second pass succeeded, applying nutrition data');
+        analysisResult.nutrition = {
+          ...analysisResult.nutrition,
+          serving_size: secondPassNutrition.serving_size || analysisResult.nutrition?.serving_size,
+          serving_size_grams: secondPassNutrition.serving_size_grams || analysisResult.nutrition?.serving_size_grams,
+          label_confidence: secondPassNutrition.confidence,
+          per_serving: {
+            calories: secondPassNutrition.calories,
+            protein_g: secondPassNutrition.protein_g || 0,
+            carbs_g: secondPassNutrition.carbs_g || 0,
+            fat_g: secondPassNutrition.fat_g || 0,
+            fiber_g: secondPassNutrition.fiber_g || 0,
+            sugars_g: secondPassNutrition.sugars_g || 0,
+            sodium_mg: secondPassNutrition.sodium_mg || 0,
+          }
+        };
+      }
+    }
+
+    // ===== UPC BARCODE LOOKUP (HIGHEST PRIORITY) =====
+    let upcResult = null;
+    if (analysisResult.barcode) {
+      console.log('🔍 Attempting UPC lookup for:', analysisResult.barcode);
+      upcResult = await lookupByUPC(analysisResult.barcode);
+    }
 
     // ===== MULTI-SOURCE NUTRITION VERIFICATION =====
     if (['food', 'beverage'].includes(analysisResult.product_type)) {
@@ -633,20 +897,39 @@ Return ONLY valid JSON, no markdown formatting.`;
         confidence: aiLabelConfidence
       });
       
-      if (productName) {
+      if (productName || upcResult) {
         console.log('=== MULTI-SOURCE NUTRITION LOOKUP ===');
         console.log('Searching for:', productName, 'by', brand);
         
-        // Search multiple databases in parallel
-        const [openFoodFactsResult, usdaResult] = await Promise.all([
-          searchOpenFoodFacts(productName, brand),
-          searchUSDA(productName, brand)
-        ]);
+        // Search multiple databases in parallel (skip if we have UPC result)
+        let openFoodFactsResult = null;
+        let usdaResult = null;
+        
+        if (!upcResult) {
+          [openFoodFactsResult, usdaResult] = await Promise.all([
+            searchOpenFoodFacts(productName, brand),
+            searchUSDA(productName, brand)
+          ]);
+        }
         
         // Build sources array for consensus voting
         const nutritionSources: NutritionSource[] = [];
         
-        // Add AI Label Reading as a source (highest priority when confident)
+        // UPC lookup is HIGHEST priority (exact match)
+        if (upcResult?.nutrition?.calories > 0) {
+          const servingGrams = upcResult.is_per_100g ? 100 : (upcResult.serving_size_grams || parseServingWeight(upcResult.serving_size));
+          nutritionSources.push({
+            name: 'UPC Lookup',
+            priority: 0, // Highest priority
+            nutrition: upcResult.nutrition,
+            servingGrams: servingGrams,
+            confidence: 0.99,
+            isExactMatch: true
+          });
+          console.log('✅ UPC source added (EXACT):', upcResult.nutrition.calories, 'cal per', servingGrams, 'g');
+        }
+        
+        // Add AI Label Reading as a source
         if (aiCalories > 0 && aiServingWeight) {
           nutritionSources.push({
             name: 'AI Label Reading',
@@ -700,7 +983,11 @@ Return ONLY valid JSON, no markdown formatting.`;
           let scaleFactor = 1;
           let finalServingSize = analysisResult.nutrition?.serving_size;
           
-          if (aiServingWeight && bestServingGrams && aiServingWeight !== bestServingGrams) {
+          // For UPC exact match with per-100g data, scale to detected serving size
+          if (consensus.bestSource.isExactMatch && upcResult?.is_per_100g && aiServingWeight) {
+            scaleFactor = aiServingWeight / 100;
+            console.log(`Scaling UPC per-100g data to ${aiServingWeight}g serving (factor: ${scaleFactor.toFixed(2)})`);
+          } else if (aiServingWeight && bestServingGrams && aiServingWeight !== bestServingGrams) {
             const sizeDiff = Math.abs(aiServingWeight - bestServingGrams) / Math.max(aiServingWeight, bestServingGrams);
             if (sizeDiff > 0.15) { // More than 15% difference - scale
               scaleFactor = aiServingWeight / bestServingGrams;
@@ -726,9 +1013,10 @@ Return ONLY valid JSON, no markdown formatting.`;
             serving_size: finalServingSize,
             serving_size_grams: finalServingGrams,
             servings_per_container: servingsPerContainer,
-            data_source: consensus.consensusReached ? 'multi_verified' : 
+            data_source: consensus.bestSource.isExactMatch ? 'upc_verified' : 
+                        consensus.consensusReached ? 'multi_verified' : 
                         consensus.bestSource.name === 'AI Label Reading' ? 'ai_extracted' : 'database_verified',
-            database_name: consensus.bestSource.name === 'AI Label Reading' ? null : consensus.bestSource.name,
+            database_name: consensus.bestSource.name,
             confidence_score: consensus.qualityScore / 100,
             quality_label: consensus.qualityLabel,
             matching_sources: consensus.matchingSources,
@@ -737,7 +1025,8 @@ Return ONLY valid JSON, no markdown formatting.`;
               name: s.name,
               calories: s.nutrition.calories || s.nutrition.per_serving?.calories,
               serving_grams: s.servingGrams,
-              confidence: s.confidence
+              confidence: s.confidence,
+              is_exact_match: s.isExactMatch || false
             })),
             per_serving: {
               calories: Math.round((bestNutrition.calories || bestNutrition.per_serving?.calories || 0) * scaleFactor),
@@ -750,9 +1039,10 @@ Return ONLY valid JSON, no markdown formatting.`;
             }
           };
           
-          // Use NOVA score from OpenFoodFacts if available
-          if (openFoodFactsResult?.nova_group && analysisResult.detailed_processing) {
-            analysisResult.detailed_processing.nova_score = openFoodFactsResult.nova_group;
+          // Use NOVA score from OpenFoodFacts/UPC if available
+          const novaSource = upcResult?.nova_group || openFoodFactsResult?.nova_group;
+          if (novaSource && analysisResult.detailed_processing) {
+            analysisResult.detailed_processing.nova_score = novaSource;
           }
           
           console.log('✅ Final nutrition applied from:', consensus.bestSource.name);
