@@ -10,11 +10,54 @@ import { CoachsChoiceAnalyzer } from "@/components/CoachsChoiceAnalyzer";
 import { MenuAnalyzer } from "@/components/MenuAnalyzer";
 import { RestaurantDiscovery } from "@/components/RestaurantDiscovery";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePageContext } from "@/hooks/usePageContext";
+
+// Tab descriptions for AI coach context
+const TAB_DESCRIPTIONS: Record<string, { name: string; description: string; defaultContent: string }> = {
+  analyzer: {
+    name: "Enhanced AI Food Analyzer",
+    description: "User can take photos of their meals to get AI-powered nutrition analysis with calorie, macro, and health grade calculations",
+    defaultContent: "Ready to analyze food photos for nutrition data"
+  },
+  product: {
+    name: "Universal Product Scanner",
+    description: "User can scan any food product, supplement, or medication to get detailed nutrition facts, ingredient analysis, and health scores",
+    defaultContent: "Ready to scan product barcodes or nutrition labels"
+  },
+  coach: {
+    name: "Coach's Choice Analyzer",
+    description: "AI-powered food selection assistant that helps users make healthier choices based on their goals",
+    defaultContent: "Ready to provide personalized food recommendations"
+  },
+  menu: {
+    name: "Restaurant Menu Analyzer",
+    description: "User can photograph restaurant menus to get nutrition estimates, health scores, and recommendations for each item",
+    defaultContent: "Ready to analyze restaurant menu photos"
+  },
+  builder: {
+    name: "AI Recipe Builder",
+    description: "User can input ingredients they have and get AI-generated healthy recipes with nutrition info",
+    defaultContent: "Ready to build recipes from available ingredients"
+  },
+  restaurants: {
+    name: "Restaurant Discovery",
+    description: "Shows popular meals and restaurants from the user's social network with health grades and nutrition data",
+    defaultContent: "Showing restaurant recommendations from user's network"
+  }
+};
 
 const FoodScanner = () => {
   const navigate = useNavigate();
   const [currentTab, setCurrentTab] = useState('analyzer');
+
+  // Register page context for AI coach awareness
+  const tabInfo = TAB_DESCRIPTIONS[currentTab] || TAB_DESCRIPTIONS.analyzer;
+  usePageContext({
+    pageName: `AI Food Hub - ${tabInfo.name}`,
+    pageDescription: tabInfo.description,
+    visibleContent: tabInfo.defaultContent
+  });
 
   return (
     <>

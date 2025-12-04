@@ -18,7 +18,8 @@ import {
   Mic,
   MicOff,
   Volume2,
-  Square
+  Square,
+  Sparkles
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -196,12 +197,27 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
     scrollToBottom();
   }, [messages]);
 
-  const quickActions = [
+  // Dynamic quick actions based on page context
+  const isFoodPage = pageContext?.route?.includes('food') || 
+                     pageContext?.pageName?.toLowerCase().includes('food') ||
+                     pageContext?.pageName?.toLowerCase().includes('menu') ||
+                     pageContext?.pageName?.toLowerCase().includes('product');
+  
+  const foodQuickActions = [
+    { icon: Sparkles, text: "Is this healthy?", message: "Is this healthy for me? Give me your analysis." },
+    { icon: Apple, text: "Alternatives", message: "What are healthier alternatives to this?" },
+    { icon: Heart, text: "Nutrition tips", message: "What should I know about the nutrition here?" },
+    { icon: Target, text: "Fits my goals?", message: "Does this fit my fitness goals?" }
+  ];
+
+  const defaultQuickActions = [
     { icon: Dumbbell, text: "Workout tips", message: "Give me some workout tips for today" },
     { icon: Apple, text: "Nutrition advice", message: "What should I eat for better performance?" },
     { icon: Heart, text: "Recovery tips", message: "How can I improve my recovery?" },
     { icon: Target, text: "Set goals", message: "Help me set realistic fitness goals" }
   ];
+
+  const quickActions = isFoodPage ? foodQuickActions : defaultQuickActions;
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -433,12 +449,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
 
             <div className="p-4 pt-0">
               <div className="grid grid-cols-2 gap-2">
-                {[ 
-                  { icon: Dumbbell, text: "Workout tips", message: "Give me workout tips" },
-                  { icon: Apple, text: "Nutrition advice", message: "What should I eat?" },
-                  { icon: Heart, text: "Recovery & support", message: "Recovery tips?" },
-                  { icon: Target, text: "Set goals", message: "Help set fitness goals" }
-                ].map((action, index) => (
+                {quickActions.map((action, index) => (
                   <Button
                     key={index}
                     variant="outline"

@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSavedMenuItems } from "@/hooks/useSavedMenuItems";
 import { AddToFoodLogModal } from "@/components/AddToFoodLogModal";
+import { useChatbotContext } from "@/contexts/ChatbotContext";
 
 interface MenuItem {
   name: string;
@@ -114,6 +115,8 @@ export const MenuAnalyzer = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  const { setPageContext } = useChatbotContext();
+  
   const { 
     savedItems, 
     loading: favoritesLoading,
@@ -122,6 +125,39 @@ export const MenuAnalyzer = () => {
     saveMenuItem, 
     deleteSavedMenuItem 
   } = useSavedMenuItems();
+  
+  // Register menu analysis with AI coach context
+  useEffect(() => {
+    if (analysisResult && analysisResult.menuItems?.length > 0) {
+      let visibleContent = `RESTAURANT MENU ANALYSIS:
+Restaurant: ${analysisResult.restaurantName || 'Unknown Restaurant'}
+Items Found: ${analysisResult.menuItems.length}
+
+MENU ITEMS:
+${analysisResult.menuItems.slice(0, 15).map(item => 
+  `- ${item.name}: ${item.calories || '?'} cal, ${item.macros?.protein || '?'}g protein, Health Score: ${item.healthScore || '?'}/100${item.price ? `, $${item.price}` : ''}`
+).join('\n')}`;
+
+      if (analysisResult.recommendations?.healthiest?.length) {
+        visibleContent += `\n\nHEALTHIEST OPTIONS:
+${analysisResult.recommendations.healthiest.map(item => `- ${item.name} (${item.calories} cal)`).join('\n')}`;
+      }
+      
+      if (analysisResult.insights?.length) {
+        visibleContent += `\n\nINSIGHTS: ${analysisResult.insights.join('; ')}`;
+      }
+      
+      if (activeFilter) {
+        visibleContent += `\n\nCURRENT FILTER: ${activeFilter.label}`;
+      }
+
+      setPageContext({
+        pageName: 'AI Food Hub - Menu Analysis',
+        pageDescription: `User analyzed a menu from ${analysisResult.restaurantName || 'a restaurant'} with ${analysisResult.menuItems.length} items`,
+        visibleContent
+      });
+    }
+  }, [analysisResult, activeFilter, setPageContext]);
 
   const handleImageCapture = async (file: File) => {
     try {
