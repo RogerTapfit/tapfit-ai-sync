@@ -115,7 +115,7 @@ export const MenuAnalyzer = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { setPageContext } = useChatbotContext();
+  const { setAnalysisContext } = useChatbotContext();
   
   const { 
     savedItems, 
@@ -126,7 +126,7 @@ export const MenuAnalyzer = () => {
     deleteSavedMenuItem 
   } = useSavedMenuItems();
   
-  // Register menu analysis with AI coach context
+  // Register menu analysis with AI coach context (uses analysisContext to avoid being overwritten)
   useEffect(() => {
     if (analysisResult && analysisResult.menuItems?.length > 0) {
       let visibleContent = `RESTAURANT MENU ANALYSIS:
@@ -151,13 +151,15 @@ ${analysisResult.recommendations.healthiest.map(item => `- ${item.name} (${item.
         visibleContent += `\n\nCURRENT FILTER: ${activeFilter.label}`;
       }
 
-      setPageContext({
-        pageName: 'AI Food Hub - Menu Analysis',
-        pageDescription: `User analyzed a menu from ${analysisResult.restaurantName || 'a restaurant'} with ${analysisResult.menuItems.length} items`,
+      setAnalysisContext({
+        type: 'menu',
+        timestamp: Date.now(),
         visibleContent
       });
+    } else {
+      setAnalysisContext(null);
     }
-  }, [analysisResult, activeFilter, setPageContext]);
+  }, [analysisResult, activeFilter, setAnalysisContext]);
 
   const handleImageCapture = async (file: File) => {
     try {

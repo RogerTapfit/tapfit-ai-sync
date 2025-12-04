@@ -328,9 +328,9 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     }
   }, [analysisResult?.nutrition?.servings_per_container]);
   
-  const { setPageContext } = useChatbotContext();
+  const { setAnalysisContext } = useChatbotContext();
   
-  // Register scanned product with AI coach context
+  // Register scanned product with AI coach context (uses analysisContext to avoid being overwritten)
   useEffect(() => {
     if (analysisResult) {
       const productType = analysisResult.product_type || 'food';
@@ -383,13 +383,17 @@ FOOD DYES DETECTED:
 ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_concerns?.join(', ') || 'None noted'}`).join('\n')}`;
       }
 
-      setPageContext({
-        pageName: 'Universal Product Analyzer',
-        pageDescription: `User just scanned a ${productType}: ${analysisResult.product.name}`,
+      // Use setAnalysisContext so FoodScanner page can't overwrite this
+      setAnalysisContext({
+        type: 'product',
+        timestamp: Date.now(),
         visibleContent
       });
+    } else {
+      // Clear analysis when product is cleared
+      setAnalysisContext(null);
     }
-  }, [analysisResult, setPageContext]);
+  }, [analysisResult, setAnalysisContext]);
 
   const ANALYSIS_STAGES = [
     { progress: 10, text: 'Uploading image...', duration: 1500 },
@@ -641,11 +645,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
     setShowDataSources(false);
     
     // Clear product context from chatbot
-    setPageContext({
-      pageName: 'Food Scanner',
-      pageDescription: 'Universal Product Analyzer - ready to scan',
-      visibleContent: undefined
-    });
+    setAnalysisContext(null);
   };
   
   // Manual UPC lookup handler

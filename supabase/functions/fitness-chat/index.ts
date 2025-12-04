@@ -612,6 +612,9 @@ serve(async (req) => {
     }
     
     // Build page context section if provided
+    // Debug logging for page context
+    console.log('[fitness-chat] Page context received:', JSON.stringify(pageContext, null, 2));
+    
     let pageContextSection = '';
     if (pageContext) {
       pageContextSection = `\n\n📍 CURRENT PAGE CONTEXT:

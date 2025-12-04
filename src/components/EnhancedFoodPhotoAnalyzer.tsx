@@ -51,9 +51,9 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [analysisStage, setAnalysisStage] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   
-  const { setPageContext } = useChatbotContext();
+  const { setAnalysisContext } = useChatbotContext();
   
-  // Register food analysis with AI coach context
+  // Register food analysis with AI coach context (uses analysisContext to avoid being overwritten)
   useEffect(() => {
     if (analysisResult && analysisResult.food_items?.length > 0) {
       const totalCalories = analysisResult.food_items.reduce((sum: number, item: FoodItem) => sum + (item.calories || 0), 0);
@@ -83,13 +83,15 @@ Health Grade: ${healthGrade}`;
         visibleContent += `\nRecommendations: ${analysisResult.health_analysis.recommendations.join(', ')}`;
       }
 
-      setPageContext({
-        pageName: 'AI Food Hub - Food Analysis Results',
-        pageDescription: `User analyzed a ${mealType || 'meal'} with ${analysisResult.food_items.length} food items`,
+      setAnalysisContext({
+        type: 'food',
+        timestamp: Date.now(),
         visibleContent
       });
+    } else {
+      setAnalysisContext(null);
     }
-  }, [analysisResult, mealType, setPageContext]);
+  }, [analysisResult, mealType, setAnalysisContext]);
 
   const ANALYSIS_STAGES = [
     { progress: 15, text: 'Processing photos...', duration: 1500 },
