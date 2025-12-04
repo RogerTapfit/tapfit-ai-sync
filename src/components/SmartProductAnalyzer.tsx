@@ -86,10 +86,14 @@ interface ProductAnalysis {
     name: string;
     brand?: string;
     size?: string;
+    net_weight?: string;
+    net_weight_grams?: number;
     confidence: number;
   };
   nutrition: {
     serving_size: string;
+    serving_size_grams?: number;
+    servings_per_container?: number;
     data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted';
     database_name?: string | null;
     confidence_score?: number;
@@ -264,9 +268,29 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
   
-  // Package size selector state
+  // Package size selector state - auto-populated from detected servings
   const [packageSize, setPackageSize] = useState<'single' | 'regular' | 'large' | 'custom'>('single');
   const [customServings, setCustomServings] = useState<number>(1);
+  
+  // Auto-set package size based on detected servings per container
+  useEffect(() => {
+    if (analysisResult?.nutrition?.servings_per_container) {
+      const servings = analysisResult.nutrition.servings_per_container;
+      if (servings <= 1.2) {
+        setPackageSize('single');
+        setCustomServings(1);
+      } else if (servings <= 2.5) {
+        setPackageSize('regular');
+        setCustomServings(Math.round(servings * 10) / 10);
+      } else if (servings <= 5) {
+        setPackageSize('large');
+        setCustomServings(Math.round(servings * 10) / 10);
+      } else {
+        setPackageSize('custom');
+        setCustomServings(Math.round(servings * 10) / 10);
+      }
+    }
+  }, [analysisResult?.nutrition?.servings_per_container]);
   
   const { setPageContext } = useChatbotContext();
   
@@ -1058,15 +1082,39 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     </motion.div>
                   </div>
 
-                  {/* Package Size Selector */}
+                  {/* Package Info & Size Selector */}
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                     className="mt-4 pt-4 border-t border-border"
                   >
+                    {/* Detected Package Net Weight */}
+                    {(analysisResult.product?.net_weight || analysisResult.nutrition?.servings_per_container) && (
+                      <div className="flex items-center gap-3 mb-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
+                        <span className="text-lg">📦</span>
+                        <div className="flex-1">
+                          {analysisResult.product?.net_weight && (
+                            <div className="text-sm font-medium text-foreground">
+                              Package: {analysisResult.product.net_weight}
+                              {analysisResult.product.net_weight_grams && (
+                                <span className="text-muted-foreground ml-1">
+                                  ({analysisResult.product.net_weight_grams}g)
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {analysisResult.nutrition?.servings_per_container && (
+                            <div className="text-xs text-muted-foreground">
+                              ~{analysisResult.nutrition.servings_per_container} servings per container
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-muted-foreground">📦 Package Size</span>
+                      <span className="text-sm font-medium text-muted-foreground">🔢 Servings to log</span>
                       <div className="flex gap-1">
                         {(['single', 'regular', 'large', 'custom'] as const).map((size) => (
                           <Button
@@ -1076,10 +1124,15 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                             className={`text-xs px-2 py-1 h-7 ${packageSize === size ? 'bg-primary text-primary-foreground' : ''}`}
                             onClick={() => {
                               setPackageSize(size);
-                              if (size !== 'custom') setCustomServings(size === 'single' ? 1 : size === 'regular' ? 2 : 4);
+                              if (size !== 'custom') {
+                                const detectedServings = analysisResult?.nutrition?.servings_per_container;
+                                if (size === 'single') setCustomServings(1);
+                                else if (size === 'regular') setCustomServings(detectedServings && detectedServings > 1 ? Math.min(detectedServings, 2) : 2);
+                                else if (size === 'large') setCustomServings(detectedServings || 4);
+                              }
                             }}
                           >
-                            {size === 'single' ? '1x' : size === 'regular' ? '2x' : size === 'large' ? '4x' : 'Custom'}
+                            {size === 'single' ? '1x' : size === 'regular' ? '2x' : size === 'large' ? 'All' : 'Custom'}
                           </Button>
                         ))}
                       </div>
@@ -1100,9 +1153,14 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       </div>
                     )}
 
-                    {/* Show total if more than 1 serving */}
+                    {/* Show whole package nutrition */}
                     {(() => {
-                      const multiplier = packageSize === 'single' ? 1 : packageSize === 'regular' ? 2 : packageSize === 'large' ? 4 : customServings;
+                      const detectedServings = analysisResult.nutrition?.servings_per_container;
+                      const multiplier = packageSize === 'single' ? 1 : 
+                                        packageSize === 'regular' ? (detectedServings && detectedServings > 1 ? Math.min(detectedServings, 2) : 2) : 
+                                        packageSize === 'large' ? (detectedServings || 4) : 
+                                        customServings;
+                      
                       if (multiplier > 1) {
                         const total = {
                           calories: Math.round(analysisResult.nutrition.per_serving.calories * multiplier),
@@ -1110,26 +1168,31 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                           carbs: Math.round(analysisResult.nutrition.per_serving.carbs_g * multiplier * 10) / 10,
                           fat: Math.round(analysisResult.nutrition.per_serving.fat_g * multiplier * 10) / 10,
                         };
+                        const totalGrams = analysisResult.nutrition.serving_size_grams 
+                          ? Math.round(analysisResult.nutrition.serving_size_grams * multiplier)
+                          : null;
+                        
                         return (
-                          <div className="p-3 bg-muted/50 rounded-lg border border-border">
-                            <div className="text-xs font-medium text-muted-foreground mb-2">
-                              📊 Total for {multiplier}x servings:
+                          <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                            <div className="text-xs font-medium text-foreground mb-2 flex items-center gap-1">
+                              📊 {packageSize === 'large' && detectedServings ? 'Whole Package' : `Total for ${multiplier.toFixed(1)} servings`}
+                              {totalGrams && <span className="text-muted-foreground">({totalGrams}g)</span>}
                             </div>
                             <div className="grid grid-cols-4 gap-2 text-center">
                               <div>
-                                <div className="font-bold text-stats-calories">{total.calories}</div>
-                                <div className="text-[10px] text-muted-foreground">cal</div>
+                                <div className="font-bold text-lg text-stats-calories">{total.calories}</div>
+                                <div className="text-[10px] text-muted-foreground">calories</div>
                               </div>
                               <div>
-                                <div className="font-bold text-stats-heart">{total.protein}g</div>
+                                <div className="font-bold text-lg text-stats-heart">{total.protein}g</div>
                                 <div className="text-[10px] text-muted-foreground">protein</div>
                               </div>
                               <div>
-                                <div className="font-bold text-stats-duration">{total.carbs}g</div>
+                                <div className="font-bold text-lg text-stats-duration">{total.carbs}g</div>
                                 <div className="text-[10px] text-muted-foreground">carbs</div>
                               </div>
                               <div>
-                                <div className="font-bold text-stats-exercises">{total.fat}g</div>
+                                <div className="font-bold text-lg text-stats-exercises">{total.fat}g</div>
                                 <div className="text-[10px] text-muted-foreground">fat</div>
                               </div>
                             </div>

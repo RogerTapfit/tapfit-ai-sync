@@ -189,6 +189,13 @@ This is crucial for database lookups.
 
 NOTE: Nutrition data may be overridden by verified database values. The data_source field will indicate the actual source used.
 
+⚠️ CRITICAL: PACKAGE NET WEIGHT EXTRACTION
+Look for NET WT, Net Weight, or total weight on the FRONT of the package:
+1. Find text like "NET WT 7 OZ (198g)", "12oz", "100g", "NET WT. 5.3 OZ"
+2. Convert to grams if in ounces: 1 oz = 28.35g
+3. Calculate servings_per_container: net_weight_grams / serving_size_grams
+4. This is DIFFERENT from serving size - NET WT is TOTAL package weight
+
 FOR ALL PRODUCTS - Return valid JSON with this structure:
 
 {
@@ -197,6 +204,8 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
     "name": "EXACT product name from packaging",
     "brand": "EXACT brand name from packaging",
     "size": "Package size",
+    "net_weight": "EXACT NET WT text from package front (e.g., '7 OZ (198g)', 'NET WT 12oz')",
+    "net_weight_grams": "CALCULATE: total package weight in grams",
     "confidence": 0.95
   },
   "alcohol_analysis": {
@@ -208,6 +217,8 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
   },
   "nutrition": {
     "serving_size": "READ_EXACT_TEXT_FROM_LABEL",
+    "serving_size_grams": "EXTRACT: just the gram weight from serving size",
+    "servings_per_container": "READ from label OR CALCULATE: net_weight_grams / serving_size_grams",
     "data_source": "ai_extracted",
     "database_name": null,
     "confidence_score": 0.85,
@@ -531,10 +542,22 @@ Return ONLY valid JSON, no markdown formatting.`;
             // Apply database nutrition (scaled if needed)
             const applyScale = (value: number) => Math.round(value * scaleFactor * 10) / 10;
             
+            // Calculate servings per container from net weight
+            const netWeightGrams = analysisResult.product?.net_weight_grams || null;
+            const servingSizeGrams = aiServingWeight || dbServingWeight;
+            let calculatedServingsPerContainer = analysisResult.nutrition?.servings_per_container || null;
+            
+            if (netWeightGrams && servingSizeGrams && !calculatedServingsPerContainer) {
+              calculatedServingsPerContainer = Math.round((netWeightGrams / servingSizeGrams) * 10) / 10;
+              console.log(`Calculated servings per container: ${netWeightGrams}g / ${servingSizeGrams}g = ${calculatedServingsPerContainer}`);
+            }
+            
             analysisResult.nutrition = {
               ...analysisResult.nutrition,
               // Keep AI serving size if it's more accurate for this product
               serving_size: aiServingWeight ? analysisResult.nutrition?.serving_size : (databaseResult.serving_size || analysisResult.nutrition?.serving_size),
+              serving_size_grams: servingSizeGrams,
+              servings_per_container: calculatedServingsPerContainer,
               data_source: shouldScaleDatabase ? 'database_scaled' : 'database_verified',
               database_name: databaseResult.source === 'openfoodfacts' ? 'OpenFoodFacts' : 'USDA FoodData Central',
               confidence_score: shouldScaleDatabase ? 0.90 : 0.99,
