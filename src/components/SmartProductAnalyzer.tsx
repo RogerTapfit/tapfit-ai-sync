@@ -84,6 +84,9 @@ interface ProductAnalysis {
   product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin';
   barcode?: string | null;
   barcode_type?: string | null;
+  nutrition_label_visible?: boolean;
+  side_detected?: string;
+  needs_nutrition_scan?: boolean;
   product: {
     name: string;
     brand?: string;
@@ -96,11 +99,11 @@ interface ProductAnalysis {
     serving_size: string;
     serving_size_grams?: number;
     servings_per_container?: number;
-    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted' | 'multi_verified' | 'upc_verified' | 'user_verified';
+    data_source?: 'label_extracted' | 'estimated' | 'partial_label' | 'database_verified' | 'database_scaled' | 'ai_extracted' | 'multi_verified' | 'upc_verified' | 'user_verified' | 'incomplete';
     database_name?: string | null;
     confidence_score?: number;
     original_database_serving?: string;
-    quality_label?: 'verified' | 'likely_accurate' | 'estimated';
+    quality_label?: 'verified' | 'likely_accurate' | 'estimated' | 'incomplete';
     matching_sources?: string[];
     consensus_reached?: boolean;
     all_sources?: Array<{
@@ -1050,8 +1053,66 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   )}
                 </div>
 
+                {/* Scan Nutrition Label Prompt - shown when label not visible */}
+                {analysisResult.needs_nutrition_scan && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 border-2 border-amber-500/50 rounded-2xl p-5 shadow-lg"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-amber-500/20 border border-amber-500/30">
+                        <Camera className="h-6 w-6 text-amber-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-amber-600 mb-1 flex items-center gap-2">
+                          📋 Nutrition Label Not Visible
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          You scanned the {analysisResult.side_detected || 'front'} of the package. 
+                          To get exact nutrition facts, please scan the <strong>back</strong> where the Nutrition Facts label is located.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handlePhotoCapture('camera')}
+                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                            size="sm"
+                          >
+                            <Camera className="h-4 w-4 mr-2" />
+                            Scan Nutrition Label
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-amber-500/50 hover:bg-amber-500/10"
+                            onClick={() => {
+                              setEditedNutrition({
+                                calories: analysisResult.nutrition.per_serving.calories || 0,
+                                protein_g: analysisResult.nutrition.per_serving.protein_g || 0,
+                                carbs_g: analysisResult.nutrition.per_serving.carbs_g || 0,
+                                fat_g: analysisResult.nutrition.per_serving.fat_g || 0,
+                                fiber_g: analysisResult.nutrition.per_serving.fiber_g || 0,
+                                sugars_g: analysisResult.nutrition.per_serving.sugars_g || 0,
+                                sodium_mg: analysisResult.nutrition.per_serving.sodium_mg || 0,
+                                serving_size: analysisResult.nutrition.serving_size || ''
+                              });
+                              setIsEditingNutrition(true);
+                            }}
+                          >
+                            ✏️ Enter Manually
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Nutrition Facts */}
-                <div className="bg-gradient-to-r from-background via-stats-exercises/5 to-background rounded-2xl border-2 border-stats-exercises/30 p-6 shadow-xl">
+                <div className={`bg-gradient-to-r from-background via-stats-exercises/5 to-background rounded-2xl border-2 p-6 shadow-xl ${
+                  analysisResult.nutrition.quality_label === 'estimated' || analysisResult.needs_nutrition_scan
+                    ? 'border-amber-500/50'
+                    : 'border-stats-exercises/30'
+                }`}>
                   <motion.h4 
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -1065,10 +1126,15 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     </div>
                     {/* Quality Badge with Multi-Source Verification */}
                     <div className="flex items-center gap-2">
+                      {/* Make Edit button more prominent when data quality is low */}
                       <Button
-                        variant="ghost"
+                        variant={analysisResult.nutrition.quality_label === 'estimated' || analysisResult.needs_nutrition_scan ? 'default' : 'ghost'}
                         size="sm"
-                        className="h-6 px-2 text-xs"
+                        className={`h-6 px-2 text-xs ${
+                          analysisResult.nutrition.quality_label === 'estimated' || analysisResult.needs_nutrition_scan
+                            ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
+                            : ''
+                        }`}
                         onClick={() => {
                           setEditedNutrition({
                             calories: analysisResult.nutrition.per_serving.calories,
@@ -1083,7 +1149,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                           setIsEditingNutrition(true);
                         }}
                       >
-                        ✏️ Edit
+                        {analysisResult.nutrition.quality_label === 'estimated' || analysisResult.needs_nutrition_scan 
+                          ? '⚠️ Verify Values' 
+                          : '✏️ Edit'}
                       </Button>
                     {(() => {
                       const dataSource = analysisResult.nutrition.data_source;
