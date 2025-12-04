@@ -297,6 +297,14 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     serving_size: ''
   });
   
+  // Manual UPC entry state
+  const [showManualUPC, setShowManualUPC] = useState(false);
+  const [manualUPCInput, setManualUPCInput] = useState('');
+  const [isLookingUpUPC, setIsLookingUpUPC] = useState(false);
+  
+  // Data sources visibility
+  const [showDataSources, setShowDataSources] = useState(false);
+  
   // Auto-set package size based on detected servings per container
   useEffect(() => {
     if (analysisResult?.nutrition?.servings_per_container) {
@@ -625,6 +633,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
     setExpandedChemicalSection(null);
     setSafetyData(null);
     setIsCheckingSafety(false);
+    setShowManualUPC(false);
+    setManualUPCInput('');
+    setShowDataSources(false);
     
     // Clear product context from chatbot
     setPageContext({
@@ -632,6 +643,40 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
       pageDescription: 'Universal Product Analyzer - ready to scan',
       visibleContent: undefined
     });
+  };
+  
+  // Manual UPC lookup handler
+  const handleManualUPCLookup = async () => {
+    const cleanUPC = manualUPCInput.replace(/[^0-9]/g, '');
+    if (cleanUPC.length < 8 || cleanUPC.length > 14) {
+      toast.error('Please enter a valid UPC (8-14 digits)');
+      return;
+    }
+    
+    setIsLookingUpUPC(true);
+    try {
+      // Re-analyze with manual barcode
+      if (selectedImage && analysisResult) {
+        // Update the analysis result with the manual barcode and trigger re-lookup
+        toast.info('Looking up UPC: ' + cleanUPC);
+        
+        // Call the analyze function with the image again, but this time we'll need to 
+        // manually trigger a re-lookup. For now, just update the barcode field.
+        setAnalysisResult({
+          ...analysisResult,
+          barcode: cleanUPC,
+          barcode_type: cleanUPC.length === 12 ? 'UPC-A' : cleanUPC.length === 13 ? 'EAN-13' : 'unknown'
+        });
+        
+        toast.success('UPC added. Re-scan for database lookup.');
+        setShowManualUPC(false);
+      }
+    } catch (error) {
+      console.error('Manual UPC lookup error:', error);
+      toast.error('Failed to lookup UPC');
+    } finally {
+      setIsLookingUpUPC(false);
+    }
   };
 
   const handleOpenFoodLogModal = () => {
@@ -1266,6 +1311,125 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       </div>
                     </motion.div>
                   )}
+                  
+                  {/* Manual UPC Entry - shown when barcode not detected */}
+                  {!analysisResult.barcode && !showManualUPC && (
+                    <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-amber-600">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Barcode not detected</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 border-amber-500/50 hover:bg-amber-500/10"
+                          onClick={() => setShowManualUPC(true)}
+                        >
+                          Enter UPC Manually
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {showManualUPC && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mb-4 p-4 bg-primary/5 border border-primary/20 rounded-xl"
+                    >
+                      <div className="text-sm font-medium mb-3">📱 Enter UPC/Barcode Manually</div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Enter 8-14 digit UPC..."
+                          value={manualUPCInput}
+                          onChange={(e) => setManualUPCInput(e.target.value.replace(/[^0-9]/g, ''))}
+                          className="flex-1 h-9 px-3 text-sm border border-border rounded-md bg-background"
+                          maxLength={14}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={handleManualUPCLookup}
+                          disabled={isLookingUpUPC || manualUPCInput.length < 8}
+                        >
+                          {isLookingUpUPC ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Lookup'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setShowManualUPC(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Look for the barcode on the product package. The UPC is the numbers below the bars.
+                      </p>
+                    </motion.div>
+                  )}
+                  
+                  {/* Data Sources Transparency */}
+                  {analysisResult.nutrition?.all_sources && analysisResult.nutrition.all_sources.length > 0 && (
+                    <Collapsible open={showDataSources} onOpenChange={setShowDataSources}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mb-3 text-xs h-7 text-muted-foreground hover:text-foreground"
+                        >
+                          {showDataSources ? <ChevronDown className="h-3 w-3 mr-1" /> : <ChevronRight className="h-3 w-3 mr-1" />}
+                          View all data sources ({analysisResult.nutrition.all_sources.length})
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border text-xs space-y-2">
+                          <div className="font-medium text-foreground mb-2">📊 Nutrition Data Sources</div>
+                          {analysisResult.nutrition.all_sources.map((source, idx) => (
+                            <div 
+                              key={idx}
+                              className={`flex items-center justify-between p-2 rounded ${
+                                source.name === analysisResult.nutrition.database_name 
+                                  ? 'bg-stats-exercises/10 border border-stats-exercises/30'
+                                  : 'bg-background/50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {source.is_exact_match ? (
+                                  <CheckCircle className="h-3 w-3 text-stats-exercises" />
+                                ) : source.confidence >= 0.9 ? (
+                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <Info className="h-3 w-3 text-muted-foreground" />
+                                )}
+                                <span className={source.name === analysisResult.nutrition.database_name ? 'font-medium' : ''}>
+                                  {source.name}
+                                </span>
+                                {source.is_exact_match && (
+                                  <Badge className="h-4 text-[10px] bg-stats-exercises/20 text-stats-exercises border-0">
+                                    Exact Match
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-muted-foreground">
+                                <span>{source.calories} cal</span>
+                                <span>per {source.serving_grams}g</span>
+                                {source.name === analysisResult.nutrition.database_name && (
+                                  <span className="text-stats-exercises">✓ Used</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {analysisResult.nutrition.consensus_reached && (
+                            <div className="mt-2 pt-2 border-t border-border text-muted-foreground">
+                              ✅ Multiple sources agree on nutrition values
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                  
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
