@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Camera, Upload, Loader2, X, Zap, Star, AlertTriangle,
   CheckCircle, Info, Sparkles, Shield, Utensils, Settings,
-  Beaker, Atom, Droplet, Factory, ChevronDown, ChevronRight
+  Beaker, Atom, Droplet, Factory, ChevronDown, ChevronRight, Pill, Clock, Leaf
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
@@ -16,8 +16,71 @@ import { supabase } from '@/integrations/supabase/client';
 import { FoodItem } from '@/hooks/useNutrition';
 import { AddToFoodLogModal } from './AddToFoodLogModal';
 import { processImageFile } from '../utils/heicConverter';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+interface SupplementAnalysis {
+  dosage_form?: string;
+  serving_size?: string;
+  servings_per_container?: number;
+  quality_rating?: {
+    grade: string;
+    score: number;
+    reasoning: string;
+  };
+  certifications?: Array<{
+    name: string;
+    verified: boolean;
+    description?: string;
+  }>;
+  active_ingredients?: Array<{
+    name: string;
+    form?: string;
+    amount?: string;
+    unit?: string;
+    daily_value?: string;
+    bioavailability?: string;
+    bioavailability_notes?: string;
+    source?: string;
+    benefits?: string[];
+  }>;
+  inactive_ingredients?: Array<{
+    name: string;
+    category?: string;
+    concern?: string;
+    notes?: string;
+  }>;
+  allergen_warnings?: string[];
+  safety_info?: {
+    max_safe_dose?: string;
+    overdose_risk?: string;
+    overdose_symptoms?: string[];
+    fat_soluble?: boolean;
+    accumulation_risk?: string;
+    pregnancy_category?: string;
+    age_restrictions?: string;
+  };
+  drug_interactions?: Array<{
+    medication: string;
+    severity?: string;
+    effect?: string;
+  }>;
+  recommendations?: {
+    best_time_to_take?: string;
+    take_with_food?: boolean;
+    food_pairings?: string;
+    avoid_with?: string;
+    storage_tips?: string;
+  };
+  overall_assessment?: {
+    pros?: string[];
+    cons?: string[];
+    verdict?: string;
+    alternative_suggestions?: string[];
+  };
+}
 
 interface ProductAnalysis {
+  product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin';
   product: {
     name: string;
     brand?: string;
@@ -150,6 +213,7 @@ interface ProductAnalysis {
     endocrine_disruption_risk?: string;
   };
   ingredients_analysis?: string;
+  supplement_analysis?: SupplementAnalysis;
 }
 
 interface SafetyData {
@@ -508,9 +572,15 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                   }}
                   className="animate-food-glow"
                 >
-                  <Sparkles className="h-7 w-7 text-primary drop-shadow-lg" />
+                  {analysisResult?.product_type === 'supplement' || analysisResult?.product_type === 'medication' || analysisResult?.product_type === 'vitamin' ? (
+                    <Pill className="h-7 w-7 text-primary drop-shadow-lg" />
+                  ) : analysisResult?.product_type === 'beverage' ? (
+                    <Droplet className="h-7 w-7 text-primary drop-shadow-lg" />
+                  ) : (
+                    <Sparkles className="h-7 w-7 text-primary drop-shadow-lg" />
+                  )}
                 </motion.div>
-                Smart Product Analyzer
+                Universal Product Analyzer
               </CardTitle>
               {!embedded && (
                 <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-primary/20 hover:text-primary">
@@ -519,7 +589,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
               )}
             </div>
             <p className="text-muted-foreground text-sm font-medium">
-              ✨ AI-powered health analysis using advanced computer vision
+              ✨ AI-powered analysis for food, beverages, vitamins & medications
             </p>
           </CardHeader>
           
@@ -559,10 +629,10 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                     >
                       <Info className="h-5 w-5 text-stats-exercises" />
                     </motion.div>
-                    <span className="font-medium text-foreground">Capture any product for comprehensive health analysis</span>
+                    <span className="font-medium text-foreground">Scan ANY product for comprehensive analysis</span>
                   </div>
                   <p className="text-xs bg-background/50 p-2 rounded-lg">
-                    🍎 Works with packaged foods, beverages, supplements, and fresh produce. Use JPG, PNG, or WEBP formats.
+                    🍎 Food & beverages • 💊 Vitamins & supplements • 💉 Medications
                   </p>
                 </div>
               </div>
@@ -880,7 +950,362 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
                   })()}
                 </div>
 
-                {/* Processing Deep Dive */}
+                {/* Supplement Analysis Section - Only shows for supplements/vitamins/medications */}
+                {analysisResult.supplement_analysis && (analysisResult.product_type === 'supplement' || analysisResult.product_type === 'medication' || analysisResult.product_type === 'vitamin') && (
+                  <>
+                    {/* Quality Rating */}
+                    {analysisResult.supplement_analysis.quality_rating && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-purple-500/20 via-purple-500/10 to-background rounded-2xl p-6 border-2 border-purple-500/30 shadow-xl"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-bold text-lg flex items-center gap-2 text-purple-600">
+                            <Star className="h-5 w-5 animate-pulse" />
+                            💊 Supplement Quality Rating
+                          </h4>
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl text-2xl font-bold border-4 shadow-lg ${getGradeColor(analysisResult.supplement_analysis.quality_rating.grade)}`}
+                          >
+                            {analysisResult.supplement_analysis.quality_rating.grade}
+                          </motion.div>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-muted-foreground">Score:</span>
+                            <Progress value={analysisResult.supplement_analysis.quality_rating.score} className="flex-1" />
+                            <span className="font-bold text-purple-600">{analysisResult.supplement_analysis.quality_rating.score}/100</span>
+                          </div>
+                          <p className="text-sm bg-purple-500/10 p-3 rounded-lg border-l-4 border-purple-500">
+                            {analysisResult.supplement_analysis.quality_rating.reasoning}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Certifications */}
+                    {analysisResult.supplement_analysis.certifications && analysisResult.supplement_analysis.certifications.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-2xl p-6 border-2 border-green-500/30"
+                      >
+                        <h4 className="font-bold mb-4 text-lg flex items-center gap-2 text-green-600">
+                          <Shield className="h-5 w-5" />
+                          🛡️ Quality Certifications
+                        </h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {analysisResult.supplement_analysis.certifications.map((cert, index) => (
+                            <div key={index} className={`p-3 rounded-lg border ${cert.verified ? 'bg-green-500/20 border-green-500/50' : 'bg-muted/20 border-muted'}`}>
+                              <div className="flex items-center gap-2">
+                                {cert.verified ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <X className="h-4 w-4 text-muted-foreground" />
+                                )}
+                                <span className={`text-sm font-medium ${cert.verified ? 'text-green-700' : 'text-muted-foreground'}`}>
+                                  {cert.name}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Active Ingredients */}
+                    {analysisResult.supplement_analysis.active_ingredients && analysisResult.supplement_analysis.active_ingredients.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl p-6 border-2 border-blue-500/30"
+                      >
+                        <h4 className="font-bold mb-4 text-lg flex items-center gap-2 text-blue-600">
+                          <Beaker className="h-5 w-5" />
+                          📊 Active Ingredients
+                        </h4>
+                        <div className="space-y-4">
+                          {analysisResult.supplement_analysis.active_ingredients.map((ingredient, index) => (
+                            <div key={index} className="bg-background/50 rounded-xl p-4 border border-blue-500/20">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h5 className="font-bold text-foreground">{ingredient.name}</h5>
+                                  {ingredient.form && <p className="text-sm text-blue-600">{ingredient.form}</p>}
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-bold text-lg text-blue-600">{ingredient.amount} {ingredient.unit}</span>
+                                  {ingredient.daily_value && (
+                                    <p className="text-xs text-muted-foreground">{ingredient.daily_value} DV</p>
+                                  )}
+                                </div>
+                              </div>
+                              {ingredient.bioavailability && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <span className="text-xs text-muted-foreground">Bioavailability:</span>
+                                  <Badge className={`text-xs ${
+                                    ingredient.bioavailability === 'very_high' ? 'bg-green-500 text-white' :
+                                    ingredient.bioavailability === 'high' ? 'bg-green-400 text-white' :
+                                    ingredient.bioavailability === 'medium' ? 'bg-yellow-500 text-white' :
+                                    'bg-red-400 text-white'
+                                  }`}>
+                                    {ingredient.bioavailability.replace('_', ' ')}
+                                  </Badge>
+                                </div>
+                              )}
+                              {ingredient.bioavailability_notes && (
+                                <p className="text-xs text-muted-foreground mt-2 italic">{ingredient.bioavailability_notes}</p>
+                              )}
+                              {ingredient.benefits && ingredient.benefits.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {ingredient.benefits.map((benefit, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30">
+                                      {benefit}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Inactive Ingredients */}
+                    {analysisResult.supplement_analysis.inactive_ingredients && analysisResult.supplement_analysis.inactive_ingredients.length > 0 && (
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-r from-gray-500/10 to-slate-500/10 rounded-2xl p-6 border-2 border-gray-500/30 cursor-pointer hover:bg-gray-500/15 transition-all"
+                          >
+                            <h4 className="font-bold text-lg flex items-center gap-2 text-gray-600">
+                              <Atom className="h-5 w-5" />
+                              🧪 Inactive Ingredients ({analysisResult.supplement_analysis.inactive_ingredients.length})
+                              <ChevronDown className="h-4 w-4 ml-auto" />
+                            </h4>
+                          </motion.div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-2 p-4 bg-muted/20 rounded-xl">
+                            {analysisResult.supplement_analysis.inactive_ingredients.map((ingredient, index) => (
+                              <div key={index} className={`flex items-center justify-between p-3 rounded-lg border ${
+                                ingredient.concern === 'high' ? 'bg-red-500/10 border-red-500/30' :
+                                ingredient.concern === 'medium' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                                'bg-background/50 border-border'
+                              }`}>
+                                <div>
+                                  <span className="font-medium">{ingredient.name}</span>
+                                  {ingredient.category && (
+                                    <span className="text-xs text-muted-foreground ml-2">({ingredient.category})</span>
+                                  )}
+                                </div>
+                                {ingredient.concern && ingredient.concern !== 'none' && (
+                                  <Badge className={`text-xs ${
+                                    ingredient.concern === 'high' ? 'bg-red-500 text-white' :
+                                    ingredient.concern === 'medium' ? 'bg-yellow-500 text-white' :
+                                    'bg-green-500 text-white'
+                                  }`}>
+                                    {ingredient.concern} concern
+                                  </Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+
+                    {/* Drug Interactions */}
+                    {analysisResult.supplement_analysis.drug_interactions && analysisResult.supplement_analysis.drug_interactions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 rounded-2xl p-6 border-2 border-amber-500/40"
+                      >
+                        <h4 className="font-bold mb-4 text-lg flex items-center gap-2 text-amber-600">
+                          <AlertTriangle className="h-5 w-5" />
+                          ⚠️ Drug Interactions
+                        </h4>
+                        <div className="space-y-3">
+                          {analysisResult.supplement_analysis.drug_interactions.map((interaction, index) => (
+                            <div key={index} className={`p-4 rounded-lg border ${
+                              interaction.severity === 'severe' ? 'bg-red-500/20 border-red-500/50' :
+                              interaction.severity === 'moderate' ? 'bg-orange-500/20 border-orange-500/50' :
+                              'bg-yellow-500/20 border-yellow-500/50'
+                            }`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold">{interaction.medication}</span>
+                                <Badge className={`${
+                                  interaction.severity === 'severe' ? 'bg-red-500 text-white' :
+                                  interaction.severity === 'moderate' ? 'bg-orange-500 text-white' :
+                                  'bg-yellow-500 text-white'
+                                }`}>
+                                  {interaction.severity}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-foreground">{interaction.effect}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Safety Information */}
+                    {analysisResult.supplement_analysis.safety_info && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-red-500/10 to-pink-500/10 rounded-2xl p-6 border-2 border-red-500/30"
+                      >
+                        <h4 className="font-bold mb-4 text-lg flex items-center gap-2 text-red-600">
+                          <Shield className="h-5 w-5" />
+                          📋 Safety Information
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {analysisResult.supplement_analysis.safety_info.max_safe_dose && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-red-500/20">
+                              <span className="text-xs text-muted-foreground">Max Safe Dose</span>
+                              <p className="font-bold text-foreground">{analysisResult.supplement_analysis.safety_info.max_safe_dose}</p>
+                            </div>
+                          )}
+                          {analysisResult.supplement_analysis.safety_info.overdose_risk && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-red-500/20">
+                              <span className="text-xs text-muted-foreground">Overdose Risk</span>
+                              <Badge className={`ml-2 ${
+                                analysisResult.supplement_analysis.safety_info.overdose_risk === 'high' ? 'bg-red-500 text-white' :
+                                analysisResult.supplement_analysis.safety_info.overdose_risk === 'medium' ? 'bg-orange-500 text-white' :
+                                'bg-green-500 text-white'
+                              }`}>
+                                {analysisResult.supplement_analysis.safety_info.overdose_risk}
+                              </Badge>
+                            </div>
+                          )}
+                          {analysisResult.supplement_analysis.safety_info.pregnancy_category && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-red-500/20">
+                              <span className="text-xs text-muted-foreground">Pregnancy</span>
+                              <p className="font-bold text-foreground">{analysisResult.supplement_analysis.safety_info.pregnancy_category}</p>
+                            </div>
+                          )}
+                          {analysisResult.supplement_analysis.safety_info.fat_soluble && (
+                            <div className="p-3 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+                              <span className="text-xs text-yellow-700">⚠️ Fat-Soluble Vitamin</span>
+                              <p className="text-sm text-yellow-800">Can accumulate in body - monitor intake</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Recommendations */}
+                    {analysisResult.supplement_analysis.recommendations && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-teal-500/10 to-cyan-500/10 rounded-2xl p-6 border-2 border-teal-500/30"
+                      >
+                        <h4 className="font-bold mb-4 text-lg flex items-center gap-2 text-teal-600">
+                          <Clock className="h-5 w-5" />
+                          💡 How to Take
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {analysisResult.supplement_analysis.recommendations.best_time_to_take && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-teal-500/20">
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> Best Time
+                              </span>
+                              <p className="font-medium text-foreground">{analysisResult.supplement_analysis.recommendations.best_time_to_take}</p>
+                            </div>
+                          )}
+                          {analysisResult.supplement_analysis.recommendations.take_with_food !== undefined && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-teal-500/20">
+                              <span className="text-xs text-muted-foreground">With Food?</span>
+                              <p className="font-medium text-foreground">
+                                {analysisResult.supplement_analysis.recommendations.take_with_food ? '✅ Yes, take with food' : '💊 Can take on empty stomach'}
+                              </p>
+                            </div>
+                          )}
+                          {analysisResult.supplement_analysis.recommendations.food_pairings && (
+                            <div className="p-3 bg-background/50 rounded-lg border border-teal-500/20 col-span-full">
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Leaf className="h-3 w-3" /> Best Paired With
+                              </span>
+                              <p className="font-medium text-foreground">{analysisResult.supplement_analysis.recommendations.food_pairings}</p>
+                            </div>
+                          )}
+                          {analysisResult.supplement_analysis.recommendations.avoid_with && (
+                            <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20 col-span-full">
+                              <span className="text-xs text-red-600">⚠️ Avoid With</span>
+                              <p className="font-medium text-foreground">{analysisResult.supplement_analysis.recommendations.avoid_with}</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Overall Assessment */}
+                    {analysisResult.supplement_analysis.overall_assessment && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                      >
+                        {analysisResult.supplement_analysis.overall_assessment.pros && analysisResult.supplement_analysis.overall_assessment.pros.length > 0 && (
+                          <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/10 rounded-xl p-5 border-2 border-green-500/40">
+                            <h4 className="font-bold text-green-600 mb-3 flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5" />
+                              ✅ Pros
+                            </h4>
+                            <ul className="space-y-2">
+                              {analysisResult.supplement_analysis.overall_assessment.pros.map((pro, index) => (
+                                <li key={index} className="flex items-start gap-2 text-sm bg-green-500/10 p-2 rounded-lg">
+                                  <span className="text-green-600 mt-0.5">✓</span>
+                                  <span>{pro}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {analysisResult.supplement_analysis.overall_assessment.cons && analysisResult.supplement_analysis.overall_assessment.cons.length > 0 && (
+                          <div className="bg-gradient-to-br from-red-500/20 to-orange-500/10 rounded-xl p-5 border-2 border-red-500/40">
+                            <h4 className="font-bold text-red-600 mb-3 flex items-center gap-2">
+                              <AlertTriangle className="h-5 w-5" />
+                              ⚠️ Cons
+                            </h4>
+                            <ul className="space-y-2">
+                              {analysisResult.supplement_analysis.overall_assessment.cons.map((con, index) => (
+                                <li key={index} className="flex items-start gap-2 text-sm bg-red-500/10 p-2 rounded-lg">
+                                  <span className="text-red-600 mt-0.5">⚠</span>
+                                  <span>{con}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+
+                    {/* Verdict */}
+                    {analysisResult.supplement_analysis.overall_assessment?.verdict && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-6 border-2 border-primary/30"
+                      >
+                        <h4 className="font-bold mb-2 text-lg flex items-center gap-2 text-primary">
+                          <Star className="h-5 w-5" />
+                          🎯 Verdict
+                        </h4>
+                        <p className="text-foreground font-medium">{analysisResult.supplement_analysis.overall_assessment.verdict}</p>
+                      </motion.div>
+                    )}
+                  </>
+                )}
+
+                {/* Processing Deep Dive - Only show for food/beverage */}
                 {analysisResult.detailed_processing && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}

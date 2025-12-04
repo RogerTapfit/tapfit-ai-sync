@@ -74,6 +74,3 @@ verify_jwt = true
 
 [functions.fitness-chat]
 verify_jwt = false
-
-[functions.analyzeSupplement]
-verify_jwt = false

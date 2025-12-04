@@ -1,15 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,81 +17,43 @@ serve(async (req) => {
     if (!imageBase64) {
       return new Response(
         JSON.stringify({ error: 'Image is required' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Frontend handles HEIC conversion, so we can process the image directly
-    const processedImageBase64 = imageBase64;
-    console.log('Processing image for analysis...');
-
-    if (!openAIApiKey) {
-      console.error('OpenAI API key not found');
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not found');
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a food scientist analyzing products. Focus on accurate identification and essential health information.
+    console.log('Processing image for universal product analysis...');
 
-CRITICAL ALCOHOL DETECTION (TOP PRIORITY):
-- Examine image for alcohol indicators: ABV%, ALC/VOL%, PROOF, alcohol percentages
-- Look for alcoholic beverage categories: BEER, WINE, SPIRITS, HARD SELTZER, MALT BEVERAGE, CIDER
-- Read all visible text for alcohol terms and percentage values
-- Identify alcoholic brands (White Claw, Truly, Corona, etc.)
-- Extract exact alcohol percentage if visible (e.g., "8% ALC/VOL")
+    const systemPrompt = `You are an expert product analyst combining food science, pharmacology, and nutritional expertise. Analyze ANY product - food, beverages, supplements, vitamins, or medications.
 
-PRODUCT ANALYSIS REQUIREMENTS:
-- Identify product name, brand, size with confidence score
-- Extract nutrition facts from labels when visible
-- Assign health grade (A-F) based on nutritional quality and processing
-- Detect concerning additives: artificial dyes, high fructose corn syrup, preservatives
-- Classify processing level (NOVA score 1-4)
-- Note major allergens and safety concerns
+FIRST: Detect the product type from the image:
+- "food" = edible food items
+- "beverage" = drinks (including alcoholic)
+- "supplement" = vitamins, minerals, herbal supplements
+- "medication" = prescription/OTC drugs, medicines
 
-STRICT GRADING PHILOSOPHY (MATCH FOOD ANALYZER):
-Grade based on whole food quality and minimal processing. Be tough on processed foods.
-- A = Whole foods, minimal processing, nutrient-dense (fresh produce, nuts, eggs, plain yogurt)
-- B = Lightly processed with clean ingredients (minimally processed proteins, whole grain products)
-- C = Moderately processed OR high sugar/sodium/fat (flavored yogurts, granola bars with added sugar)
-- D = Ultra-processed, artificial ingredients, or concerning additives (diet sodas, chips, candy, processed meats)
-- F = Severe safety concerns, harmful additives, or extreme processing
+CRITICAL DETECTION RULES:
+- Look for "Supplement Facts" label → supplement/vitamin
+- Look for "Drug Facts" label → medication
+- Look for "Nutrition Facts" label → food/beverage
+- Look for pill bottles, capsules, tablets → supplement or medication
+- Look for vitamin names (D3, B12, C, etc.) → supplement
 
-SPECIFIC GRADING RULES:
-- Zero-calorie/sugar-free sodas/drinks: Grade D (ultra-processed with artificial sweeteners, not "healthy" just low-impact)
-- Diet beverages with artificial sweeteners: Grade D (concerns about artificial ingredients despite low calories)
-- Protein bars with clean ingredients: Grade B-C depending on processing level
-- Whole fruits/vegetables: Grade A
-- Processed/cured meats: Grade D-F (nitrates, high sodium, processing concerns)
-- Natural plain yogurt: Grade A-B
-- Sweetened/flavored yogurt: Grade C-D depending on sugar content
-- Energy drinks: Grade D-F (high caffeine, artificial ingredients)
-- Fresh meat/fish: Grade A-B
-- Packaged snacks (chips, cookies): Grade D (ultra-processed)
+FOR ALL PRODUCTS - Return valid JSON with this structure:
 
-RESPONSE FORMAT: Return valid JSON only, no markdown formatting.
 {
+  "product_type": "food|beverage|supplement|medication",
   "product": {
     "name": "Product name",
-    "brand": "Brand name", 
+    "brand": "Brand name",
     "size": "Package size",
     "confidence": 0.95
   },
@@ -130,8 +89,8 @@ RESPONSE FORMAT: Return valid JSON only, no markdown formatting.
   "detailed_processing": {
     "nova_score": 3,
     "classification": "Processed",
-    "processing_methods": ["heating", "preservation"],
-    "why_processed": "Contains processed ingredients",
+    "processing_methods": [],
+    "why_processed": "",
     "industrial_ingredients": []
   },
   "chemical_analysis": {
@@ -158,8 +117,8 @@ RESPONSE FORMAT: Return valid JSON only, no markdown formatting.
       "liver_metabolism_burden": "none"
     },
     "health_impacts": {
-      "immediate_effects": ["none"],
-      "chronic_effects": ["none"],
+      "immediate_effects": [],
+      "chronic_effects": [],
       "addiction_potential": "none"
     },
     "regulatory_concerns": {
@@ -171,7 +130,7 @@ RESPONSE FORMAT: Return valid JSON only, no markdown formatting.
   },
   "analysis": {
     "pros": [],
-    "cons": [], 
+    "cons": [],
     "concerns": [],
     "alternatives": []
   },
@@ -184,107 +143,191 @@ RESPONSE FORMAT: Return valid JSON only, no markdown formatting.
     "oxidative_stress_potential": "low",
     "endocrine_disruption_risk": "low"
   },
-  "ingredients_analysis": "Basic ingredient analysis"
-}`
-          },
+  "ingredients_analysis": "",
+  
+  "supplement_analysis": {
+    "dosage_form": "softgel|tablet|capsule|gummy|liquid|powder|spray",
+    "serving_size": "1 softgel",
+    "servings_per_container": 0,
+    
+    "quality_rating": {
+      "grade": "A|B|C|D|F",
+      "score": 0,
+      "reasoning": ""
+    },
+    
+    "certifications": [
+      {
+        "name": "USP Verified|NSF Certified|GMP Certified|Non-GMO|Organic|Vegan|Gluten-Free|Third-Party Tested",
+        "verified": true,
+        "description": ""
+      }
+    ],
+    
+    "active_ingredients": [
+      {
+        "name": "Ingredient name",
+        "form": "Chemical form (e.g., Cholecalciferol, Magnesium Glycinate)",
+        "amount": "Amount per serving",
+        "unit": "mg|mcg|IU|CFU|g",
+        "daily_value": "Percentage or null",
+        "bioavailability": "low|medium|high|very_high",
+        "bioavailability_notes": "",
+        "source": "Natural or synthetic",
+        "benefits": []
+      }
+    ],
+    
+    "inactive_ingredients": [
+      {
+        "name": "Ingredient name",
+        "category": "filler|binder|coating|preservative|colorant|sweetener|flow_agent|carrier",
+        "concern": "none|low|medium|high",
+        "notes": ""
+      }
+    ],
+    
+    "allergen_warnings": [],
+    
+    "safety_info": {
+      "max_safe_dose": "",
+      "overdose_risk": "low|medium|high",
+      "overdose_symptoms": [],
+      "fat_soluble": false,
+      "accumulation_risk": "",
+      "pregnancy_category": "Safe|Consult Doctor|Avoid|Unknown",
+      "age_restrictions": ""
+    },
+    
+    "drug_interactions": [
+      {
+        "medication": "",
+        "severity": "mild|moderate|severe",
+        "effect": ""
+      }
+    ],
+    
+    "recommendations": {
+      "best_time_to_take": "",
+      "take_with_food": true,
+      "food_pairings": "",
+      "avoid_with": "",
+      "storage_tips": ""
+    },
+    
+    "overall_assessment": {
+      "pros": [],
+      "cons": [],
+      "verdict": "",
+      "alternative_suggestions": []
+    }
+  }
+}
+
+SUPPLEMENT/VITAMIN QUALITY RATING CRITERIA:
+- A+ (95-100): Pharmaceutical-grade, third-party tested, optimal bioavailability forms, minimal fillers, gold-standard certifications
+- A (90-94): Excellent quality, USP/NSF verified, great bioavailability, reputable brand
+- B+ (85-89): Very good quality, some certifications, good ingredient forms
+- B (75-84): Good quality, decent bioavailability, acceptable fillers
+- C+ (65-74): Average quality, may have suboptimal forms, more fillers
+- C (55-64): Below average, poor forms, unnecessary additives
+- D (40-54): Low quality, poor bioavailability, many fillers
+- F (<40): Very poor, potentially harmful, no testing verification
+
+BIOAVAILABILITY EXAMPLES:
+- Vitamin D3 (Cholecalciferol) > D2 (Ergocalciferol)
+- Magnesium Glycinate/Citrate > Oxide
+- Methylcobalamin > Cyanocobalamin
+- Methylfolate > Folic Acid
+- Zinc Picolinate > Zinc Oxide
+- Vitamin K2 (MK-7) > K1
+- Curcumin with Piperine > Plain Curcumin
+
+FOOD/BEVERAGE GRADING (be strict on processed foods):
+- A = Whole foods, minimal processing, nutrient-dense
+- B = Lightly processed with clean ingredients
+- C = Moderately processed OR high sugar/sodium/fat
+- D = Ultra-processed, artificial ingredients
+- F = Severe safety concerns, harmful additives
+
+IMPORTANT: Only populate supplement_analysis fields when product_type is "supplement" or "medication". For food/beverage, leave supplement_analysis as null or empty object.
+
+Return ONLY valid JSON, no markdown formatting.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
           {
-            role: 'user',
+            role: "user",
             content: [
-              {
-                type: "text",
-                text: "Analyze this product for comprehensive health information including nutrition facts, health grade, safety concerns, and alternatives."
-              },
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:image/jpeg;base64,${processedImageBase64}`
+                  url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
                 }
+              },
+              {
+                type: "text",
+                text: "Analyze this product comprehensively. Detect if it's food, beverage, supplement, or medication. Provide complete analysis including quality rating, ingredients, safety, and recommendations. Return ONLY valid JSON."
               }
             ]
           }
         ],
-        max_completion_tokens: 1500,
-        temperature: 0.1
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API Error:', response.status, response.statusText, errorText);
+      console.error("AI gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ 
-          error: `OpenAI API error: ${response.status} ${response.statusText}`,
-          details: errorText
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        JSON.stringify({ error: `AI analysis failed: ${response.status}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    console.log('OpenAI Response:', content);
+    let content = data.choices?.[0]?.message?.content;
 
-    // Parse the JSON response - handle markdown wrapping and extract JSON
-    let analysisResult;
-    try {
-      let cleanContent = content.trim();
-      
-      // Try to extract JSON from the response
-      if (cleanContent.includes('```json')) {
-        // Extract content between ```json and ```
-        const jsonMatch = cleanContent.match(/```json\s*([\s\S]*?)\s*```/);
-        if (jsonMatch) {
-          cleanContent = jsonMatch[1].trim();
-        }
-      } else if (cleanContent.includes('{')) {
-        // Find the first { and last } to extract JSON
-        const firstBrace = cleanContent.indexOf('{');
-        const lastBrace = cleanContent.lastIndexOf('}');
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
-        }
-      }
-      
-      analysisResult = JSON.parse(cleanContent);
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response as JSON:', parseError);
-      console.error('Raw content:', content);
-      
-      // Return error response that matches expected format
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to analyze product - invalid response format',
-          raw_response: content
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!content) {
+      throw new Error("No response from AI");
     }
 
-    return new Response(
-      JSON.stringify(analysisResult),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    console.log('Raw AI response:', content.substring(0, 500));
+
+    // Clean up response - remove markdown code blocks if present
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    let analysisResult;
+    try {
+      analysisResult = JSON.parse(content);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        analysisResult = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response as JSON');
       }
-    );
+    }
+
+    console.log('Successfully analyzed product:', analysisResult.product?.name, 'Type:', analysisResult.product_type);
+
+    return new Response(JSON.stringify(analysisResult), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in analyzeProduct function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to analyze product',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed, Pill } from "lucide-react";
+import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
@@ -9,7 +9,6 @@ import { SmartProductAnalyzer } from "@/components/SmartProductAnalyzer";
 import { CoachsChoiceAnalyzer } from "@/components/CoachsChoiceAnalyzer";
 import { MenuAnalyzer } from "@/components/MenuAnalyzer";
 import { RestaurantDiscovery } from "@/components/RestaurantDiscovery";
-import SupplementAnalyzer from "@/components/SupplementAnalyzer";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
@@ -121,7 +120,7 @@ const FoodScanner = () => {
             transition={{ delay: 0.6 }}
           >
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-7 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
+              <TabsList className="grid w-full grid-cols-6 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
                 <TabsTrigger 
                   value="analyzer" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
@@ -134,14 +133,7 @@ const FoodScanner = () => {
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Scan className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Products</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="supplements" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
-                >
-                  <Pill className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Vitamins</span>
+                  <span className="hidden lg:inline">Scanner</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="coach" 
@@ -195,16 +187,6 @@ const FoodScanner = () => {
                       console.log('Product found:', foodItem);
                     }}
                   />
-                </motion.div>
-              </TabsContent>
-
-              <TabsContent value="supplements" className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <SupplementAnalyzer />
                 </motion.div>
               </TabsContent>
 
