@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { processImageFile } from '../utils/heicConverter';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
+import { useChatbotContext } from '@/contexts/ChatbotContext';
 
 // Enhanced food photo analyzer without barcode functionality
 
@@ -49,6 +50,46 @@ export const EnhancedFoodPhotoAnalyzer: React.FC<EnhancedFoodPhotoAnalyzerProps>
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStage, setAnalysisStage] = useState('');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  
+  const { setPageContext } = useChatbotContext();
+  
+  // Register food analysis with AI coach context
+  useEffect(() => {
+    if (analysisResult && analysisResult.food_items?.length > 0) {
+      const totalCalories = analysisResult.food_items.reduce((sum: number, item: FoodItem) => sum + (item.calories || 0), 0);
+      const totalProtein = analysisResult.food_items.reduce((sum: number, item: FoodItem) => sum + (item.protein || 0), 0);
+      const totalCarbs = analysisResult.food_items.reduce((sum: number, item: FoodItem) => sum + (item.carbs || 0), 0);
+      const totalFat = analysisResult.food_items.reduce((sum: number, item: FoodItem) => sum + (item.fat || 0), 0);
+      
+      const healthGrade = analysisResult.health_analysis?.overall_grade || 'N/A';
+      
+      let visibleContent = `ANALYZED MEAL (${mealType || 'meal'}):
+Food Items Detected:
+${analysisResult.food_items.map((item: FoodItem) => `- ${item.name}: ${item.calories} cal, ${item.protein}g protein, ${item.carbs}g carbs, ${item.fat}g fat`).join('\n')}
+
+Total Nutrition:
+- Calories: ${totalCalories}
+- Protein: ${totalProtein}g
+- Carbs: ${totalCarbs}g
+- Fat: ${totalFat}g
+
+Health Grade: ${healthGrade}`;
+
+      if (analysisResult.health_analysis?.summary) {
+        visibleContent += `\nHealth Summary: ${analysisResult.health_analysis.summary}`;
+      }
+      
+      if (analysisResult.health_analysis?.recommendations?.length) {
+        visibleContent += `\nRecommendations: ${analysisResult.health_analysis.recommendations.join(', ')}`;
+      }
+
+      setPageContext({
+        pageName: 'AI Food Hub - Food Analysis Results',
+        pageDescription: `User analyzed a ${mealType || 'meal'} with ${analysisResult.food_items.length} food items`,
+        visibleContent
+      });
+    }
+  }, [analysisResult, mealType, setPageContext]);
 
   const ANALYSIS_STAGES = [
     { progress: 15, text: 'Processing photos...', duration: 1500 },

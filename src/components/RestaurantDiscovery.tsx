@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRestaurantDiscovery } from '@/hooks/useRestaurantDiscovery';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,9 +7,38 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, TrendingUp, Utensils, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
+import { useChatbotContext } from '@/contexts/ChatbotContext';
 
 export const RestaurantDiscovery = () => {
   const { popularMeals, popularRestaurants, loading } = useRestaurantDiscovery();
+  const { setPageContext } = useChatbotContext();
+
+  // Register restaurant data with AI coach context
+  useEffect(() => {
+    if (popularMeals.length > 0 || popularRestaurants.length > 0) {
+      let visibleContent = `RESTAURANT DISCOVERY - Popular from your network:`;
+      
+      if (popularMeals.length > 0) {
+        visibleContent += `\n\nPOPULAR MEALS:
+${popularMeals.slice(0, 5).map(meal => 
+  `- ${meal.meal_name} at ${meal.restaurant_name}: ${meal.avg_calories} cal, ${meal.avg_protein}g protein, Grade ${meal.avg_health_grade || 'N/A'} (${meal.share_count} shares)`
+).join('\n')}`;
+      }
+      
+      if (popularRestaurants.length > 0) {
+        visibleContent += `\n\nTOP RESTAURANTS:
+${popularRestaurants.slice(0, 5).map(r => 
+  `- ${r.restaurant_name}: ${r.total_shares} shares from ${r.unique_users} users, Avg Grade: ${r.avg_health_grade || 'N/A'}`
+).join('\n')}`;
+      }
+
+      setPageContext({
+        pageName: 'AI Food Hub - Restaurant Discovery',
+        pageDescription: 'Showing popular meals and restaurants from the user\'s social network',
+        visibleContent
+      });
+    }
+  }, [popularMeals, popularRestaurants, setPageContext]);
 
   const getGradeColor = (grade: string | null) => {
     if (!grade) return 'bg-muted text-muted-foreground';
