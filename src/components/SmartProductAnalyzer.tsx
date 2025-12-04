@@ -90,6 +90,8 @@ interface ProductAnalysis {
   };
   nutrition: {
     serving_size: string;
+    data_source?: 'label_extracted' | 'estimated' | 'partial_label';
+    confidence_score?: number;
     per_serving: {
       calories: number;
       protein_g: number;
@@ -935,12 +937,42 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   <motion.h4 
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="font-bold mb-4 flex items-center gap-2 text-lg"
+                    className="font-bold mb-4 flex items-center justify-between text-lg"
                   >
-                    <Utensils className="h-5 w-5 text-stats-exercises animate-pulse" />
-                    <span className="bg-gradient-to-r from-stats-exercises to-stats-calories bg-clip-text text-transparent">
-                      🥄 Nutrition per {analysisResult.nutrition.serving_size}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Utensils className="h-5 w-5 text-stats-exercises animate-pulse" />
+                      <span className="bg-gradient-to-r from-stats-exercises to-stats-calories bg-clip-text text-transparent">
+                        🥄 Nutrition per {analysisResult.nutrition.serving_size}
+                      </span>
+                    </div>
+                    {/* Confidence Badge */}
+                    {(() => {
+                      const dataSource = analysisResult.nutrition.data_source;
+                      const confidence = analysisResult.nutrition.confidence_score;
+                      if (dataSource === 'label_extracted') {
+                        return (
+                          <Badge className="bg-green-500/20 text-green-600 border-green-500/30 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Verified from label
+                          </Badge>
+                        );
+                      } else if (dataSource === 'partial_label') {
+                        return (
+                          <Badge className="bg-blue-500/20 text-blue-600 border-blue-500/30 text-xs">
+                            <Info className="h-3 w-3 mr-1" />
+                            Partial data
+                          </Badge>
+                        );
+                      } else if (dataSource === 'estimated') {
+                        return (
+                          <Badge className="bg-amber-500/20 text-amber-600 border-amber-500/30 text-xs">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Estimated values
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
                   </motion.h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <motion.div 
