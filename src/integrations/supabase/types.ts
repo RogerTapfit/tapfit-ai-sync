@@ -2665,6 +2665,69 @@ export type Database = {
           },
         ]
       }
+      screen_time_bank: {
+        Row: {
+          created_at: string
+          earned_minutes: number
+          id: string
+          last_earning_date: string | null
+          push_ups_per_minute: number
+          updated_at: string
+          used_minutes: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          earned_minutes?: number
+          id?: string
+          last_earning_date?: string | null
+          push_ups_per_minute?: number
+          updated_at?: string
+          used_minutes?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          earned_minutes?: number
+          id?: string
+          last_earning_date?: string | null
+          push_ups_per_minute?: number
+          updated_at?: string
+          used_minutes?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      screen_time_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          minutes_used: number
+          platform: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          minutes_used?: number
+          platform: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          minutes_used?: number
+          platform?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           created_at: string

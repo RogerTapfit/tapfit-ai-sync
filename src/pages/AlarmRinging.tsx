@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
+import { useScreenTimeBank } from '@/hooks/useScreenTimeBank';
 import { useAlarmAudio } from '@/hooks/useAlarmAudio';
 import { alarmStorageService } from '@/services/alarmStorageService';
 import { VolumeX, Volume2 } from 'lucide-react';
@@ -14,6 +15,7 @@ export default function AlarmRinging() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { alarms, logCompletion } = useFitnessAlarm();
+  const { addEarnedTime, bank } = useScreenTimeBank();
   const [alarm, setAlarm] = useState<any>(null);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [isAlarmMuted, setIsAlarmMuted] = useState(false);
@@ -34,11 +36,21 @@ export default function AlarmRinging() {
         time_to_complete: timeToComplete,
       });
 
+      // Earn screen time from push-ups
+      const pushUpsPerMinute = bank?.push_ups_per_minute || 5;
+      const earnedMinutes = Math.floor(stats.reps / pushUpsPerMinute);
+      if (earnedMinutes > 0) {
+        await addEarnedTime({ pushUps: stats.reps });
+      }
+
       stopAlarm();
       alarmStorageService.clearRingingAlarm();
       await Haptics.impact({ style: ImpactStyle.Heavy });
       
-      toast.success(`Congratulations! ${stats.reps} push-ups completed! Have a great day! 🎉`, { duration: 3000 });
+      const screenTimeMessage = earnedMinutes > 0 
+        ? ` You earned ${earnedMinutes} min of screen time! 📱` 
+        : '';
+      toast.success(`Congratulations! ${stats.reps} push-ups completed!${screenTimeMessage} Have a great day! 🎉`, { duration: 4000 });
       
       setTimeout(() => {
         navigate('/fitness-alarm');

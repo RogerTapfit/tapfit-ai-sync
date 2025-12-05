@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AlarmCard } from '@/components/AlarmCard';
 import { useFitnessAlarm } from '@/hooks/useFitnessAlarm';
 import { useAlarmScheduler } from '@/hooks/useAlarmScheduler';
+import { useScreenTimeBank } from '@/hooks/useScreenTimeBank';
 import { useAuth } from '@/components/AuthGuard';
-import { Plus, ArrowLeft, Bell, BarChart3 } from 'lucide-react';
+import { Plus, ArrowLeft, Bell, BarChart3, Clock, Smartphone } from 'lucide-react';
 import { alarmNotificationService } from '@/services/alarmNotificationService';
 import { useToast } from '@/hooks/use-toast';
 import { usePageContext } from '@/hooks/usePageContext';
@@ -16,6 +17,7 @@ export default function FitnessAlarm() {
   const { toast } = useToast();
   const { isGuest } = useAuth();
   const { alarms, isLoading, toggleAlarm, deleteAlarm } = useFitnessAlarm();
+  const { availableMinutes, bank } = useScreenTimeBank();
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
   const [testingAlarmId, setTestingAlarmId] = useState<string | null>(null);
 
@@ -159,6 +161,43 @@ export default function FitnessAlarm() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Screen Time Bank Card */}
+        {!isGuest && (
+          <Card 
+            className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30 cursor-pointer hover:border-purple-500/50 transition-all"
+            onClick={() => navigate('/screen-time-bank')}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-purple-500/20 rounded-xl">
+                    <Smartphone className="h-6 w-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground">Screen Time Bank</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Earn social media time with push-ups
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-purple-400">{availableMinutes}</div>
+                  <div className="text-xs text-muted-foreground">min available</div>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-purple-500/20">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {bank?.push_ups_per_minute || 5} push-ups = 1 min
+                  </span>
+                  <span className="text-purple-400 font-medium">Manage →</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Alarms List */}

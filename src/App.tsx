@@ -54,6 +54,7 @@ import FitnessAlarm from "./pages/FitnessAlarm";
 import AlarmSetup from "./pages/AlarmSetup";
 import AlarmRinging from "./pages/AlarmRinging";
 import AlarmStatistics from "./pages/AlarmStatistics";
+import ScreenTimeBank from "./pages/ScreenTimeBank";
 import Achievements from "./pages/Achievements";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -253,6 +254,7 @@ const App = () => {
             <Route path="/alarm-setup/:id" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
             <Route path="/alarm-ringing/:id" element={<AuthGuard fallback={<Auth />}><AlarmRinging /></AuthGuard>} />
             <Route path="/alarm-statistics" element={<AuthGuard fallback={<Auth />}><AlarmStatistics /></AuthGuard>} />
+            <Route path="/screen-time-bank" element={<AuthGuard fallback={<Auth />}><ScreenTimeBank /></AuthGuard>} />
             <Route path="/achievements" element={<AuthGuard fallback={<Auth />}><Achievements /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/admin/replace-avatar-image" element={
