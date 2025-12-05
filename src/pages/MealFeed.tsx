@@ -12,6 +12,7 @@ import { ArrowLeft, Filter, UtensilsCrossed, Users, Trophy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import { motion } from 'framer-motion';
+import { usePageContext } from '@/hooks/usePageContext';
 
 type MealType = 'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'restaurant_meal' | 'alcohol_logged';
 type HealthGrade = 'all' | 'A' | 'B' | 'C' | 'D' | 'F';
@@ -21,6 +22,13 @@ export default function MealFeed() {
   const { activities, loading } = useActivityFeed(50);
   const [mealTypeFilter, setMealTypeFilter] = useState<MealType>('all');
   const [healthGradeFilter, setHealthGradeFilter] = useState<HealthGrade>('all');
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Meal Feed',
+    pageDescription: 'Social feed showing meals logged by users you follow, with nutrition challenges',
+    visibleContent: `Viewing community meal feed with ${activities.filter(a => ['meal_logged', 'restaurant_meal', 'alcohol_logged'].includes(a.activity_type)).length} meal posts. Filter by meal type: ${mealTypeFilter}, health grade: ${healthGradeFilter}`
+  });
 
   // Filter only meal-related activities
   const mealActivities = activities.filter(activity => 

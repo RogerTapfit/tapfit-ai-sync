@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthGuard";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePageContext } from '@/hooks/usePageContext';
 
 interface WorkoutHistoryItem {
   id: string;
@@ -23,6 +24,15 @@ const WorkoutHistory = () => {
   const { user } = useAuth();
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Workout History',
+    pageDescription: 'View all past workouts including strength training, runs, rides, and swims',
+    visibleContent: workouts.length > 0 
+      ? `Total workouts: ${workouts.length}. Recent: ${workouts.slice(0, 5).map(w => `${w.type} (${w.duration}min, ${w.caloriesBurned}cal)`).join(', ')}`
+      : 'No workouts recorded yet'
+  });
 
   useEffect(() => {
     const fetchAllWorkouts = async () => {

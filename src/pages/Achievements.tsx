@@ -9,6 +9,7 @@ import { useGamerAchievements, GamerAchievement } from '@/hooks/useGamerAchievem
 import { getRankForLevel, getPrestigeInfo, GAMER_RANKS } from '@/config/gamerRanks';
 import { ArrowLeft, Trophy, Zap, Lock, Droplets, Apple, Dumbbell, Flame, Star, Coins } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePageContext } from '@/hooks/usePageContext';
 
 const CATEGORY_INFO = {
   hydration: { icon: Droplets, label: 'Hydration', color: 'text-blue-500' },
@@ -31,6 +32,13 @@ export default function Achievements() {
   const { stats, loading: statsLoading, getProgressPercentage } = useGamerRank();
   const { achievements, userAchievements, loading: achievementsLoading, isUnlocked, getUnlockedCount } = useGamerAchievements();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Achievements & Rank',
+    pageDescription: 'View your gamer rank progression and unlocked achievements',
+    visibleContent: stats ? `Current Rank: ${stats.rank_title} (Level ${stats.current_level}), Total XP: ${stats.total_xp}, Achievements Unlocked: ${getUnlockedCount()}/${achievements.length}, Prestige Level: ${stats.prestige_level}` : 'Loading achievements...'
+  });
 
   if (statsLoading || achievementsLoading) {
     return (

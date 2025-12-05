@@ -10,9 +10,18 @@ import { Bike, Home, Clock, MapPin, Heart, Info, History } from 'lucide-react';
 import { RideSettings } from '@/types/ride';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import SEO from '@/components/SEO';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export default function RideSetup() {
   const navigate = useNavigate();
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Ride Setup',
+    pageDescription: 'Configure your cycling ride with training mode, goals, and heart rate zones',
+    visibleContent: 'Setting up cycling ride. Training modes: Zone 2 Endurance, Zone 3 Tempo, Intervals, Recovery. Set distance/time goals and ride type (road, mountain, indoor).'
+  });
+
   const [settings, setSettings] = useState<RideSettings>({
     unit: 'km',
     auto_pause: true,

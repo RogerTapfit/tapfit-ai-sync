@@ -15,6 +15,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import { getDisplayName } from '@/lib/userDisplay';
 import { useCoachEncouragement } from '@/hooks/useCoachEncouragement';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export default function ProfileCustomization() {
   const navigate = useNavigate();
@@ -24,6 +25,13 @@ export default function ProfileCustomization() {
   const [saving, setSaving] = useState(false);
   const { avatarData, loading: avatarLoading, updateAvatar } = useRobotAvatar();
   const { handleCoachClick, isSpeaking, canSpeak } = useCoachEncouragement();
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Profile Customization',
+    pageDescription: 'Customize your profile photo, select your AI coach character, and manage account settings',
+    visibleContent: profile ? `Customizing profile for ${profile.username || profile.full_name}. Change profile photo, select coach character, and preview public profile appearance.` : 'Loading profile settings...'
+  });
 
   useEffect(() => {
     loadUserData();

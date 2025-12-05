@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Search, Dumbbell, Activity, Clock, Users, Target, Smartphone } from "lucide-react";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
+import { usePageContext } from '@/hooks/usePageContext';
 
 interface WorkoutMachine {
   id: string;
@@ -28,6 +29,13 @@ const WorkoutHub = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("all");
   const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Workout Hub',
+    pageDescription: 'Browse all gym machines and exercises organized by muscle group',
+    visibleContent: `Machine library with exercises for Chest, Back, Shoulders, Arms, Legs, Cardio, and more. Search and filter by muscle group: ${selectedMuscleGroup}. Each machine shows sets, reps, rest time, and difficulty level.`
+  });
 
   // Check for developer mode flag in localStorage
   useEffect(() => {

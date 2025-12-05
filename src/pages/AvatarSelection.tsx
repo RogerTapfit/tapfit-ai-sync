@@ -4,9 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AvatarGallery } from '@/components/AvatarGallery';
 import SEO from '@/components/SEO';
+import { usePageContext } from '@/hooks/usePageContext';
 
 const AvatarSelection: React.FC = () => {
   const navigate = useNavigate();
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Choose Coach',
+    pageDescription: 'Select your AI fitness coach character who will guide you through workouts and provide encouragement',
+    visibleContent: 'Browse and select from available coach characters. Each coach has a unique personality and voice to motivate you during workouts.'
+  });
 
   return (
     <>

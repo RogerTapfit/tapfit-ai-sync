@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { LiveExerciseTracker } from '@/components/LiveExerciseTracker';
 import SEO from '@/components/SEO';
 import { type ExerciseType } from '@/utils/exerciseDetection';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export default function LiveWorkout() {
   const location = useLocation();
@@ -19,6 +20,13 @@ export default function LiveWorkout() {
     workoutId?: string;
     aiSelectedImageUrl?: string;
   } | undefined;
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Live Workout',
+    pageDescription: 'AI-powered live exercise tracking with camera-based form analysis and automatic rep counting',
+    visibleContent: `Live exercise tracking${exerciseParam ? ` for ${exerciseParam}` : ''}${state?.machineName ? ` on ${state.machineName}` : ''}. Camera analyzes form in real-time and counts reps automatically.`
+  });
 
   const handleBackToMachine = () => {
     if (state?.workoutId) {

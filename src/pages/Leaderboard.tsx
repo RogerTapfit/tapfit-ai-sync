@@ -15,12 +15,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export default function Leaderboard() {
   const navigate = useNavigate();
   const [leaderboardType, setLeaderboardType] = useState<LeaderboardType>('coins');
   const [period, setPeriod] = useState<LeaderboardPeriod>('all_time');
   const { users, loading, myRank } = useLeaderboard(leaderboardType, period);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Leaderboard',
+    pageDescription: 'Community rankings for tap coins, workouts, and calories burned',
+    visibleContent: `Viewing ${leaderboardType} leaderboard (${period}). Your rank: #${myRank || 'N/A'}. Top users: ${users.slice(0, 3).map(u => `${u.username}: ${leaderboardType === 'coins' ? u.tap_coins_balance : leaderboardType === 'workouts' ? u.total_workouts : u.total_calories}`).join(', ')}`
+  });
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return <Crown className="h-5 w-5 text-yellow-500" />;

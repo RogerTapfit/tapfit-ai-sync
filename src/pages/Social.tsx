@@ -11,6 +11,7 @@ import { Search, Home, Trophy, Settings, UtensilsCrossed } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export default function Social() {
   const navigate = useNavigate();
@@ -19,6 +20,13 @@ export default function Social() {
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Social Hub',
+    pageDescription: 'Connect with other users, view activity feed, and manage your social profile',
+    visibleContent: username ? `Logged in as @${username}. View activity feed, search for users, manage workout visibility settings, and see your network.` : 'Social features - set up username to get started'
+  });
 
   useEffect(() => {
     checkUsername();

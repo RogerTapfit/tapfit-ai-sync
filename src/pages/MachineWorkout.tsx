@@ -16,6 +16,7 @@ import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
 import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
 import { PRCelebration } from '@/components/PRCelebration';
 import { toast } from "sonner";
+import { usePageContext } from '@/hooks/usePageContext';
 import { 
   ArrowLeft, 
   Info, 
@@ -50,6 +51,13 @@ export default function MachineWorkout() {
   const { logExercise, currentWorkoutLog, startWorkout, completeWorkout } = useWorkoutLogger();
   
   const machine = workoutId ? MachineRegistryService.getMachineByWorkoutId(workoutId) : null;
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: `Machine Workout${machine ? ` - ${machine.name}` : ''}`,
+    pageDescription: 'Active workout session on gym equipment with set/rep tracking and weight recommendations',
+    visibleContent: machine ? `Working out on ${machine.name}. Track sets, reps, weight used, and rest times. AI recommends weights based on your history.` : 'Loading machine workout...'
+  });
   
   // Workout state
   const [sets, setSets] = useState<WorkoutSet[]>([]);
