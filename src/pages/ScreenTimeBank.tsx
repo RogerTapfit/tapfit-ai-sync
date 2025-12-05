@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { usePageContext } from '@/hooks/usePageContext';
 import { ArrowLeft, Clock, Dumbbell, Settings, TrendingUp } from 'lucide-react';
 import { SocialMediaTimer } from '@/components/SocialMediaTimer';
 import { ScreenTimePlatformSelector } from '@/components/ScreenTimePlatformSelector';
+import { EarnScreenTimeModal } from '@/components/EarnScreenTimeModal';
 
 export default function ScreenTimeBank() {
   const navigate = useNavigate();
@@ -23,7 +24,15 @@ export default function ScreenTimeBank() {
   const [showTimer, setShowTimer] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showEarnModal, setShowEarnModal] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(bank?.push_ups_per_minute || 5);
+
+  // Sync exchange rate when bank loads
+  useEffect(() => {
+    if (bank?.push_ups_per_minute) {
+      setExchangeRate(bank.push_ups_per_minute);
+    }
+  }, [bank?.push_ups_per_minute]);
 
   // Register page context for chatbot
   usePageContext({
@@ -107,7 +116,7 @@ export default function ScreenTimeBank() {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/fitness-alarm')}>
+              <Button variant="outline" size="sm" onClick={() => setShowEarnModal(true)}>
                 Earn More
               </Button>
             </div>
@@ -214,6 +223,13 @@ export default function ScreenTimeBank() {
           onClose={handleTimerClose}
         />
       )}
+
+      {/* Earn Screen Time Modal */}
+      <EarnScreenTimeModal
+        isOpen={showEarnModal}
+        onClose={() => setShowEarnModal(false)}
+        initialExchangeRate={bank?.push_ups_per_minute || 5}
+      />
     </div>
   );
 }
