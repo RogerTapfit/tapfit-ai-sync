@@ -34,7 +34,8 @@ import {
   Video,
   StopCircle,
   Download,
-  Share2
+  Share2,
+  Clock
 } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
@@ -61,6 +62,10 @@ interface LiveExerciseTrackerProps {
   alarmMode?: boolean;
   targetRepsOverride?: number;
   onAlarmComplete?: (stats: WorkoutStats) => void;
+  // Screen time mode props
+  screenTimeMode?: boolean;
+  onRepUpdate?: (reps: number) => void;
+  onScreenTimeComplete?: () => void;
 }
 
 export function LiveExerciseTracker({ 
@@ -70,16 +75,19 @@ export function LiveExerciseTracker({
   onBackToDashboard,
   alarmMode = false,
   targetRepsOverride,
-  onAlarmComplete
+  onAlarmComplete,
+  screenTimeMode = false,
+  onRepUpdate,
+  onScreenTimeComplete
 }: LiveExerciseTrackerProps) {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseType>(preSelectedExercise || 'pushups');
-  const [targetReps, setTargetReps] = useState(targetRepsOverride || 10);
+  const [targetReps, setTargetReps] = useState(screenTimeMode ? 9999 : (targetRepsOverride || 10));
   const [showResults, setShowResults] = useState(false);
   const [workoutStats, setWorkoutStats] = useState<WorkoutStats | null>(null);
-  const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise || alarmMode);
+  const [skipSetup, setSkipSetup] = useState(!!preSelectedExercise || alarmMode || screenTimeMode);
   const [isMirrored, setIsMirrored] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  const [forceShowSkeleton, setForceShowSkeleton] = useState(alarmMode);
+  const [forceShowSkeleton, setForceShowSkeleton] = useState(alarmMode || screenTimeMode);
 
   // Sync external target reps override (e.g., alarm mode)
   useEffect(() => {
@@ -119,6 +127,13 @@ export function LiveExerciseTracker({
       onAlarmComplete(stats);
       return;
     }
+    
+    // Screen time mode: call completion callback and return
+    if (screenTimeMode && onScreenTimeComplete) {
+      onScreenTimeComplete();
+      return;
+    }
+    
     setWorkoutStats(stats);
     setShowResults(true);
 
@@ -293,6 +308,31 @@ export function LiveExerciseTracker({
       return () => clearTimeout(timer);
     }
   }, [alarmMode, isInitialized, isActive, isPreviewMode]);
+
+  // Screen time mode: ensure preview starts and then auto-start workout
+  useEffect(() => {
+    if (screenTimeMode && isInitialized && !isActive) {
+      console.log('[ScreenTimeMode] Starting preview and workout');
+      if (!isPreviewMode) {
+        startPreview();
+      }
+      // Auto-start workout after camera initializes
+      const timer = setTimeout(() => {
+        if (!isActive) {
+          console.log('[ScreenTimeMode] Auto-starting workout');
+          start();
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [screenTimeMode, isInitialized, isActive, isPreviewMode]);
+
+  // Call onRepUpdate callback when reps change (for screen time mode)
+  useEffect(() => {
+    if (screenTimeMode && onRepUpdate) {
+      onRepUpdate(reps);
+    }
+  }, [reps, screenTimeMode, onRepUpdate]);
 
   // Draw pose overlay on canvas - continuously update (for both preview and active modes)
   useEffect(() => {
@@ -1486,10 +1526,17 @@ export function LiveExerciseTracker({
           </Button>
         )}
         
-        <Button onClick={stop} size="lg" variant="destructive">
-          <Square className="w-5 h-5 mr-2" />
-          End Workout
-        </Button>
+        {screenTimeMode ? (
+          <Button onClick={stop} size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+            <Clock className="w-5 h-5 mr-2" />
+            End & Save Minutes
+          </Button>
+        ) : (
+          <Button onClick={stop} size="lg" variant="destructive">
+            <Square className="w-5 h-5 mr-2" />
+            End Workout
+          </Button>
+        )}
       </div>
       
       {/* Recorded Video Options */}
