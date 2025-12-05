@@ -810,38 +810,42 @@ export function LiveExerciseTracker({
               </div>
             )}
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Target Reps per Set</label>
-              <div className="flex gap-2">
-                {[5, 10, 15, 20, 30].map((count) => (
-                  <Button
-                    key={count}
-                    variant={targetReps === count ? 'default' : 'outline'}
-                    onClick={() => setTargetReps(count)}
-                  >
-                    {count}
-                  </Button>
-                ))}
+            {!screenTimeMode && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">Target Reps per Set</label>
+                <div className="flex gap-2">
+                  {[5, 10, 15, 20, 30].map((count) => (
+                    <Button
+                      key={count}
+                      variant={targetReps === count ? 'default' : 'outline'}
+                      onClick={() => setTargetReps(count)}
+                    >
+                      {count}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <Button 
-              onClick={() => {
-                if (isPreviewMode) {
-                  stopPreview();
-                }
-                start();
-              }}
-              size="lg" 
-              className="w-full"
-              disabled={!isInitialized}
-            >
-              <Play className="w-5 h-5 mr-2" />
-              {isInitialized ? 'Start Workout' : 'Initializing AI...'}
-            </Button>
+            {!screenTimeMode && (
+              <Button 
+                onClick={() => {
+                  if (isPreviewMode) {
+                    stopPreview();
+                  }
+                  start();
+                }}
+                size="lg" 
+                className="w-full"
+                disabled={!isInitialized}
+              >
+                <Play className="w-5 h-5 mr-2" />
+                {isInitialized ? 'Start Workout' : 'Initializing AI...'}
+              </Button>
+            )}
 
             {/* Voice Commands Toggle */}
-            {isVoiceSupported && (
+            {!screenTimeMode && isVoiceSupported && (
               <>
                 <Button
                   onClick={toggleVoiceCommands}
@@ -879,7 +883,7 @@ export function LiveExerciseTracker({
               </>
             )}
 
-            {!isInitialized && (
+            {!screenTimeMode && !isInitialized && (
               <p className="text-sm text-muted-foreground text-center">
                 Loading AI pose detection model...
               </p>
