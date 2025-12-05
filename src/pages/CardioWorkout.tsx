@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { CardioWorkoutSession } from '@/components/CardioWorkoutSession';
 import { CardioMachineType } from '@/types/cardio';
+import { usePageContext } from '@/hooks/usePageContext';
 
 const CardioWorkout = () => {
   const navigate = useNavigate();
@@ -12,6 +13,13 @@ const CardioWorkout = () => {
 
   // Get machine data from navigation state
   const machineData = location.state?.machineData;
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Cardio Workout',
+    pageDescription: 'Active cardio workout session with heart rate zone tracking and calorie burn monitoring',
+    visibleContent: machineData ? `Active cardio on ${machineData.name}. Track heart rate zones, calories burned, and workout duration.` : 'Setting up cardio workout...'
+  });
 
   if (!machineData) {
     return (

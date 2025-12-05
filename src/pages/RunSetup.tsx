@@ -10,11 +10,20 @@ import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 import { calculateHRZones, estimateMaxHR } from "@/utils/heartRateZones";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePageContext } from '@/hooks/usePageContext';
 
 const RunSetup = () => {
   const navigate = useNavigate();
   const [userMaxHR, setUserMaxHR] = useState<number>(180);
   const [hrZones, setHRZones] = useState(calculateHRZones(180));
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Run Setup',
+    pageDescription: 'Configure your outdoor run with training mode, distance/time goals, and heart rate zones',
+    visibleContent: `Setting up outdoor run. Training modes: Pace-Based, Steady Jog (Zone 2), Steady Run (Zone 3), Interval Training. Goal options: distance (1-10km) or time (15-60 min). Max HR: ${userMaxHR} bpm`
+  });
+
   const [settings, setSettings] = useState<RunSettings>({
     unit: 'km',
     auto_pause: true,

@@ -9,6 +9,7 @@ import { useAuth } from '@/components/AuthGuard';
 import { Plus, ArrowLeft, Bell, BarChart3 } from 'lucide-react';
 import { alarmNotificationService } from '@/services/alarmNotificationService';
 import { useToast } from '@/hooks/use-toast';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export default function FitnessAlarm() {
   const navigate = useNavigate();
@@ -17,6 +18,13 @@ export default function FitnessAlarm() {
   const { alarms, isLoading, toggleAlarm, deleteAlarm } = useFitnessAlarm();
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
   const [testingAlarmId, setTestingAlarmId] = useState<string | null>(null);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Fitness Alarm',
+    pageDescription: 'Set alarms that require push-ups to turn off - wake up and work out!',
+    visibleContent: `Fitness alarm feature - ${alarms?.length || 0} alarms configured. Each alarm requires completing push-ups before it turns off. Create, edit, test, or delete alarms.`
+  });
 
   const handleRequestNotificationPermission = async () => {
     const granted = await alarmNotificationService.requestPermission();

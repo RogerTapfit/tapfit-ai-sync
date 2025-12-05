@@ -11,6 +11,7 @@ import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { socialService } from '@/services/socialService';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Users, Dumbbell, Trophy, TrendingUp, Home, Coins, Flame, Target, Calendar, Globe, Lock, Eye, EyeOff, Settings } from 'lucide-react';
+import { usePageContext } from '@/hooks/usePageContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Badge } from '@/components/ui/badge';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -31,6 +32,13 @@ export default function UserProfile() {
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
   const { achievements, loading: achievementsLoading } = useUserAchievements(userId);
   const { handleCoachClick, isSpeaking, canSpeak } = useCoachEncouragement();
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: `User Profile - ${username || 'Unknown'}`,
+    pageDescription: `Viewing ${isOwnProfile ? 'your own' : 'a user'} profile with stats and achievements`,
+    visibleContent: profile ? `Profile: @${profile.username}, ${profile.full_name || 'No name'}. Stats: ${stats?.workout_count || 0} workouts, ${stats?.follower_count || 0} followers, ${stats?.following_count || 0} following, ${profile.tap_coins_balance || 0} Tap Coins. ${achievements.length} achievements earned.` : 'Loading profile...'
+  });
 
   useEffect(() => {
     if (username) {

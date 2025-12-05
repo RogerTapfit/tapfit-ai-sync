@@ -15,6 +15,7 @@ import { segmentBody } from "@/features/bodyScan/ml/mask";
 import { startScan, pollScanUntilDone } from "@/features/bodyScan/api";
 import { useToast } from "@/components/ui/use-toast";
 import { computeFitnessAge } from "@/features/bodyScan/fitnessAge";
+import { usePageContext } from '@/hooks/usePageContext';
 
 import { Link } from "react-router-dom";
 
@@ -35,6 +36,13 @@ const BodyScan = () => {
   const { toast } = useToast();
   const [slots, setSlots] = useState<ScanSlot[]>(SLOTS);
   const [analyzing, setAnalyzing] = useState(false);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Body Scan',
+    pageDescription: 'AI-powered body composition analysis using photos from front, left, right, and back views',
+    visibleContent: analyzing ? 'Currently analyzing body scan photos...' : 'Take photos from 4 angles for body fat estimation, posture analysis, symmetry scoring, and measurements'
+  });
   const [result, setResult] = useState<null | {
     bodyFatRange: string;
     postureScore: number;

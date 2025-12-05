@@ -5,11 +5,20 @@ import { MachineRegistryService } from '@/services/machineRegistryService';
 import { ExerciseTrackingDialog } from '@/components/ExerciseTrackingDialog';
 import { isMachineBodyweightCompatible, getMachineExercises } from '@/utils/machineExerciseMapping';
 import { toast } from 'sonner';
+import { usePageContext } from '@/hooks/usePageContext';
 
 export const ScanMachine: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
+
+  // Register page context for chatbot
+  usePageContext({
+    pageName: 'Scan Machine',
+    pageDescription: 'AI-powered gym machine scanner - point camera at equipment for instant recognition',
+    visibleContent: 'Use camera to scan any gym machine for automatic identification. AI will recognize the equipment and provide exercise recommendations with proper form guidance.'
+  });
+
   const [pendingNavigation, setPendingNavigation] = useState<{
     machineId: string;
     machineName: string;
