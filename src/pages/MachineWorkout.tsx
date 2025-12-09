@@ -48,9 +48,33 @@ export default function MachineWorkout() {
   const { workoutId } = useParams<{ workoutId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { logExercise, currentWorkoutLog, startWorkout, completeWorkout } = useWorkoutLogger();
+  const { logExercise, currentWorkoutLog, startWorkout, completeWorkout, loadExistingWorkoutLog } = useWorkoutLogger();
+  const [workoutLogLoaded, setWorkoutLogLoaded] = useState(false);
   
   const machine = workoutId ? MachineRegistryService.getMachineByWorkoutId(workoutId) : null;
+
+  // Load existing workout log on mount to ensure non-scheduled machines can log to active workout
+  useEffect(() => {
+    const initWorkoutLog = async () => {
+      if (!currentWorkoutLog && !workoutLogLoaded) {
+        console.log('MachineWorkout: No current workout log, checking session storage...');
+        const existingLog = await loadExistingWorkoutLog();
+        
+        if (!existingLog && machine) {
+          // No existing workout, create one for this machine workout
+          console.log('MachineWorkout: Creating new workout log for scanned machine');
+          await startWorkout(
+            `${machine.muscleGroup} Workout`,
+            machine.muscleGroup,
+            8
+          );
+        }
+        setWorkoutLogLoaded(true);
+      }
+    };
+    
+    initWorkoutLog();
+  }, [currentWorkoutLog, workoutLogLoaded, machine, loadExistingWorkoutLog, startWorkout]);
 
   // Register page context for chatbot
   usePageContext({
