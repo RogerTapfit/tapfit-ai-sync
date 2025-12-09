@@ -646,6 +646,7 @@ export const useWorkoutLogger = () => {
     completeWorkout,
     getTodaysCompletedExercises,
     calculateActualWorkoutTotals,
-    refreshProgress: fetchTodaysProgress
+    refreshProgress: fetchTodaysProgress,
+    loadExistingWorkoutLog
   };
 };
