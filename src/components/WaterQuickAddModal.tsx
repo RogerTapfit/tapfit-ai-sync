@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Droplet, Trash2, GlassWater, Wine, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Droplet, Trash2, GlassWater, Wine, ChevronDown, ChevronUp, AlertTriangle, Camera } from 'lucide-react';
 import { useWaterIntake } from '@/hooks/useWaterIntake';
 import { format } from 'date-fns';
 import { BEVERAGE_HYDRATION, getBeveragesByCategory } from '@/lib/beverageHydration';
 import { useState } from 'react';
+import { BeverageScannerModal } from './BeverageScannerModal';
 
 interface WaterQuickAddModalProps {
   open: boolean;
@@ -34,6 +35,7 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
   
   const [showOtherBeverages, setShowOtherBeverages] = useState(false);
   const [showAlcohol, setShowAlcohol] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleQuickAdd = async (oz: number, beverageType: string = 'water') => {
     await addBeverage(oz, beverageType);
@@ -54,6 +56,16 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Scan Beverage Button */}
+          <Button 
+            variant="outline" 
+            className="w-full h-14 border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-500/50 transition-all"
+            onClick={() => setShowScanner(true)}
+          >
+            <Camera className="h-5 w-5 mr-2 text-cyan-500" />
+            <span className="text-foreground font-medium">Scan Your Beverage</span>
+          </Button>
+
           {/* Progress Section */}
           <div className="text-center space-y-3">
             <div className="relative inline-flex items-center justify-center">
@@ -270,6 +282,13 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
             </div>
           )}
         </div>
+
+        {/* Beverage Scanner Modal */}
+        <BeverageScannerModal
+          open={showScanner}
+          onOpenChange={setShowScanner}
+          onAddBeverage={handleQuickAdd}
+        />
       </DialogContent>
     </Dialog>
   );
