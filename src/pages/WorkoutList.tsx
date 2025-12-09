@@ -59,9 +59,28 @@ const WorkoutList = () => {
 
   // Helper function to determine if a workout is cardio
   const isCardio = (workout: WorkoutMachine) => {
-    const cardioKeywords = ['treadmill', 'elliptical', 'bike', 'cycling', 'cardio', 'running', 'walking'];
+    const cardioKeywords = ['treadmill', 'elliptical', 'bike', 'cycling', 'cardio', 'running', 'walking', 'swimming', 'rowing'];
     const workoutName = workout.name.toLowerCase();
     return workout.muscleGroup === 'cardio' || cardioKeywords.some(keyword => workoutName.includes(keyword));
+  };
+
+  // Get workout day theme name based on muscle group
+  const getWorkoutDayName = (muscleGroup: string): string => {
+    const dayNames: Record<string, string> = {
+      'chest': 'Chest Day',
+      'chest_triceps': 'Push Day',
+      'back': 'Back Day',
+      'back_biceps': 'Pull Day',
+      'shoulders': 'Shoulder Day',
+      'legs': 'Leg Day',
+      'arms': 'Arms Day',
+      'core': 'Core Day',
+      'cardio': 'Cardio Day',
+      'full_body': 'Full Body Day',
+      'upper_body': 'Upper Body Day',
+      'lower_body': 'Lower Body Day'
+    };
+    return dayNames[muscleGroup] || 'Workout';
   };
 
 

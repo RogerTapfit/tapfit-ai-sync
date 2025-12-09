@@ -267,7 +267,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // Enhanced prompt for monthly workout generation
+    // Enhanced prompt for monthly workout generation with dynamic day themes
     const enhancedPrompt = `
 Generate a comprehensive 30-day workout plan for a ${preferences.current_fitness_level} level person with the following details:
 
@@ -294,35 +294,82 @@ TEMPLATE GUIDELINES:
 ${templateData ? `Base Template: ${JSON.stringify(templateData.template_data)}
 Week Structure: ${JSON.stringify(templateData.week_structure)}` : 'Use standard progression'}
 
+=== MANDATORY WEEKLY STRUCTURE (DYNAMIC DAY THEMES) ===
+Each week MUST follow this rotating structure with NAMED workout days:
+
+DAY 1 - PUSH DAY (Chest + Triceps):
+- Primary: Chest Press Machine, Incline Chest Press, Decline Chest Press
+- Secondary: Pec Deck (Butterfly), Cable Crossover
+- Triceps: Tricep Pushdown, Dip Machine, Tricep Extension
+- Minimum 6 unique exercises from this list
+
+DAY 2 - PULL DAY (Back + Biceps):
+- Primary: Lat Pulldown Machine (wide grip), Seated Row Machine, Cable Row
+- Secondary: T-Bar Row, Rear Delt Machine
+- Biceps: Bicep Curl Machine, Preacher Curl, Cable Curl
+- Minimum 6 unique exercises from this list
+
+DAY 3 - CARDIO DAY (Running, Cycling, Swimming):
+- Option A: Treadmill Running (intervals or steady-state, 30-45 min)
+- Option B: Stationary Bike Cycling (HIIT or endurance, 30-45 min)
+- Option C: Elliptical Machine (moderate intensity, 30-40 min)
+- Option D: Swimming Laps (if pool available, 30-45 min)
+- Option E: Rowing Machine (full body cardio, 20-30 min)
+- Include warm-up and cool-down periods
+
+DAY 4 - LEG DAY (Quads, Hamstrings, Glutes, Calves):
+- Primary: Leg Press Machine, Squat Machine (Hack Squat/Smith)
+- Quads: Leg Extension Machine
+- Hamstrings: Leg Curl Machine (Seated or Lying)
+- Calves: Calf Raise Machine
+- Glutes: Hip Thrust, Glute Kickback Machine
+- Minimum 6 unique exercises from this list
+
+DAY 5 - SHOULDERS + CORE:
+- Primary: Shoulder Press Machine, Lateral Raise Machine
+- Secondary: Rear Delt Machine, Front Raise
+- Core: Ab Crunch Machine, Cable Woodchops, Plank variations
+- Minimum 6 unique exercises
+
+DAY 6 - FULL BODY or ACTIVE RECOVERY:
+- Light cardio (20-30 min walk/bike)
+- Full body circuit with lighter weights
+- OR Swimming/Yoga
+
+DAY 7 - REST DAY
+
+=== CARDIO EXERCISE OPTIONS TO INCLUDE ===
+- Treadmill Running: Intervals (30 sec sprint/60 sec recovery), Incline Walking, Steady State
+- Stationary Bike: HIIT Cycling, Hill Climbs, Endurance rides
+- Elliptical: Fat burn mode, interval mode
+- Swimming: Lap swimming freestyle, backstroke, breaststroke
+- Rowing Machine: 500m intervals, 2000m time trials
+
 CRITICAL VARIETY RULES:
 1. Each workout day MUST have 6-8 UNIQUE exercises (NO DUPLICATES within the same day)
 2. NEVER repeat the same machine/exercise more than once per day
-3. Each muscle group day must include 4-5 DIFFERENT machines/exercises for that muscle group
-4. Rotate exercises across the week - don't use the same machine on consecutive days unless necessary
+3. Each muscle group day must include 4-5 DIFFERENT machines for that muscle group
+4. Rotate exercises across the week - don't use the same machine on consecutive days
 5. Mix machine types: compound movements (60%), isolation (30%), cardio warmup/finisher (10%)
-
-MUSCLE GROUP EXERCISE DISTRIBUTION:
-- Chest Days: Mix from Chest Press, Incline Chest Press, Pec Deck, Cable Crossover, Decline Chest Press, Assisted Dips
-- Back Days: Mix from Lat Pulldown (wide/narrow grip), Seated Row, T-Bar Row, Cable Row variations
-- Shoulder Days: Mix from Shoulder Press, Lateral Raise Machine, variations
-- Leg Days: Mix from Leg Press, Leg Extension, Leg Curl, Calf Raise, variations
-- Arm Days: Mix from Bicep Curl Machine, Preacher Curl, Tricep Pushdown, Dip Machine variations
+6. Cardio days MUST include running, cycling, OR swimming - not just machine warmups
 
 PROGRESSIVE VARIATION STRUCTURE:
-- Week 1-2: Foundation exercises (60% intensity)
-- Week 3-4: Add variation exercises and increase intensity (70-85%)
-- Each day: 6-8 DIFFERENT exercises total
+- Week 1: Foundation exercises (60% intensity) - learn form
+- Week 2: Add variety exercises (70% intensity) - build consistency
+- Week 3: Increase intensity (80%) - progressive overload
+- Week 4: Peak performance (85%) - test strength gains
 
 REQUIREMENTS:
 1. Create a TRUE 30-day plan (4 weeks + 2 bonus days) with progressive overload
-2. Balance muscle groups across the week
+2. Balance muscle groups across the week using the NAMED DAY THEMES above
 3. Include 70% machines, 20% free weights, 10% cardio
 4. Each workout MUST have 6-8 DIFFERENT exercises (NO duplicates in same workout)
-5. Add 10-15 minutes of cardio warmup or finisher to each session
+5. Include at least 2 dedicated CARDIO DAYS per week with running/cycling/swimming
 6. Progressive intensity: Week 1 (60%), Week 2 (70%), Week 3 (80%), Week 4 (85%)
 7. Include specific weight recommendations when possible
 8. Provide form instructions and progression notes
 9. VALIDATE: Every workout must have unique exercises - reject if any duplicates found
+10. Use descriptive muscle_group values: "chest", "back", "legs", "shoulders", "arms", "cardio", "full_body"
 
 Return ONLY a JSON object with this exact structure (no other text):
 {
@@ -332,7 +379,8 @@ Return ONLY a JSON object with this exact structure (no other text):
     {
       "day": "monday",
       "time": "18:00",
-      "muscle_group": "chest_triceps",
+      "muscle_group": "chest",
+      "workout_theme": "Push Day",
       "duration": 60,
       "week_number": 1,
       "exercises": [
@@ -356,6 +404,35 @@ Return ONLY a JSON object with this exact structure (no other text):
           "intensity": "moderate",
           "rest_seconds": 0,
           "order": 7
+        }
+      ]
+    },
+    {
+      "day": "wednesday",
+      "time": "18:00",
+      "muscle_group": "cardio",
+      "workout_theme": "Cardio Day",
+      "duration": 45,
+      "week_number": 1,
+      "exercises": [
+        {
+          "machine": "Treadmill",
+          "exercise_name": "Interval Running",
+          "type": "cardio",
+          "duration_minutes": 30,
+          "intensity": "high",
+          "rest_seconds": 0,
+          "order": 1,
+          "form_instructions": "Alternate 30 seconds sprint with 60 seconds recovery jog"
+        },
+        {
+          "machine": "Stationary Bike",
+          "exercise_name": "Cool Down Cycling",
+          "type": "cardio",
+          "duration_minutes": 10,
+          "intensity": "low",
+          "rest_seconds": 0,
+          "order": 2
         }
       ]
     }
