@@ -43,10 +43,10 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     
     return () => {
       if (isScanning) {
-        stopScanning();
+        stopScanning(videoRef.current || undefined);
       }
     };
-  }, [open, mode]);
+  }, [open, mode, isScanning, startScanning, stopScanning]);
 
   // Process barcode when product data is received
   useEffect(() => {
@@ -57,7 +57,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
 
   const processProduct = async (barcode: string, productName: string) => {
     setIsAnalyzing(true);
-    stopScanning();
+    stopScanning(videoRef.current || undefined);
     
     try {
       // First check our water database by barcode
@@ -167,7 +167,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   };
 
   const handleClose = () => {
-    stopScanning();
+    stopScanning(videoRef.current || undefined);
     setMode('camera');
     setScanResult(null);
     setManualBarcode('');
