@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import { toast } from 'sonner';
 import { EnhancedBarcodeService } from '../services/enhancedBarcodeService';
@@ -33,6 +33,7 @@ export const useBarcodeScanner = () => {
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(false);
   const [codeReader] = useState(() => new BrowserMultiFormatReader());
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const fetchProductData = async (barcode: string): Promise<ProductData | null> => {
     try {
@@ -46,30 +47,49 @@ export const useBarcodeScanner = () => {
   const startScanning = useCallback(async (videoElement: HTMLVideoElement) => {
     setIsScanning(true);
     setLoading(true);
+    activeVideoRef.current = videoElement;
     
     try {
+      // First, stop any existing scanning
+      codeReader.reset();
+      
+      // Request camera permission and get stream
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          // Disable mirroring for barcode scanning
-          advanced: [{
-            facingMode: 'environment'
-          }]
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         } 
       });
       
+      // Set up video element
       videoElement.srcObject = stream;
-      videoElement.play();
+      videoElement.setAttribute('playsinline', 'true');
+      videoElement.setAttribute('autoplay', 'true');
+      videoElement.muted = true;
       
-      // Debounce the barcode detection to prevent flickering
+      // Wait for video to be ready
+      await new Promise<void>((resolve, reject) => {
+        videoElement.onloadedmetadata = () => {
+          videoElement.play()
+            .then(() => resolve())
+            .catch(reject);
+        };
+        videoElement.onerror = () => reject(new Error('Video element error'));
+        // Timeout after 5 seconds
+        setTimeout(() => reject(new Error('Video load timeout')), 5000);
+      });
+      
+      setLoading(false);
+      
+      // Debounce the barcode detection
       let lastScanTime = 0;
-      const scanCooldown = 2000; // 2 seconds between scans
+      const scanCooldown = 2000;
       
-      const result = await codeReader.decodeFromVideoDevice(
-        undefined, 
-        videoElement, 
+      // Use decodeFromStream for continuous scanning with the existing stream
+      await codeReader.decodeFromStream(
+        stream,
+        videoElement,
         (result: Result | null, error?: Error) => {
           if (result) {
             const now = Date.now();
@@ -85,15 +105,23 @@ export const useBarcodeScanner = () => {
       console.error('Error starting camera:', error);
       toast.error('Failed to access camera. Please check permissions.');
       setIsScanning(false);
-    } finally {
       setLoading(false);
     }
-  }, []);
+  }, [codeReader]);
 
-  const stopScanning = useCallback(() => {
+  const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
     codeReader.reset();
     setIsScanning(false);
-  }, []);
+    
+    const videoEl = videoElement || activeVideoRef.current;
+    // Also stop any video tracks
+    if (videoEl?.srcObject) {
+      const stream = videoEl.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoEl.srcObject = null;
+    }
+    activeVideoRef.current = null;
+  }, [codeReader]);
 
   const handleBarcodeDetected = async (barcode: string) => {
     setLoading(true);
