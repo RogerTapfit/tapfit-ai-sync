@@ -45,6 +45,7 @@ export const useBarcodeScanner = () => {
   };
 
   const startScanning = useCallback(async (videoElement: HTMLVideoElement) => {
+    console.log('📷 Starting barcode scanner...');
     setIsScanning(true);
     setLoading(true);
     activeVideoRef.current = videoElement;
@@ -53,6 +54,7 @@ export const useBarcodeScanner = () => {
       // First, stop any existing scanning
       codeReader.reset();
       
+      console.log('📷 Requesting camera access...');
       // Request camera permission and get stream
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
@@ -62,6 +64,8 @@ export const useBarcodeScanner = () => {
         } 
       });
       
+      console.log('📷 Camera access granted, setting up video element...');
+      
       // Set up video element
       videoElement.srcObject = stream;
       videoElement.setAttribute('playsinline', 'true');
@@ -70,24 +74,40 @@ export const useBarcodeScanner = () => {
       
       // Wait for video to be ready
       await new Promise<void>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Video load timeout'));
+        }, 10000);
+        
         videoElement.onloadedmetadata = () => {
+          console.log('📷 Video metadata loaded');
+          clearTimeout(timeoutId);
           videoElement.play()
-            .then(() => resolve())
-            .catch(reject);
+            .then(() => {
+              console.log('📷 Video playing');
+              resolve();
+            })
+            .catch((err) => {
+              console.error('📷 Video play error:', err);
+              reject(err);
+            });
         };
-        videoElement.onerror = () => reject(new Error('Video element error'));
-        // Timeout after 5 seconds
-        setTimeout(() => reject(new Error('Video load timeout')), 5000);
+        
+        videoElement.onerror = (e) => {
+          console.error('📷 Video element error:', e);
+          clearTimeout(timeoutId);
+          reject(new Error('Video element error'));
+        };
       });
       
       setLoading(false);
+      console.log('📷 Starting barcode detection...');
       
       // Debounce the barcode detection
       let lastScanTime = 0;
       const scanCooldown = 2000;
       
       // Use decodeFromStream for continuous scanning with the existing stream
-      await codeReader.decodeFromStream(
+      codeReader.decodeFromStream(
         stream,
         videoElement,
         (result: Result | null, error?: Error) => {
@@ -95,14 +115,17 @@ export const useBarcodeScanner = () => {
             const now = Date.now();
             if (now - lastScanTime > scanCooldown) {
               lastScanTime = now;
+              console.log('📷 Barcode detected:', result.getText());
               handleBarcodeDetected(result.getText());
             }
           }
         }
-      );
+      ).catch((err) => {
+        console.error('📷 Decode stream error:', err);
+      });
       
     } catch (error) {
-      console.error('Error starting camera:', error);
+      console.error('📷 Error starting camera:', error);
       toast.error('Failed to access camera. Please check permissions.');
       setIsScanning(false);
       setLoading(false);

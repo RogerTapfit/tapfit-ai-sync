@@ -37,16 +37,29 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
 
   // Start camera when modal opens in camera mode
   useEffect(() => {
-    if (open && mode === 'camera' && videoRef.current && !isScanning) {
-      startScanning(videoRef.current);
+    let mounted = true;
+    
+    const initCamera = async () => {
+      // Small delay to ensure video element is mounted
+      await new Promise(r => setTimeout(r, 100));
+      
+      if (mounted && open && mode === 'camera' && videoRef.current && !isScanning) {
+        console.log('📷 BeverageScannerModal: Initializing camera...');
+        startScanning(videoRef.current);
+      }
+    };
+    
+    if (open && mode === 'camera') {
+      initCamera();
     }
     
     return () => {
-      if (isScanning) {
-        stopScanning(videoRef.current || undefined);
+      mounted = false;
+      if (isScanning && videoRef.current) {
+        stopScanning(videoRef.current);
       }
     };
-  }, [open, mode, isScanning, startScanning, stopScanning]);
+  }, [open, mode]);
 
   // Process barcode when product data is received
   useEffect(() => {
