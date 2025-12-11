@@ -105,6 +105,7 @@ export const getPricingByName = (productName: string): ProductPricing | null => 
   
   // Common product name to pricing mapping
   const namePricingMap: Record<string, ProductPricing> = {
+    // Water brands
     'fiji': { average_price: 2.49, price_low: 1.99, price_high: 3.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'evian': { average_price: 2.29, price_low: 1.79, price_high: 3.49, currency: 'USD', typical_stores: ['Target', 'Walmart'], last_updated: '2024-12' },
     'essentia': { average_price: 2.99, price_low: 2.29, price_high: 3.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
@@ -115,20 +116,39 @@ export const getPricingByName = (productName: string): ProductPricing | null => 
     'voss': { average_price: 3.49, price_low: 2.49, price_high: 4.99, currency: 'USD', typical_stores: ['Target', 'Whole Foods'], last_updated: '2024-12' },
     'core': { average_price: 2.49, price_low: 1.99, price_high: 3.49, currency: 'USD', typical_stores: ['Target', 'Walmart'], last_updated: '2024-12' },
     'liquid death': { average_price: 1.99, price_low: 1.49, price_high: 2.99, currency: 'USD', typical_stores: ['Target', 'Whole Foods'], last_updated: '2024-12' },
+    'crystal geyser': { average_price: 1.29, price_low: 0.79, price_high: 1.99, currency: 'USD', typical_stores: ['Walmart', 'Target', 'Grocery Outlet', 'Dollar Tree'], last_updated: '2024-12' },
+    'arrowhead': { average_price: 1.49, price_low: 0.99, price_high: 2.29, currency: 'USD', typical_stores: ['Walmart', 'Target', 'Ralph\'s'], last_updated: '2024-12' },
+    'deer park': { average_price: 1.39, price_low: 0.89, price_high: 1.99, currency: 'USD', typical_stores: ['Walmart', 'Target', 'CVS'], last_updated: '2024-12' },
+    'ozarka': { average_price: 1.29, price_low: 0.79, price_high: 1.89, currency: 'USD', typical_stores: ['Walmart', 'H-E-B', 'Kroger'], last_updated: '2024-12' },
+    'ice mountain': { average_price: 1.39, price_low: 0.89, price_high: 1.99, currency: 'USD', typical_stores: ['Walmart', 'Meijer', 'Target'], last_updated: '2024-12' },
+    'zephyrhills': { average_price: 1.29, price_low: 0.79, price_high: 1.89, currency: 'USD', typical_stores: ['Walmart', 'Publix', 'Target'], last_updated: '2024-12' },
+    'mountain valley': { average_price: 3.99, price_low: 2.99, price_high: 5.49, currency: 'USD', typical_stores: ['Whole Foods', 'Sprouts', 'Natural Grocers'], last_updated: '2024-12' },
+    'san pellegrino': { average_price: 2.49, price_low: 1.99, price_high: 3.49, currency: 'USD', typical_stores: ['Target', 'Whole Foods', 'Costco'], last_updated: '2024-12' },
+    'perrier': { average_price: 2.29, price_low: 1.79, price_high: 2.99, currency: 'USD', typical_stores: ['Target', 'Whole Foods', 'Costco'], last_updated: '2024-12' },
+    'topo chico': { average_price: 1.99, price_low: 1.49, price_high: 2.79, currency: 'USD', typical_stores: ['Target', 'H-E-B', 'Whole Foods'], last_updated: '2024-12' },
+    'la croix': { average_price: 5.99, price_low: 4.49, price_high: 7.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'Costco'], last_updated: '2024-12' },
+    'bubly': { average_price: 5.49, price_low: 3.99, price_high: 6.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'Costco'], last_updated: '2024-12' },
+    'aha': { average_price: 5.49, price_low: 3.99, price_high: 6.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'Kroger'], last_updated: '2024-12' },
+    // Sodas
     'coca-cola': { average_price: 2.29, price_low: 1.79, price_high: 2.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'coke': { average_price: 2.29, price_low: 1.79, price_high: 2.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'pepsi': { average_price: 2.19, price_low: 1.69, price_high: 2.89, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'dr pepper': { average_price: 2.29, price_low: 1.79, price_high: 2.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'sprite': { average_price: 2.19, price_low: 1.69, price_high: 2.89, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
+    // Energy drinks
     'red bull': { average_price: 3.49, price_low: 2.49, price_high: 4.49, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'monster': { average_price: 2.99, price_low: 2.29, price_high: 3.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'celsius': { average_price: 2.49, price_low: 1.99, price_high: 3.29, currency: 'USD', typical_stores: ['Target', 'Walmart', 'GNC'], last_updated: '2024-12' },
+    // Sports drinks
     'gatorade': { average_price: 1.99, price_low: 1.49, price_high: 2.79, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'bodyarmor': { average_price: 2.49, price_low: 1.79, price_high: 3.29, currency: 'USD', typical_stores: ['Target', 'Walmart', 'CVS'], last_updated: '2024-12' },
     'powerade': { average_price: 1.79, price_low: 1.29, price_high: 2.49, currency: 'USD', typical_stores: ['Target', 'Walmart'], last_updated: '2024-12' },
+    // Juices
     'tropicana': { average_price: 4.99, price_low: 3.99, price_high: 6.49, currency: 'USD', typical_stores: ['Target', 'Walmart', 'Kroger'], last_updated: '2024-12' },
     'simply orange': { average_price: 4.49, price_low: 3.49, price_high: 5.99, currency: 'USD', typical_stores: ['Target', 'Walmart', 'Kroger'], last_updated: '2024-12' },
+    // Coffee
     'starbucks': { average_price: 3.49, price_low: 2.79, price_high: 4.49, currency: 'USD', typical_stores: ['Target', 'Starbucks', 'CVS'], last_updated: '2024-12' },
+    // Alcohol
     'budweiser': { average_price: 9.99, price_low: 7.99, price_high: 12.99, currency: 'USD', typical_stores: ['Liquor Stores', 'Walmart'], last_updated: '2024-12' },
     'corona': { average_price: 15.99, price_low: 12.99, price_high: 18.99, currency: 'USD', typical_stores: ['Liquor Stores', 'Costco'], last_updated: '2024-12' },
     'white claw': { average_price: 17.99, price_low: 14.99, price_high: 21.99, currency: 'USD', typical_stores: ['Target', 'Costco'], last_updated: '2024-12' },
