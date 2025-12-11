@@ -1150,8 +1150,8 @@ const WorkoutDetail = () => {
                           type="number"
                           value={set.actualReps}
                           onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                          className="w-full h-10"
-                          disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
+                          className={`w-full h-10 ${set.completed ? 'border-green-500/50' : ''}`}
+                          disabled={autoFlowActive && set.id === setIndexAuto}
                         />
                         <span className="text-sm text-muted-foreground whitespace-nowrap">minutes</span>
                       </div>
@@ -1171,8 +1171,8 @@ const WorkoutDetail = () => {
                           type="number"
                           value={set.actualReps}
                           onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                          className="w-full h-10"
-                          disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
+                          className={`w-full h-10 ${set.completed ? 'border-green-500/50' : ''}`}
+                          disabled={autoFlowActive && set.id === setIndexAuto}
                         />
                         <span className="text-sm text-muted-foreground whitespace-nowrap">reps</span>
                       </div>
@@ -1182,8 +1182,8 @@ const WorkoutDetail = () => {
                           type="number"
                           value={set.actualWeight}
                           onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
-                          className="w-full h-10"
-                          disabled={set.completed || (autoFlowActive && set.id === setIndexAuto)}
+                          className={`w-full h-10 ${set.completed ? 'border-green-500/50' : ''}`}
+                          disabled={autoFlowActive && set.id === setIndexAuto}
                         />
                         <span className="text-sm text-muted-foreground whitespace-nowrap">lbs</span>
                       </div>

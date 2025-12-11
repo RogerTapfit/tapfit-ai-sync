@@ -950,8 +950,7 @@ export default function MachineWorkout() {
                             type="number"
                             value={set.actualReps}
                             onChange={(e) => handleSetEdit(index, 'actualReps', parseInt(e.target.value) || 0)}
-                            disabled={set.completed}
-                            className="mt-1"
+                            className={`mt-1 ${set.completed ? 'border-green-500/50' : ''}`}
                           />
                         </div>
                         <div>
@@ -963,8 +962,7 @@ export default function MachineWorkout() {
                             type="number"
                             value={set.actualWeight}
                             onChange={(e) => handleSetEdit(index, 'actualWeight', parseInt(e.target.value) || 0)}
-                            disabled={set.completed}
-                            className="mt-1"
+                            className={`mt-1 ${set.completed ? 'border-green-500/50' : ''}`}
                           />
                         </div>
                       </div>

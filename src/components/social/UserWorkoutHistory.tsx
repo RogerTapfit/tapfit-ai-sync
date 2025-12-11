@@ -15,7 +15,10 @@ import {
   Zap,
   Trophy,
   Timer,
-  Activity
+  Activity,
+  Pencil,
+  Save,
+  XCircle
 } from 'lucide-react';
 import { SetDetailTable } from './SetDetailTable';
 import { RPEMeter } from './RPEMeter';
@@ -23,6 +26,7 @@ import { PRBadge } from './PRBadge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Collapsible,
   CollapsibleContent,
@@ -41,19 +45,60 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 
 interface UserWorkoutHistoryProps {
   userId: string;
 }
 
+interface EditingExercise {
+  exerciseId: string;
+  sets: number;
+  reps: number;
+  weight: number;
+}
+
 export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) {
-  const { workouts, loading } = useUserWorkoutHistory(userId);
+  const { workouts, loading, refetch } = useUserWorkoutHistory(userId);
+  const { updateExerciseLog } = useWorkoutLogger();
   const [expandedWorkouts, setExpandedWorkouts] = useState<Set<string>>(new Set());
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string>('all');
   const [selectedMachine, setSelectedMachine] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<EditingExercise | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const startEditExercise = (exercise: any) => {
+    setEditingExercise({
+      exerciseId: exercise.id,
+      sets: exercise.sets_completed || 0,
+      reps: exercise.reps_completed || 0,
+      weight: exercise.weight_used || 0
+    });
+  };
+
+  const cancelEditExercise = () => {
+    setEditingExercise(null);
+  };
+
+  const saveEditExercise = async () => {
+    if (!editingExercise) return;
+    
+    setIsSaving(true);
+    const success = await updateExerciseLog(editingExercise.exerciseId, {
+      sets_completed: editingExercise.sets,
+      reps_completed: editingExercise.reps,
+      weight_used: editingExercise.weight
+    });
+    
+    if (success) {
+      setEditingExercise(null);
+      refetch();
+    }
+    setIsSaving(false);
+  };
 
   const toggleWorkout = (workoutId: string) => {
     setExpandedWorkouts(prev => {
@@ -415,6 +460,7 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                 </h4>
                 {workout.exercises.map((exercise, idx) => {
                   const hasSetData = exercise.sets && exercise.sets.length > 0;
+                  const isEditing = editingExercise?.exerciseId === exercise.id;
                   
                   return (
                     <div key={idx} className="rounded-lg border border-border overflow-hidden">
@@ -435,43 +481,122 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                               {exercise.machine_name}
                             </Badge>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground mb-1">Total Volume</p>
-                            <p className="text-lg font-bold text-primary">
-                              {hasSetData ? `${exercise.total_volume.toLocaleString()} lbs` : 'N/A'}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            {exercise.id && !isEditing && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEditExercise(exercise);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground mb-1">Total Volume</p>
+                              <p className="text-lg font-bold text-primary">
+                                {hasSetData ? `${exercise.total_volume.toLocaleString()} lbs` : 'N/A'}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       
-                        {/* Exercise Stats */}
-                        {hasSetData ? (
-                          <div className="mt-3 flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">Sets:</span>
-                              <span className="font-semibold">{exercise.sets_completed}</span>
+                        {/* Edit Mode */}
+                        {isEditing && editingExercise ? (
+                          <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                            <div className="grid grid-cols-3 gap-3 mb-3">
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Sets</label>
+                                <Input
+                                  type="number"
+                                  value={editingExercise.sets}
+                                  onChange={(e) => setEditingExercise({
+                                    ...editingExercise,
+                                    sets: parseInt(e.target.value) || 0
+                                  })}
+                                  className="h-9"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
+                                <Input
+                                  type="number"
+                                  value={editingExercise.reps}
+                                  onChange={(e) => setEditingExercise({
+                                    ...editingExercise,
+                                    reps: parseInt(e.target.value) || 0
+                                  })}
+                                  className="h-9"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Weight (lbs)</label>
+                                <Input
+                                  type="number"
+                                  value={editingExercise.weight}
+                                  onChange={(e) => setEditingExercise({
+                                    ...editingExercise,
+                                    weight: parseInt(e.target.value) || 0
+                                  })}
+                                  className="h-9"
+                                />
+                              </div>
                             </div>
-                            <span className="text-muted-foreground">•</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground">Total Reps:</span>
-                              <span className="font-semibold">{exercise.reps_completed}</span>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={saveEditExercise}
+                                disabled={isSaving}
+                                className="flex-1"
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                {isSaving ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={cancelEditExercise}
+                                disabled={isSaving}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
                             </div>
-                            {exercise.avg_rpe && (
-                              <>
-                                <span className="text-muted-foreground">•</span>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-muted-foreground">Avg RPE:</span>
-                                  <span className="font-semibold">{exercise.avg_rpe.toFixed(1)}/10</span>
-                                </div>
-                              </>
-                            )}
                           </div>
                         ) : (
-                          <div className="mt-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
-                            <p className="text-sm text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
-                              <Activity className="h-4 w-4" />
-                              No set data recorded for this exercise
-                            </p>
-                          </div>
+                          /* Exercise Stats */
+                          hasSetData ? (
+                            <div className="mt-3 flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-muted-foreground">Sets:</span>
+                                <span className="font-semibold">{exercise.sets_completed}</span>
+                              </div>
+                              <span className="text-muted-foreground">•</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-muted-foreground">Total Reps:</span>
+                                <span className="font-semibold">{exercise.reps_completed}</span>
+                              </div>
+                              {exercise.avg_rpe && (
+                                <>
+                                  <span className="text-muted-foreground">•</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-muted-foreground">Avg RPE:</span>
+                                    <span className="font-semibold">{exercise.avg_rpe.toFixed(1)}/10</span>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="mt-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                              <p className="text-sm text-yellow-600 dark:text-yellow-500 flex items-center gap-2">
+                                <Activity className="h-4 w-4" />
+                                No set data recorded for this exercise
+                              </p>
+                            </div>
+                          )
                         )}
 
                         {/* RPE Meter */}

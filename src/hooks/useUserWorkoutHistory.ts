@@ -11,6 +11,7 @@ interface SetDetail {
 }
 
 interface ExerciseDetail {
+  id?: string;
   exercise_name: string;
   machine_name: string;
   sets_completed: number;
@@ -40,9 +41,16 @@ interface WorkoutHistoryItem {
   totalRestTime: number;
 }
 
+export interface ExerciseDetailPublic extends ExerciseDetail {
+  id?: string;
+}
+
 export const useUserWorkoutHistory = (userId?: string) => {
   const [workouts, setWorkouts] = useState<WorkoutHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = () => setRefreshKey(prev => prev + 1);
 
   useEffect(() => {
     const fetchWorkouts = async () => {
@@ -153,6 +161,7 @@ export const useUserWorkoutHistory = (userId?: string) => {
             if (isPr) prCount++;
 
             return {
+              id: ex.id,
               exercise_name: ex.exercise_name || 'Unknown Exercise',
               machine_name: ex.machine_name || 'Unknown Machine',
               sets_completed: ex.sets_completed || sets.length,
@@ -194,7 +203,7 @@ export const useUserWorkoutHistory = (userId?: string) => {
     };
 
     fetchWorkouts();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
-  return { workouts, loading };
+  return { workouts, loading, refetch };
 };
