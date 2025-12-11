@@ -16,12 +16,14 @@ interface ProductData {
     fiber_100g?: number;
     sugars_100g?: number;
     salt_100g?: number;
+    alcohol_100g?: number;
     // Per-serving values (direct from label)
     calories_serving?: number;
     proteins_serving?: number;
     carbohydrates_serving?: number;
     fat_serving?: number;
     sugars_serving?: number;
+    alcohol_serving?: number;
   };
   ingredients?: string;
   serving_size?: string;

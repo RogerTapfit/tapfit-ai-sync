@@ -7,7 +7,7 @@ import {
   getScoreColor,
   BeverageGradeResult 
 } from '@/utils/beverageHealthGrading';
-import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot } from 'lucide-react';
+import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Slider } from './ui/slider';
 
@@ -21,6 +21,7 @@ interface ServingData {
     carbs: number;
     fat: number;
     sugar: number;
+    alcoholContent?: number;
   };
 }
 
@@ -60,7 +61,8 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
     protein: beverageInfo.protein,
     carbs: beverageInfo.carbs,
     fat: beverageInfo.fat,
-    sugar: beverageInfo.sugar || 0
+    sugar: beverageInfo.sugar || 0,
+    alcoholContent: beverageInfo.alcoholContent
   };
   
   const displayNutrition = {
@@ -68,7 +70,8 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
     protein: Math.round(baseNutrition.protein * selectedServings * 10) / 10,
     carbs: Math.round(baseNutrition.carbs * selectedServings),
     fat: Math.round(baseNutrition.fat * selectedServings * 10) / 10,
-    sugar: Math.round(baseNutrition.sugar * selectedServings)
+    sugar: Math.round(baseNutrition.sugar * selectedServings),
+    alcoholContent: baseNutrition.alcoholContent || 0
   };
   
   const displayServingOz = Math.round((servingData?.servingOz || servingOz || beverageInfo.servingOz) * selectedServings * 10) / 10;
@@ -181,6 +184,17 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
         </div>
         
         <div className="space-y-2">
+          {/* Alcohol Content - Prominent for alcoholic beverages */}
+          {displayNutrition.alcoholContent > 0 && (
+            <div className="flex justify-between items-center py-2 border-b border-border bg-purple-500/10 -mx-4 px-4 rounded-t-lg">
+              <div className="flex items-center gap-2">
+                <Wine className="h-4 w-4 text-purple-500" />
+                <span className="font-semibold text-foreground">Alcohol (ABV)</span>
+              </div>
+              <span className="text-xl font-bold text-purple-400">{displayNutrition.alcoholContent}%</span>
+            </div>
+          )}
+
           {/* Calories - Prominent */}
           <div className="flex justify-between items-center py-2 border-b border-border">
             <div className="flex items-center gap-2">

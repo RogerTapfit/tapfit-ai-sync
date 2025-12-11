@@ -30,6 +30,7 @@ interface ServingData {
     carbs: number;
     fat: number;
     sugar: number;
+    alcoholContent?: number;
   };
 }
 
@@ -172,6 +173,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             carbs: matchedBeverage.carbs,
             fat: matchedBeverage.fat,
             sugar: matchedBeverage.sugar,
+            alcoholContent: matchedBeverage.alcoholContent,
           };
           
           const servingData: ServingData = {
@@ -206,6 +208,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             carbs: nutrition?.carbohydrates_serving ?? (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
             fat: nutrition?.fat_serving ?? (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
             sugar: nutrition?.sugars_serving ?? (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
+            alcoholContent: nutrition?.alcohol_serving ?? nutrition?.alcohol_100g,
           };
           
           const beverageInfo: BeverageType = {

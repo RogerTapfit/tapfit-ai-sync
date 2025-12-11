@@ -27,6 +27,7 @@ export interface BeverageType {
   fat: number;
   sugar: number;
   servingOz: number;
+  alcoholContent?: number; // ABV percentage
 }
 
 export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
@@ -132,7 +133,8 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     color: 'text-amber-600',
     isAlcohol: true,
     category: 'alcohol',
-    calories: 150, carbs: 13, protein: 2, fat: 0, sugar: 0, servingOz: 12
+    calories: 150, carbs: 13, protein: 2, fat: 0, sugar: 0, servingOz: 12,
+    alcoholContent: 5
   },
   wine: { 
     name: 'Wine', 
@@ -141,7 +143,8 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     color: 'text-purple-600',
     isAlcohol: true,
     category: 'alcohol',
-    calories: 125, carbs: 4, protein: 0, fat: 0, sugar: 1, servingOz: 5
+    calories: 125, carbs: 4, protein: 0, fat: 0, sugar: 1, servingOz: 5,
+    alcoholContent: 13
   },
   cocktail: { 
     name: 'Cocktail', 
@@ -150,7 +153,8 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     color: 'text-pink-500',
     isAlcohol: true,
     category: 'alcohol',
-    calories: 200, carbs: 15, protein: 0, fat: 0, sugar: 12, servingOz: 8
+    calories: 200, carbs: 15, protein: 0, fat: 0, sugar: 12, servingOz: 8,
+    alcoholContent: 12
   },
   spirits: { 
     name: 'Spirits', 
@@ -159,7 +163,8 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     color: 'text-slate-500',
     isAlcohol: true,
     category: 'alcohol',
-    calories: 97, carbs: 0, protein: 0, fat: 0, sugar: 0, servingOz: 1.5
+    calories: 97, carbs: 0, protein: 0, fat: 0, sugar: 0, servingOz: 1.5,
+    alcoholContent: 40
   },
   hard_cider: { 
     name: 'Hard Cider', 
@@ -168,7 +173,8 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     color: 'text-amber-500',
     isAlcohol: true,
     category: 'alcohol',
-    calories: 200, carbs: 24, protein: 0, fat: 0, sugar: 20, servingOz: 12
+    calories: 200, carbs: 24, protein: 0, fat: 0, sugar: 20, servingOz: 12,
+    alcoholContent: 5
   },
   hard_seltzer: { 
     name: 'Seltzer', 
@@ -177,7 +183,8 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     color: 'text-sky-400',
     isAlcohol: true,
     category: 'alcohol',
-    calories: 100, carbs: 2, protein: 0, fat: 0, sugar: 2, servingOz: 12
+    calories: 100, carbs: 2, protein: 0, fat: 0, sugar: 2, servingOz: 12,
+    alcoholContent: 5
   },
 };
 
