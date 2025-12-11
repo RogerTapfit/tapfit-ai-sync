@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FoodItem } from '@/hooks/useNutrition';
 import { ApiKeyManager } from './ApiKeyManager';
 import { ProductNotFoundDialog } from './ProductNotFoundDialog';
+import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
+import { ProductPriceCard } from './ProductPriceCard';
 
 interface BarcodeScannerProps {
   onProductFound?: (foodItem: FoodItem) => void;
@@ -32,17 +34,39 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   const [showApiManager, setShowApiManager] = useState(false);
   const [showProductNotFound, setShowProductNotFound] = useState(false);
   const [lastScannedBarcode, setLastScannedBarcode] = useState<string>('');
+  const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
   
   const {
     isScanning,
     productData,
     loading,
+    lastBarcode,
     startScanning,
     stopScanning,
     convertToFoodItem,
     resetScanner,
     fetchProductData
   } = useBarcodeScanner();
+
+  // Fetch pricing when product data is found
+  useEffect(() => {
+    const fetchPricing = async () => {
+      if (productData && (lastBarcode || productData.name)) {
+        try {
+          const priceData = await PriceLookupService.lookupPrice(
+            lastBarcode || '',
+            productData.name
+          );
+          setPricing(priceData);
+        } catch (error) {
+          console.log('Price lookup unavailable:', error);
+        }
+      } else {
+        setPricing(null);
+      }
+    };
+    fetchPricing();
+  }, [productData, lastBarcode]);
 
   useEffect(() => {
     if (isOpen && scanMode === 'camera' && videoRef.current && !isScanning) {
@@ -83,6 +107,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
 
   const handleRetry = () => {
     resetScanner();
+    setPricing(null);
     if (scanMode === 'camera' && videoRef.current) {
       startScanning(videoRef.current);
     }
@@ -325,6 +350,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                     </div>
                   )}
                 </div>
+
+                {/* Price Comparison */}
+                {pricing && (
+                  <ProductPriceCard 
+                    pricing={pricing} 
+                    productName={productData.name} 
+                  />
+                )}
 
                 <div>
                   <Label htmlFor="serving">Serving Size (grams)</Label>
