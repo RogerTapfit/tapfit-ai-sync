@@ -1,14 +1,23 @@
+import { useState, useEffect } from 'react';
 import { WaterProduct, getPHDescription, getGradeColor, getGradeDescription } from '@/services/waterQualityDatabase';
 import { Badge } from '@/components/ui/badge';
 import { Droplet, MapPin, Check, AlertTriangle, Beaker, Sparkles } from 'lucide-react';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 
 interface WaterQualityCardProps {
   water: WaterProduct;
 }
 
 export const WaterQualityCard = ({ water }: WaterQualityCardProps) => {
+  const [isAnimated, setIsAnimated] = useState(false);
   const phInfo = getPHDescription(water.ph_level);
   const gradeColorClass = getGradeColor(water.quality_grade);
+
+  // Trigger animation after component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => setIsAnimated(true), 200);
+    return () => clearTimeout(timer);
+  }, [water.ph_level]);
 
   return (
     <div className="space-y-4">
@@ -42,10 +51,10 @@ export const WaterQualityCard = ({ water }: WaterQualityCardProps) => {
             <span>9</span>
             <span>10</span>
           </div>
-          {/* Indicator */}
+          {/* Animated Indicator */}
           <div 
-            className="absolute top-0 bottom-0 w-1 bg-white shadow-lg border-2 border-foreground rounded-full transform -translate-x-1/2"
-            style={{ left: `${((water.ph_level - 4) / 6) * 100}%` }}
+            className="absolute top-0 bottom-0 w-1 bg-white shadow-lg border-2 border-foreground rounded-full transform -translate-x-1/2 transition-all duration-1000 ease-out"
+            style={{ left: isAnimated ? `${((water.ph_level - 4) / 6) * 100}%` : '0%' }}
           />
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -58,7 +67,7 @@ export const WaterQualityCard = ({ water }: WaterQualityCardProps) => {
       {/* Quality Score */}
       <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold border-2 ${gradeColorClass}`}>
-          {water.quality_score}
+          <AnimatedNumber finalValue={water.quality_score} duration={1500} />
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-foreground">Quality Score</p>
