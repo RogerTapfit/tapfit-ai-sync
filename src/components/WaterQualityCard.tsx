@@ -18,10 +18,10 @@ export const WaterQualityCard = ({ water }: WaterQualityCardProps) => {
   useEffect(() => {
     const timer = setTimeout(() => setIsAnimated(true), 200);
     
-    // Play sound after animation completes (1500ms animation + 200ms delay + 100ms buffer)
+    // Play sound after animation completes (2250ms animation + 200ms delay + 100ms buffer)
     const soundTimer = setTimeout(() => {
       playPHSound(water.ph_level);
-    }, 1800);
+    }, 2550);
     
     return () => {
       clearTimeout(timer);
@@ -67,7 +67,7 @@ export const WaterQualityCard = ({ water }: WaterQualityCardProps) => {
           </div>
           {/* Enhanced Animated Indicator - positioned above the bar */}
           <div 
-            className="absolute top-0 bottom-0 flex flex-col items-center transform -translate-x-1/2 transition-all duration-[1500ms] ease-out"
+            className="absolute top-0 bottom-0 flex flex-col items-center transform -translate-x-1/2 transition-all duration-[2250ms] ease-out"
             style={{ left: isAnimated ? `${((water.ph_level - 4) / 6) * 100}%` : '0%' }}
           >
             {/* pH Number floating above */}
