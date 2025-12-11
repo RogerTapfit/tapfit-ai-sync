@@ -28,19 +28,34 @@ export const useOnboarding = (userId?: string) => {
   const fetchProfile = async () => {
     if (!userId) return;
 
+    // Create abort controller with 5 second timeout for Safari mobile hang prevention
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.warn('⏱️ Profile fetch timeout after 5s');
+      controller.abort();
+    }, 5000);
+
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('id, onboarding_completed, calibration_completed, weight_kg, height_cm, gender, diet_type')
         .eq('id', userId)
+        .abortSignal(controller.signal)
         .single();
+
+      clearTimeout(timeoutId);
 
       if (error) throw error;
 
       setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error?.name === 'AbortError') {
+        console.warn('⏱️ Profile fetch aborted due to timeout');
+      } else {
+        console.error('Error fetching profile:', error);
+      }
       setError('Failed to load profile');
     } finally {
       setLoading(false);
