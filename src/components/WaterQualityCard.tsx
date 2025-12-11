@@ -47,27 +47,35 @@ export const WaterQualityCard = ({ water }: WaterQualityCardProps) => {
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground font-medium">pH Level</span>
           <span className={`font-bold ${phInfo.color}`}>
-            {water.ph_level} - {phInfo.text}
+            {phInfo.text}
           </span>
         </div>
-        <div className="relative h-6 rounded-full overflow-hidden bg-gradient-to-r from-red-500 via-yellow-400 via-green-500 via-cyan-500 to-blue-600">
-          {/* pH markers */}
-          <div className="absolute inset-0 flex justify-between px-2 items-center text-[10px] text-white font-medium">
-            <span>4</span>
-            <span>5</span>
-            <span>6</span>
-            <span>7</span>
-            <span>8</span>
-            <span>9</span>
-            <span>10</span>
+        {/* Container with extra top padding for floating number */}
+        <div className="relative pt-8">
+          {/* Gradient bar */}
+          <div className="relative h-6 rounded-full overflow-hidden bg-gradient-to-r from-red-500 via-yellow-400 via-green-500 via-cyan-500 to-blue-600">
+            {/* pH markers */}
+            <div className="absolute inset-0 flex justify-between px-2 items-center text-[10px] text-white font-medium">
+              <span>4</span>
+              <span>5</span>
+              <span>6</span>
+              <span>7</span>
+              <span>8</span>
+              <span>9</span>
+              <span>10</span>
+            </div>
           </div>
-          {/* Enhanced Animated Indicator */}
+          {/* Enhanced Animated Indicator - positioned above the bar */}
           <div 
-            className="absolute -top-2 bottom-0 flex flex-col items-center transform -translate-x-1/2 transition-all duration-[1500ms] ease-out"
+            className="absolute top-0 bottom-0 flex flex-col items-center transform -translate-x-1/2 transition-all duration-[1500ms] ease-out"
             style={{ left: isAnimated ? `${((water.ph_level - 4) / 6) * 100}%` : '0%' }}
           >
+            {/* pH Number floating above */}
+            <div className="bg-white text-black font-bold text-sm px-2 py-0.5 rounded-full shadow-lg min-w-[28px] text-center mb-1">
+              {water.ph_level}
+            </div>
             {/* Droplet pointer */}
-            <Droplet className="h-5 w-5 text-white fill-white drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
+            <Droplet className="h-4 w-4 text-white fill-white drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]" />
             {/* Vertical line with glow */}
             <div className="w-1.5 flex-1 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.8)] border border-black/20" />
           </div>
