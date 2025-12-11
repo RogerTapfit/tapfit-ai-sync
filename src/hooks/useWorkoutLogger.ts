@@ -486,6 +486,57 @@ export const useWorkoutLogger = () => {
     }
   };
 
+  // Update an existing exercise log (for editing after completion)
+  const updateExerciseLog = async (
+    exerciseLogId: string,
+    updates: { 
+      sets_completed?: number;
+      reps_completed?: number;
+      weight_used?: number;
+      notes?: string;
+    }
+  ) => {
+    if (isGuestMode()) {
+      toast({ title: 'Guest Mode', description: 'Updates aren\'t saved in guest mode.', variant: 'destructive' });
+      return false;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No user found for updateExerciseLog');
+      return false;
+    }
+
+    console.log("Updating exercise log:", exerciseLogId, updates);
+
+    try {
+      const { error } = await supabase
+        .from('exercise_logs')
+        .update(updates)
+        .eq('id', exerciseLogId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating exercise log:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Exercise Updated! ✏️",
+        description: "Your workout data has been saved.",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating exercise:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update exercise.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   // Calculate actual workout totals from logged exercises
   const calculateActualWorkoutTotals = async (workoutLogId?: string) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -643,6 +694,7 @@ export const useWorkoutLogger = () => {
     loading,
     startWorkout,
     logExercise,
+    updateExerciseLog,
     completeWorkout,
     getTodaysCompletedExercises,
     calculateActualWorkoutTotals,
