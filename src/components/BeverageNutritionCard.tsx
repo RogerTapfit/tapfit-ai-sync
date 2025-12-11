@@ -9,16 +9,35 @@ import {
 } from '@/utils/beverageHealthGrading';
 import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
+import { Slider } from './ui/slider';
+
+interface ServingData {
+  servingSizeLabel: string;
+  servingOz: number;
+  maxServings: number;
+  perServingNutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    sugar: number;
+  };
+}
 
 interface BeverageNutritionCardProps {
   beverageInfo: BeverageType;
   productName?: string;
   servingOz?: number;
+  servingData?: ServingData;
 }
 
-export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: BeverageNutritionCardProps) => {
+export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData }: BeverageNutritionCardProps) => {
   const [gradeResult, setGradeResult] = useState<BeverageGradeResult | null>(null);
   const [isAnimated, setIsAnimated] = useState(false);
+  const [selectedServings, setSelectedServings] = useState(1);
+
+  const maxServings = servingData?.maxServings || 1;
+  const hasMultipleServings = maxServings > 1;
 
   useEffect(() => {
     const result = calculateBeverageHealthGrade(beverageInfo, productName);
@@ -34,6 +53,25 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: 
   const scoreColor = getScoreColor(gradeResult.score);
   const circumference = 2 * Math.PI * 40; // radius = 40
   const strokeDashoffset = circumference - (gradeResult.score / 100) * circumference;
+
+  // Calculate nutrition based on selected servings
+  const baseNutrition = servingData?.perServingNutrition || {
+    calories: beverageInfo.calories,
+    protein: beverageInfo.protein,
+    carbs: beverageInfo.carbs,
+    fat: beverageInfo.fat,
+    sugar: beverageInfo.sugar || 0
+  };
+  
+  const displayNutrition = {
+    calories: Math.round(baseNutrition.calories * selectedServings),
+    protein: Math.round(baseNutrition.protein * selectedServings * 10) / 10,
+    carbs: Math.round(baseNutrition.carbs * selectedServings),
+    fat: Math.round(baseNutrition.fat * selectedServings * 10) / 10,
+    sugar: Math.round(baseNutrition.sugar * selectedServings)
+  };
+  
+  const displayServingOz = Math.round((servingData?.servingOz || servingOz || beverageInfo.servingOz) * selectedServings * 10) / 10;
 
   return (
     <div className="space-y-4">
@@ -88,7 +126,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: 
                 {productName || beverageInfo.name}
               </h3>
               <p className="text-sm text-muted-foreground capitalize">
-                {beverageInfo.category} • {servingOz || beverageInfo.servingOz}oz serving
+                {beverageInfo.category} • {servingData?.servingSizeLabel || `${servingOz || beverageInfo.servingOz}oz`}
               </p>
             </div>
           </div>
@@ -105,11 +143,42 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: 
         </div>
       </div>
 
+      {/* Serving Slider */}
+      {hasMultipleServings && (
+        <div className="p-4 rounded-lg bg-muted/30 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-foreground">Servings</span>
+            <span className="text-lg font-bold text-foreground">
+              {selectedServings} of {maxServings}
+            </span>
+          </div>
+          <Slider
+            value={[selectedServings]}
+            onValueChange={(value) => setSelectedServings(value[0])}
+            min={1}
+            max={maxServings}
+            step={1}
+            className="enhanced-slider"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>1 serving ({servingData?.servingSizeLabel})</span>
+            <span>Whole container ({displayServingOz}oz)</span>
+          </div>
+        </div>
+      )}
+
       {/* Nutrition Facts */}
       <div className="rounded-lg border border-border bg-card p-4">
-        <h4 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3 pb-2 border-b border-border">
-          Nutrition Facts
-        </h4>
+        <div className="flex justify-between items-center mb-3 pb-2 border-b border-border">
+          <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">
+            Nutrition Facts
+          </h4>
+          {hasMultipleServings && (
+            <span className="text-xs text-muted-foreground">
+              {selectedServings === 1 ? 'Per serving' : `${selectedServings} servings`}
+            </span>
+          )}
+        </div>
         
         <div className="space-y-2">
           {/* Calories - Prominent */}
@@ -118,7 +187,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: 
               <Flame className="h-4 w-4 text-orange-500" />
               <span className="font-semibold text-foreground">Calories</span>
             </div>
-            <span className="text-xl font-bold text-foreground">{beverageInfo.calories}</span>
+            <span className="text-xl font-bold text-foreground">{displayNutrition.calories}</span>
           </div>
 
           {/* Macros */}
@@ -127,7 +196,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: 
               <Drumstick className="h-4 w-4 text-red-400" />
               <span className="text-foreground">Protein</span>
             </div>
-            <span className="font-medium text-foreground">{beverageInfo.protein}g</span>
+            <span className="font-medium text-foreground">{displayNutrition.protein}g</span>
           </div>
 
           <div className="flex justify-between items-center py-1.5">
@@ -135,25 +204,23 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz }: 
               <Wheat className="h-4 w-4 text-amber-500" />
               <span className="text-foreground">Carbohydrates</span>
             </div>
-            <span className="font-medium text-foreground">{beverageInfo.carbs}g</span>
+            <span className="font-medium text-foreground">{displayNutrition.carbs}g</span>
           </div>
 
           {/* Sugar - indented under carbs */}
-          {beverageInfo.sugar !== undefined && (
-            <div className="flex justify-between items-center py-1.5 pl-6">
-              <span className="text-muted-foreground">└ Sugar</span>
-              <span className={`font-medium ${beverageInfo.sugar > 20 ? 'text-red-400' : beverageInfo.sugar > 10 ? 'text-yellow-400' : 'text-foreground'}`}>
-                {beverageInfo.sugar}g {beverageInfo.sugar > 20 && '⚠️'}
-              </span>
-            </div>
-          )}
+          <div className="flex justify-between items-center py-1.5 pl-6">
+            <span className="text-muted-foreground">└ Sugar</span>
+            <span className={`font-medium ${displayNutrition.sugar > 20 ? 'text-red-400' : displayNutrition.sugar > 10 ? 'text-yellow-400' : 'text-foreground'}`}>
+              {displayNutrition.sugar}g {displayNutrition.sugar > 20 && '⚠️'}
+            </span>
+          </div>
 
           <div className="flex justify-between items-center py-1.5">
             <div className="flex items-center gap-2">
               <CircleDot className="h-4 w-4 text-yellow-500" />
               <span className="text-foreground">Fat</span>
             </div>
-            <span className="font-medium text-foreground">{beverageInfo.fat}g</span>
+            <span className="font-medium text-foreground">{displayNutrition.fat}g</span>
           </div>
         </div>
       </div>
