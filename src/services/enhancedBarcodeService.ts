@@ -14,9 +14,18 @@ interface ProductData {
     fiber_100g?: number;
     sugars_100g?: number;
     salt_100g?: number;
+    // Per-serving values (direct from label)
+    calories_serving?: number;
+    proteins_serving?: number;
+    carbohydrates_serving?: number;
+    fat_serving?: number;
+    sugars_serving?: number;
   };
   ingredients?: string;
   serving_size?: string;
+  serving_quantity_ml?: number;
+  product_quantity_ml?: number;
+  servings_per_container?: number;
   category?: string;
   store_info?: {
     stores?: string[];
@@ -263,6 +272,29 @@ export class EnhancedBarcodeService {
       }
       
       const product = data.product;
+      const nutriments = product.nutriments || {};
+      
+      // Extract serving quantity in ml (for liquids)
+      let servingQuantityMl = nutriments.serving_quantity || product.serving_quantity;
+      if (!servingQuantityMl && product.serving_size) {
+        // Try to parse serving size string like "1/2 cup (120ml)" or "240ml"
+        const mlMatch = product.serving_size.match(/(\d+)\s*ml/i);
+        if (mlMatch) servingQuantityMl = parseFloat(mlMatch[1]);
+      }
+      
+      // Extract product quantity (total container size)
+      let productQuantityMl = product.product_quantity;
+      if (!productQuantityMl && product.quantity) {
+        const qtyMatch = product.quantity.match(/(\d+)\s*ml/i);
+        if (qtyMatch) productQuantityMl = parseFloat(qtyMatch[1]);
+      }
+      
+      // Calculate servings per container
+      let servingsPerContainer = product.servings_per_container;
+      if (!servingsPerContainer && servingQuantityMl && productQuantityMl) {
+        servingsPerContainer = Math.round(productQuantityMl / servingQuantityMl);
+      }
+      
       return {
         success: true,
         product: {
@@ -271,16 +303,25 @@ export class EnhancedBarcodeService {
           brand: product.brands || '',
           image_url: product.image_url,
           nutrition: {
-            calories_100g: product.nutriments?.['energy-kcal_100g'],
-            proteins_100g: product.nutriments?.proteins_100g,
-            carbohydrates_100g: product.nutriments?.carbohydrates_100g,
-            fat_100g: product.nutriments?.fat_100g,
-            fiber_100g: product.nutriments?.fiber_100g,
-            sugars_100g: product.nutriments?.sugars_100g,
-            salt_100g: product.nutriments?.salt_100g,
+            calories_100g: nutriments['energy-kcal_100g'],
+            proteins_100g: nutriments.proteins_100g,
+            carbohydrates_100g: nutriments.carbohydrates_100g,
+            fat_100g: nutriments.fat_100g,
+            fiber_100g: nutriments.fiber_100g,
+            sugars_100g: nutriments.sugars_100g,
+            salt_100g: nutriments.salt_100g,
+            // Per-serving values (direct from label)
+            calories_serving: nutriments['energy-kcal_serving'],
+            proteins_serving: nutriments.proteins_serving,
+            carbohydrates_serving: nutriments.carbohydrates_serving,
+            fat_serving: nutriments.fat_serving,
+            sugars_serving: nutriments.sugars_serving,
           },
           ingredients: product.ingredients_text,
           serving_size: product.serving_size,
+          serving_quantity_ml: servingQuantityMl,
+          product_quantity_ml: productQuantityMl,
+          servings_per_container: servingsPerContainer,
           category: product.categories,
           data_source: 'OpenFoodFacts',
           confidence: 0.95

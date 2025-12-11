@@ -20,6 +20,19 @@ interface BeverageScannerModalProps {
 
 type ScanMode = 'camera' | 'manual' | 'result';
 
+interface ServingData {
+  servingSizeLabel: string;
+  servingOz: number;
+  maxServings: number;
+  perServingNutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    sugar: number;
+  };
+}
+
 interface ScanResult {
   isWater: boolean;
   waterProduct?: WaterProduct;
@@ -28,6 +41,7 @@ interface ScanResult {
   productName?: string;
   servingOz?: number;
   barcode?: string;
+  servingData?: ServingData;
 }
 
 export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: BeverageScannerModalProps) => {
@@ -117,14 +131,24 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       } else {
         // Check if it's a known beverage type
         const matchedBeverage = findMatchingBeverage(productName);
-        
-        // Create beverage info - use matched or create generic from barcode data
-        // Calculate serving size: 12oz = ~355ml/grams for liquids
-        const servingOz = 12;
-        const servingGrams = servingOz * 29.57; // oz to ml (≈ grams for liquids)
-        const scaleFactor = servingGrams / 100;
-        
         const nutrition = productData?.nutrition;
+        
+        // Use actual serving data from product if available
+        const servingMl = productData?.serving_quantity_ml;
+        const servingOz = servingMl ? Math.round(servingMl / 29.57 * 10) / 10 : 12;
+        const maxServings = productData?.servings_per_container || 1;
+        const servingSizeLabel = productData?.serving_size || `${servingOz}oz`;
+        
+        // Prioritize per-serving values, then scale from 100g
+        const scaleFactor = servingMl ? servingMl / 100 : (servingOz * 29.57) / 100;
+        
+        const perServingNutrition = {
+          calories: nutrition?.calories_serving ?? (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100),
+          protein: nutrition?.proteins_serving ?? (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2),
+          carbs: nutrition?.carbohydrates_serving ?? (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
+          fat: nutrition?.fat_serving ?? (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
+          sugar: nutrition?.sugars_serving ?? (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
+        };
         
         const beverageInfo: BeverageType = matchedBeverage || {
           name: productName || 'Beverage',
@@ -132,13 +156,19 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           hydrationFactor: 0.7,
           color: 'text-cyan-500',
           category: 'moderate',
-          // Scale per-100g values to per-serving (12oz ≈ 355g)
-          calories: nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100,
-          carbs: nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15,
-          protein: nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2,
-          fat: nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2,
-          sugar: nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10,
+          calories: perServingNutrition.calories,
+          carbs: perServingNutrition.carbs,
+          protein: perServingNutrition.protein,
+          fat: perServingNutrition.fat,
+          sugar: perServingNutrition.sugar,
           servingOz
+        };
+        
+        const servingData: ServingData = {
+          servingSizeLabel,
+          servingOz,
+          maxServings,
+          perServingNutrition
         };
         
         setScanResult({
@@ -147,7 +177,8 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           beverageInfo,
           productName,
           servingOz: beverageInfo.servingOz,
-          barcode
+          barcode,
+          servingData
         });
       }
       
@@ -323,6 +354,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   beverageInfo={scanResult.beverageInfo}
                   productName={scanResult.productName}
                   servingOz={scanResult.servingOz}
+                  servingData={scanResult.servingData}
                 />
               )}
 
