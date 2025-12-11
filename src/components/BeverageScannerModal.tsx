@@ -133,53 +133,98 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
         const matchedBeverage = findMatchingBeverage(productName);
         const nutrition = productData?.nutrition;
         
-        // Use actual serving data from product if available
-        const servingMl = productData?.serving_quantity_ml;
-        const servingOz = servingMl ? Math.round(servingMl / 29.57 * 10) / 10 : 12;
-        const maxServings = productData?.servings_per_container || 1;
-        const servingSizeLabel = productData?.serving_size || `${servingOz}oz`;
+        // Get container size from product data (for calculating servings)
+        const containerMl = productData?.product_quantity_ml || 0;
         
-        // Prioritize per-serving values, then scale from 100g
-        const scaleFactor = servingMl ? servingMl / 100 : (servingOz * 29.57) / 100;
-        
-        const perServingNutrition = {
-          calories: nutrition?.calories_serving ?? (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100),
-          protein: nutrition?.proteins_serving ?? (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2),
-          carbs: nutrition?.carbohydrates_serving ?? (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
-          fat: nutrition?.fat_serving ?? (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
-          sugar: nutrition?.sugars_serving ?? (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
-        };
-        
-        const beverageInfo: BeverageType = matchedBeverage || {
-          name: productName || 'Beverage',
-          icon: Droplet,
-          hydrationFactor: 0.7,
-          color: 'text-cyan-500',
-          category: 'moderate',
-          calories: perServingNutrition.calories,
-          carbs: perServingNutrition.carbs,
-          protein: perServingNutrition.protein,
-          fat: perServingNutrition.fat,
-          sugar: perServingNutrition.sugar,
-          servingOz
-        };
-        
-        const servingData: ServingData = {
-          servingSizeLabel,
-          servingOz,
-          maxServings,
-          perServingNutrition
-        };
-        
-        setScanResult({
-          isWater: false,
-          beverageType: matchedBeverage?.key || 'other',
-          beverageInfo,
-          productName,
-          servingOz: beverageInfo.servingOz,
-          barcode,
-          servingData
-        });
+        // If matched beverage found, use its known nutrition values
+        if (matchedBeverage) {
+          const knownServingOz = matchedBeverage.servingOz;
+          const knownServingMl = knownServingOz * 29.57;
+          
+          // Calculate max servings from container size
+          let maxServings = 1;
+          if (containerMl > 0) {
+            maxServings = Math.round(containerMl / knownServingMl);
+          } else if (productData?.servings_per_container) {
+            maxServings = productData.servings_per_container;
+          }
+          maxServings = Math.max(1, maxServings);
+          
+          const servingSizeLabel = `${knownServingOz}oz glass`;
+          
+          const perServingNutrition = {
+            calories: matchedBeverage.calories,
+            protein: matchedBeverage.protein,
+            carbs: matchedBeverage.carbs,
+            fat: matchedBeverage.fat,
+            sugar: matchedBeverage.sugar,
+          };
+          
+          const servingData: ServingData = {
+            servingSizeLabel,
+            servingOz: knownServingOz,
+            maxServings,
+            perServingNutrition
+          };
+          
+          setScanResult({
+            isWater: false,
+            beverageType: matchedBeverage.key,
+            beverageInfo: matchedBeverage,
+            productName,
+            servingOz: knownServingOz,
+            barcode,
+            servingData
+          });
+        } else {
+          // Unknown beverage - use API data or defaults
+          const servingMl = productData?.serving_quantity_ml;
+          const servingOz = servingMl ? Math.round(servingMl / 29.57 * 10) / 10 : 12;
+          const maxServings = productData?.servings_per_container || 1;
+          const servingSizeLabel = productData?.serving_size || `${servingOz}oz`;
+          
+          // Prioritize per-serving values, then scale from 100g
+          const scaleFactor = servingMl ? servingMl / 100 : (servingOz * 29.57) / 100;
+          
+          const perServingNutrition = {
+            calories: nutrition?.calories_serving ?? (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100),
+            protein: nutrition?.proteins_serving ?? (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2),
+            carbs: nutrition?.carbohydrates_serving ?? (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
+            fat: nutrition?.fat_serving ?? (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
+            sugar: nutrition?.sugars_serving ?? (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
+          };
+          
+          const beverageInfo: BeverageType = {
+            name: productName || 'Beverage',
+            icon: Droplet,
+            hydrationFactor: 0.7,
+            color: 'text-cyan-500',
+            category: 'moderate',
+            calories: perServingNutrition.calories,
+            carbs: perServingNutrition.carbs,
+            protein: perServingNutrition.protein,
+            fat: perServingNutrition.fat,
+            sugar: perServingNutrition.sugar,
+            servingOz
+          };
+          
+          const servingData: ServingData = {
+            servingSizeLabel,
+            servingOz,
+            maxServings,
+            perServingNutrition
+          };
+          
+          setScanResult({
+            isWater: false,
+            beverageType: 'other',
+            beverageInfo,
+            productName,
+            servingOz: beverageInfo.servingOz,
+            barcode,
+            servingData
+          });
+        }
       }
       
       setMode('result');
@@ -201,6 +246,19 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       }
     }
 
+    // Wine detection by grape varieties and wine terms
+    const wineGrapes = ['sauvignon', 'chardonnay', 'pinot', 'merlot', 'cabernet', 'riesling', 
+      'moscato', 'malbec', 'zinfandel', 'shiraz', 'syrah', 'grenache', 'tempranillo', 
+      'sangiovese', 'nebbiolo', 'viognier', 'gewurztraminer', 'prosecco', 'champagne'];
+    const wineTerms = ['blanc', 'noir', 'grigio', 'gris', 'rosé', 'rose', 'bordeaux', 
+      'burgundy', 'chianti', 'rioja', 'barolo', 'chablis', 'sancerre', 'beaujolais'];
+    
+    if (wineGrapes.some(grape => nameLower.includes(grape)) || 
+        wineTerms.some(term => nameLower.includes(term)) ||
+        nameLower.includes('wine')) {
+      return { ...BEVERAGE_HYDRATION.wine, key: 'wine' };
+    }
+
     // Check for common beverage keywords
     if (nameLower.includes('coffee')) return { ...BEVERAGE_HYDRATION.coffee, key: 'coffee' };
     if (nameLower.includes('tea')) return { ...BEVERAGE_HYDRATION.tea, key: 'tea' };
@@ -211,8 +269,6 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       return { ...BEVERAGE_HYDRATION.energy_drink, key: 'energy_drink' };
     if (nameLower.includes('beer') || nameLower.includes('lager') || nameLower.includes('ale')) 
       return { ...BEVERAGE_HYDRATION.beer, key: 'beer' };
-    if (nameLower.includes('wine')) 
-      return { ...BEVERAGE_HYDRATION.wine, key: 'wine' };
     if (nameLower.includes('milk')) 
       return { ...BEVERAGE_HYDRATION.milk, key: 'milk' };
     if (nameLower.includes('smoothie')) 
