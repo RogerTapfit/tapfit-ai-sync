@@ -274,19 +274,39 @@ export class EnhancedBarcodeService {
       const product = data.product;
       const nutriments = product.nutriments || {};
       
+      // Helper to parse volume from string (handles ml, L, liters, oz, fl oz)
+      const parseVolumeMl = (str: string | undefined | number): number | null => {
+        if (!str) return null;
+        if (typeof str === 'number') return str;
+        
+        // Match patterns like "1.5L", "1.5 L", "1500ml", "500 ml", "750 mL"
+        const literMatch = str.match(/([\d.]+)\s*l(?:iter)?s?\b/i);
+        if (literMatch) return parseFloat(literMatch[1]) * 1000;
+        
+        const mlMatch = str.match(/([\d.]+)\s*ml/i);
+        if (mlMatch) return parseFloat(mlMatch[1]);
+        
+        // Fluid ounces: "12 fl oz", "16oz"
+        const ozMatch = str.match(/([\d.]+)\s*(?:fl\.?\s*)?oz/i);
+        if (ozMatch) return parseFloat(ozMatch[1]) * 29.57;
+        
+        return null;
+      };
+      
       // Extract serving quantity in ml (for liquids)
       let servingQuantityMl = nutriments.serving_quantity || product.serving_quantity;
       if (!servingQuantityMl && product.serving_size) {
-        // Try to parse serving size string like "1/2 cup (120ml)" or "240ml"
-        const mlMatch = product.serving_size.match(/(\d+)\s*ml/i);
-        if (mlMatch) servingQuantityMl = parseFloat(mlMatch[1]);
+        servingQuantityMl = parseVolumeMl(product.serving_size);
       }
       
       // Extract product quantity (total container size)
       let productQuantityMl = product.product_quantity;
       if (!productQuantityMl && product.quantity) {
-        const qtyMatch = product.quantity.match(/(\d+)\s*ml/i);
-        if (qtyMatch) productQuantityMl = parseFloat(qtyMatch[1]);
+        productQuantityMl = parseVolumeMl(product.quantity);
+      }
+      // Also try product name for container size (e.g., "Wine 1.5L")
+      if (!productQuantityMl && product.product_name) {
+        productQuantityMl = parseVolumeMl(product.product_name);
       }
       
       // Calculate servings per container
