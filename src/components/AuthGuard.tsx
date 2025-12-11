@@ -40,11 +40,21 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
 
   useEffect(() => {
     console.log('🔐 AuthGuard: Setting up auth listener...');
+    let mounted = true;
+    
+    // Timeout failsafe - if auth check takes more than 10 seconds, stop loading
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('🔐 AuthGuard: Auth check timed out after 10s');
+        setLoading(false);
+      }
+    }, 10000);
     
     try {
       // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
+          if (!mounted) return;
           console.log('🔐 AuthGuard: Auth state changed =>', { event, hasSession: !!session });
           
           // Clear guest tokens when user logs in with real account
@@ -64,6 +74,7 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
       console.log('🔐 AuthGuard: Checking existing session...');
       supabase.auth.getSession()
         .then(({ data: { session }, error }) => {
+          if (!mounted) return;
           if (error) {
             console.error('🔐 AuthGuard: Error getting session =>', error);
             setError('Failed to check authentication status');
@@ -75,12 +86,15 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
           setLoading(false);
         })
         .catch((err) => {
+          if (!mounted) return;
           console.error('🔐 AuthGuard: Session check failed =>', err);
           setError('Authentication system unavailable');
           setLoading(false);
         });
 
       return () => {
+        mounted = false;
+        clearTimeout(timeout);
         console.log('🔐 AuthGuard: Cleaning up auth listener...');
         subscription.unsubscribe();
       };
@@ -88,6 +102,10 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
       console.error('🔐 AuthGuard: Failed to initialize auth =>', err);
       setError('Authentication system initialization failed');
       setLoading(false);
+      return () => {
+        mounted = false;
+        clearTimeout(timeout);
+      };
     }
   }, []);
 
