@@ -1662,6 +1662,65 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_plans: {
+        Row: {
+          created_at: string
+          custom_meal_name: string | null
+          food_items: Json | null
+          id: string
+          meal_type: string
+          notes: string | null
+          planned_calories: number | null
+          planned_carbs: number | null
+          planned_date: string
+          planned_fat: number | null
+          planned_protein: number | null
+          recipe_id: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_meal_name?: string | null
+          food_items?: Json | null
+          id?: string
+          meal_type: string
+          notes?: string | null
+          planned_calories?: number | null
+          planned_carbs?: number | null
+          planned_date: string
+          planned_fat?: number | null
+          planned_protein?: number | null
+          recipe_id?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_meal_name?: string | null
+          food_items?: Json | null
+          id?: string
+          meal_type?: string
+          notes?: string | null
+          planned_calories?: number | null
+          planned_carbs?: number | null
+          planned_date?: string
+          planned_fat?: number | null
+          planned_protein?: number | null
+          recipe_id?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plans_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "saved_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_shares: {
         Row: {
           activity_feed_id: string
@@ -2387,6 +2446,51 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_database: {
+        Row: {
+          category: string
+          created_at: string
+          cuisine: string
+          id: string
+          image_url: string | null
+          ingredients: Json
+          instructions: Json
+          is_active: boolean | null
+          name: string
+          nutrition_per_serving: Json
+          popularity_score: number | null
+          tags: string[] | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          cuisine: string
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: Json
+          is_active?: boolean | null
+          name: string
+          nutrition_per_serving?: Json
+          popularity_score?: number | null
+          tags?: string[] | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          cuisine?: string
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: Json
+          is_active?: boolean | null
+          name?: string
+          nutrition_per_serving?: Json
+          popularity_score?: number | null
+          tags?: string[] | null
+        }
+        Relationships: []
+      }
       ride_sessions: {
         Row: {
           audio_cues_enabled: boolean | null
@@ -2613,6 +2717,69 @@ export type Database = {
           notes?: string | null
           price?: number | null
           restaurant_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_recipes: {
+        Row: {
+          cook_time_min: number | null
+          created_at: string
+          cuisine: string
+          description: string | null
+          difficulty: string | null
+          id: string
+          image_url: string | null
+          ingredients: Json
+          instructions: Json
+          is_public: boolean | null
+          name: string
+          nutrition_per_serving: Json
+          prep_time_min: number | null
+          servings: number
+          source: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cook_time_min?: number | null
+          created_at?: string
+          cuisine?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: Json
+          is_public?: boolean | null
+          name: string
+          nutrition_per_serving?: Json
+          prep_time_min?: number | null
+          servings?: number
+          source?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cook_time_min?: number | null
+          created_at?: string
+          cuisine?: string
+          description?: string | null
+          difficulty?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: Json
+          is_public?: boolean | null
+          name?: string
+          nutrition_per_serving?: Json
+          prep_time_min?: number | null
+          servings?: number
+          source?: string | null
+          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }

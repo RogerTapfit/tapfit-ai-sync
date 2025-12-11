@@ -28,6 +28,7 @@ import BodyScanDetail from "./pages/BodyScanDetail";
 import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
 import AvatarSelection from "./pages/AvatarSelection";
 import FoodScanner from "./pages/FoodScanner";
+import MealPlanner from "./pages/MealPlanner";
 import ScanMachine from "./pages/ScanMachine";
 import PuckTest from "./pages/PuckTest";
 import RunSetup from "./pages/RunSetup";
@@ -201,6 +202,11 @@ const App = () => {
             <Route path="/food-scanner" element={
               <AuthGuard fallback={<Auth />}>
                 <FoodScanner />
+              </AuthGuard>
+            } />
+            <Route path="/meal-planner" element={
+              <AuthGuard fallback={<Auth />}>
+                <MealPlanner />
               </AuthGuard>
             } />
             <Route path="/scan-machine" element={
