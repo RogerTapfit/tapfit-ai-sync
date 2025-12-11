@@ -7,6 +7,8 @@ import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { WaterQualityCard } from './WaterQualityCard';
 import { findWaterByBarcode, findWaterByName, WaterProduct } from '@/services/waterQualityDatabase';
 import { BEVERAGE_HYDRATION, BeverageType } from '@/lib/beverageHydration';
+import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
+import { ProductPriceCard } from './ProductPriceCard';
 import { toast } from 'sonner';
 
 interface BeverageScannerModalProps {
@@ -24,6 +26,7 @@ interface ScanResult {
   beverageInfo?: BeverageType;
   productName?: string;
   servingOz?: number;
+  barcode?: string;
 }
 
 export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: BeverageScannerModalProps) => {
@@ -31,9 +34,10 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   const [manualBarcode, setManualBarcode] = useState('');
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { isScanning, loading, startScanning, stopScanning, productData } = useBarcodeScanner();
+  const { isScanning, loading, startScanning, stopScanning, productData, lastBarcode } = useBarcodeScanner();
 
   // Start camera when modal opens in camera mode
   useEffect(() => {
@@ -64,12 +68,13 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   // Process barcode when product data is received
   useEffect(() => {
     if (productData) {
-      processProduct('', productData.name || '');
+      processProduct(lastBarcode || '', productData.name || '');
     }
-  }, [productData]);
+  }, [productData, lastBarcode]);
 
   const processProduct = async (barcode: string, productName: string) => {
     setIsAnalyzing(true);
+    setPricing(null);
     stopScanning(videoRef.current || undefined);
     
     try {
@@ -87,18 +92,26 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
         productName.toLowerCase().includes('spring') ||
         productName.toLowerCase().includes('mineral');
 
+      // Fetch pricing data
+      const pricingData = await PriceLookupService.lookupPrice(barcode, productName);
+      if (pricingData) {
+        setPricing(pricingData);
+      }
+
       if (waterProduct) {
         setScanResult({
           isWater: true,
           waterProduct,
-          servingOz: waterProduct.serving_size_oz || 16.9
+          servingOz: waterProduct.serving_size_oz || 16.9,
+          barcode
         });
       } else if (isWaterProduct) {
         // Generic water product not in database
         setScanResult({
           isWater: true,
           productName,
-          servingOz: 16.9
+          servingOz: 16.9,
+          barcode
         });
       } else {
         // Check if it's a known beverage type
@@ -109,14 +122,16 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             beverageType: matchedBeverage.key,
             beverageInfo: matchedBeverage,
             productName,
-            servingOz: matchedBeverage.servingOz
+            servingOz: matchedBeverage.servingOz,
+            barcode
           });
         } else {
           // Default to generic beverage
           setScanResult({
             isWater: false,
             productName,
-            servingOz: 12
+            servingOz: 12,
+            barcode
           });
         }
       }
@@ -183,12 +198,14 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     stopScanning(videoRef.current || undefined);
     setMode('camera');
     setScanResult(null);
+    setPricing(null);
     setManualBarcode('');
     onOpenChange(false);
   };
 
   const handleRescan = () => {
     setScanResult(null);
+    setPricing(null);
     setMode('camera');
     if (videoRef.current) {
       startScanning(videoRef.current);
@@ -346,6 +363,14 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Price Comparison Card */}
+              {pricing && (
+                <ProductPriceCard 
+                  pricing={pricing} 
+                  productName={scanResult.productName || scanResult.waterProduct?.name || scanResult.beverageInfo?.name || 'Product'} 
+                />
               )}
 
               {/* Action buttons */}
