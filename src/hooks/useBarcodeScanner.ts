@@ -32,6 +32,7 @@ export const useBarcodeScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lastBarcode, setLastBarcode] = useState<string | null>(null);
   const [codeReader] = useState(() => new BrowserMultiFormatReader());
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -148,6 +149,7 @@ export const useBarcodeScanner = () => {
 
   const handleBarcodeDetected = async (barcode: string) => {
     setLoading(true);
+    setLastBarcode(barcode);
     stopScanning();
     
     try {
@@ -213,6 +215,7 @@ export const useBarcodeScanner = () => {
     setProductData(null);
     setIsScanning(false);
     setLoading(false);
+    setLastBarcode(null);
     codeReader.reset();
   };
 
@@ -220,6 +223,7 @@ export const useBarcodeScanner = () => {
     isScanning,
     productData,
     loading,
+    lastBarcode,
     startScanning,
     stopScanning,
     scanBarcodeFromImage,
