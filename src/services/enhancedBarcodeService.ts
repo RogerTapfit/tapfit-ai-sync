@@ -14,12 +14,14 @@ interface ProductData {
     fiber_100g?: number;
     sugars_100g?: number;
     salt_100g?: number;
+    alcohol_100g?: number; // ABV percentage
     // Per-serving values (direct from label)
     calories_serving?: number;
     proteins_serving?: number;
     carbohydrates_serving?: number;
     fat_serving?: number;
     sugars_serving?: number;
+    alcohol_serving?: number;
   };
   ingredients?: string;
   serving_size?: string;
@@ -330,12 +332,14 @@ export class EnhancedBarcodeService {
             fiber_100g: nutriments.fiber_100g,
             sugars_100g: nutriments.sugars_100g,
             salt_100g: nutriments.salt_100g,
+            alcohol_100g: nutriments.alcohol_100g,
             // Per-serving values (direct from label)
             calories_serving: nutriments['energy-kcal_serving'],
             proteins_serving: nutriments.proteins_serving,
             carbohydrates_serving: nutriments.carbohydrates_serving,
             fat_serving: nutriments.fat_serving,
             sugars_serving: nutriments.sugars_serving,
+            alcohol_serving: nutriments.alcohol_serving,
           },
           ingredients: product.ingredients_text,
           serving_size: product.serving_size,
