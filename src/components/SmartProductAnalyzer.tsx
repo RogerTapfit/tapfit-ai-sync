@@ -18,6 +18,8 @@ import { AddToFoodLogModal } from './AddToFoodLogModal';
 import { processImageFile } from '../utils/heicConverter';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useChatbotContext } from '@/contexts/ChatbotContext';
+import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
+import { ProductPriceCard } from './ProductPriceCard';
 
 interface SupplementAnalysis {
   dosage_form?: string;
@@ -308,6 +310,9 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   // Data sources visibility
   const [showDataSources, setShowDataSources] = useState(false);
   
+  // Price lookup state
+  const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
+  
   // Auto-set package size based on detected servings per container
   useEffect(() => {
     if (analysisResult?.nutrition?.servings_per_container) {
@@ -481,6 +486,17 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
       // Check product safety after successful analysis
       await checkProductSafety(data.product.name, data.product.brand);
       
+      // Look up pricing information
+      try {
+        const priceData = await PriceLookupService.lookupPrice(
+          data.barcode || '',
+          data.product.name
+        );
+        setPricing(priceData);
+      } catch (priceError) {
+        console.log('Price lookup unavailable:', priceError);
+      }
+      
       toast.success('Product analyzed successfully!');
     } catch (error) {
       console.error('Error analyzing product:', error);
@@ -643,6 +659,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
     setShowManualUPC(false);
     setManualUPCInput('');
     setShowDataSources(false);
+    setPricing(null);
     
     // Clear product context from chatbot
     setAnalysisContext(null);
@@ -1052,6 +1069,14 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     </motion.div>
                   )}
                 </div>
+
+                {/* Price Comparison */}
+                {pricing && (
+                  <ProductPriceCard 
+                    pricing={pricing} 
+                    productName={analysisResult.product.name} 
+                  />
+                )}
 
                 {/* Scan Nutrition Label Prompt - shown when label not visible */}
                 {analysisResult.needs_nutrition_scan && (
