@@ -1,4 +1,5 @@
 import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { BleClient, type BleDevice, type ScanResult } from '@capacitor-community/bluetooth-le';
 import { PuckClient } from '@/ble/puckClient';
 
@@ -9,6 +10,22 @@ const RX_CHARACTERISTIC = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 
 let _scanActive = false;
 let _connectedPuck: PuckClient | null = null;
+
+// Check if BLE is supported on this platform
+function isBleSupported(): boolean {
+  // Always supported on native platforms
+  if (Capacitor.isNativePlatform()) {
+    return true;
+  }
+  
+  // On web, check if Web Bluetooth API is available and functional
+  if (typeof navigator !== 'undefined' && navigator.bluetooth) {
+    // requestLEScan is not available in most browsers
+    return typeof (navigator.bluetooth as any).requestLEScan === 'function';
+  }
+  
+  return false;
+}
 
 export interface BlePairResult {
   success: boolean;
@@ -47,6 +64,12 @@ async function connectNearest(
   timeoutMs = 15000, 
   callbacks?: BlePairCallbacks
 ): Promise<BlePairResult> {
+  // Check if BLE is supported on this platform
+  if (!isBleSupported()) {
+    console.log('BLE not supported on this platform, skipping scan');
+    return { success: false, error: 'BLE not supported on this browser' };
+  }
+
   if (_scanActive) {
     return { success: false, error: 'Scan already active' };
   }
@@ -190,6 +213,12 @@ async function connectNearest(
 }
 
 export function setupUniversalLinkPairing(callbacks?: BlePairCallbacks): void {
+  // Skip BLE setup on platforms that don't support it
+  if (!isBleSupported()) {
+    console.log('BLE not supported on this platform, skipping Universal Link pairing setup');
+    return;
+  }
+
   console.log('Setting up Universal Link pairing...');
   
   App.addListener('appUrlOpen', async ({ url }) => {
