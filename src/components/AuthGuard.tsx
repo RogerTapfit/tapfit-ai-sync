@@ -44,12 +44,12 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     console.log('🔐 AuthGuard: Setting up auth listener...');
     let mounted = true;
     
-    // Timeout failsafe - if auth check takes more than 8 seconds, stop loading completely
+    // Timeout failsafe - ALWAYS fires after 8 seconds to bypass any hanging state
     const timeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('🔐 AuthGuard: Auth check timed out after 8s, showing fallback');
-        setLoading(false);
+      if (mounted) {
+        console.warn('🔐 AuthGuard: Global timeout after 8s, bypassing all loading states');
         setTimedOut(true);
+        setLoading(false);
       }
     }, 8000);
     
@@ -137,7 +137,13 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     );
   }
 
-  // If timed out, skip loading and go straight to fallback (login page)
+  // If timed out with authenticated user, bypass profile loading and proceed
+  if (timedOut && user) {
+    console.log('🔐 AuthGuard: Timed out with user, bypassing profile loading...');
+    return <>{children}</>;
+  }
+
+  // If timed out without user, show login
   if (timedOut && !user && !isGuest) {
     console.log('🔐 AuthGuard: Auth timed out, showing login...');
     return <>{fallback}</>;
