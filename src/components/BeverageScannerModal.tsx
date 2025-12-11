@@ -133,8 +133,22 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
         const matchedBeverage = findMatchingBeverage(productName);
         const nutrition = productData?.nutrition;
         
-        // Get container size from product data (for calculating servings)
-        const containerMl = productData?.product_quantity_ml || 0;
+        // Helper to parse container size from product name
+        const parseContainerMlFromName = (name: string): number | null => {
+          const literMatch = name.match(/([\d.]+)\s*l(?:iter)?s?\b/i);
+          if (literMatch) return parseFloat(literMatch[1]) * 1000;
+          const mlMatch = name.match(/([\d.]+)\s*ml/i);
+          if (mlMatch) return parseFloat(mlMatch[1]);
+          const ozMatch = name.match(/([\d.]+)\s*(?:fl\.?\s*)?oz/i);
+          if (ozMatch) return parseFloat(ozMatch[1]) * 29.57;
+          return null;
+        };
+        
+        // Get container size from product data OR parse from name
+        let containerMl = productData?.product_quantity_ml || 0;
+        if (!containerMl && productName) {
+          containerMl = parseContainerMlFromName(productName) || 0;
+        }
         
         // If matched beverage found, use its known nutrition values
         if (matchedBeverage) {
