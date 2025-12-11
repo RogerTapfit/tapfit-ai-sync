@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Camera, X, Loader2, Barcode, Droplet, Plus } from 'lucide-react';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { WaterQualityCard } from './WaterQualityCard';
+import { BeverageNutritionCard } from './BeverageNutritionCard';
 import { findWaterByBarcode, findWaterByName, WaterProduct } from '@/services/waterQualityDatabase';
 import { BEVERAGE_HYDRATION, BeverageType } from '@/lib/beverageHydration';
 import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
@@ -302,66 +303,27 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                 </div>
               )}
 
-              {/* Non-water beverage */}
-              {!scanResult.isWater && (
-                <div className="space-y-3 p-4 rounded-lg bg-muted/30">
-                  {scanResult.beverageInfo && (
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-full ${scanResult.beverageInfo.color} bg-opacity-20`}>
-                        <scanResult.beverageInfo.icon className={`h-6 w-6 ${scanResult.beverageInfo.color}`} />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {scanResult.productName || scanResult.beverageInfo.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {scanResult.beverageInfo.category} beverage
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {scanResult.beverageInfo && (
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="p-2 rounded bg-muted/50">
-                        <p className="text-muted-foreground">Hydration Factor</p>
-                        <p className="font-semibold text-foreground">
-                          {Math.round(scanResult.beverageInfo.hydrationFactor * 100)}%
-                        </p>
-                      </div>
-                      <div className="p-2 rounded bg-muted/50">
-                        <p className="text-muted-foreground">Calories</p>
-                        <p className="font-semibold text-foreground">
-                          {scanResult.beverageInfo.calories} per serving
-                        </p>
-                      </div>
-                      {scanResult.beverageInfo.sugar !== undefined && (
-                        <div className="p-2 rounded bg-muted/50">
-                          <p className="text-muted-foreground">Sugar</p>
-                          <p className="font-semibold text-foreground">
-                            {scanResult.beverageInfo.sugar}g
-                          </p>
-                        </div>
-                      )}
-                      <div className="p-2 rounded bg-muted/50">
-                        <p className="text-muted-foreground">Serving Size</p>
-                        <p className="font-semibold text-foreground">
-                          {scanResult.servingOz}oz
-                        </p>
-                      </div>
-                    </div>
-                  )}
+              {/* Non-water beverage - Full Nutrition Card */}
+              {!scanResult.isWater && scanResult.beverageInfo && (
+                <BeverageNutritionCard 
+                  beverageInfo={scanResult.beverageInfo}
+                  productName={scanResult.productName}
+                  servingOz={scanResult.servingOz}
+                />
+              )}
 
-                  {!scanResult.beverageInfo && (
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        {scanResult.productName || 'Beverage'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Beverage detected - will be logged with estimated hydration
-                      </p>
-                    </div>
-                  )}
+              {/* Non-water beverage without detailed info */}
+              {!scanResult.isWater && !scanResult.beverageInfo && (
+                <div className="space-y-3 p-4 rounded-lg bg-muted/30 text-center">
+                  <Droplet className="h-12 w-12 text-cyan-500 mx-auto opacity-50" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {scanResult.productName || 'Beverage'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Beverage detected - will be logged with estimated hydration
+                    </p>
+                  </div>
                 </div>
               )}
 
