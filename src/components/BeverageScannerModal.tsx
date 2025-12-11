@@ -119,19 +119,26 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
         const matchedBeverage = findMatchingBeverage(productName);
         
         // Create beverage info - use matched or create generic from barcode data
+        // Calculate serving size: 12oz = ~355ml/grams for liquids
+        const servingOz = 12;
+        const servingGrams = servingOz * 29.57; // oz to ml (≈ grams for liquids)
+        const scaleFactor = servingGrams / 100;
+        
+        const nutrition = productData?.nutrition;
+        
         const beverageInfo: BeverageType = matchedBeverage || {
           name: productName || 'Beverage',
           icon: Droplet,
           hydrationFactor: 0.7,
           color: 'text-cyan-500',
           category: 'moderate',
-          // Use barcode nutrition data if available, otherwise estimate
-          calories: productData?.nutrition?.calories_100g || 100,
-          carbs: productData?.nutrition?.carbohydrates_100g || 15,
-          protein: productData?.nutrition?.proteins_100g || 2,
-          fat: productData?.nutrition?.fat_100g || 2,
-          sugar: productData?.nutrition?.sugars_100g || 10,
-          servingOz: 12
+          // Scale per-100g values to per-serving (12oz ≈ 355g)
+          calories: nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100,
+          carbs: nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15,
+          protein: nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2,
+          fat: nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2,
+          sugar: nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10,
+          servingOz
         };
         
         setScanResult({
