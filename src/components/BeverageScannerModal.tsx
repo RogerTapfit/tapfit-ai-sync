@@ -117,24 +117,31 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       } else {
         // Check if it's a known beverage type
         const matchedBeverage = findMatchingBeverage(productName);
-        if (matchedBeverage) {
-          setScanResult({
-            isWater: false,
-            beverageType: matchedBeverage.key,
-            beverageInfo: matchedBeverage,
-            productName,
-            servingOz: matchedBeverage.servingOz,
-            barcode
-          });
-        } else {
-          // Default to generic beverage
-          setScanResult({
-            isWater: false,
-            productName,
-            servingOz: 12,
-            barcode
-          });
-        }
+        
+        // Create beverage info - use matched or create generic from barcode data
+        const beverageInfo: BeverageType = matchedBeverage || {
+          name: productName || 'Beverage',
+          icon: Droplet,
+          hydrationFactor: 0.7,
+          color: 'text-cyan-500',
+          category: 'moderate',
+          // Use barcode nutrition data if available, otherwise estimate
+          calories: productData?.nutrition?.calories_100g || 100,
+          carbs: productData?.nutrition?.carbohydrates_100g || 15,
+          protein: productData?.nutrition?.proteins_100g || 2,
+          fat: productData?.nutrition?.fat_100g || 2,
+          sugar: productData?.nutrition?.sugars_100g || 10,
+          servingOz: 12
+        };
+        
+        setScanResult({
+          isWater: false,
+          beverageType: matchedBeverage?.key || 'other',
+          beverageInfo,
+          productName,
+          servingOz: beverageInfo.servingOz,
+          barcode
+        });
       }
       
       setMode('result');
@@ -312,19 +319,25 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                 />
               )}
 
-              {/* Non-water beverage without detailed info */}
+              {/* Non-water beverage without detailed info - fallback (should rarely show now) */}
               {!scanResult.isWater && !scanResult.beverageInfo && (
-                <div className="space-y-3 p-4 rounded-lg bg-muted/30 text-center">
-                  <Droplet className="h-12 w-12 text-cyan-500 mx-auto opacity-50" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {scanResult.productName || 'Beverage'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Beverage detected - will be logged with estimated hydration
-                    </p>
-                  </div>
-                </div>
+                <BeverageNutritionCard 
+                  beverageInfo={{
+                    name: scanResult.productName || 'Beverage',
+                    icon: Droplet,
+                    hydrationFactor: 0.7,
+                    color: 'text-cyan-500',
+                    category: 'moderate',
+                    calories: 100,
+                    carbs: 15,
+                    protein: 2,
+                    fat: 2,
+                    sugar: 10,
+                    servingOz: scanResult.servingOz || 12
+                  }}
+                  productName={scanResult.productName}
+                  servingOz={scanResult.servingOz}
+                />
               )}
 
               {/* Price Comparison Card */}
