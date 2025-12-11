@@ -15,6 +15,7 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   
   const platform = Capacitor.getPlatform();
   const isNative = Capacitor.isNativePlatform();
@@ -32,7 +33,8 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     needsOnboarding, 
     error,
     platform,
-    isNative
+    isNative,
+    timedOut
   });
 
   // If user has a real authenticated session, they're not a guest (prioritize session over localStorage)
@@ -42,13 +44,14 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     console.log('🔐 AuthGuard: Setting up auth listener...');
     let mounted = true;
     
-    // Timeout failsafe - if auth check takes more than 10 seconds, stop loading
+    // Timeout failsafe - if auth check takes more than 8 seconds, stop loading completely
     const timeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('🔐 AuthGuard: Auth check timed out after 10s');
+        console.warn('🔐 AuthGuard: Auth check timed out after 8s, showing fallback');
         setLoading(false);
+        setTimedOut(true);
       }
-    }, 10000);
+    }, 8000);
     
     try {
       // Set up auth state listener FIRST
@@ -66,6 +69,7 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+          setTimedOut(false); // Reset timeout when auth succeeds
           setError(null);
         }
       );
@@ -133,7 +137,13 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     );
   }
 
-  if (loading || profileLoading) {
+  // If timed out, skip loading and go straight to fallback (login page)
+  if (timedOut && !user && !isGuest) {
+    console.log('🔐 AuthGuard: Auth timed out, showing login...');
+    return <>{fallback}</>;
+  }
+
+  if ((loading || profileLoading) && !timedOut) {
     console.log('🔐 AuthGuard: Showing loading state...');
     const LoadingComponent = (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
