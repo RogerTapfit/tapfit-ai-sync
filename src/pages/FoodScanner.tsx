@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import { SmartProductAnalyzer } from "@/components/SmartProductAnalyzer";
 import { CoachsChoiceAnalyzer } from "@/components/CoachsChoiceAnalyzer";
 import { MenuAnalyzer } from "@/components/MenuAnalyzer";
 import { RestaurantDiscovery } from "@/components/RestaurantDiscovery";
+import { MealPlannerEmbed } from "@/components/meal-planner/MealPlannerEmbed";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { usePageContext } from "@/hooks/usePageContext";
@@ -44,6 +45,11 @@ const TAB_DESCRIPTIONS: Record<string, { name: string; description: string; defa
     name: "Restaurant Discovery",
     description: "Shows popular meals and restaurants from the user's social network with health grades and nutrition data",
     defaultContent: "Showing restaurant recommendations from user's network"
+  },
+  planner: {
+    name: "Meal Planner",
+    description: "Plan your meals, discover recipes by cuisine, save favorites, and schedule meals on a calendar",
+    defaultContent: "Browse recipes, save favorites, and plan your weekly meals"
   }
 };
 
@@ -163,48 +169,55 @@ const FoodScanner = () => {
             transition={{ delay: 0.6 }}
           >
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
+              <TabsList className="grid w-full grid-cols-7 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
                 <TabsTrigger 
                   value="analyzer" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Analyzer</span>
+                  <span className="hidden xl:inline">Analyzer</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="product" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Scan className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Scanner</span>
+                  <span className="hidden xl:inline">Scanner</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="coach" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Pick</span>
+                  <span className="hidden xl:inline">Pick</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="menu" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <MenuSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Menu</span>
+                  <span className="hidden xl:inline">Menu</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="builder" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Stars className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Builder</span>
+                  <span className="hidden xl:inline">Builder</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="restaurants" 
                   className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
                 >
                   <Utensils className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden lg:inline">Spots</span>
+                  <span className="hidden xl:inline">Spots</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="planner" 
+                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white transition-all duration-300"
+                >
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden xl:inline">Planner</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -270,6 +283,16 @@ const FoodScanner = () => {
                   transition={{ delay: 0.2 }}
                 >
                   <RestaurantDiscovery />
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="planner" className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <MealPlannerEmbed />
                 </motion.div>
               </TabsContent>
             </Tabs>
