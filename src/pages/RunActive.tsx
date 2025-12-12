@@ -29,6 +29,9 @@ const RunActive = () => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelDestination, setCancelDestination] = useState<'setup' | 'home'>('setup');
   
+  // Live timer that updates every second
+  const [liveTime, setLiveTime] = useState(0);
+  
   // Get session for HR zone info
   const session = runTrackerService.getState()?.session;
 
@@ -56,6 +59,26 @@ const RunActive = () => {
       initRun();
     }
   }, [status, isInitialized]);
+
+  // Live timer effect - updates every second
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (status === 'running') {
+      interval = setInterval(() => {
+        setLiveTime((prev) => prev + 1);
+      }, 1000);
+    }
+    
+    // Sync with metrics when available
+    if (metrics?.moving_time_s !== undefined) {
+      setLiveTime(Math.floor(metrics.moving_time_s));
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [status, metrics?.moving_time_s]);
 
   const handlePause = async () => {
     try {
@@ -251,8 +274,8 @@ const RunActive = () => {
               </div>
               <span className="text-xs text-muted-foreground">Time</span>
             </div>
-            <div className="text-2xl font-bold">
-              {metrics ? formatTime(metrics.moving_time_s) : '0:00'}
+            <div className="text-2xl font-bold tabular-nums">
+              {formatTime(liveTime)}
             </div>
           </Card>
 
