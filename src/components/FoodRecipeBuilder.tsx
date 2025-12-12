@@ -1030,14 +1030,29 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
                     Instructions
                   </h3>
                   <div className="space-y-3">
-                    {selectedRecipe.instructions.map((instruction, index) => (
-                      <div key={index} className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                          {index + 1}
+                    {selectedRecipe.instructions.map((instruction, index) => {
+                      // Handle both string and object instruction formats
+                      const stepText = typeof instruction === 'string' 
+                        ? instruction 
+                        : (instruction as { text?: string })?.text || '';
+                      const stepTime = typeof instruction === 'object' 
+                        ? (instruction as { time?: string })?.time 
+                        : null;
+                      
+                      return (
+                        <div key={index} className="flex gap-3">
+                          <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm leading-relaxed pt-0.5">{stepText}</p>
+                            {stepTime && (
+                              <span className="text-xs text-primary/70 mt-1">⏱️ {stepTime}</span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm leading-relaxed pt-0.5">{instruction}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
