@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tapfit.app',
+  appId: 'com.rogertapfit.tapfit',
   appName: 'TapFit',
   webDir: 'dist',
   // server: {
