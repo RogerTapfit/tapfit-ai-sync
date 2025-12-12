@@ -1,5 +1,5 @@
 import { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation';
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin, Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
@@ -16,6 +16,8 @@ type StateCallback = (metrics: RunMetrics, status: RunTrackerStatus) => void;
 class RunTrackerService {
   private currentSession: RunSession | null = null;
   private watcherId: string | null = null;
+  private webWatcherId: string | null = null; // For web GPS fallback
+  private isNative: boolean = false;
   private status: RunTrackerStatus = 'idle';
   private callbacks: Set<StateCallback> = new Set();
   private lastPoint: RunPoint | null = null;
@@ -82,27 +84,60 @@ class RunTrackerService {
     // Save initial session
     await runStorageService.saveSession(this.currentSession);
 
-    // Start GPS tracking with optimizations
-    this.watcherId = await BackgroundGeolocation.addWatcher(
-      {
-        backgroundMessage: 'TapFit is tracking your run',
-        backgroundTitle: 'Run Tracking Active',
-        requestPermissions: true,
-        stale: false,
-        distanceFilter: 5, // Update every 5 meters for better accuracy and battery efficiency
-      },
-      (location) => {
-        this.handleLocationUpdate({
-          lat: location.latitude,
-          lon: location.longitude,
-          timestamp: location.time || Date.now(),
-          accuracy: location.accuracy || 50,
-          altitude: location.altitude,
-          speed: location.speed,
-          bearing: location.bearing,
-        });
-      }
-    );
+    // Detect platform for GPS method selection
+    this.isNative = Capacitor.isNativePlatform();
+    console.log(`📍 Starting GPS tracking (platform: ${this.isNative ? 'native' : 'web'})`);
+
+    if (this.isNative) {
+      // Native: Use background geolocation for background tracking support
+      this.watcherId = await BackgroundGeolocation.addWatcher(
+        {
+          backgroundMessage: 'TapFit is tracking your run',
+          backgroundTitle: 'Run Tracking Active',
+          requestPermissions: true,
+          stale: false,
+          distanceFilter: 5, // Update every 5 meters for better accuracy and battery efficiency
+        },
+        (location) => {
+          this.handleLocationUpdate({
+            lat: location.latitude,
+            lon: location.longitude,
+            timestamp: location.time || Date.now(),
+            accuracy: location.accuracy || 50,
+            altitude: location.altitude,
+            speed: location.speed,
+            bearing: location.bearing,
+          });
+        }
+      );
+    } else {
+      // Web: Use standard Geolocation API (works on WiFi, 5G, LTE)
+      console.log('🌐 Using web geolocation API for GPS tracking');
+      this.webWatcherId = await Geolocation.watchPosition(
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        },
+        (position, err) => {
+          if (err) {
+            console.error('📍 Web GPS error:', err);
+            return;
+          }
+          if (position) {
+            this.handleLocationUpdate({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+              timestamp: position.timestamp,
+              accuracy: position.coords.accuracy ?? 100,
+              altitude: position.coords.altitude ?? undefined,
+              speed: position.coords.speed ?? undefined,
+              bearing: position.coords.heading ?? undefined,
+            });
+          }
+        }
+      );
+    }
 
     this.status = 'running';
     this.startAutoSave();
@@ -114,8 +149,12 @@ class RunTrackerService {
   private handleLocationUpdate(point: RunPoint): void {
     if (!this.currentSession || this.status !== 'running') return;
 
-    // Filter poor accuracy points
-    if (point.accuracy > 50) return;
+    // Filter poor accuracy points - more lenient on web (cell tower triangulation can be 50-150m)
+    const maxAccuracy = this.isNative ? 50 : 150;
+    if (point.accuracy > maxAccuracy) {
+      console.log(`📍 Skipping low accuracy point: ${point.accuracy}m (max: ${maxAccuracy}m)`);
+      return;
+    }
 
     // Filter unrealistic speeds (>6 m/s = ~13.4 mph)
     if (point.speed && point.speed > 6) return;
@@ -250,10 +289,13 @@ class RunTrackerService {
   async stopTracking(): Promise<RunSession | null> {
     if (!this.currentSession) return null;
 
-    // Stop GPS watcher
-    if (this.watcherId) {
+    // Stop GPS watcher - handle both native and web
+    if (this.isNative && this.watcherId) {
       await BackgroundGeolocation.removeWatcher({ id: this.watcherId });
       this.watcherId = null;
+    } else if (this.webWatcherId) {
+      await Geolocation.clearWatch({ id: this.webWatcherId });
+      this.webWatcherId = null;
     }
 
     // Stop auto-save
