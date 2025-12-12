@@ -23,13 +23,17 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
   console.log('🔐 AuthGuard: Initializing...');
   console.log('🔐 AuthGuard: Platform:', platform, 'IsNative:', isNative);
   
-  const { profile, loading: profileLoading, needsOnboarding, refetch } = useOnboarding(session?.user?.id);
+  const { profile, loading: profileLoading, needsOnboarding, refetch } = useOnboarding(user?.id);
+  
+  // Only wait for profile loading if we actually have a user
+  const shouldWaitForProfile = !!user && profileLoading;
   
   console.log('🔐 AuthGuard: State =>', { 
     user: !!user, 
     session: !!session, 
     loading, 
-    profileLoading, 
+    profileLoading,
+    shouldWaitForProfile,
     needsOnboarding, 
     error,
     platform,
@@ -149,7 +153,7 @@ export const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     return <>{fallback}</>;
   }
 
-  if ((loading || profileLoading) && !timedOut) {
+  if ((loading || shouldWaitForProfile) && !timedOut) {
     console.log('🔐 AuthGuard: Showing loading state...');
     const LoadingComponent = (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
