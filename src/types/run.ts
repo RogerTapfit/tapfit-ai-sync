@@ -52,6 +52,7 @@ export interface RunSplit {
 }
 
 export interface RunSettings {
+  activity_type: 'run' | 'walk';
   unit: 'km' | 'mi';
   auto_pause: boolean;
   audio_cues: boolean;
