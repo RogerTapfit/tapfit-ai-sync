@@ -70,6 +70,7 @@
     "firebase": "^10.14.1",
     "framer-motion": "^10.18.0",
     "heic2any": "^0.0.4",
+    "html-to-image": "^1.11.13",
     "input-otp": "^1.2.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.462.0",
