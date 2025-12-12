@@ -20,8 +20,11 @@ const RunActive = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [settings] = useState<RunSettings>(() => {
     const stored = sessionStorage.getItem('runSettings');
-    return stored ? JSON.parse(stored) : { unit: 'km', auto_pause: true, audio_cues: true };
+    return stored ? JSON.parse(stored) : { activity_type: 'run', unit: 'km', auto_pause: true, audio_cues: true };
   });
+  
+  const isWalk = settings.activity_type === 'walk';
+  const activityName = isWalk ? 'Walk' : 'Run';
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelDestination, setCancelDestination] = useState<'setup' | 'home'>('setup');
   
@@ -56,28 +59,28 @@ const RunActive = () => {
   const handlePause = async () => {
     try {
       await pauseRun();
-      toast.info("Run paused");
+      toast.info(`${activityName} paused`);
     } catch (error) {
-      toast.error("Failed to pause run");
+      toast.error(`Failed to pause ${activityName.toLowerCase()}`);
     }
   };
 
   const handleResume = async () => {
     try {
       await resumeRun();
-      toast.success("Run resumed");
+      toast.success(`${activityName} resumed`);
     } catch (error) {
-      toast.error("Failed to resume run");
+      toast.error(`Failed to resume ${activityName.toLowerCase()}`);
     }
   };
 
   const handleStop = async () => {
     try {
       const session = await stopRun();
-      toast.success("Run completed!");
+      toast.success(`${activityName} completed!`);
       navigate(`/run/summary/${session?.id}`);
     } catch (error) {
-      toast.error("Failed to stop run");
+      toast.error(`Failed to stop ${activityName.toLowerCase()}`);
     }
   };
 
@@ -94,11 +97,11 @@ const RunActive = () => {
   const handleConfirmCancel = async () => {
     try {
       await stopRun();
-      toast.info("Run cancelled");
+      toast.info(`${activityName} cancelled`);
       navigate(cancelDestination === 'home' ? '/' : '/run/setup');
     } catch (error) {
-      console.error('Failed to cancel run:', error);
-      toast.error("Failed to cancel run");
+      console.error(`Failed to cancel ${activityName.toLowerCase()}:`, error);
+      toast.error(`Failed to cancel ${activityName.toLowerCase()}`);
     }
     setShowCancelDialog(false);
   };
@@ -107,7 +110,7 @@ const RunActive = () => {
   const isRunning = status === 'running';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5">
+    <div className={`min-h-screen bg-gradient-to-b from-background via-background ${isWalk ? 'to-green-500/5' : 'to-blue-500/5'}`}>
       {/* Header with Navigation */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b animate-fade-in">
         <div className="flex items-center justify-between p-4">
@@ -121,10 +124,14 @@ const RunActive = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-blue-500/10">
-                <Footprints className="h-4 w-4 text-blue-500" />
+              <div className={`p-1.5 rounded-lg ${isWalk ? 'bg-green-500/10' : 'bg-blue-500/10'}`}>
+                {isWalk ? (
+                  <Footprints className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Activity className="h-4 w-4 text-blue-500" />
+                )}
               </div>
-              <span className="font-semibold">Active Run</span>
+              <span className="font-semibold">Active {activityName}</span>
             </div>
           </div>
           <Button
@@ -343,20 +350,20 @@ const RunActive = () => {
               className="w-full text-muted-foreground"
             >
               <X className="h-4 w-4 mr-2" />
-              Cancel Run
+              Cancel {activityName}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Cancel Run Confirmation Dialog */}
+      {/* Cancel Confirmation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Abandon Run?</AlertDialogTitle>
+            <AlertDialogTitle>Abandon {activityName}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your current run data will be lost if you leave now.
-              {status === 'running' && ' Your run is still active.'}
+              Your current {activityName.toLowerCase()} data will be lost if you leave now.
+              {status === 'running' && ` Your ${activityName.toLowerCase()} is still active.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -365,7 +372,7 @@ const RunActive = () => {
               onClick={handleConfirmCancel}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              End Run
+              End {activityName}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
