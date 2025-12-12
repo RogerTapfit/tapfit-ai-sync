@@ -11,6 +11,8 @@ import { getMachineImageUrl } from '@/utils/machineImageUtils';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useNavigate } from 'react-router-dom';
 import { useMachineHistory } from '@/hooks/useMachineHistory';
+import { useMachineSpecs } from '@/hooks/useMachineSpecs';
+import { MachineMaxToggle } from './workout/MachineMaxToggle';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +50,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   const [historyPromptShown, setHistoryPromptShown] = useState(false);
   
   const { history, loading: historyLoading } = useMachineHistory(exercise.machine);
+  const { specs, userMax, contributeSpec, updateUserMax } = useMachineSpecs(exercise.machine);
   
   const [sets, setSets] = useState<SetData[]>(() => {
     // Use calculated weight if available, otherwise fallback to exercise weight or reasonable default
@@ -140,17 +143,35 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
   const handleCompleteExercise = async () => {
     try {
       const weightUsed = sets[0]?.weight ?? (exercise as any).calculated_weight ?? exercise.weight;
+      const repsCompleted = sets.reduce((sum, set) => sum + (set.completed ? set.actualReps : 0), 0);
+      const setsCompleted = completedSets;
+      
       const activeLog = currentWorkoutLog ?? await startWorkout(exercise.machine, exercise.exercise_type || 'strength', 1);
       if (activeLog) {
         await logExercise(
           activeLog.id,
           exercise.machine,
           exercise.machine,
-          4,
-          40,
+          setsCompleted,
+          repsCompleted,
           weightUsed ? Math.round(weightUsed) : undefined
         );
         await completeWorkout(activeLog.id);
+      }
+      
+      // Update user's typical weight and reps for this machine
+      if (weightUsed && repsCompleted > 0) {
+        try {
+          await updateUserMax(
+            userMax?.is_at_machine_max || false,
+            userMax?.is_at_machine_min || false,
+            weightUsed,
+            Math.round(repsCompleted / setsCompleted),
+            weightUsed
+          );
+        } catch (e) {
+          console.error('Failed to update user machine max:', e);
+        }
       }
     } catch (e) {
       console.error('Failed to persist workout session', e);
@@ -158,6 +179,16 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
       onExerciseComplete(exercise);
       onBack();
     }
+  };
+
+  const handleContributeSpec = async (maxWeight?: number, minWeight?: number) => {
+    await contributeSpec(maxWeight, minWeight);
+  };
+
+  const handleUpdateUserMax = async (isMax: boolean, isMin: boolean, weight?: number) => {
+    const currentWeight = sets[0]?.weight || 0;
+    const avgReps = Math.round(sets.reduce((sum, s) => sum + s.actualReps, 0) / sets.length);
+    await updateUserMax(isMax, isMin, weight || currentWeight, avgReps, currentWeight);
   };
 
   const getWorkoutIdForMachine = (name: string): string | null => {
@@ -322,6 +353,16 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Machine Max/Min Toggles - Crowdsourced */}
+      <MachineMaxToggle
+        machineName={exercise.machine}
+        currentWeight={sets[0]?.weight || 0}
+        specs={specs}
+        userMax={userMax}
+        onContributeSpec={handleContributeSpec}
+        onUpdateUserMax={handleUpdateUserMax}
+      />
 
       {/* Smart Puck Workout Runner */}
       <div className="space-y-3">

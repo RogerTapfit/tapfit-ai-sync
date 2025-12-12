@@ -10,6 +10,10 @@ interface MachineHistoryData {
   shouldProgressWeight?: boolean;
   suggestedWeight?: number;
   consecutiveSuccessfulWorkouts?: number;
+  // User's typical performance on this machine
+  typicalWeight?: number;
+  typicalReps?: number;
+  personalMaxWeight?: number;
 }
 
 export const useMachineHistory = (machineName: string) => {
@@ -94,6 +98,11 @@ export const useMachineHistory = (machineName: string) => {
           const rawIncrease = lastWorkout.weight_used * increasePercentage;
           const suggestedWeight = Math.round((lastWorkout.weight_used + rawIncrease) / 5) * 5;
           
+          // Calculate typical weight and reps from last 3 workouts
+          const avgWeight = recentWorkouts.reduce((sum, w) => sum + (w.weight_used || 0), 0) / recentWorkouts.length;
+          const avgReps = recentWorkouts.reduce((sum, w) => sum + (w.reps_completed || 0), 0) / recentWorkouts.length;
+          const maxWeight = Math.max(...recentWorkouts.map(w => w.weight_used || 0));
+          
           setHistory({
             lastWeight: lastWorkout.weight_used || 0,
             lastReps: lastWorkout.reps_completed || 0,
@@ -102,7 +111,10 @@ export const useMachineHistory = (machineName: string) => {
             exerciseName: lastWorkout.exercise_name,
             shouldProgressWeight,
             suggestedWeight,
-            consecutiveSuccessfulWorkouts: consecutiveSuccessful
+            consecutiveSuccessfulWorkouts: consecutiveSuccessful,
+            typicalWeight: Math.round(avgWeight),
+            typicalReps: Math.round(avgReps),
+            personalMaxWeight: maxWeight
           });
         } else {
           setHistory(null);

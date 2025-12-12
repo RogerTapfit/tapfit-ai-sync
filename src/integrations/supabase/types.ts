@@ -1632,6 +1632,53 @@ export type Database = {
         }
         Relationships: []
       }
+      machine_weight_specs: {
+        Row: {
+          contributions_count: number | null
+          created_at: string | null
+          gym_id: string | null
+          id: string
+          last_updated: string | null
+          machine_name: string
+          machine_type: string | null
+          max_weight: number | null
+          min_weight: number | null
+          weight_increment: number | null
+        }
+        Insert: {
+          contributions_count?: number | null
+          created_at?: string | null
+          gym_id?: string | null
+          id?: string
+          last_updated?: string | null
+          machine_name: string
+          machine_type?: string | null
+          max_weight?: number | null
+          min_weight?: number | null
+          weight_increment?: number | null
+        }
+        Update: {
+          contributions_count?: number | null
+          created_at?: string | null
+          gym_id?: string | null
+          id?: string
+          last_updated?: string | null
+          machine_name?: string
+          machine_type?: string | null
+          max_weight?: number | null
+          min_weight?: number | null
+          weight_increment?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_weight_specs_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machines: {
         Row: {
           brand: string | null
@@ -3727,6 +3774,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_machine_maxes: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_at_machine_max: boolean | null
+          is_at_machine_min: boolean | null
+          last_workout_date: string | null
+          machine_name: string
+          personal_max_weight: number | null
+          typical_reps: number | null
+          typical_weight: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_at_machine_max?: boolean | null
+          is_at_machine_min?: boolean | null
+          last_workout_date?: string | null
+          machine_name: string
+          personal_max_weight?: number | null
+          typical_reps?: number | null
+          typical_weight?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_at_machine_max?: boolean | null
+          is_at_machine_min?: boolean | null
+          last_workout_date?: string | null
+          machine_name?: string
+          personal_max_weight?: number | null
+          typical_reps?: number | null
+          typical_weight?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_power_levels: {
         Row: {
           created_at: string
@@ -4425,6 +4514,34 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      contribute_machine_spec: {
+        Args: {
+          _gym_id?: string
+          _machine_name: string
+          _machine_type?: string
+          _max_weight?: number
+          _min_weight?: number
+          _weight_increment?: number
+        }
+        Returns: {
+          contributions_count: number | null
+          created_at: string | null
+          gym_id: string | null
+          id: string
+          last_updated: string | null
+          machine_name: string
+          machine_type: string | null
+          max_weight: number | null
+          min_weight: number | null
+          weight_increment: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "machine_weight_specs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       encrypt_sensitive_field: {
         Args: { field_value: string }
         Returns: string
@@ -4572,6 +4689,36 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      update_user_machine_max: {
+        Args: {
+          _is_at_machine_max?: boolean
+          _is_at_machine_min?: boolean
+          _machine_name: string
+          _personal_max_weight?: number
+          _typical_reps?: number
+          _typical_weight?: number
+          _user_id: string
+        }
+        Returns: {
+          created_at: string | null
+          id: string
+          is_at_machine_max: boolean | null
+          is_at_machine_min: boolean | null
+          last_workout_date: string | null
+          machine_name: string
+          personal_max_weight: number | null
+          typical_reps: number | null
+          typical_weight: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_machine_maxes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_user_power_level: { Args: { _user_id: string }; Returns: boolean }
       update_workout_streak: {
