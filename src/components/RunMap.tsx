@@ -3,8 +3,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRunTracker } from '@/hooks/useRunTracker';
 
-// Strava-style colors
-const STRAVA_ORANGE = '#FC4C02';
+// TapFit theme colors
+const TAPFIT_NEON_RED = '#FF4D4D';
 const START_GREEN = '#22c55e';
 const CURRENT_BLUE = '#3b82f6';
 
@@ -41,9 +41,9 @@ export const RunMap = () => {
       lineJoin: 'round',
     }).addTo(map);
 
-    // Main route line - Strava orange, bold
+    // Main route line - TapFit neon red, bold
     const route = L.polyline([], {
-      color: STRAVA_ORANGE,
+      color: TAPFIT_NEON_RED,
       weight: 6,
       opacity: 1,
       lineCap: 'round',
