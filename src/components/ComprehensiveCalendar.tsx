@@ -76,7 +76,11 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
-    if (day.alcoholEntries.length > 0) {
+    // Check for alcohol: legacy entries OR dehydrating beverages from hydration tracker
+    const hasAlcoholEntries = day.alcoholEntries.length > 0 || 
+      day.waterEntries.some(entry => entry.isDehydrating);
+    
+    if (hasAlcoholEntries) {
       indicators.push(
         <div key="alcohol" className="w-2 h-2 bg-red-500 rounded-full" />
       );

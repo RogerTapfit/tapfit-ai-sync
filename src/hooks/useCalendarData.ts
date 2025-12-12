@@ -461,7 +461,8 @@ export const useCalendarData = (userId?: string) => {
         const totalTapCoinsEarned = dayTapCoins
           .filter(coin => coin.amount > 0)
           .reduce((sum, coin) => sum + coin.amount, 0);
-        const totalAlcoholDrinks = dayAlcoholEntries.reduce((sum, alcohol) => sum + alcohol.quantity, 0);
+        const dehydratingBeverages = dayWaterEntries.filter(w => w.isDehydrating).length;
+        const totalAlcoholDrinks = dayAlcoholEntries.reduce((sum, alcohol) => sum + alcohol.quantity, 0) + dehydratingBeverages;
         const totalWaterIntakeOz = dayWaterEntries.reduce((sum, water) => sum + water.effectiveOz, 0);
         
         // Calculate cycle phase for this day
