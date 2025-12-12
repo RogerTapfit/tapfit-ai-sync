@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 import { getCoachingCue, getZoneColor } from "@/utils/heartRateZones";
 import { runTrackerService } from "@/services/runTrackerService";
+import { GPSSignalIndicator } from "@/components/GPSSignalIndicator";
 
 const RunActive = () => {
   const navigate = useNavigate();
@@ -167,14 +168,7 @@ const RunActive = () => {
           </Card>
           
           {metrics && (
-            <Card className="px-3 py-2 bg-card/90 backdrop-blur border-green-500/20 shadow-lg">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-green-500" />
-                <span className="text-xs font-medium">
-                  {metrics.gps_accuracy > 0 ? `±${Math.round(metrics.gps_accuracy)}m` : '--'}
-                </span>
-              </div>
-            </Card>
+            <GPSSignalIndicator accuracy={metrics.gps_accuracy} />
           )}
         </div>
       </div>
