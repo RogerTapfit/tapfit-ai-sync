@@ -55,8 +55,8 @@ export default function RideSetup() {
     <>
       <SEO title="Setup Ride" description="Configure your cycling workout with GPS tracking and heart rate training" />
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-green-500/5">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        {/* Header - safe area aware */}
+        <div className="sticky z-10 bg-background/95 backdrop-blur border-b safe-header">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover-scale">

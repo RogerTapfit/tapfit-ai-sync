@@ -24,7 +24,7 @@ export default function RideSummary() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="sticky z-10 bg-background/95 backdrop-blur border-b safe-header">
           <div className="flex items-center gap-2 p-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/ride/history')}>
               <ArrowLeft className="h-5 w-5" />
@@ -43,7 +43,7 @@ export default function RideSummary() {
   if (error || !ride) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="sticky z-10 bg-background/95 backdrop-blur border-b safe-header">
           <div className="flex items-center gap-2 p-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/ride/history')}>
               <ArrowLeft className="h-5 w-5" />
@@ -66,8 +66,8 @@ export default function RideSummary() {
     <>
       <SEO title="Ride Summary" description="Detailed summary of your cycling workout" />
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        {/* Header - safe area aware */}
+        <div className="sticky z-10 bg-background/95 backdrop-blur border-b safe-header">
           <div className="flex items-center gap-2 p-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/ride/history')}>
               <ArrowLeft className="h-5 w-5" />

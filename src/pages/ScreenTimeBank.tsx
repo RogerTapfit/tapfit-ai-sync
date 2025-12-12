@@ -69,8 +69,8 @@ export default function ScreenTimeBank() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+      {/* Header - safe area aware */}
+      <div className="sticky z-10 bg-background/80 backdrop-blur-lg border-b border-border safe-header">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="icon" onClick={() => navigate('/fitness-alarm')}>

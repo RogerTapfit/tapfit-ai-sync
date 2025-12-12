@@ -22,8 +22,8 @@ export default function RideHistory() {
     <>
       <SEO title="Ride History" description="View your past cycling workouts and performance" />
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        {/* Header - safe area aware */}
+        <div className="sticky z-10 bg-background/95 backdrop-blur border-b safe-header">
           <div className="flex items-center gap-2 p-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
               <ArrowLeft className="h-5 w-5" />

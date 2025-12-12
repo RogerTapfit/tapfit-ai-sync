@@ -45,8 +45,8 @@ export default function MealPlanner() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      {/* Header - safe area aware */}
+      <div className="sticky z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 safe-header">
         <div className="px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
