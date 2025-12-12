@@ -163,8 +163,8 @@ const RunActive = () => {
         />
       )}
 
-      {/* Header with Navigation */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b animate-fade-in">
+      {/* Header with Navigation - safe area aware */}
+      <div className="sticky z-10 bg-background/95 backdrop-blur border-b animate-fade-in safe-header">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
             <Button

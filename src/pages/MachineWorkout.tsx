@@ -563,8 +563,8 @@ export default function MachineWorkout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border p-4">
+      {/* Header - safe area aware */}
+      <div className="sticky z-10 bg-background/95 backdrop-blur-sm border-b border-border p-4 safe-header">
         <div className="container max-w-4xl mx-auto flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={handleBackToList}>
             <ArrowLeft className="h-4 w-4 mr-2" />

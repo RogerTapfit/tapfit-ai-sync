@@ -51,8 +51,10 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="md:hidden fixed safe-top-md safe-left z-[100]">
+      {/* Mobile Menu Button - positioned below iOS notch/Dynamic Island */}
+      <div 
+        className="md:hidden fixed z-[100] safe-top-offset safe-left"
+      >
         <Button
           variant="outline"
           size="icon"
@@ -60,7 +62,7 @@ const Navigation = ({ currentPage, onPageChange, user, isGuest, onSignOut }: Nav
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="touch-target glow-card bg-background border-border shadow-lg"
         >
-          {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
       </div>
 

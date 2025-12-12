@@ -115,8 +115,8 @@ export default function RideActive() {
     <>
       <SEO title="Active Ride" description="Live cycling workout with GPS and heart rate tracking" />
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-green-500/5">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b animate-fade-in">
+        {/* Header - safe area aware */}
+        <div className="sticky z-10 bg-background/95 backdrop-blur border-b animate-fade-in safe-header">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => handleNavigateAway('setup')} className="hover-scale">

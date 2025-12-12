@@ -23,12 +23,24 @@
     <meta name="twitter:site" content="@tapfit_app" />
     <meta name="twitter:image" content="https://tapfit.info/assets/tapfit-hero-new.jpg" />
   <style>
-    :root { --safe-top: env(safe-area-inset-top); --safe-left: env(safe-area-inset-left); }
-    .safe-pad-top { padding-top: max(var(--safe-top), 12px); }
-    .safe-top { top: max(var(--safe-top), 8px); }
-    .safe-top-md { top: calc(max(var(--safe-top), 8px) + 10px); }
-    .safe-left { left: max(var(--safe-left), 16px); }
-    .touch-target { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    /* iOS Safe Area Utilities for Capacitor Native Apps */
+    :root { 
+      --safe-top: env(safe-area-inset-top, 0px); 
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    /* Safe area padding classes */
+    .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+    /* Sticky headers: position below notch/Dynamic Island */
+    .safe-header { top: env(safe-area-inset-top, 0px); }
+    /* Fixed positioning with safe area offset */
+    .safe-top { top: env(safe-area-inset-top, 0px); }
+    .safe-top-offset { top: calc(env(safe-area-inset-top, 0px) + 1rem); }
+    .safe-left { left: calc(env(safe-area-inset-left, 0px) + 1rem); }
+    /* Apple HIG 44pt minimum touch target */
+    .touch-target { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
   </style>
   </head>
 
