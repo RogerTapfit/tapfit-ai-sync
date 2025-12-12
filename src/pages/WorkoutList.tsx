@@ -661,7 +661,7 @@ const WorkoutList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-6">
+    <div className="min-h-screen bg-background p-4 space-y-6 pt-safe">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button

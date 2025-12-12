@@ -58,7 +58,7 @@ export default function ScreenTimeBank() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-safe">
         <div className="text-center">
           <div className="text-4xl animate-bounce mb-4">⏳</div>
           <p className="text-muted-foreground">Loading your screen time bank...</p>
@@ -68,7 +68,7 @@ export default function ScreenTimeBank() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-20 pt-safe">
       {/* Header - safe area aware */}
       <div className="sticky z-10 bg-background/80 backdrop-blur-lg border-b border-border safe-header">
         <div className="container mx-auto px-4 py-4">

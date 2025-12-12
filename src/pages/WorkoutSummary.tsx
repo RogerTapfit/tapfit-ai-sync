@@ -118,7 +118,7 @@ const WorkoutSummary = () => {
   const estimatedCalories = Math.round(workoutData.duration * 8 + (workoutData.totalReps || workoutData.sets * 10) * 0.5);
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-6">
+    <div className="min-h-screen bg-background p-4 space-y-6 pt-safe">
       {/* Header with Celebrating Avatar */}
       <div className="text-center space-y-4">
         {avatar && (

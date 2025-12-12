@@ -22,7 +22,7 @@ const AvatarSelection: React.FC = () => {
         title="Choose Coach | TapFit"
         description="Select your coach character from our collection of fitness companions"
       />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-safe">
         <div className="container mx-auto px-4 py-6">
           <div className="mb-6 flex items-center gap-4">
             <Button

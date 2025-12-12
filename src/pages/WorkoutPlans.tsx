@@ -42,7 +42,7 @@ const WorkoutPlans = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-safe">
         <div className="p-4">
           <Button variant="ghost" onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -60,7 +60,7 @@ const WorkoutPlans = () => {
 
   if (!currentPlan) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-safe">
         <div className="p-4">
           <Button variant="ghost" onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -82,7 +82,7 @@ const WorkoutPlans = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-safe">
       <div className="p-4">
         <Button variant="ghost" onClick={() => navigate('/')}>
           <ArrowLeft className="h-4 w-4 mr-2" />

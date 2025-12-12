@@ -34,7 +34,7 @@ export default function SwimSummary() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 flex items-center justify-center pt-safe">
         <Card className="p-8">
           <p className="text-muted-foreground">Loading swim summary...</p>
         </Card>
@@ -44,7 +44,7 @@ export default function SwimSummary() {
 
   if (error || !swim) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 flex items-center justify-center p-4 pt-safe">
         <Card className="p-8 text-center max-w-md">
           <Waves className="h-16 w-16 mx-auto mb-4 text-blue-500/50" />
           <h3 className="text-lg font-semibold mb-2">Swim Not Found</h3>
@@ -58,7 +58,7 @@ export default function SwimSummary() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 pb-20 pt-safe">
       <div className="container max-w-4xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">

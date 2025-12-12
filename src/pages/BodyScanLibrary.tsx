@@ -68,7 +68,7 @@ const BodyScanLibrary = () => {
         description="Browse your saved AI body scans with images and metrics."
         canonicalPath="/body-scans"
       />
-      <main className="min-h-screen bg-background p-4 md:p-8">
+      <main className="min-h-screen bg-background p-4 md:p-8 pt-safe">
         <Button 
           variant="ghost" 
           size="sm" 

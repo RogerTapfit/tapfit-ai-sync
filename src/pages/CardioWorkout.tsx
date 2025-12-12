@@ -23,7 +23,7 @@ const CardioWorkout = () => {
 
   if (!machineData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pt-safe">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <p className="text-gray-600">Machine data not found</p>
@@ -51,7 +51,7 @@ const CardioWorkout = () => {
   const machineType = getMachineType(machineData.name);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pt-safe">
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center mb-6">
           <Button 

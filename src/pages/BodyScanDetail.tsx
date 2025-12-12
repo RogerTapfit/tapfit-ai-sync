@@ -105,7 +105,7 @@ const BodyScanDetail = () => {
         description="View your saved body scan images and AI metrics."
         canonicalPath={`/body-scans/${scanId}`}
       />
-      <main className="min-h-screen bg-background p-4 md:p-8">
+      <main className="min-h-screen bg-background p-4 md:p-8 pt-safe">
         <Button 
           variant="ghost" 
           size="sm" 

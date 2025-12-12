@@ -113,7 +113,7 @@ export default function AlarmRinging() {
 
   if (!alarm) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-safe">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading alarm...</p>
@@ -123,7 +123,7 @@ export default function AlarmRinging() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative pt-safe">
       {/* Alarm Controls Overlay */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
         <Button

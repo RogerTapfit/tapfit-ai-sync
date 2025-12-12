@@ -533,7 +533,7 @@ export default function MachineWorkout() {
 
   if (loading || !machine) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center pt-safe">
         <div className="text-center">
           <div className="h-8 w-8 mx-auto mb-4 animate-spin text-primary rounded-full border-2 border-primary border-t-transparent" />
           <p>Loading machine...</p>
@@ -562,7 +562,7 @@ export default function MachineWorkout() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-safe">
       {/* Header - safe area aware */}
       <div className="sticky z-10 bg-background/95 backdrop-blur-sm border-b border-border p-4 safe-header">
         <div className="container max-w-4xl mx-auto flex items-center gap-4">

@@ -30,7 +30,7 @@ export default function AlarmStatistics() {
 
   if (isGuest) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-safe">
         <div className="sticky z-10 bg-background/80 backdrop-blur-lg border-b border-border safe-header">
           <div className="container mx-auto px-4 py-4 max-w-full">
             <div className="flex items-center justify-between">
@@ -62,7 +62,7 @@ export default function AlarmStatistics() {
 
   if (isLoading || !stats) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center pt-safe">
         <p className="text-muted-foreground">Loading statistics...</p>
       </div>
     );
@@ -75,7 +75,7 @@ export default function AlarmStatistics() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 overflow-x-hidden">
+    <div className="min-h-screen bg-background pb-20 overflow-x-hidden pt-safe">
       {/* Header - safe area aware */}
       <div className="sticky z-10 bg-background/80 backdrop-blur-lg border-b border-border safe-header">
         <div className="container mx-auto px-4 py-4 max-w-full">
