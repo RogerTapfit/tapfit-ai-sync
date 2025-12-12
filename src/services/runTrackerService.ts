@@ -27,6 +27,11 @@ class RunTrackerService {
   private autoPauseTimer: NodeJS.Timeout | null = null;
   private saveTimer: NodeJS.Timeout | null = null;
   
+  // Wall-clock timer for immediate start & sleep mode handling
+  private sessionStartTime: number | null = null;
+  private timerInterval: NodeJS.Timeout | null = null;
+  private wakeLock: WakeLockSentinel | null = null;
+  
   // Heart Rate Monitoring
   private hrListener: any = null;
   private currentBPM: number | null = null;
@@ -142,10 +147,77 @@ class RunTrackerService {
     }
 
     this.status = 'running';
+    
+    // Start wall-clock timer immediately (doesn't wait for GPS)
+    this.sessionStartTime = Date.now();
+    this.pausedTime = 0;
+    this.startWallClockTimer();
+    
+    // Request wake lock to keep screen on during workout (web only)
+    this.requestWakeLock();
+    
+    // Add visibility change listener for sleep mode handling
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    }
+    
     this.startAutoSave();
     this.notifyListeners();
 
     return sessionId;
+  }
+  
+  private startWallClockTimer(): void {
+    // Timer ticks every second based on wall-clock time
+    this.timerInterval = setInterval(() => {
+      if (this.currentSession && this.status === 'running' && this.sessionStartTime) {
+        const now = Date.now();
+        const totalElapsed = (now - this.sessionStartTime) / 1000;
+        this.currentSession.elapsed_time_s = Math.max(0, totalElapsed - this.pausedTime);
+        
+        // If auto-pause is off, moving time = elapsed time
+        if (!this.currentSession.auto_pause_enabled) {
+          this.currentSession.moving_time_s = this.currentSession.elapsed_time_s;
+        }
+        
+        // Recalculate metrics based on new time
+        this.updateMetrics();
+        this.notifyListeners();
+      }
+    }, 1000);
+  }
+  
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState === 'visible' && this.status === 'running' && this.sessionStartTime && this.currentSession) {
+      // App came back to foreground - recalculate time from wall clock
+      const now = Date.now();
+      const totalElapsed = (now - this.sessionStartTime) / 1000;
+      this.currentSession.elapsed_time_s = Math.max(0, totalElapsed - this.pausedTime);
+      
+      if (!this.currentSession.auto_pause_enabled) {
+        this.currentSession.moving_time_s = this.currentSession.elapsed_time_s;
+      }
+      
+      this.updateMetrics();
+      this.notifyListeners();
+      console.log('📱 App resumed - timer recalculated from wall clock');
+    }
+  };
+  
+  private async requestWakeLock(): Promise<void> {
+    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+      try {
+        this.wakeLock = await (navigator as any).wakeLock.request('screen');
+        console.log('🔒 Wake lock acquired - screen will stay on');
+        
+        // Re-acquire wake lock if released (e.g., tab switch)
+        this.wakeLock.addEventListener('release', () => {
+          console.log('🔓 Wake lock released');
+        });
+      } catch (err) {
+        console.log('Wake lock not available:', err);
+      }
+    }
   }
 
   private handleLocationUpdate(point: RunPoint): void {
@@ -271,6 +343,7 @@ class RunTrackerService {
   async pauseTracking(): Promise<void> {
     if (this.status !== 'running') return;
     this.status = 'paused';
+    this.pauseStartTime = Date.now(); // Track when pause started for wall-clock calculation
     if (this.currentSession) {
       this.currentSession.status = 'paused';
       await runStorageService.saveSession(this.currentSession);
@@ -280,6 +353,13 @@ class RunTrackerService {
 
   async resumeTracking(): Promise<void> {
     if (this.status !== 'paused') return;
+    
+    // Add paused duration to total paused time
+    if (this.pauseStartTime) {
+      this.pausedTime += (Date.now() - this.pauseStartTime) / 1000;
+      this.pauseStartTime = null;
+    }
+    
     this.status = 'running';
     if (this.currentSession) {
       this.currentSession.status = 'active';
@@ -290,6 +370,28 @@ class RunTrackerService {
 
   async stopTracking(): Promise<RunSession | null> {
     if (!this.currentSession) return null;
+
+    // Stop wall-clock timer
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    
+    // Remove visibility change listener
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    }
+    
+    // Release wake lock
+    if (this.wakeLock) {
+      try {
+        await this.wakeLock.release();
+        this.wakeLock = null;
+        console.log('🔓 Wake lock released');
+      } catch (err) {
+        console.log('Error releasing wake lock:', err);
+      }
+    }
 
     // Stop GPS watcher - handle both native and web
     if (this.isNative && this.watcherId) {
@@ -327,6 +429,8 @@ class RunTrackerService {
     this.recentSpeeds = [];
     this.hrSamples = [];
     this.currentBPM = null;
+    this.sessionStartTime = null;
+    this.pausedTime = 0;
     this.status = 'idle';
     this.notifyListeners();
 
