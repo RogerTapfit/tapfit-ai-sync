@@ -35,13 +35,15 @@ class RunTrackerService {
   async initialize(): Promise<void> {
     await runStorageService.init();
     
-    // Check permissions
-    const status = await Geolocation.checkPermissions();
-    if (status.location !== 'granted') {
-      // Request permissions - on iOS this will show the system dialog
-      const result = await Geolocation.requestPermissions();
-      if (result.location !== 'granted') {
-        throw new Error('Location permission denied. GPS tracking requires location access.');
+    // On web, permissions are requested automatically when calling watchPosition
+    // Only check/request permissions on native platforms
+    if (Capacitor.isNativePlatform()) {
+      const status = await Geolocation.checkPermissions();
+      if (status.location !== 'granted') {
+        const result = await Geolocation.requestPermissions();
+        if (result.location !== 'granted') {
+          throw new Error('Location permission denied. GPS tracking requires location access.');
+        }
       }
     }
   }
