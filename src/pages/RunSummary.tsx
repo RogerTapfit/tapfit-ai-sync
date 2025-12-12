@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock, Flame, Activity, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Flame, Activity, TrendingUp, TrendingDown, Share2 } from "lucide-react";
+import ShareRunModal from "@/components/run/ShareRunModal";
 import { useRunById } from "@/hooks/useRunHistory";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { format } from "date-fns";
@@ -13,6 +14,7 @@ const RunSummary = () => {
   const { runId } = useParams<{ runId: string }>();
   const navigate = useNavigate();
   const { data: run, isLoading } = useRunById(runId);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Initialize map with the run route
   useEffect(() => {
@@ -109,7 +111,9 @@ const RunSummary = () => {
               {format(new Date(run.started_at), "EEEE, MMM d 'at' h:mm a")}
             </p>
           </div>
-          <div className="w-20" />
+          <Button variant="ghost" size="icon" onClick={() => setShowShareModal(true)}>
+            <Share2 className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
@@ -240,6 +244,13 @@ const RunSummary = () => {
             Start New Run
           </Button>
         </div>
+
+        {/* Share Modal */}
+        <ShareRunModal 
+          run={run} 
+          open={showShareModal} 
+          onOpenChange={setShowShareModal} 
+        />
       </div>
     </div>
   );
