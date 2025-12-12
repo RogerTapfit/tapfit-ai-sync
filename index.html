@@ -31,7 +31,7 @@
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
     /* Safe area padding classes */
-    .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    .pt-safe { padding-top: calc(env(safe-area-inset-top, 0px) + 1rem); }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
     /* Sticky headers: position below notch/Dynamic Island */
     .safe-header { top: env(safe-area-inset-top, 0px); }
