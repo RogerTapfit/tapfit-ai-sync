@@ -83,7 +83,7 @@ export default function SwimActive() {
   if (status === 'idle') return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 pb-20 pt-safe">
       <div className="container max-w-4xl mx-auto p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">

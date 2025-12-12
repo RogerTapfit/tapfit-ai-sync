@@ -124,7 +124,7 @@ const RunSetup = () => {
   const zone3 = hrZones[2];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 p-4">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-blue-500/5 p-4 pt-safe">
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">

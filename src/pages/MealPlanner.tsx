@@ -44,7 +44,7 @@ export default function MealPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 pt-safe">
       {/* Header - safe area aware */}
       <div className="sticky z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 safe-header">
         <div className="px-4 py-4">

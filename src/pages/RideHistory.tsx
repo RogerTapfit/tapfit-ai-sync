@@ -21,7 +21,7 @@ export default function RideHistory() {
   return (
     <>
       <SEO title="Ride History" description="View your past cycling workouts and performance" />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-safe">
         {/* Header - safe area aware */}
         <div className="sticky z-10 bg-background/95 backdrop-blur border-b safe-header">
           <div className="flex items-center gap-2 p-4">

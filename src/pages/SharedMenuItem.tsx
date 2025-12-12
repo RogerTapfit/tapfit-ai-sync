@@ -68,7 +68,7 @@ export default function SharedMenuItem() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background pt-safe">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading shared content...</p>
@@ -79,7 +79,7 @@ export default function SharedMenuItem() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 pt-safe">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -99,7 +99,7 @@ export default function SharedMenuItem() {
     const item = data?.itemData as MenuItem;
     
     return (
-      <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="min-h-screen bg-background p-4 md:p-8 pt-safe">
         <SEO 
           title={`${item?.name} - Shared Menu Item`}
           description={`View nutrition information for ${item?.name} ${data?.restaurantName ? `from ${data.restaurantName}` : ''}`}
@@ -238,7 +238,7 @@ export default function SharedMenuItem() {
   const comparisonItems = data?.comparisonData as MenuItem[];
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8 pt-safe">
       <SEO 
         title="Menu Comparison - Shared"
         description={`Compare nutrition information for menu items ${data?.restaurantName ? `from ${data.restaurantName}` : ''}`}

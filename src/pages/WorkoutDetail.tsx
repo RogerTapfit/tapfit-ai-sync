@@ -802,7 +802,7 @@ const WorkoutDetail = () => {
   }, [stopNotify, puckDevice?.deviceId]);
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-6">
+    <div className="min-h-screen bg-background p-4 space-y-6 pt-safe">
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center p-8">

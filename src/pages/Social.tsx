@@ -54,7 +54,7 @@ export default function Social() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-purple-500/5 to-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-purple-500/5 to-background pt-safe">
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl pb-20">
         <div className="mb-6 pt-6">
           <Button 

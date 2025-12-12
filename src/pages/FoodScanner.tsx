@@ -73,7 +73,7 @@ const FoodScanner = () => {
         canonicalPath="/food-scanner"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 pt-safe">
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
           {/* Animated Header */}
           <motion.div 

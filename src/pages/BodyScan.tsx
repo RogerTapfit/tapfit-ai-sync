@@ -522,7 +522,7 @@ const BodyScan = () => {
         canonicalPath="/body-scan"
       />
 
-      <main className="min-h-screen bg-background p-4 md:p-8">
+      <main className="min-h-screen bg-background p-4 md:p-8 pt-safe">
         <header className="mb-6">
           <div className="flex items-center gap-3 mb-3">
             <Link to="/" aria-label="Back to Dashboard">

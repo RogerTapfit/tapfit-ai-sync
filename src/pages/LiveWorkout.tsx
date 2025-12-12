@@ -48,7 +48,7 @@ export default function LiveWorkout() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8 pt-safe">
       <SEO 
         title="Live Exercise Tracker | AI Form Analysis"
         description="Track your bodyweight exercises in real-time with AI-powered form feedback and rep counting"
