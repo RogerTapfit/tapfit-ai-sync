@@ -257,7 +257,7 @@ const TapFitApp = () => {
         onSignOut={signOut}
       />
       <div className="flex-1 md:ml-0 pt-20 md:pt-0 relative">
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute right-4 z-50 safe-top-offset">
           <NotificationBell />
         </div>
         {renderContent()}
