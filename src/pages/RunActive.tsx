@@ -14,6 +14,7 @@ import { RunGPSWarningBanner } from "@/components/RunGPSWarningBanner";
 import { getCoachingCue, getZoneColor } from "@/utils/heartRateZones";
 import { runTrackerService } from "@/services/runTrackerService";
 import { GPSSignalIndicator } from "@/components/GPSSignalIndicator";
+import { RunCompletionCelebration } from "@/components/run/RunCompletionCelebration";
 
 const RunActive = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const RunActive = () => {
   const activityName = isWalk ? 'Walk' : 'Run';
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelDestination, setCancelDestination] = useState<'setup' | 'home'>('setup');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [completedSessionId, setCompletedSessionId] = useState<string | null>(null);
   
   // Live timer that updates every second
   const [liveTime, setLiveTime] = useState(0);
@@ -102,10 +105,21 @@ const RunActive = () => {
   const handleStop = async () => {
     try {
       const session = await stopRun();
-      toast.success(`${activityName} completed!`);
-      navigate(`/run/summary/${session?.id}`);
+      if (session?.id) {
+        setCompletedSessionId(session.id);
+        setShowCelebration(true);
+      } else {
+        navigate('/run/setup');
+      }
     } catch (error) {
       toast.error(`Failed to stop ${activityName.toLowerCase()}`);
+    }
+  };
+
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+    if (completedSessionId) {
+      navigate(`/run/summary/${completedSessionId}`);
     }
   };
 
@@ -136,6 +150,19 @@ const RunActive = () => {
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-background via-background ${isWalk ? 'to-green-500/5' : 'to-blue-500/5'}`}>
+      {/* Celebration Modal */}
+      {showCelebration && metrics && (
+        <RunCompletionCelebration
+          distance_m={metrics.distance_m}
+          moving_time_s={metrics.moving_time_s}
+          avg_pace_sec_per_km={metrics.avg_pace_sec_per_km}
+          calories={metrics.calories}
+          activityType={settings.activity_type}
+          unit={settings.unit}
+          onComplete={handleCelebrationComplete}
+        />
+      )}
+
       {/* Header with Navigation */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b animate-fade-in">
         <div className="flex items-center justify-between p-4">
