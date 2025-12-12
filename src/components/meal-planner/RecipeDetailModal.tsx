@@ -144,14 +144,29 @@ export function RecipeDetailModal({
                 <span>📝</span> Instructions
               </h3>
               <ol className="space-y-3">
-                {recipe.instructions.map((step, index) => (
-                  <li key={index} className="flex gap-3 text-sm">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
-                      {index + 1}
-                    </span>
-                    <span className="text-muted-foreground">{step}</span>
-                  </li>
-                ))}
+                {recipe.instructions.map((step, index) => {
+                  // Handle both string and object instruction formats
+                  const stepText = typeof step === 'string' 
+                    ? step 
+                    : (step as { text?: string; step?: number; time?: string })?.text || '';
+                  const stepTime = typeof step === 'object' 
+                    ? (step as { time?: string })?.time 
+                    : null;
+                  
+                  return (
+                    <li key={index} className="flex gap-3 text-sm">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium">
+                        {index + 1}
+                      </span>
+                      <div className="flex-1">
+                        <span className="text-muted-foreground">{stepText}</span>
+                        {stepTime && (
+                          <span className="block text-xs text-primary/70 mt-1">⏱️ {stepTime}</span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             </div>
 
