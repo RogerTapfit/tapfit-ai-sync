@@ -65,15 +65,16 @@ const RunActive = () => {
     let interval: NodeJS.Timeout | null = null;
     
     if (status === 'running') {
+      // Only sync with metrics when running (not when paused)
+      if (metrics?.moving_time_s !== undefined) {
+        setLiveTime(Math.floor(metrics.moving_time_s));
+      }
+      
       interval = setInterval(() => {
         setLiveTime((prev) => prev + 1);
       }, 1000);
     }
-    
-    // Sync with metrics when available
-    if (metrics?.moving_time_s !== undefined) {
-      setLiveTime(Math.floor(metrics.moving_time_s));
-    }
+    // When paused - do nothing, liveTime keeps its current value
     
     return () => {
       if (interval) clearInterval(interval);
