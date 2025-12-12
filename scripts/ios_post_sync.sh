@@ -80,13 +80,24 @@ if [ -f "$PLIST_PATH" ]; then
         echo "  ✅ Added NSHealthUpdateUsageDescription"
     fi
     
-    # Add UIBackgroundModes if not present
+    # Add or update UIBackgroundModes
     if ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$PLIST_PATH" 2>/dev/null; then
         /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes array" "$PLIST_PATH"
-        /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:0 string 'bluetooth-central'" "$PLIST_PATH"
-        /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:1 string 'location'" "$PLIST_PATH"
-        /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes:2 string 'fetch'" "$PLIST_PATH"
-        echo "  ✅ Added UIBackgroundModes"
+    fi
+    
+    # Ensure all required background modes are present
+    MODES=("bluetooth-central" "location" "fetch" "processing" "remote-notification")
+    for MODE in "${MODES[@]}"; do
+        if ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$PLIST_PATH" 2>/dev/null | grep -q "$MODE"; then
+            /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes: string '$MODE'" "$PLIST_PATH" 2>/dev/null || true
+        fi
+    done
+    echo "  ✅ Configured UIBackgroundModes (bluetooth-central, location, fetch, processing, remote-notification)"
+    
+    # Add NSLocationAlwaysUsageDescription if not present (required for background GPS)
+    if ! /usr/libexec/PlistBuddy -c "Print :NSLocationAlwaysUsageDescription" "$PLIST_PATH" 2>/dev/null; then
+        /usr/libexec/PlistBuddy -c "Add :NSLocationAlwaysUsageDescription string 'TapFit needs continuous access to your location to accurately track your runs with GPS, even when the app is in the background.'" "$PLIST_PATH"
+        echo "  ✅ Added NSLocationAlwaysUsageDescription"
     fi
     
     echo "✅ Info.plist updated successfully"
