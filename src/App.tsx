@@ -59,6 +59,7 @@ import ScreenTimeBank from "./pages/ScreenTimeBank";
 import Achievements from "./pages/Achievements";
 import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
+import SafeAreaLayout from "./components/SafeAreaLayout";
 import { AlarmSchedulerProvider } from "./components/AlarmSchedulerProvider";
 
 const queryClient = new QueryClient();
@@ -123,154 +124,156 @@ const App = () => {
         <Sonner />
       <HashRouter>
         <ChatbotProvider>
-          <ScrollToTop />
-          <NFCHandler />
-          <AlarmSchedulerProvider />
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={
-              <AuthGuard fallback={<Auth />}>
-                <Index />
-              </AuthGuard>
-            } />
-            <Route path="/workout-mode-select" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutModeSelect />
-              </AuthGuard>
-            } />
-            <Route path="/workout-list" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutList />
-              </AuthGuard>
-            } />
-            <Route path="/workout/:workoutId" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutDetail />
-              </AuthGuard>
-            } />
-            <Route path="/workout-summary" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutSummary />
-              </AuthGuard>
-            } />
-            <Route path="/workout-history" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutHistory />
-              </AuthGuard>
-            } />
-            <Route path="/workout-plans" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutPlans />
-              </AuthGuard>
-            } />
-            <Route path="/workout-plan" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutPlan />
-              </AuthGuard>
-            } />
-            <Route path="/machine/:machineId" element={
-              <AuthGuard fallback={<Auth />}>
-                <MachineAccess />
-              </AuthGuard>
-            } />
-            <Route path="/machine-workout/:workoutId" element={
-              <AuthGuard fallback={<Auth />}>
-                <MachineWorkout />
-              </AuthGuard>
-            } />
-            <Route path="/workouts" element={
-              <AuthGuard fallback={<Auth />}>
-                <WorkoutHub />
-              </AuthGuard>
-            } />
-            <Route path="/body-scan" element={<BodyScan />} />
-            <Route path="/body-scans" element={
-              <AuthGuard fallback={<Auth />}>
-                <BodyScanLibrary />
-              </AuthGuard>
-            } />
-            <Route path="/body-scans/:scanId" element={
-              <AuthGuard fallback={<Auth />}>
-                <BodyScanDetail />
-              </AuthGuard>
-            } />
-            <Route path="/avatars" element={
-              <AuthGuard fallback={<Auth />}>
-                <AvatarSelection />
-              </AuthGuard>
-            } />
-            <Route path="/food-scanner" element={
-              <AuthGuard fallback={<Auth />}>
-                <FoodScanner />
-              </AuthGuard>
-            } />
-            <Route path="/meal-planner" element={
-              <AuthGuard fallback={<Auth />}>
-                <MealPlanner />
-              </AuthGuard>
-            } />
-            <Route path="/scan-machine" element={
-              <AuthGuard fallback={<Auth />}>
-                <ScanMachine />
-              </AuthGuard>
-            } />
-            <Route path="/puck-test" element={
-              <AuthGuard fallback={<Auth />}>
-                <PuckTest />
-              </AuthGuard>
-            } />
-            <Route path="/run/setup" element={
-              <AuthGuard fallback={<Auth />}>
-                <RunSetup />
-              </AuthGuard>
-            } />
-            <Route path="/run/active" element={
-              <AuthGuard fallback={<Auth />}>
-                <RunActive />
-              </AuthGuard>
-            } />
-            <Route path="/run/history" element={
-              <AuthGuard fallback={<Auth />}>
-                <RunHistory />
-              </AuthGuard>
-            } />
-            <Route path="/run/summary/:runId" element={
-              <AuthGuard fallback={<Auth />}>
-                <RunSummary />
-              </AuthGuard>
-            } />
-            <Route path="/ride/setup" element={<AuthGuard fallback={<Auth />}><RideSetup /></AuthGuard>} />
-            <Route path="/ride/active" element={<AuthGuard fallback={<Auth />}><RideActive /></AuthGuard>} />
-            <Route path="/ride/history" element={<AuthGuard fallback={<Auth />}><RideHistory /></AuthGuard>} />
-            <Route path="/ride/summary/:id" element={<AuthGuard fallback={<Auth />}><RideSummary /></AuthGuard>} />
-            <Route path="/swim/setup" element={<AuthGuard fallback={<Auth />}><SwimSetup /></AuthGuard>} />
-            <Route path="/swim/active" element={<AuthGuard fallback={<Auth />}><SwimActive /></AuthGuard>} />
-            <Route path="/swim/history" element={<AuthGuard fallback={<Auth />}><SwimHistory /></AuthGuard>} />
-            <Route path="/swim/summary/:id" element={<AuthGuard fallback={<Auth />}><SwimSummary /></AuthGuard>} />
-            <Route path="/pr-leaderboard" element={<AuthGuard fallback={<Auth />}><PRLeaderboard /></AuthGuard>} />
-            <Route path="/leaderboard" element={<AuthGuard fallback={<Auth />}><Leaderboard /></AuthGuard>} />
-            <Route path="/social" element={<AuthGuard fallback={<Auth />}><Social /></AuthGuard>} />
-            <Route path="/meal-feed" element={<AuthGuard fallback={<Auth />}><MealFeed /></AuthGuard>} />
-            <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
-            <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
-            <Route path="/live-workout" element={<AuthGuard fallback={<Auth />}><LiveWorkout /></AuthGuard>} />
-            <Route path="/shared/:type/:token" element={<SharedMenuItem />} />
-            <Route path="/fitness-alarm" element={<AuthGuard fallback={<Auth />}><FitnessAlarm /></AuthGuard>} />
-            <Route path="/alarm-setup" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
-            <Route path="/alarm-setup/:id" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
-            <Route path="/alarm-ringing/:id" element={<AuthGuard fallback={<Auth />}><AlarmRinging /></AuthGuard>} />
-            <Route path="/alarm-statistics" element={<AuthGuard fallback={<Auth />}><AlarmStatistics /></AuthGuard>} />
-            <Route path="/screen-time-bank" element={<AuthGuard fallback={<Auth />}><ScreenTimeBank /></AuthGuard>} />
-            <Route path="/achievements" element={<AuthGuard fallback={<Auth />}><Achievements /></AuthGuard>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="/admin/replace-avatar-image" element={
-              <AuthGuard fallback={<Auth />}>
-                <AdminReplaceAvatarImage />
-              </AuthGuard>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <GlobalChatbot />
+          <SafeAreaLayout>
+            <ScrollToTop />
+            <NFCHandler />
+            <AlarmSchedulerProvider />
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={
+                <AuthGuard fallback={<Auth />}>
+                  <Index />
+                </AuthGuard>
+              } />
+              <Route path="/workout-mode-select" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutModeSelect />
+                </AuthGuard>
+              } />
+              <Route path="/workout-list" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutList />
+                </AuthGuard>
+              } />
+              <Route path="/workout/:workoutId" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutDetail />
+                </AuthGuard>
+              } />
+              <Route path="/workout-summary" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutSummary />
+                </AuthGuard>
+              } />
+              <Route path="/workout-history" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutHistory />
+                </AuthGuard>
+              } />
+              <Route path="/workout-plans" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutPlans />
+                </AuthGuard>
+              } />
+              <Route path="/workout-plan" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutPlan />
+                </AuthGuard>
+              } />
+              <Route path="/machine/:machineId" element={
+                <AuthGuard fallback={<Auth />}>
+                  <MachineAccess />
+                </AuthGuard>
+              } />
+              <Route path="/machine-workout/:workoutId" element={
+                <AuthGuard fallback={<Auth />}>
+                  <MachineWorkout />
+                </AuthGuard>
+              } />
+              <Route path="/workouts" element={
+                <AuthGuard fallback={<Auth />}>
+                  <WorkoutHub />
+                </AuthGuard>
+              } />
+              <Route path="/body-scan" element={<BodyScan />} />
+              <Route path="/body-scans" element={
+                <AuthGuard fallback={<Auth />}>
+                  <BodyScanLibrary />
+                </AuthGuard>
+              } />
+              <Route path="/body-scans/:scanId" element={
+                <AuthGuard fallback={<Auth />}>
+                  <BodyScanDetail />
+                </AuthGuard>
+              } />
+              <Route path="/avatars" element={
+                <AuthGuard fallback={<Auth />}>
+                  <AvatarSelection />
+                </AuthGuard>
+              } />
+              <Route path="/food-scanner" element={
+                <AuthGuard fallback={<Auth />}>
+                  <FoodScanner />
+                </AuthGuard>
+              } />
+              <Route path="/meal-planner" element={
+                <AuthGuard fallback={<Auth />}>
+                  <MealPlanner />
+                </AuthGuard>
+              } />
+              <Route path="/scan-machine" element={
+                <AuthGuard fallback={<Auth />}>
+                  <ScanMachine />
+                </AuthGuard>
+              } />
+              <Route path="/puck-test" element={
+                <AuthGuard fallback={<Auth />}>
+                  <PuckTest />
+                </AuthGuard>
+              } />
+              <Route path="/run/setup" element={
+                <AuthGuard fallback={<Auth />}>
+                  <RunSetup />
+                </AuthGuard>
+              } />
+              <Route path="/run/active" element={
+                <AuthGuard fallback={<Auth />}>
+                  <RunActive />
+                </AuthGuard>
+              } />
+              <Route path="/run/history" element={
+                <AuthGuard fallback={<Auth />}>
+                  <RunHistory />
+                </AuthGuard>
+              } />
+              <Route path="/run/summary/:runId" element={
+                <AuthGuard fallback={<Auth />}>
+                  <RunSummary />
+                </AuthGuard>
+              } />
+              <Route path="/ride/setup" element={<AuthGuard fallback={<Auth />}><RideSetup /></AuthGuard>} />
+              <Route path="/ride/active" element={<AuthGuard fallback={<Auth />}><RideActive /></AuthGuard>} />
+              <Route path="/ride/history" element={<AuthGuard fallback={<Auth />}><RideHistory /></AuthGuard>} />
+              <Route path="/ride/summary/:id" element={<AuthGuard fallback={<Auth />}><RideSummary /></AuthGuard>} />
+              <Route path="/swim/setup" element={<AuthGuard fallback={<Auth />}><SwimSetup /></AuthGuard>} />
+              <Route path="/swim/active" element={<AuthGuard fallback={<Auth />}><SwimActive /></AuthGuard>} />
+              <Route path="/swim/history" element={<AuthGuard fallback={<Auth />}><SwimHistory /></AuthGuard>} />
+              <Route path="/swim/summary/:id" element={<AuthGuard fallback={<Auth />}><SwimSummary /></AuthGuard>} />
+              <Route path="/pr-leaderboard" element={<AuthGuard fallback={<Auth />}><PRLeaderboard /></AuthGuard>} />
+              <Route path="/leaderboard" element={<AuthGuard fallback={<Auth />}><Leaderboard /></AuthGuard>} />
+              <Route path="/social" element={<AuthGuard fallback={<Auth />}><Social /></AuthGuard>} />
+              <Route path="/meal-feed" element={<AuthGuard fallback={<Auth />}><MealFeed /></AuthGuard>} />
+              <Route path="/profile/:username" element={<AuthGuard fallback={<Auth />}><UserProfile /></AuthGuard>} />
+              <Route path="/profile-customize" element={<AuthGuard fallback={<Auth />}><ProfileCustomization /></AuthGuard>} />
+              <Route path="/live-workout" element={<AuthGuard fallback={<Auth />}><LiveWorkout /></AuthGuard>} />
+              <Route path="/shared/:type/:token" element={<SharedMenuItem />} />
+              <Route path="/fitness-alarm" element={<AuthGuard fallback={<Auth />}><FitnessAlarm /></AuthGuard>} />
+              <Route path="/alarm-setup" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
+              <Route path="/alarm-setup/:id" element={<AuthGuard fallback={<Auth />}><AlarmSetup /></AuthGuard>} />
+              <Route path="/alarm-ringing/:id" element={<AuthGuard fallback={<Auth />}><AlarmRinging /></AuthGuard>} />
+              <Route path="/alarm-statistics" element={<AuthGuard fallback={<Auth />}><AlarmStatistics /></AuthGuard>} />
+              <Route path="/screen-time-bank" element={<AuthGuard fallback={<Auth />}><ScreenTimeBank /></AuthGuard>} />
+              <Route path="/achievements" element={<AuthGuard fallback={<Auth />}><Achievements /></AuthGuard>} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/admin/replace-avatar-image" element={
+                <AuthGuard fallback={<Auth />}>
+                  <AdminReplaceAvatarImage />
+                </AuthGuard>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <GlobalChatbot />
+          </SafeAreaLayout>
         </ChatbotProvider>
       </HashRouter>
       </TooltipProvider>
