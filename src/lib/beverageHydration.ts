@@ -53,7 +53,7 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     icon: Zap, 
     hydrationFactor: 1.0, 
     color: 'text-blue-400',
-    category: 'water',
+    category: 'high',
     calories: 10, carbs: 2, protein: 0, fat: 0, sugar: 0, servingOz: 16
   },
   
