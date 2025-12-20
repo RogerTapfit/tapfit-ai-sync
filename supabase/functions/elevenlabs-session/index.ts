@@ -6,11 +6,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Voice ID mapping by gender
+// Voice ID mapping by gender (fallback)
 const VOICE_MAP: Record<string, string> = {
   'female': '9BWtsMINqrJLrRacOk9x', // Aria
   'male': 'CwhRBWXzGAHq8TQ4Fs17',   // Roger
   'neutral': 'SAz9YHcvj6GT2YYXdXww' // River
+};
+
+// Avatar-specific voice assignments for unique character voices
+const AVATAR_VOICE_OVERRIDES: Record<string, { id: string; name: string }> = {
+  // Female avatars
+  'Tails': { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria' },
+  'Tygrus': { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah' },
+  'Aurora': { id: 'FGY2WhTYpPnrIDTdsKH5', name: 'Laura' },
+  'Ember': { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte' },
+  'Nova': { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah' },
+  // Male avatars
+  'Stark': { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger' },
+  'Petrie': { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie' },
+  'Night Hawk': { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George' },
+  'Banjo': { id: 'bIHbv24MWmeRgasZH58o', name: 'Will' },
+  'Ceasar': { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger' },
+  'Reptile': { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie' },
+  'Rhydon': { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George' },
 };
 
 serve(async (req) => {
@@ -80,7 +98,21 @@ serve(async (req) => {
     };
     
     const agentId = agentIdMap[gender] || AGENT_ID_NEUTRAL;
-    const voiceId = VOICE_MAP[gender] || VOICE_MAP['neutral'];
+    
+    // Get voice - check for avatar-specific override first, then fall back to gender
+    let voiceId: string;
+    let voiceName: string;
+    
+    if (coachName && AVATAR_VOICE_OVERRIDES[coachName]) {
+      voiceId = AVATAR_VOICE_OVERRIDES[coachName].id;
+      voiceName = AVATAR_VOICE_OVERRIDES[coachName].name;
+      console.log(`Using avatar-specific voice for ${coachName}: ${voiceName} (${voiceId})`);
+    } else {
+      voiceId = VOICE_MAP[gender] || VOICE_MAP['neutral'];
+      voiceName = gender === 'female' ? 'Aria' : gender === 'male' ? 'Roger' : 'River';
+      console.log(`Using gender-based voice for ${coachName}: ${voiceName} (${voiceId})`);
+    }
+    
     console.log('Selected agent ID:', agentId, 'voice ID:', voiceId, 'for gender:', gender);
 
     // Get signed URL from ElevenLabs
@@ -106,7 +138,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       signed_url: data.signed_url,
       agent_id: agentId,
-      voice_name: Object.entries(VOICE_MAP).find(([_, v]) => v === voiceId)?.[0] || 'River',
+      voice_id: voiceId,
+      voice_name: voiceName,
       coach_name: coachName,
       gender: gender
     }), {
