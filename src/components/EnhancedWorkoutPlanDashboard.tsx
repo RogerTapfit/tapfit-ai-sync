@@ -25,6 +25,7 @@ import { SmartWeightRecommendation } from './SmartWeightRecommendation';
 import WorkoutPlanSetup from './WorkoutPlanSetup';
 import WeeklyWorkoutSchedule from './WeeklyWorkoutSchedule';
 import WorkoutCalendar from './WorkoutCalendar';
+import { PageHeader } from './PageHeader';
 
 const EnhancedWorkoutPlanDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -136,26 +137,28 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">TapFit Workout Plans</h1>
-          <p className="text-muted-foreground">
-            Personalized training with smart adaptations
-          </p>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="TapFit Workout Plans" />
+      
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-muted-foreground">
+              Personalized training with smart adaptations
+            </p>
+          </div>
+          
+          {needsCalibration && (
+            <Button 
+              onClick={() => setShowCalibration(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Zap className="mr-2 h-4 w-4" />
+              Quick Setup (2 min)
+            </Button>
+          )}
         </div>
-        
-        {needsCalibration && (
-          <Button 
-            onClick={() => setShowCalibration(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Zap className="mr-2 h-4 w-4" />
-            Quick Setup (2 min)
-          </Button>
-        )}
-      </div>
 
       {/* Calibration Status */}
       {needsCalibration && (
@@ -484,6 +487,7 @@ const EnhancedWorkoutPlanDashboard: React.FC = () => {
           <WorkoutPlanSetup />
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };

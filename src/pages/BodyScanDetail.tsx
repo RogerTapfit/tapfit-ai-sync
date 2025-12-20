@@ -4,7 +4,7 @@ import SEO from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 interface ScanDetail {
   id: string;
@@ -105,16 +105,8 @@ const BodyScanDetail = () => {
         description="View your saved body scan images and AI metrics."
         canonicalPath={`/body-scans/${scanId}`}
       />
-      <main className="min-h-screen bg-background p-4 md:p-8 pt-safe">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
+      <main className="min-h-screen bg-background">
+        <PageHeader title="Body Scan Details" />
         
         <header className="mb-6 flex items-center justify-between">
           <div>

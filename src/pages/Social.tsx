@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { UserSearchBar } from '@/components/social/UserSearchBar';
 import { ActivityFeed } from '@/components/social/ActivityFeed';
 import { UsernameSetupBanner } from '@/components/social/UsernameSetupBanner';
@@ -9,9 +10,9 @@ import { NetworkList } from '@/components/social/NetworkList';
 import { WorkoutVisibilitySettings } from '@/components/social/WorkoutVisibilitySettings';
 import { Search, Home, Trophy, Settings, UtensilsCrossed } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { usePageContext } from '@/hooks/usePageContext';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function Social() {
   const navigate = useNavigate();
@@ -54,18 +55,11 @@ export default function Social() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-purple-500/5 to-background pt-safe">
+    <div className="min-h-screen bg-gradient-to-b from-background via-purple-500/5 to-background">
+      <PageHeader title="Social" />
+      
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl pb-20">
         <div className="mb-6 pt-6">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate('/')}
-            className="mb-4 hover:bg-accent"
-          >
-            <Home className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
           
           {/* Hero Header with Gradient */}
           <div className="relative overflow-hidden rounded-2xl mb-6 p-6 sm:p-8 bg-card border border-border">
