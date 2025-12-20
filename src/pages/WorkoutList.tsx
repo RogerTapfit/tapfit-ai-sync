@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MachineRegistryService } from "@/services/machineRegistryService";
 import { toast } from "sonner";
 import { getLocalDateString } from "@/utils/dateUtils";
+import { getMachineImageUrl } from "@/utils/machineImageUtils";
 import { usePageContext } from "@/hooks/usePageContext";
 
 interface WorkoutMachine {
@@ -23,6 +24,7 @@ interface WorkoutMachine {
   name: string;
   muscleGroup: string;
   completed: boolean;
+  imageUrl?: string;
   workoutDetails?: {
     sets: number;
     reps: number;
@@ -143,9 +145,10 @@ const WorkoutList = () => {
       workoutPlan = scheduledWorkouts[0].workout_exercises
         ?.sort((a: any, b: any) => a.exercise_order - b.exercise_order)
         .map((exercise: any, index: number) => {
-          // Look up the actual machine to get its real muscle group
+          // Look up the actual machine to get its real muscle group and image
           const machine = MachineRegistryService.getMachineByName(exercise.machine_name);
           const actualMuscleGroup = machine?.muscleGroup || 'unknown';
+          const machineImageUrl = machine?.imageUrl || getMachineImageUrl(exercise.machine_name);
           
           console.log(`🔍 Exercise: ${exercise.machine_name} | Scheduled as: ${muscleGroup} | Actual: ${actualMuscleGroup}`);
           console.log(`💪 AI Prescription: ${exercise.sets} sets × ${exercise.reps} reps @ ${exercise.weight}lbs`);
@@ -153,9 +156,9 @@ const WorkoutList = () => {
           return {
             id: (index + 1).toString(),
             name: exercise.machine_name,
-            muscleGroup: actualMuscleGroup, // Use actual machine muscle group
+            muscleGroup: actualMuscleGroup,
+            imageUrl: machineImageUrl,
             completed: false,
-            // Include AI-generated prescription from database
             prescription: {
               sets: exercise.sets || 3,
               reps: exercise.reps || 10,
@@ -510,13 +513,18 @@ const WorkoutList = () => {
   const handleWorkoutClick = (workoutId: string) => {
     const machine = todaysWorkouts.find(w => w.id === workoutId);
     if (machine) {
+      // Look up correct image from registry if not already set
+      const registryMachine = MachineRegistryService.getMachineByName(machine.name);
+      const imageUrl = machine.imageUrl || registryMachine?.imageUrl || getMachineImageUrl(machine.name);
+      
       // Pass machine data via navigation state
       navigate(`/workout/${workoutId}`, {
         state: {
           machineData: {
             name: machine.name,
             muscleGroup: machine.muscleGroup,
-            id: machine.id
+            id: machine.id,
+            imageUrl: imageUrl
           }
         }
       });
