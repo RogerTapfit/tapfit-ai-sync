@@ -74,3 +74,6 @@ verify_jwt = true
 
 [functions.fitness-chat]
 verify_jwt = false
+
+[functions.generate-avatar]
+verify_jwt = false

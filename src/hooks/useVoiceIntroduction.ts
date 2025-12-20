@@ -70,6 +70,28 @@ const AVATAR_SAYINGS: Record<string, string[]> = {
     "Built like a tank. You next!",
     "Charge through with me!",
   ],
+  // New female avatars
+  'Aurora': [
+    "Ice cold focus, warm heart. Let's flow!",
+    "Graceful moves, powerful results!",
+    "Find your zen, then find your strength!",
+    "Crystal clear goals, diamond hard gains!",
+    "Frost and fire in every rep!",
+  ],
+  'Ember': [
+    "Rise from the ashes. Let's burn!",
+    "Fire up those muscles!",
+    "Phoenix power ignite!",
+    "Flames don't rest, neither do we!",
+    "Burn bright, burn strong!",
+  ],
+  'Nova': [
+    "Dance among the stars with me!",
+    "Cosmic energy flows through you!",
+    "Elegant and unstoppable!",
+    "Stellar moves, stellar results!",
+    "Light up your fitness journey!",
+  ],
 };
 
 const getRandomSaying = (avatarName: string): string => {
