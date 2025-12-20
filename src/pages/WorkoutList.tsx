@@ -30,6 +30,15 @@ interface WorkoutMachine {
     completedAt?: string;
     totalWeightLifted?: number;
   };
+  // AI-generated prescription for pending exercises
+  prescription?: {
+    sets: number;
+    reps: number;
+    weight?: number;
+    weight_guidance?: string;
+    rest_seconds?: number;
+    form_instructions?: string;
+  };
 }
 
 const WorkoutList = () => {
@@ -114,6 +123,9 @@ const WorkoutList = () => {
           sets,
           reps,
           weight,
+          weight_guidance,
+          rest_seconds,
+          form_instructions,
           exercise_order
         )
       `)
@@ -136,12 +148,22 @@ const WorkoutList = () => {
           const actualMuscleGroup = machine?.muscleGroup || 'unknown';
           
           console.log(`🔍 Exercise: ${exercise.machine_name} | Scheduled as: ${muscleGroup} | Actual: ${actualMuscleGroup}`);
+          console.log(`💪 AI Prescription: ${exercise.sets} sets × ${exercise.reps} reps @ ${exercise.weight}lbs`);
           
           return {
             id: (index + 1).toString(),
             name: exercise.machine_name,
             muscleGroup: actualMuscleGroup, // Use actual machine muscle group
-            completed: false
+            completed: false,
+            // Include AI-generated prescription from database
+            prescription: {
+              sets: exercise.sets || 3,
+              reps: exercise.reps || 10,
+              weight: exercise.weight || undefined,
+              weight_guidance: exercise.weight_guidance || undefined,
+              rest_seconds: exercise.rest_seconds || 60,
+              form_instructions: exercise.form_instructions || undefined
+            }
           };
         }) || [];
         

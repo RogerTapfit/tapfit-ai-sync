@@ -16,6 +16,15 @@ interface WorkoutMachine {
     completedAt?: string;
     totalWeightLifted?: number;
   };
+  // AI-generated prescription for pending exercises
+  prescription?: {
+    sets: number;
+    reps: number;
+    weight?: number;
+    weight_guidance?: string;
+    rest_seconds?: number;
+    form_instructions?: string;
+  };
 }
 
 interface DailyWorkoutSectionProps {
@@ -96,15 +105,42 @@ export const DailyWorkoutSection: React.FC<DailyWorkoutSectionProps> = ({
                 
                 <div className="flex-1">
                   <h4 className="font-medium text-foreground">{workout.name}</h4>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs ${getMuscleGroupColor(workout.muscleGroup)}`}
-                    >
-                      {workout.muscleGroup}
-                    </Badge>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs ${getMuscleGroupColor(workout.muscleGroup)}`}
+                      >
+                        {workout.muscleGroup}
+                      </Badge>
+                    </div>
                     
-                    {workout.workoutDetails && (
+                    {/* Show AI prescription for pending exercises */}
+                    {!workout.completed && workout.prescription && (
+                      <div className="flex flex-col gap-0.5 text-sm">
+                        <div className="flex items-center gap-2 text-foreground">
+                          <span className="font-medium">
+                            {workout.prescription.sets} sets × {workout.prescription.reps} reps
+                            {workout.prescription.weight && (
+                              <span className="text-primary"> @ {workout.prescription.weight} lbs</span>
+                            )}
+                          </span>
+                          {workout.prescription.rest_seconds && (
+                            <span className="text-muted-foreground text-xs">
+                              ({workout.prescription.rest_seconds}s rest)
+                            </span>
+                          )}
+                        </div>
+                        {workout.prescription.form_instructions && (
+                          <p className="text-xs text-muted-foreground italic line-clamp-1">
+                            💡 {workout.prescription.form_instructions}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Show completed workout details */}
+                    {workout.completed && workout.workoutDetails && (
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <span>{workout.workoutDetails.sets} sets × {workout.workoutDetails.reps} reps</span>
                         {workout.workoutDetails.weight && (
