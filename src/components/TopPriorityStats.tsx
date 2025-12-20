@@ -15,7 +15,7 @@ import { useSleepData } from "@/hooks/useSleepData";
 import { SleepTrackerModal } from "./SleepTrackerModal";
 import { useCycleTracking } from "@/hooks/useCycleTracking";
 import { CycleTrackerModal } from "./CycleTrackerModal";
-import { useChatbotContext } from "@/contexts/ChatbotContext";
+import { useChatbotContextOptional } from "@/contexts/ChatbotContext";
 
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
@@ -39,10 +39,14 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
   const { isEnabled: cycleEnabled, calculatePhaseInfo } = useCycleTracking();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
-  const { pendingModal, clearPendingModal } = useChatbotContext();
+  const chatbotContext = useChatbotContextOptional();
+  const pendingModal = chatbotContext?.pendingModal;
+  const clearPendingModal = chatbotContext?.clearPendingModal;
 
   // Listen for modal triggers from chatbot
   useEffect(() => {
+    if (!pendingModal || !clearPendingModal) return;
+    
     if (pendingModal === 'water') {
       setShowWaterModal(true);
       clearPendingModal();

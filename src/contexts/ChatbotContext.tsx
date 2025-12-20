@@ -113,3 +113,8 @@ export const useChatbotContext = () => {
   }
   return context;
 };
+
+// Optional hook that returns null if used outside provider (for components that can work without it)
+export const useChatbotContextOptional = () => {
+  return useContext(ChatbotContext);
+};
