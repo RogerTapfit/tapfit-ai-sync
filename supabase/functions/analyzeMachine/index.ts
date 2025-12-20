@@ -82,13 +82,13 @@ const MACHINE_CATALOG = [
     id: "MCH-LEG-CURL",
     name: "Leg Curl Machine",
     type: "Leg Curl",
-    description: "Machine for hamstring curls, either seated or lying position"
+    description: "Seated machine with TWO roller pads - one LARGE roller on TOP of thighs (restraint) AND one roller positioned on BACK of ankles (behind Achilles tendon). User CURLS legs BACKWARD/DOWNWARD against resistance. Targets HAMSTRINGS (back of thigh). Look for the thigh restraint roller which is NOT present on Leg Extension. COUNT THE ROLLERS: 2 rollers = Leg Curl."
   },
   {
     id: "MCH-LEG-EXTENSION",
     name: "Leg Extension Machine",
     type: "Leg Extension",
-    description: "Seated machine for quadriceps extension, leg straightening motion"
+    description: "Seated machine with SINGLE roller pad positioned on FRONT/TOP of ankles (on shins). User EXTENDS legs FORWARD/UPWARD against resistance. Only ONE roller visible at foot position. Targets QUADRICEPS (front of thigh). Pivot point is at the knees. NO thigh restraint roller on top of thighs. COUNT THE ROLLERS: 1 roller = Leg Extension."
   },
   {
     id: "MCH-CABLE-CROSSOVER",
@@ -261,7 +261,12 @@ Always output valid JSON in the schema below. Never return free-form prose.
    - Stair Stepper: pedals/footplates + upright frame.  
    - Elliptical: foot rails + upright arms + big drive housing.  
    - Rower: rail + sliding seat + flywheel housing + handle.  
-   - Strength: weight stack + selector pin + seat/backpad + levers.  
+   - Strength: weight stack + selector pin + seat/backpad + levers.
+   
+   LEG MACHINES - CRITICAL DISTINCTION:
+   - Leg Extension: SINGLE roller at FRONT of ankles (on shins). User pushes UP/FORWARD. NO thigh restraint roller. Works QUADRICEPS. COUNT: 1 roller only.
+   - Leg Curl: TWO rollers - large thigh restraint on TOP of thighs + ankle roller BEHIND heels. User pulls DOWN/BACK. Works HAMSTRINGS. COUNT: 2 rollers.
+   - KEY VISUAL CUE: Count the rollers! Extension=1 roller (front of ankles), Curl=2 rollers (thigh pad + back of ankles). If you see a large padded roller resting on top of the thighs, it's Leg Curl.
 
 3) TAXONOMY  
    - First decide cardio vs strength.  

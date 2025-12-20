@@ -85,6 +85,15 @@ export const MACHINE_CATALOG: Machine[] = [
     workoutId: 'leg-extension',
     muscleGroup: 'legs'
   },
+  {
+    id: 'MCH-LEG-CURL',
+    name: 'Leg Curl Machine',
+    type: 'Leg Curl',
+    synonyms: ['leg curl', 'hamstring curl', 'lying leg curl', 'seated leg curl', 'prone leg curl', 'ham curl'],
+    imageUrl: '/lovable-uploads/8b855abd-c6fe-4cef-9549-7c3a6cd70fae.png',
+    workoutId: 'leg-curl',
+    muscleGroup: 'legs'
+  },
   
   // Free Weight Stations
   {

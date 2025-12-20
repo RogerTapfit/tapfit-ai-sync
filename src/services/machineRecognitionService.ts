@@ -124,7 +124,8 @@ export class MachineRecognitionService {
       'MCH-LAT-PULLDOWN': 'Overhead bar pulled down to chest or behind neck, cable system with various grip options (wide, close, reverse), seated position with thigh pads for stability, targets latissimus dorsi and back muscles',
       'MCH-SEATED-ROW': 'Horizontal pulling motion, seated with chest pad, cable handles',
       'MCH-LEG-PRESS': 'Angled leg pressing platform, seated with back support',
-      'MCH-LEG-EXTENSION': 'Seated position with leg pad that lifts up, targets quadriceps',
+      'MCH-LEG-EXTENSION': 'Seated position with SINGLE roller pad on FRONT/TOP of ankles (shins). User EXTENDS legs FORWARD/UPWARD. NO thigh restraint roller. Targets QUADRICEPS (front of thigh).',
+      'MCH-LEG-CURL': 'Machine with TWO roller pads - large thigh restraint roller on TOP of thighs + ankle roller positioned BEHIND heels/Achilles. User CURLS legs BACKWARD/DOWNWARD. Targets HAMSTRINGS (back of thigh).',
       'MCH-TREADMILL': 'Moving belt for walking/running, with handrails and control panel',
       'MCH-ELLIPTICAL': 'Standing position with moving foot pedals and arm handles, elliptical motion',
       'MCH-INDOOR-CYCLING-BIKE': 'Seated cycling position with pedals, handlebars, and flywheel',
@@ -233,7 +234,9 @@ export class MachineRecognitionService {
       'MCH-CHEST-PRESS': { hasHandles: true, motion: 'horizontal' },
       'MCH-SHOULDER-PRESS': { hasHandles: true, motion: 'vertical', seatBack: 'upright' },
       'MCH-INCLINE-CHEST-PRESS': { hasHandles: true, motion: 'upward-forward', seatBack: 'inclined' },
-      'MCH-LAT-PULLDOWN': { hasOverheadCable: true }
+      'MCH-LAT-PULLDOWN': { hasOverheadCable: true },
+      'MCH-LEG-EXTENSION': { rollerCount: 'single', padPosition: 'front-of-ankles', motion: 'extend-upward', hasThighRestraint: false, targetMuscle: 'quadriceps' },
+      'MCH-LEG-CURL': { rollerCount: 'two', padPosition: 'back-of-ankles', motion: 'curl-backward', hasThighRestraint: true, targetMuscle: 'hamstrings' }
     };
     
     const expectedFeatures = rules[machineId];
