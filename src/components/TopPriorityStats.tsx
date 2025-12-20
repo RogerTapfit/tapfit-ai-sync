@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets } from "lucide-react";
@@ -15,6 +15,7 @@ import { useSleepData } from "@/hooks/useSleepData";
 import { SleepTrackerModal } from "./SleepTrackerModal";
 import { useCycleTracking } from "@/hooks/useCycleTracking";
 import { CycleTrackerModal } from "./CycleTrackerModal";
+import { useChatbotContext } from "@/contexts/ChatbotContext";
 
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
@@ -38,6 +39,24 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
   const { isEnabled: cycleEnabled, calculatePhaseInfo } = useCycleTracking();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+  const { pendingModal, clearPendingModal } = useChatbotContext();
+
+  // Listen for modal triggers from chatbot
+  useEffect(() => {
+    if (pendingModal === 'water') {
+      setShowWaterModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'sleep') {
+      setShowSleepModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'cycle') {
+      setShowCycleModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'heartRate') {
+      setShowScanModal(true);
+      clearPendingModal();
+    }
+  }, [pendingModal, clearPendingModal]);
 
   const cyclePhaseInfo = calculatePhaseInfo(new Date());
 
