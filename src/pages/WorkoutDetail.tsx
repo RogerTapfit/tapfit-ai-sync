@@ -198,35 +198,80 @@ const WorkoutDetail = () => {
   // Use machine data from navigation state if available, fallback to static data
   const machineData = location.state?.machineData;
 
-  // Load workout data
+  // Load workout data - prioritize database prescription, fallback to generated or static
   useEffect(() => {
     const loadWorkout = async () => {
-      if (machineData) {
-        setLoading(true);
-        try {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // First, try to get AI prescription from database
+        if (user && machineData?.name) {
+          const today = new Date().toISOString().split('T')[0];
+          const { data: exerciseData } = await supabase
+            .from('workout_exercises')
+            .select(`
+              *,
+              scheduled_workouts!inner (
+                scheduled_date,
+                user_id
+              )
+            `)
+            .eq('machine_name', machineData.name)
+            .eq('scheduled_workouts.user_id', user.id)
+            .eq('scheduled_workouts.scheduled_date', today)
+            .single();
+          
+          if (exerciseData) {
+            console.log('📋 Found AI prescription from database:', exerciseData);
+            setWorkout({
+              name: exerciseData.machine_name,
+              sets: exerciseData.sets || 3,
+              reps: exerciseData.reps || 10,
+              weight: exerciseData.weight ? `${exerciseData.weight} lbs` : "Start light",
+              restTime: exerciseData.rest_seconds || 60,
+              image: machineData.imageUrl,
+              primaryMuscle: machineData.muscleGroup?.charAt(0).toUpperCase() + machineData.muscleGroup?.slice(1) + " muscles",
+              secondaryMuscles: "Supporting stabilizer muscles",
+              notes: exerciseData.notes || `AI-generated prescription for ${machineData.muscleGroup}`,
+              target: machineData.muscleGroup?.charAt(0).toUpperCase() + machineData.muscleGroup?.slice(1),
+              isCardio: machineData.muscleGroup === 'cardio',
+              form_instructions: exerciseData.notes // Use notes field for form instructions
+            });
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Fallback: generate workout from machine data
+        if (machineData) {
           const generatedWorkout = await generateWorkoutFromMachine(machineData);
           setWorkout(generatedWorkout);
-        } catch (error) {
-          console.error('Error loading workout:', error);
-          // Fallback to basic workout
+        } else {
+          setWorkout(workoutData[workoutId || "1"]);
+        }
+      } catch (error) {
+        console.error('Error loading workout:', error);
+        // Final fallback
+        if (machineData) {
           setWorkout({
             name: machineData.name,
-            sets: 1,
-            reps: 30,
-            weight: "Moderate intensity",
-            restTime: 0,
+            sets: 3,
+            reps: 10,
+            weight: "Start light",
+            restTime: 60,
             image: machineData.imageUrl,
-            primaryMuscle: "Cardiovascular System",
-            secondaryMuscles: "Full body endurance",
-            notes: "Duration-based cardio workout",
-            target: "Zone 2",
-            isCardio: true
+            primaryMuscle: machineData.muscleGroup?.charAt(0).toUpperCase() + machineData.muscleGroup?.slice(1) + " muscles",
+            secondaryMuscles: "Supporting stabilizer muscles",
+            notes: "Default prescription - personalize through calibration",
+            target: machineData.muscleGroup,
+            isCardio: machineData.muscleGroup === 'cardio'
           });
-        } finally {
-          setLoading(false);
+        } else {
+          setWorkout(workoutData[workoutId || "1"]);
         }
-      } else {
-        setWorkout(workoutData[workoutId || "1"]);
+      } finally {
+        setLoading(false);
       }
     };
 

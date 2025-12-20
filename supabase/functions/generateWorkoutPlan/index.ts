@@ -261,10 +261,10 @@ serve(async (req) => {
       .eq('is_active', true)
       .single();
 
-    // Use OpenAI to generate comprehensive monthly workout plan
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    // Use Lovable AI Gateway to generate comprehensive monthly workout plan
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      throw new Error('Lovable API key not configured');
     }
 
     // Enhanced prompt for monthly workout generation with dynamic day themes
@@ -439,37 +439,37 @@ Return ONLY a JSON object with this exact structure (no other text):
   ]
 }`;
 
-    console.log('Sending request to OpenAI with enhanced prompt...');
+    console.log('Sending request to Lovable AI Gateway...');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
-            content: 'You are a certified personal trainer and exercise physiologist specializing in creating personalized workout programs. Generate comprehensive, safe, and effective workout plans based on individual fitness assessments.'
+            content: 'You are a certified personal trainer and exercise physiologist specializing in creating personalized workout programs. Generate comprehensive, safe, and effective workout plans based on individual fitness assessments. Always include specific sets, reps, weight recommendations, rest periods, and detailed form instructions for EVERY exercise.'
           },
           {
             role: 'user',
             content: enhancedPrompt
           }
         ],
-        max_tokens: 4000,
+        max_tokens: 8000,
         temperature: 0.7
       })
     });
 
     const data = await response.json();
-    console.log('OpenAI response status:', response.status);
+    console.log('Lovable AI response status:', response.status);
 
     if (!response.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(`OpenAI API error: ${data.error?.message || 'Unknown error'}`);
+      console.error('Lovable AI API error:', data);
+      throw new Error(`Lovable AI API error: ${data.error?.message || 'Unknown error'}`);
     }
 
     let generatedContent = data.choices[0].message.content;
