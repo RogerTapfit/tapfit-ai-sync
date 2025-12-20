@@ -1,7 +1,7 @@
 import { Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { EnhancedFoodPhotoAnalyzer } from "@/components/EnhancedFoodPhotoAnalyzer";
 import { FoodRecipeBuilder } from "@/components/FoodRecipeBuilder";
@@ -11,7 +11,7 @@ import { MenuAnalyzer } from "@/components/MenuAnalyzer";
 import { RestaurantDiscovery } from "@/components/RestaurantDiscovery";
 import { MealPlannerEmbed } from "@/components/meal-planner/MealPlannerEmbed";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePageContext } from "@/hooks/usePageContext";
 import { PageHeader } from "@/components/PageHeader";
 
@@ -56,7 +56,17 @@ const TAB_DESCRIPTIONS: Record<string, { name: string; description: string; defa
 
 const FoodScanner = () => {
   const navigate = useNavigate();
-  const [currentTab, setCurrentTab] = useState('analyzer');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'analyzer';
+  const [currentTab, setCurrentTab] = useState(initialTab);
+
+  // Update tab when URL query parameter changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && TAB_DESCRIPTIONS[tabParam]) {
+      setCurrentTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Register page context for AI coach awareness
   const tabInfo = TAB_DESCRIPTIONS[currentTab] || TAB_DESCRIPTIONS.analyzer;

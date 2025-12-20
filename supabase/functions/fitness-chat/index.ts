@@ -728,21 +728,33 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
       type: "function",
       function: {
         name: "navigate_to_page",
-        description: "Navigate the user to a specific page in the TapFit app when they ask to go somewhere, start an activity, or access a feature. Use this when user wants to scan a machine, start a workout, log food, track water, etc.",
+        description: "Navigate the user to a specific page or feature in the TapFit app when they ask to go somewhere, start an activity, or access a feature. Use this when user wants to scan a machine, start a workout, log food, track water, scan a menu, etc. Be PRECISE with routes - use the exact tab parameter when available.",
         parameters: {
           type: "object",
           properties: {
             route: {
               type: "string",
               enum: [
+                // Main pages
                 "/", "/workout-mode-select", "/workout-list", "/scan-machine",
-                "/run/setup", "/ride/setup", "/swim/setup", "/food-scanner",
-                "/meal-planner", "/body-scan", "/workouts", "/social",
-                "/leaderboard", "/fitness-alarm", "/run/history", "/ride/history",
+                "/run/setup", "/ride/setup", "/swim/setup",
+                "/body-scan", "/workouts", "/social", "/leaderboard",
+                "/meal-planner", "/fitness-alarm", "/run/history", "/ride/history",
                 "/swim/history", "/progress", "/settings", "/profile",
-                "/notifications", "/rewards", "/achievements"
+                "/notifications", "/rewards", "/achievements", "/workout-history",
+                "/pr-leaderboard", "/meal-feed", "/screen-time-bank", "/avatars",
+                
+                // Food Scanner with SPECIFIC tabs - USE THESE FOR PRECISE NAVIGATION
+                "/food-scanner",                  // Default - AI Food Analyzer
+                "/food-scanner?tab=analyzer",     // AI Food Photo Analyzer
+                "/food-scanner?tab=product",      // Product/Barcode Scanner
+                "/food-scanner?tab=menu",         // Restaurant Menu Scanner
+                "/food-scanner?tab=coach",        // Coach's Choice Recommendations
+                "/food-scanner?tab=builder",      // AI Recipe Builder
+                "/food-scanner?tab=restaurants",  // Restaurant Discovery
+                "/food-scanner?tab=planner"       // Embedded Meal Planner
               ],
-              description: "The route path to navigate to"
+              description: "The route path to navigate to. Use query parameters for specific tabs."
             },
             pageName: {
               type: "string",
@@ -767,30 +779,51 @@ NAVIGATION COMMANDS:
 
 You can navigate users around the app! When they ask to go somewhere or start an activity, use the navigate_to_page tool.
 
-NAVIGATION TRIGGERS & ROUTES:
-- "scan a machine", "scan machine", "machine scanner" → /scan-machine
-- "start a run", "go running", "track my run" → /run/setup
-- "start a ride", "go cycling", "bike ride" → /ride/setup
-- "start a swim", "go swimming" → /swim/setup
-- "scan food", "what's in this food", "food scanner" → /food-scanner
-- "meal plan", "plan my meals", "meal planner" → /meal-planner
-- "body scan", "measure my body" → /body-scan
-- "workouts", "workout hub", "exercises" → /workouts
-- "start workout", "begin workout" → /workout-mode-select
-- "my workouts", "workout list" → /workout-list
-- "home", "dashboard", "main page" → /
-- "social", "friends", "feed" → /social
-- "leaderboard", "rankings" → /leaderboard
-- "set alarm", "fitness alarm" → /fitness-alarm
+🍎 FOOD HUB - BE SPECIFIC WITH TABS:
+- "scan food", "analyze food", "what's in this food", "food photo" → /food-scanner?tab=analyzer
+- "scan product", "scan barcode", "nutrition label", "scan package" → /food-scanner?tab=product
+- "scan menu", "restaurant menu", "menu scanner", "analyze menu" → /food-scanner?tab=menu
+- "healthy choices", "coach's choice", "what should I eat", "food recommendations" → /food-scanner?tab=coach
+- "build recipe", "recipe from ingredients", "what can I make", "recipe builder" → /food-scanner?tab=builder
+- "find restaurants", "restaurant recommendations", "discover restaurants" → /food-scanner?tab=restaurants
+- "meal planner in food hub" → /food-scanner?tab=planner
+- "meal planner", "plan my meals", "weekly meals" → /meal-planner
+- "meal feed", "see what friends eat" → /meal-feed
+
+🏋️ WORKOUTS:
+- "scan machine", "machine scanner", "gym machine" → /scan-machine
+- "start workout", "begin workout", "do a workout" → /workout-mode-select
+- "workout list", "my workouts", "saved workouts" → /workout-list
+- "workout history", "past workouts", "workout logs" → /workout-history
+- "workout hub", "exercises", "exercise library" → /workouts
+- "PRs", "personal records", "PR leaderboard" → /pr-leaderboard
+
+🏃 CARDIO:
+- "start run", "go running", "track my run", "running" → /run/setup
+- "start ride", "go cycling", "bike ride", "cycling" → /ride/setup
+- "start swim", "go swimming", "pool session" → /swim/setup
 - "run history", "past runs" → /run/history
 - "ride history", "past rides" → /ride/history
 - "swim history", "past swims" → /swim/history
-- "progress", "my progress", "stats" → /progress
+
+📊 TRACKING & PROGRESS:
+- "progress", "my progress", "stats", "analytics" → /progress
+- "body scan", "measure my body", "body composition" → /body-scan
+- "leaderboard", "rankings" → /leaderboard
+
+👥 SOCIAL:
+- "social", "friends", "feed", "social feed" → /social
+- "achievements", "badges" → /achievements
+- "rewards", "my rewards", "tap coins" → /rewards
+- "avatars", "change avatar", "my avatar" → /avatars
+
+⚙️ SETTINGS & PROFILE:
+- "home", "dashboard", "main page" → /
 - "settings" → /settings
 - "profile", "my profile" → /profile
 - "notifications" → /notifications
-- "rewards", "my rewards", "tap coins" → /rewards
-- "achievements", "badges" → /achievements
+- "set alarm", "fitness alarm", "wake up alarm" → /fitness-alarm
+- "screen time bank", "screen time" → /screen-time-bank
 
 SPECIAL CASES (not navigable - give instructions instead):
 - "water tracker", "log water", "hydration" → Tell them to tap the water droplet icon on the dashboard
@@ -798,7 +831,8 @@ SPECIAL CASES (not navigable - give instructions instead):
 - "mood tracker", "log mood" → Tell them to tap the emoji icon on the dashboard
 
 When using navigate_to_page, keep confirmationMessage brief and energetic!
-Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!"`;
+Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Opening that for you!"`;
+
 
     // Build messages array with conversation history
     const messages = [
