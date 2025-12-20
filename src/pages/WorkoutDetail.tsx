@@ -224,6 +224,9 @@ const WorkoutDetail = () => {
           
           if (exerciseData) {
             console.log('📋 Found AI prescription from database:', exerciseData);
+            const formInstructions = (exerciseData as any).form_instructions || exerciseData.notes;
+            const weightGuidance = (exerciseData as any).weight_guidance || `AI-generated prescription for ${machineData.muscleGroup}`;
+            
             setWorkout({
               name: exerciseData.machine_name,
               sets: exerciseData.sets || 3,
@@ -233,10 +236,10 @@ const WorkoutDetail = () => {
               image: machineData.imageUrl,
               primaryMuscle: machineData.muscleGroup?.charAt(0).toUpperCase() + machineData.muscleGroup?.slice(1) + " muscles",
               secondaryMuscles: "Supporting stabilizer muscles",
-              notes: exerciseData.notes || `AI-generated prescription for ${machineData.muscleGroup}`,
+              notes: weightGuidance,
               target: machineData.muscleGroup?.charAt(0).toUpperCase() + machineData.muscleGroup?.slice(1),
               isCardio: machineData.muscleGroup === 'cardio',
-              form_instructions: exerciseData.notes // Use notes field for form instructions
+              form_instructions: formInstructions
             });
             setLoading(false);
             return;

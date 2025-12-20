@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, ChevronDown, Calendar } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Dumbbell, Activity, AlertTriangle, Smartphone, Camera, ChevronDown, Calendar, Sparkles } from "lucide-react";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
 import { useMuscleGroupAnalysis } from "@/hooks/useMuscleGroupAnalysis";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
@@ -855,13 +855,30 @@ const WorkoutList = () => {
       </Card>
 
       {/* Today's Scheduled Workouts */}
-      <DailyWorkoutSection
-        title="Today's Scheduled Workouts"
-        workouts={todaysWorkouts}
-        onWorkoutClick={handleWorkoutClick}
-        onToggleComplete={toggleWorkoutComplete}
-        showTime={true}
-      />
+      {todaysWorkouts.length > 0 ? (
+        <DailyWorkoutSection
+          title="Today's Scheduled Workouts"
+          workouts={todaysWorkouts}
+          onWorkoutClick={handleWorkoutClick}
+          onToggleComplete={toggleWorkoutComplete}
+          showTime={true}
+        />
+      ) : workoutMode === 'scheduled' && (
+        <Card className="glow-card p-6 border-primary/20 text-center">
+          <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary animate-pulse" />
+          <h3 className="text-lg font-semibold mb-2">No Workout Scheduled for Today</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Generate an AI-powered workout plan with personalized exercises, sets, reps, and weight recommendations.
+          </p>
+          <Button 
+            onClick={() => navigate('/workout-plan')}
+            className="bg-gradient-to-r from-primary to-primary/80"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Generate AI Workout Plan
+          </Button>
+        </Card>
+      )}
 
       {/* Extra Completed Exercises */}
       {completedExtraExercises.length > 0 && (

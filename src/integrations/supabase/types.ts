@@ -4057,6 +4057,7 @@ export type Database = {
           duration_minutes: number | null
           exercise_order: number
           exercise_type: string | null
+          form_instructions: string | null
           id: string
           intensity: string | null
           machine_name: string
@@ -4066,12 +4067,14 @@ export type Database = {
           scheduled_workout_id: string
           sets: number | null
           weight: number | null
+          weight_guidance: string | null
         }
         Insert: {
           created_at?: string
           duration_minutes?: number | null
           exercise_order: number
           exercise_type?: string | null
+          form_instructions?: string | null
           id?: string
           intensity?: string | null
           machine_name: string
@@ -4081,12 +4084,14 @@ export type Database = {
           scheduled_workout_id: string
           sets?: number | null
           weight?: number | null
+          weight_guidance?: string | null
         }
         Update: {
           created_at?: string
           duration_minutes?: number | null
           exercise_order?: number
           exercise_type?: string | null
+          form_instructions?: string | null
           id?: string
           intensity?: string | null
           machine_name?: string
@@ -4096,6 +4101,7 @@ export type Database = {
           scheduled_workout_id?: string
           sets?: number | null
           weight?: number | null
+          weight_guidance?: string | null
         }
         Relationships: [
           {
