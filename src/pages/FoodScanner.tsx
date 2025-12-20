@@ -1,7 +1,7 @@
-import { ArrowLeft, Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed, Calendar } from "lucide-react";
+import { Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { EnhancedFoodPhotoAnalyzer } from "@/components/EnhancedFoodPhotoAnalyzer";
 import { FoodRecipeBuilder } from "@/components/FoodRecipeBuilder";
@@ -11,8 +11,9 @@ import { MenuAnalyzer } from "@/components/MenuAnalyzer";
 import { RestaurantDiscovery } from "@/components/RestaurantDiscovery";
 import { MealPlannerEmbed } from "@/components/meal-planner/MealPlannerEmbed";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePageContext } from "@/hooks/usePageContext";
+import { PageHeader } from "@/components/PageHeader";
 
 // Tab descriptions for AI coach context
 const TAB_DESCRIPTIONS: Record<string, { name: string; description: string; defaultContent: string }> = {
@@ -73,7 +74,9 @@ const FoodScanner = () => {
         canonicalPath="/food-scanner"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 pt-safe">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+        <PageHeader title="AI Food Hub" />
+        
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
           {/* Animated Header */}
           <motion.div 
@@ -81,13 +84,6 @@ const FoodScanner = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8"
           >
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="gap-2 hover:bg-primary/10 transition-colors mb-2 sm:mb-0">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
-                <span className="sm:hidden">Back</span>
-              </Button>
-            </Link>
             <div className="flex-1 w-full">
               <motion.h1 
                 initial={{ opacity: 0, x: -20 }}

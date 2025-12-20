@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGamerRank } from '@/hooks/useGamerRank';
 import { useGamerAchievements, GamerAchievement } from '@/hooks/useGamerAchievements';
 import { getRankForLevel, getPrestigeInfo, GAMER_RANKS } from '@/config/gamerRanks';
-import { ArrowLeft, Trophy, Zap, Lock, Droplets, Apple, Dumbbell, Flame, Star, Coins } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Trophy, Zap, Lock, Droplets, Apple, Dumbbell, Flame, Star, Coins } from 'lucide-react';
 import { usePageContext } from '@/hooks/usePageContext';
+import { PageHeader } from '@/components/PageHeader';
 
 const CATEGORY_INFO = {
   hydration: { icon: Droplets, label: 'Hydration', color: 'text-blue-500' },
@@ -28,7 +27,6 @@ const RARITY_COLORS = {
 };
 
 export default function Achievements() {
-  const navigate = useNavigate();
   const { stats, loading: statsLoading, getProgressPercentage } = useGamerRank();
   const { achievements, userAchievements, loading: achievementsLoading, isUnlocked, getUnlockedCount } = useGamerAchievements();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -42,7 +40,8 @@ export default function Achievements() {
 
   if (statsLoading || achievementsLoading) {
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center pt-safe">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <PageHeader title="Achievements & Rank" />
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
@@ -62,14 +61,10 @@ export default function Achievements() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-6 pt-safe">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold">Achievements & Rank</h1>
-      </div>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Achievements & Rank" />
+      
+      <div className="p-4 space-y-6">
 
       {/* Rank Card */}
       {stats && (
@@ -243,6 +238,7 @@ export default function Achievements() {
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );

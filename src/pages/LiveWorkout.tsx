@@ -3,6 +3,7 @@ import { LiveExerciseTracker } from '@/components/LiveExerciseTracker';
 import SEO from '@/components/SEO';
 import { type ExerciseType } from '@/utils/exerciseDetection';
 import { usePageContext } from '@/hooks/usePageContext';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function LiveWorkout() {
   const location = useLocation();
@@ -48,17 +49,20 @@ export default function LiveWorkout() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 pt-safe">
-      <SEO 
-        title="Live Exercise Tracker | AI Form Analysis"
-        description="Track your bodyweight exercises in real-time with AI-powered form feedback and rep counting"
-      />
-      <LiveExerciseTracker 
-        preSelectedExercise={exerciseParam || undefined}
-        machineName={state?.machineName}
-        onBackToMachine={sourceParam === 'scan' && state?.workoutId ? handleBackToMachine : undefined}
-        onBackToDashboard={handleBackToDashboard}
-      />
+    <div className="min-h-screen bg-background">
+      <PageHeader title="Live Workout" />
+      <div className="p-4 md:p-8">
+        <SEO 
+          title="Live Exercise Tracker | AI Form Analysis"
+          description="Track your bodyweight exercises in real-time with AI-powered form feedback and rep counting"
+        />
+        <LiveExerciseTracker 
+          preSelectedExercise={exerciseParam || undefined}
+          machineName={state?.machineName}
+          onBackToMachine={sourceParam === 'scan' && state?.workoutId ? handleBackToMachine : undefined}
+          onBackToDashboard={handleBackToDashboard}
+        />
+      </div>
     </div>
   );
 }

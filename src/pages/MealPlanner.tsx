@@ -9,6 +9,7 @@ import { RecipeDatabaseItem } from '@/hooks/useRecipeDatabase';
 import { SavedRecipe } from '@/hooks/useSavedRecipes';
 import { Search, BookOpen, Calendar, ChefHat } from 'lucide-react';
 import { format } from 'date-fns';
+import { PageHeader } from '@/components/PageHeader';
 
 export default function MealPlanner() {
   const [activeTab, setActiveTab] = useState('discover');
@@ -44,21 +45,14 @@ export default function MealPlanner() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-safe">
-      {/* Header - safe area aware */}
-      <div className="sticky z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 safe-header">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
-              <ChefHat className="h-6 w-6 text-orange-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Meal Planner</h1>
-              <p className="text-sm text-muted-foreground">Plan your meals & track nutrition</p>
-            </div>
+    <div className="min-h-screen bg-background pb-24">
+      <PageHeader title="Meal Planner">
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20">
+            <ChefHat className="h-6 w-6 text-orange-500" />
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4 pt-4">
