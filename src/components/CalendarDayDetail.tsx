@@ -11,6 +11,7 @@ import { BurnedCaloriesBreakdown } from './calendar/BurnedCaloriesBreakdown';
 import { ConsumedCaloriesBreakdown } from './calendar/ConsumedCaloriesBreakdown';
 import { ExercisesBreakdown } from './calendar/ExercisesBreakdown';
 import { WorkoutTimeBreakdown } from './calendar/WorkoutTimeBreakdown';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 import { 
   Dumbbell, 
   Utensils, 
@@ -283,7 +284,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                     <Coins className="h-4 w-4 text-yellow-500" />
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-yellow-500">{day.dailyStats.tapCoinsEarned}</div>
+                    <div className="text-lg font-bold text-yellow-500">{formatCoinsForDisplay(day.dailyStats.tapCoinsEarned)}</div>
                     <div className="text-xs text-muted-foreground">Tap Coins</div>
                   </div>
                 </Button>
@@ -608,7 +609,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
               <div>
                 <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   <Coins className="h-5 w-5 text-yellow-500" />
-                  Tap Coins Earned ({day.dailyStats.tapCoinsEarned} coins)
+                  Tap Coins Earned ({formatCoinsForDisplay(day.dailyStats.tapCoinsEarned)} coins)
                 </h3>
                 <div className="space-y-3">
                   {day.tapCoins
@@ -619,7 +620,7 @@ export const CalendarDayDetail: React.FC<CalendarDayDetailProps> = ({
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <Coins className="h-4 w-4 text-yellow-500" />
-                            <span className="font-semibold text-yellow-500">+{coin.amount} coins</span>
+                            <span className="font-semibold text-yellow-500">+{formatCoinsForDisplay(coin.amount)} coins</span>
                             <Badge variant="outline" className="text-yellow-500 border-yellow-500/30">
                               {coin.transactionType}
                             </Badge>

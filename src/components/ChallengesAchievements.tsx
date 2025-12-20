@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trophy, Target, Clock, Coins, Medal, Star, Zap, Filter } from 'lucide-react';
 import { useChallenges } from '@/hooks/useChallenges';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 const ChallengesAchievements = () => {
   const {
@@ -300,7 +301,7 @@ const ChallengesAchievements = () => {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-1">
                       <Coins className="h-3 w-3" />
-                      <span className="font-medium">{userChallenge.coins_earned} coins earned</span>
+                      <span className="font-medium">{formatCoinsForDisplay(userChallenge.coins_earned)} coins earned</span>
                       {userChallenge.early_completion_bonus && (
                         <Badge variant="secondary" className="text-xs">Early bonus!</Badge>
                       )}

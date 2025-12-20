@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Coins, ShoppingCart, History, Zap, Palette, Trophy, Package } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface RewardsStoreProps {
   onClose: () => void;
@@ -61,7 +62,7 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
           <Card className="p-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30">
             <div className="flex items-center gap-2">
               <Coins className="h-5 w-5 text-yellow-400" />
-              <span className="font-bold text-lg">{balance.toLocaleString()}</span>
+              <span className="font-bold text-lg">{formatCoinsForDisplay(balance)}</span>
             </div>
           </Card>
         </div>
@@ -101,7 +102,7 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
                       </div>
                       <div className="flex items-center gap-1 text-yellow-400">
                         <Coins className="h-4 w-4" />
-                        <span className="font-bold">{item.coin_cost}</span>
+                        <span className="font-bold">{formatCoinsForDisplay(item.coin_cost)}</span>
                       </div>
                     </div>
                   </CardHeader>
@@ -137,7 +138,7 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
                       </div>
                       <div className="flex items-center gap-1 text-yellow-400">
                         <Coins className="h-4 w-4" />
-                        <span className="font-bold">{item.coin_cost}</span>
+                        <span className="font-bold">{formatCoinsForDisplay(item.coin_cost)}</span>
                       </div>
                     </div>
                   </CardHeader>
@@ -173,7 +174,7 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
                       </div>
                       <div className="flex items-center gap-1 text-yellow-400">
                         <Coins className="h-4 w-4" />
-                        <span className="font-bold">{item.coin_cost}</span>
+                        <span className="font-bold">{formatCoinsForDisplay(item.coin_cost)}</span>
                       </div>
                     </div>
                   </CardHeader>
@@ -211,7 +212,7 @@ export const RewardsStore = ({ onClose }: RewardsStoreProps) => {
                         <div className={`flex items-center gap-1 ${transaction.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
                           <Coins className="h-4 w-4" />
                           <span className="font-bold">
-                            {transaction.amount > 0 ? '+' : ''}{transaction.amount}
+                            {transaction.amount > 0 ? '+' : ''}{formatCoinsForDisplay(transaction.amount)}
                           </span>
                         </div>
                       </div>

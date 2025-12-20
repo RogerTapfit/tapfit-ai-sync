@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Star, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface LevelUpAnimationProps {
   newLevel: number;
@@ -141,7 +142,7 @@ export const LevelUpAnimation = ({
               >
                 <Coins className="h-6 w-6 text-amber-500" />
                 <span className="text-xl font-bold text-amber-500">
-                  +{coinsAwarded} Tap Coins!
+                  +{formatCoinsForDisplay(coinsAwarded)} Tap Coins!
                 </span>
               </motion.div>
             )}

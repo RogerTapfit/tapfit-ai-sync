@@ -5,6 +5,7 @@ import { Flame, Target, Trophy, TrendingUp, Clock, Coins } from 'lucide-react';
 import { useUserChallenges } from '@/hooks/useUserChallenges';
 import { useWorkoutStreak } from '@/hooks/useWorkoutStreak';
 import { format, differenceInDays } from 'date-fns';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface ProfileChallengesStreaksProps {
   userId: string;
@@ -80,7 +81,7 @@ export const ProfileChallengesStreaks = ({ userId }: ProfileChallengesStreaksPro
                         <Trophy className="h-3 w-3" />
                         {milestone.milestoneDays} days
                         <span className="text-yellow-600 dark:text-yellow-400">
-                          +{milestone.coinsAwarded}
+                          +{formatCoinsForDisplay(milestone.coinsAwarded)}
                         </span>
                       </Badge>
                     ))}

@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReactionButtons } from './ReactionButtons';
 import { MealActivityDetail } from './MealActivityDetail';
 import { getGradeColor, getGradeBgColor } from '@/utils/healthGrading';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface ActivityFeedItemProps {
   activity: ActivityFeedItemType;
@@ -61,7 +62,7 @@ export const ActivityFeedItem = ({ activity }: ActivityFeedItemProps) => {
             <span className="text-accent">{data.achievement_name}</span>
             {data.coins_earned > 0 && (
               <span className="text-muted-foreground text-sm ml-2">
-                +{data.coins_earned} coins
+                +{formatCoinsForDisplay(data.coins_earned)} coins
               </span>
             )}
           </>
