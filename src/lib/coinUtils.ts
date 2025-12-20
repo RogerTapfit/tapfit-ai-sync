@@ -10,27 +10,17 @@
  * @returns The actual coin value (e.g., 0.86)
  */
 export const formatCoinsForDisplay = (rawAmount: number): string => {
-  const actualValue = rawAmount / 1000;
-  
-  // If it's a whole number, show without decimals
-  if (actualValue === Math.floor(actualValue)) {
-    return actualValue.toLocaleString();
-  }
-  
-  // Otherwise show up to 2 decimal places
-  return actualValue.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
+  // Display as whole numbers with thousand separators (like Bitcoin)
+  return Math.floor(rawAmount).toLocaleString();
 };
 
 /**
- * Get the raw coin value for display (used for small amounts)
+ * Get the raw coin value for display
  * @param rawAmount - The raw integer value from the database
- * @returns The actual coin value as a number
+ * @returns The coin value as a whole number
  */
 export const getDisplayCoinValue = (rawAmount: number): number => {
-  return rawAmount / 1000;
+  return Math.floor(rawAmount);
 };
 
 /**
@@ -39,6 +29,5 @@ export const getDisplayCoinValue = (rawAmount: number): number => {
  * @returns Formatted string like "+0.86 coins"
  */
 export const formatEarnedCoins = (rawAmount: number): string => {
-  const displayValue = formatCoinsForDisplay(rawAmount);
-  return `+${displayValue} coins`;
+  return `+${Math.floor(rawAmount).toLocaleString()} coins`;
 };
