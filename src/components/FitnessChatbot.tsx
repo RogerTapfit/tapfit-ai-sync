@@ -295,14 +295,14 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
         
         // Short delay so user sees the message before opening modal
         setTimeout(() => {
-          // Navigate to dashboard if not already there (modals are on dashboard)
+          // Set pending modal FIRST - it persists in context across route changes
+          triggerModal(data.action.modalType);
+          
+          // Then navigate to dashboard if not already there (modals are on dashboard)
           if (window.location.pathname !== '/') {
             navigate('/');
           }
-          // Small additional delay to ensure dashboard is loaded
-          setTimeout(() => {
-            triggerModal(data.action.modalType);
-          }, 100);
+          
           onToggle(); // Close chatbot
         }, 1200);
       }
