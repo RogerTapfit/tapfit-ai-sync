@@ -14,6 +14,8 @@ export interface AnalysisContext {
   timestamp: number;
 }
 
+export type ModalType = 'water' | 'sleep' | 'mood' | 'cycle' | 'heartRate' | null;
+
 interface ChatbotContextType {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -23,6 +25,9 @@ interface ChatbotContextType {
   analysisContext: AnalysisContext | null;
   setAnalysisContext: (context: AnalysisContext | null) => void;
   getMergedContext: () => PageContext;
+  pendingModal: ModalType;
+  triggerModal: (modal: ModalType) => void;
+  clearPendingModal: () => void;
 }
 
 const defaultPageContext: PageContext = {
@@ -38,6 +43,7 @@ export const ChatbotProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isOpen, setIsOpen] = useState(false);
   const [basePageContext, setBasePageContext] = useState<PageContext>(defaultPageContext);
   const [analysisContext, setAnalysisContextState] = useState<AnalysisContext | null>(null);
+  const [pendingModal, setPendingModal] = useState<ModalType>(null);
   const location = useLocation();
 
   const toggleChatbot = useCallback(() => {
@@ -55,6 +61,15 @@ export const ChatbotProvider: React.FC<{ children: ReactNode }> = ({ children })
   const setAnalysisContext = useCallback((context: AnalysisContext | null) => {
     console.log('[ChatbotContext] Setting analysis context:', context?.type, context?.visibleContent?.substring(0, 100));
     setAnalysisContextState(context);
+  }, []);
+
+  const triggerModal = useCallback((modal: ModalType) => {
+    console.log('[ChatbotContext] Triggering modal:', modal);
+    setPendingModal(modal);
+  }, []);
+
+  const clearPendingModal = useCallback(() => {
+    setPendingModal(null);
   }, []);
 
   // Merge base page context with analysis context - analysis takes priority for visibleContent
@@ -81,7 +96,10 @@ export const ChatbotProvider: React.FC<{ children: ReactNode }> = ({ children })
       setPageContext,
       analysisContext,
       setAnalysisContext,
-      getMergedContext
+      getMergedContext,
+      pendingModal,
+      triggerModal,
+      clearPendingModal
     }}>
       {children}
     </ChatbotContext.Provider>

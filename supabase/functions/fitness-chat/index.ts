@@ -728,7 +728,7 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
       type: "function",
       function: {
         name: "navigate_to_page",
-        description: "Navigate the user to a specific page or feature in the TapFit app when they ask to go somewhere, start an activity, or access a feature. Use this when user wants to scan a machine, start a workout, log food, track water, scan a menu, etc. Be PRECISE with routes - use the exact tab parameter when available.",
+        description: "Navigate the user to a specific page or feature in the TapFit app when they ask to go somewhere, start an activity, or access a feature. Use this when user wants to scan a machine, start a workout, log food, scan a menu, etc. Be PRECISE with routes - use the exact tab parameter when available. DO NOT use this for modals like water, sleep, mood, cycle, or heart rate - use open_modal instead.",
         parameters: {
           type: "object",
           properties: {
@@ -766,6 +766,34 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
             }
           },
           required: ["route", "pageName", "confirmationMessage"]
+        }
+      }
+    };
+
+    // Modal tool for opening dashboard modals (water, sleep, mood, cycle, heart rate)
+    const modalTool = {
+      type: "function",
+      function: {
+        name: "open_modal",
+        description: "Open a modal/dialog on the user's screen for features that don't have their own page. Use this for water tracking, sleep tracking, mood logging, cycle tracking, and heart rate scanning. These are NOT pages - they are modals on the dashboard.",
+        parameters: {
+          type: "object",
+          properties: {
+            modalType: {
+              type: "string",
+              enum: ["water", "sleep", "mood", "cycle", "heartRate"],
+              description: "The type of modal to open: water (hydration tracker), sleep (sleep log), mood (mood check-in), cycle (menstrual cycle tracker), heartRate (heart rate scanner)"
+            },
+            modalName: {
+              type: "string",
+              description: "Human-readable name of the modal (e.g., 'Water Tracker', 'Sleep Log', 'Heart Rate Scanner')"
+            },
+            confirmationMessage: {
+              type: "string",
+              description: "A friendly message to say before opening the modal (keep it brief)"
+            }
+          },
+          required: ["modalType", "modalName", "confirmationMessage"]
         }
       }
     };
@@ -825,12 +853,17 @@ You can navigate users around the app! When they ask to go somewhere or start an
 - "set alarm", "fitness alarm", "wake up alarm" → /fitness-alarm
 - "screen time bank", "screen time" → /screen-time-bank
 
-SPECIAL CASES (not navigable - give instructions instead):
-- "water tracker", "log water", "hydration" → Tell them to tap the water droplet icon on the dashboard
-- "sleep tracker", "log sleep" → Tell them to tap the moon icon on the dashboard
-- "mood tracker", "log mood" → Tell them to tap the emoji icon on the dashboard
+💧 MODAL-BASED FEATURES (use open_modal tool, NOT navigation):
+- "water tracker", "log water", "hydration", "drink water", "track water" → open_modal(water, "Water Tracker")
+- "sleep tracker", "log sleep", "track sleep", "how did I sleep" → open_modal(sleep, "Sleep Tracker")
+- "mood tracker", "log mood", "how do I feel", "mood check" → open_modal(mood, "Mood Check-in")
+- "cycle tracker", "period tracker", "menstrual cycle", "track period" → open_modal(cycle, "Cycle Tracker")
+- "heart rate", "check heart rate", "scan heart", "measure pulse", "BPM" → open_modal(heartRate, "Heart Rate Scanner")
 
-When using navigate_to_page, keep confirmationMessage brief and energetic!
+IMPORTANT: For modals (water, sleep, mood, cycle, heartRate), use the open_modal tool.
+For pages/features, use the navigate_to_page tool.
+
+When using navigate_to_page or open_modal, keep confirmationMessage brief and energetic!
 Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Opening that for you!"`;
 
 
@@ -855,7 +888,7 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
-        tools: [navigationTool],
+        tools: [navigationTool, modalTool],
         tool_choice: "auto"
       }),
     });
@@ -888,9 +921,10 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
     const data = await response.json();
     const messageData = data.choices?.[0]?.message;
     
-    // Check if AI wants to navigate
+    // Check if AI wants to use a tool (navigate or open modal)
     if (messageData?.tool_calls?.length > 0) {
       const toolCall = messageData.tool_calls[0];
+      
       if (toolCall.function?.name === 'navigate_to_page') {
         try {
           const args = JSON.parse(toolCall.function.arguments);
@@ -909,6 +943,27 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
           });
         } catch (parseError) {
           console.error('Error parsing navigation tool call:', parseError);
+        }
+      }
+      
+      if (toolCall.function?.name === 'open_modal') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Modal requested:', args);
+          
+          return new Response(JSON.stringify({ 
+            response: args.confirmationMessage,
+            action: {
+              type: 'open_modal',
+              modalType: args.modalType,
+              modalName: args.modalName
+            },
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (parseError) {
+          console.error('Error parsing modal tool call:', parseError);
         }
       }
     }

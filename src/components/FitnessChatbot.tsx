@@ -28,6 +28,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAvatar as useSelectedAvatar } from '@/lib/avatarState';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
 import { useAuth } from '@/components/AuthGuard';
+import { useChatbotContext } from '@/contexts/ChatbotContext';
 
 interface Message {
   id: string;
@@ -63,6 +64,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   // Get userId from auth context if not provided via props
   const { user } = useAuth();
   const userId = propUserId || user?.id;
+  const { triggerModal } = useChatbotContext();
 
   // Selected avatar (mini) for bot identity
   const { avatar } = useSelectedAvatar();
@@ -281,6 +283,27 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
         setTimeout(() => {
           navigate(data.action.route);
           onToggle(); // Close chatbot after navigation
+        }, 1200);
+      }
+      
+      // Handle modal action from AI
+      if (data.action?.type === 'open_modal') {
+        toast({
+          title: `Opening ${data.action.modalName}`,
+          description: data.response,
+        });
+        
+        // Short delay so user sees the message before opening modal
+        setTimeout(() => {
+          // Navigate to dashboard if not already there (modals are on dashboard)
+          if (window.location.pathname !== '/') {
+            navigate('/');
+          }
+          // Small additional delay to ensure dashboard is loaded
+          setTimeout(() => {
+            triggerModal(data.action.modalType);
+          }, 100);
+          onToggle(); // Close chatbot
         }, 1200);
       }
     } catch (error) {
