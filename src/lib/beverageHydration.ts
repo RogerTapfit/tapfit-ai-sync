@@ -48,6 +48,14 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     category: 'water',
     calories: 0, carbs: 0, protein: 0, fat: 0, sugar: 0, servingOz: 8
   },
+  electrolyte_water: { 
+    name: 'Electrolyte Water', 
+    icon: Zap, 
+    hydrationFactor: 1.0, 
+    color: 'text-blue-400',
+    category: 'water',
+    calories: 10, carbs: 2, protein: 0, fat: 0, sugar: 0, servingOz: 16
+  },
   
   // High hydration (85-95%)
   herbal_tea: { 
