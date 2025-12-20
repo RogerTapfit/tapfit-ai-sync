@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { WeightProgressionChart } from '@/components/WeightProgressionChart';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface PersonalRecord {
   id: string;
@@ -400,7 +401,7 @@ export default function PRLeaderboard() {
                         <div className="text-right">
                           <div className="text-xl font-bold">{record.weightLbs} lbs</div>
                           <Badge variant="secondary" className="mt-1">
-                            +{record.coinsAwarded} coins
+                            +{formatCoinsForDisplay(record.coinsAwarded)} coins
                           </Badge>
                         </div>
                       </div>

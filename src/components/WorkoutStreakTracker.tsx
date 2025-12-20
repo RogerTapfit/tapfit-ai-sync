@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface StreakCelebrationProps {
   isVisible: boolean;
@@ -310,7 +311,7 @@ export const WorkoutStreakTracker: React.FC<WorkoutStreakTrackerProps> = ({
                       </div>
                     </div>
                     <Badge variant="secondary">
-                      +{milestone.coinsAwarded} coins
+                      +{formatCoinsForDisplay(milestone.coinsAwarded)} coins
                     </Badge>
                   </div>
                 ))}

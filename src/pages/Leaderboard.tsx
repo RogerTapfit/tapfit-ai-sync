@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { usePageContext } from '@/hooks/usePageContext';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 export default function Leaderboard() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ export default function Leaderboard() {
   };
 
   const getStatValue = (user: typeof users[0]) => {
-    if (leaderboardType === 'coins') return user.tap_coins_balance.toLocaleString();
+    if (leaderboardType === 'coins') return formatCoinsForDisplay(user.tap_coins_balance);
     if (leaderboardType === 'workouts') return user.total_workouts.toLocaleString();
     return user.total_calories.toLocaleString();
   };

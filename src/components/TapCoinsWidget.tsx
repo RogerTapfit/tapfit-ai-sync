@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Coins, ChevronRight } from 'lucide-react';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { RewardsStore } from './RewardsStore';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 export const TapCoinsWidget = () => {
   const [showStore, setShowStore] = useState(false);
@@ -25,7 +26,7 @@ export const TapCoinsWidget = () => {
           <div>
             <p className="text-sm font-medium text-muted-foreground">Tap Coins</p>
             <p className="text-xl font-bold text-foreground">
-              {loading ? '...' : balance.toLocaleString()}
+              {loading ? '...' : formatCoinsForDisplay(balance)}
             </p>
           </div>
         </div>

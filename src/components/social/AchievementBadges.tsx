@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Achievement } from '@/hooks/useUserAchievements';
+import { formatCoinsForDisplay } from '@/lib/coinUtils';
 
 interface AchievementBadgesProps {
   achievements: Achievement[];
@@ -92,7 +93,7 @@ export const AchievementBadges = ({ achievements, loading }: AchievementBadgesPr
                   </p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
-                      +{achievement.coins_earned || achievement.coin_reward} coins
+                      +{formatCoinsForDisplay(achievement.coins_earned || achievement.coin_reward)} coins
                     </span>
                     {achievement.unlocked_at && (
                       <span className="text-xs text-muted-foreground">
