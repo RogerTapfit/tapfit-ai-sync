@@ -82,6 +82,14 @@ export const BEVERAGE_HYDRATION: Record<string, BeverageType> = {
     category: 'high',
     calories: 110, carbs: 26, protein: 1, fat: 0, sugar: 24, servingOz: 8
   },
+  cold_pressed_juice: { 
+    name: 'Cold Pressed Juice', 
+    icon: Citrus, 
+    hydrationFactor: 0.85, 
+    color: 'text-green-500',
+    category: 'high',
+    calories: 120, carbs: 28, protein: 1, fat: 0, sugar: 22, servingOz: 8
+  },
   
   // Moderate hydration (65-85%) - caffeine is a mild diuretic
   coffee: { 
