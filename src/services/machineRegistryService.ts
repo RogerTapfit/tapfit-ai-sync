@@ -129,8 +129,8 @@ export const MACHINE_CATALOG: Machine[] = [
     id: 'MCH-STATIONARY-BIKE',
     name: 'Stationary Bike',
     type: 'Cardio',
-    synonyms: ['stationary bike', 'exercise bike', 'spin bike', 'cycling machine'],
-    imageUrl: '/lovable-uploads/28009a8a-51b5-4196-bd00-c1ad68b67bc0.png',
+    synonyms: ['stationary bike', 'exercise bike', 'spin bike', 'cycling machine', 'cycle'],
+    imageUrl: '/assets/indoor-cycling-bike-red.png',
     workoutId: 'bike-cardio',
     muscleGroup: 'cardio'
   },
@@ -147,8 +147,8 @@ export const MACHINE_CATALOG: Machine[] = [
     id: 'MCH-STAIR-CLIMBER',
     name: 'Stair Climber',
     type: 'Cardio',
-    synonyms: ['stair climber', 'stair master', 'step machine'],
-    imageUrl: '/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png',
+    synonyms: ['stair climber', 'stair master', 'step machine', 'stairmaster'],
+    imageUrl: '/lovable-uploads/53858814-478c-431c-8c54-feecf0b00e19.png',
     workoutId: 'stairs-cardio',
     muscleGroup: 'cardio'
   },
