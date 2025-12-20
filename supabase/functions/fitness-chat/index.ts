@@ -723,9 +723,86 @@ ${historyContext}${userMetricsContext}${injuryContext}${moodContext}
 
 Always provide practical, evidence-based advice. If you notice injury risks, imbalances, low readiness, or health concerns in the user's data, proactively mention them.`;
 
+    // Navigation tool for smart app navigation
+    const navigationTool = {
+      type: "function",
+      function: {
+        name: "navigate_to_page",
+        description: "Navigate the user to a specific page in the TapFit app when they ask to go somewhere, start an activity, or access a feature. Use this when user wants to scan a machine, start a workout, log food, track water, etc.",
+        parameters: {
+          type: "object",
+          properties: {
+            route: {
+              type: "string",
+              enum: [
+                "/", "/workout-mode-select", "/workout-list", "/scan-machine",
+                "/run/setup", "/ride/setup", "/swim/setup", "/food-scanner",
+                "/meal-planner", "/body-scan", "/workouts", "/social",
+                "/leaderboard", "/fitness-alarm", "/run/history", "/ride/history",
+                "/swim/history", "/progress", "/settings", "/profile",
+                "/notifications", "/rewards", "/achievements"
+              ],
+              description: "The route path to navigate to"
+            },
+            pageName: {
+              type: "string",
+              description: "Human-readable page name to display to user"
+            },
+            confirmationMessage: {
+              type: "string",
+              description: "A friendly message to say before navigating (keep it brief and motivating)"
+            }
+          },
+          required: ["route", "pageName", "confirmationMessage"]
+        }
+      }
+    };
+    
+    // Extend system prompt with navigation capabilities
+    const navigationInstructions = `
+
+═══════════════════════════════════════════════════════════════
+NAVIGATION COMMANDS:
+═══════════════════════════════════════════════════════════════
+
+You can navigate users around the app! When they ask to go somewhere or start an activity, use the navigate_to_page tool.
+
+NAVIGATION TRIGGERS & ROUTES:
+- "scan a machine", "scan machine", "machine scanner" → /scan-machine
+- "start a run", "go running", "track my run" → /run/setup
+- "start a ride", "go cycling", "bike ride" → /ride/setup
+- "start a swim", "go swimming" → /swim/setup
+- "scan food", "what's in this food", "food scanner" → /food-scanner
+- "meal plan", "plan my meals", "meal planner" → /meal-planner
+- "body scan", "measure my body" → /body-scan
+- "workouts", "workout hub", "exercises" → /workouts
+- "start workout", "begin workout" → /workout-mode-select
+- "my workouts", "workout list" → /workout-list
+- "home", "dashboard", "main page" → /
+- "social", "friends", "feed" → /social
+- "leaderboard", "rankings" → /leaderboard
+- "set alarm", "fitness alarm" → /fitness-alarm
+- "run history", "past runs" → /run/history
+- "ride history", "past rides" → /ride/history
+- "swim history", "past swims" → /swim/history
+- "progress", "my progress", "stats" → /progress
+- "settings" → /settings
+- "profile", "my profile" → /profile
+- "notifications" → /notifications
+- "rewards", "my rewards", "tap coins" → /rewards
+- "achievements", "badges" → /achievements
+
+SPECIAL CASES (not navigable - give instructions instead):
+- "water tracker", "log water", "hydration" → Tell them to tap the water droplet icon on the dashboard
+- "sleep tracker", "log sleep" → Tell them to tap the moon icon on the dashboard
+- "mood tracker", "log mood" → Tell them to tap the emoji icon on the dashboard
+
+When using navigate_to_page, keep confirmationMessage brief and energetic!
+Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!"`;
+
     // Build messages array with conversation history
     const messages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: systemPrompt + navigationInstructions },
       ...(conversationHistory || []).map((msg: any) => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
         content: msg.content
@@ -744,6 +821,8 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
+        tools: [navigationTool],
+        tool_choice: "auto"
       }),
     });
 
@@ -773,7 +852,34 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
     }
 
     const data = await response.json();
-    const aiResponse = data.choices?.[0]?.message?.content || "I'm having trouble responding. Please try again.";
+    const messageData = data.choices?.[0]?.message;
+    
+    // Check if AI wants to navigate
+    if (messageData?.tool_calls?.length > 0) {
+      const toolCall = messageData.tool_calls[0];
+      if (toolCall.function?.name === 'navigate_to_page') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Navigation requested:', args);
+          
+          return new Response(JSON.stringify({ 
+            response: args.confirmationMessage,
+            action: {
+              type: 'navigate',
+              route: args.route,
+              pageName: args.pageName
+            },
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (parseError) {
+          console.error('Error parsing navigation tool call:', parseError);
+        }
+      }
+    }
+    
+    const aiResponse = messageData?.content || "I'm having trouble responding. Please try again.";
 
     console.log('Fitness chat response generated:', aiResponse.substring(0, 50));
 

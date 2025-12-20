@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,8 @@ import {
   MicOff,
   Volume2,
   Square,
-  Sparkles
+  Sparkles,
+  Navigation
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -56,6 +58,7 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
   const [voiceMode, setVoiceMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Get userId from auth context if not provided via props
   const { user } = useAuth();
@@ -266,6 +269,20 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
       };
 
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Handle navigation action from AI
+      if (data.action?.type === 'navigate') {
+        toast({
+          title: `Navigating to ${data.action.pageName}`,
+          description: data.response,
+        });
+        
+        // Short delay so user sees the message before navigating
+        setTimeout(() => {
+          navigate(data.action.route);
+          onToggle(); // Close chatbot after navigation
+        }, 1200);
+      }
     } catch (error) {
       console.error('Chat error:', error);
       toast({
