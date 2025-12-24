@@ -121,6 +121,28 @@ const AVATAR_SAYINGS: Record<string, string[]> = {
     "Butterfly wings, warrior heart!",
     "Sparkle and sweat!",
   ],
+  // New masculine avatars
+  'Titan': [
+    "The pack is ready. Lead the hunt!",
+    "Wolf strength, iron discipline!",
+    "Howl at the weights, not the moon!",
+    "Alpha energy activated. Let's dominate!",
+    "Run with the pack, lift like the alpha!",
+  ],
+  'Blaze': [
+    "The king of the jungle never skips leg day!",
+    "Roar your way to greatness!",
+    "Lion heart, champion spirit!",
+    "Rule your fitness kingdom!",
+    "Golden mane, golden gains!",
+  ],
+  'Storm': [
+    "Soar above your limits!",
+    "Eagle eyes on the prize!",
+    "Strike like lightning, train like thunder!",
+    "Spread your wings and conquer!",
+    "Sky-high ambition, ground-level grind!",
+  ],
 };
 
 const getRandomSaying = (avatarName: string): string => {
