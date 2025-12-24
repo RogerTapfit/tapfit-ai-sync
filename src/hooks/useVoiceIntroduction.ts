@@ -92,6 +92,35 @@ const AVATAR_SAYINGS: Record<string, string[]> = {
     "Stellar moves, stellar results!",
     "Light up your fitness journey!",
   ],
+  // Feminine robot animal hybrids
+  'Luna': [
+    "Soft steps, strong core. Let's stretch!",
+    "Bunny hops to better health!",
+    "Pink power, gentle strength!",
+    "Hop into your best self!",
+    "Cute but fierce. Ready?",
+  ],
+  'Siren': [
+    "Flow like water, strong like waves!",
+    "Aqua energy, infinite motion!",
+    "Dive deep into your workout!",
+    "Make a splash with every move!",
+    "Ocean heart, champion spirit!",
+  ],
+  'Velvet': [
+    "Grace and power in perfect balance!",
+    "Dance your way to strength!",
+    "Elegance is the ultimate strength!",
+    "Royal results for royal effort!",
+    "Glide into greatness!",
+  ],
+  'Pixie': [
+    "Flutter into fitness mode!",
+    "Coral energy ignite!",
+    "Small moves, big transformation!",
+    "Butterfly wings, warrior heart!",
+    "Sparkle and sweat!",
+  ],
 };
 
 const getRandomSaying = (avatarName: string): string => {

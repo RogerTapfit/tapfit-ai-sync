@@ -26,8 +26,8 @@ serve(async (req) => {
     
     console.log(`🎨 Generating avatar: ${name} (${theme} ${animalType})`);
 
-    // Generate the avatar image using AI
-    const prompt = `A 3D robot ${animalType} fitness coach character, metallic cybernetic body with ${accentColor} accents, glowing ${accentColor} energy core in chest, ${accentColor} LED eyes, sleek ${gender === 'female' ? 'feminine elegant' : 'masculine powerful'} design, futuristic armor plating, standing in heroic confident pose, ${theme} themed details, ${accentColor} gradient cosmic background with particle effects, highly detailed, octane render style, professional 3D art, centered composition. Ultra high resolution.`;
+    // Generate the avatar image using AI - chibi style to match existing avatars
+    const prompt = `A 3D robot ${animalType} fitness coach character, chibi proportions with large cute head and small body, metallic cybernetic body with ${accentColor} accents, glowing ${accentColor} energy core in chest, ${accentColor} LED eyes, sleek ${gender === 'female' ? 'feminine elegant cute' : 'masculine powerful'} design, futuristic armor plating, standing in heroic confident pose, ${theme} themed details, ${accentColor} gradient cosmic dark background with particle effects, highly detailed, octane render style, professional 3D game character art, centered composition. Ultra high resolution.`;
 
     console.log(`📝 Prompt: ${prompt}`);
 
