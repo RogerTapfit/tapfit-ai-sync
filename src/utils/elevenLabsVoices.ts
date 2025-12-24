@@ -33,6 +33,11 @@ const AVATAR_VOICE_OVERRIDES: Record<string, VoiceOption> = {
   'Aurora': { id: 'FGY2WhTYpPnrIDTdsKH5', name: 'Laura' },
   'Ember': { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte' },
   'Nova': { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah' },
+  // Feminine robot animal hybrids
+  'Luna': { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria' },
+  'Siren': { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica' },
+  'Velvet': { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte' },
+  'Pixie': { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily' },
   // Existing male avatars with unique voices
   'Stark': { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger' },
   'Petrie': { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie' },
