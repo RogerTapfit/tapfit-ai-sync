@@ -1,13 +1,15 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AvatarGallery } from '@/components/AvatarGallery';
 import SEO from '@/components/SEO';
 import { usePageContext } from '@/hooks/usePageContext';
+import GenerateAvatars from '@/components/admin/GenerateAvatars';
 
 const AvatarSelection: React.FC = () => {
   const navigate = useNavigate();
+  const [showGenerator, setShowGenerator] = useState(false);
 
   // Register page context for chatbot
   usePageContext({
@@ -24,18 +26,36 @@ const AvatarSelection: React.FC = () => {
       />
       <div className="min-h-screen bg-background pt-safe">
         <div className="container mx-auto px-4 py-6">
-          <div className="mb-6 flex items-center gap-4">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <h1 className="text-2xl font-bold">Choose Your Coach</h1>
+            </div>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={() => navigate('/')}
+              onClick={() => setShowGenerator(!showGenerator)}
               className="gap-2"
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back
+              <Sparkles className="w-4 h-4" />
+              {showGenerator ? 'Hide Generator' : 'Generate New Avatars'}
             </Button>
-            <h1 className="text-2xl font-bold">Choose Your Coach</h1>
           </div>
+          
+          {showGenerator && (
+            <div className="mb-8">
+              <GenerateAvatars />
+            </div>
+          )}
+          
           <AvatarGallery />
         </div>
       </div>
