@@ -169,11 +169,12 @@ export const useVoiceIntroduction = () => {
       
       console.log(`🔊 Playing introduction for ${avatarName} (${gender}) to user: ${userName}`);
       
-      // Call text-to-speech edge function
+      // Call text-to-speech edge function with avatarName for unique voice
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
         body: { 
           text: introText,
-          gender: gender
+          gender: gender,
+          avatarName: avatarName
         }
       });
 
