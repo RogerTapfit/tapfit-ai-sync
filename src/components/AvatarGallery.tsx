@@ -59,25 +59,32 @@ export const AvatarGallery: React.FC = () => {
       return '#ff4d4d';
     }
   };
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from('avatars')
-        .select('id, name, image_url, mini_image_url, accent_hex, gender')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
+  const fetchAvatars = async () => {
+    const { data, error } = await supabase
+      .from('avatars')
+      .select('id, name, image_url, mini_image_url, accent_hex, gender')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
-      if (!mounted) return;
-      if (error) {
-        console.error('Error loading avatars:', error);
-        setAvatars([]);
-      } else {
-        setAvatars(data || []);
-      }
-      setLoading(false);
-    })();
-    return () => { mounted = false; };
+    if (error) {
+      console.error('Error loading avatars:', error);
+      setAvatars([]);
+    } else {
+      setAvatars(data || []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAvatars();
+    
+    // Listen for avatar updates
+    const handleAvatarUpdate = () => fetchAvatars();
+    window.addEventListener('avatars:updated', handleAvatarUpdate);
+    
+    return () => {
+      window.removeEventListener('avatars:updated', handleAvatarUpdate);
+    };
   }, []);
 
   const handleAvatarClick = (a: DBAvatar) => {

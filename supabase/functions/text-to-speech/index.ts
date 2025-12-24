@@ -12,6 +12,34 @@ const openaiVoices: Record<string, string> = {
   'River': 'alloy',
   'Sarah': 'shimmer',
   'Laura': 'fable',
+  'Charlotte': 'shimmer',
+  'Charlie': 'echo',
+  'George': 'fable',
+  'Will': 'onyx',
+  'Jessica': 'nova',
+  'Lily': 'shimmer',
+};
+
+// Avatar-specific voice overrides for unique character voices
+const AVATAR_VOICE_OVERRIDES: Record<string, { voiceId: string; voiceName: string }> = {
+  // Female avatars
+  'Tails': { voiceId: '9BWtsMINqrJLrRacOk9x', voiceName: 'Aria' },
+  'Tygrus': { voiceId: 'EXAVITQu4vr4xnSDxMaL', voiceName: 'Sarah' },
+  'Aurora': { voiceId: 'FGY2WhTYpPnrIDTdsKH5', voiceName: 'Laura' },
+  'Ember': { voiceId: 'XB0fDUnXU5powFXDhCwa', voiceName: 'Charlotte' },
+  'Nova': { voiceId: 'EXAVITQu4vr4xnSDxMaL', voiceName: 'Sarah' },
+  'Luna': { voiceId: '9BWtsMINqrJLrRacOk9x', voiceName: 'Aria' },
+  'Siren': { voiceId: 'cgSgspJ2msm6clMCkdW9', voiceName: 'Jessica' },
+  'Velvet': { voiceId: 'XB0fDUnXU5powFXDhCwa', voiceName: 'Charlotte' },
+  'Pixie': { voiceId: 'pFZP5JQG7iQjIQuC4Bku', voiceName: 'Lily' },
+  // Male avatars
+  'Stark': { voiceId: 'CwhRBWXzGAHq8TQ4Fs17', voiceName: 'Roger' },
+  'Petrie': { voiceId: 'IKne3meq5aSn9XLyUdCD', voiceName: 'Charlie' },
+  'Night Hawk': { voiceId: 'JBFqnCBsd6RMkjVDRZzb', voiceName: 'George' },
+  'Banjo': { voiceId: 'bIHbv24MWmeRgasZH58o', voiceName: 'Will' },
+  'Ceasar': { voiceId: 'CwhRBWXzGAHq8TQ4Fs17', voiceName: 'Roger' },
+  'Reptile': { voiceId: 'IKne3meq5aSn9XLyUdCD', voiceName: 'Charlie' },
+  'Rhydon': { voiceId: 'JBFqnCBsd6RMkjVDRZzb', voiceName: 'George' },
 };
 
 // Try ElevenLabs first, fallback to OpenAI
@@ -90,7 +118,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice, gender } = await req.json();
+    const { text, voice, gender, avatarName } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
@@ -99,13 +127,19 @@ serve(async (req) => {
     const ELEVEN_LABS_API_KEY = Deno.env.get('ELEVEN_LABS_API_KEY');
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
-    // Get voice ID for ElevenLabs
+    // Voice ID mappings
     const voiceIds: Record<string, string> = {
       'Aria': '9BWtsMINqrJLrRacOk9x',
       'Roger': 'CwhRBWXzGAHq8TQ4Fs17',
       'River': 'SAz9YHcvj6GT2YYXdXww',
       'Sarah': 'EXAVITQu4vr4xnSDxMaL',
       'Laura': 'FGY2WhTYpPnrIDTdsKH5',
+      'Charlotte': 'XB0fDUnXU5powFXDhCwa',
+      'Charlie': 'IKne3meq5aSn9XLyUdCD',
+      'George': 'JBFqnCBsd6RMkjVDRZzb',
+      'Will': 'bIHbv24MWmeRgasZH58o',
+      'Jessica': 'cgSgspJ2msm6clMCkdW9',
+      'Lily': 'pFZP5JQG7iQjIQuC4Bku',
     };
 
     // Map gender to voice if provided
@@ -115,8 +149,23 @@ serve(async (req) => {
       'neutral': 'River'
     };
 
-    const selectedVoice = gender ? (genderVoiceMap[gender] || 'River') : (voice || 'Aria');
-    const elevenLabsVoiceId = voiceIds[selectedVoice] || voiceIds['Aria'];
+    // Priority: avatar-specific override > explicit voice > gender-based > default
+    let selectedVoice = 'Aria';
+    let elevenLabsVoiceId = voiceIds['Aria'];
+
+    if (avatarName && AVATAR_VOICE_OVERRIDES[avatarName]) {
+      const override = AVATAR_VOICE_OVERRIDES[avatarName];
+      selectedVoice = override.voiceName;
+      elevenLabsVoiceId = override.voiceId;
+      console.log(`Using avatar-specific voice for ${avatarName}: ${selectedVoice}`);
+    } else if (voice && voiceIds[voice]) {
+      selectedVoice = voice;
+      elevenLabsVoiceId = voiceIds[voice];
+    } else if (gender && genderVoiceMap[gender]) {
+      selectedVoice = genderVoiceMap[gender];
+      elevenLabsVoiceId = voiceIds[selectedVoice];
+    }
+
     const openaiVoice = openaiVoices[selectedVoice] || 'alloy';
 
     console.log(`Generating speech for text: "${text.substring(0, 50)}..." with voice: ${selectedVoice}`);
