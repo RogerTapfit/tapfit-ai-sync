@@ -1,0 +1,1 @@
+DELETE FROM avatars WHERE name IN ('Luna', 'Siren', 'Velvet', 'Pixie');
