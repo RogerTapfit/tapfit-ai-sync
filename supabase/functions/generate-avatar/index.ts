@@ -26,8 +26,8 @@ serve(async (req) => {
     
     console.log(`🎨 Generating avatar: ${name} (${theme} ${animalType})`);
 
-    // Generate the avatar image using AI - chibi style to match existing avatars with clean single-color glow
-    const prompt = `A 3D robot ${animalType} fitness coach character with chibi proportions (oversized cute head, small body), metallic cybernetic armor body with ${accentColor} accents, clearly visible mechanical joints and armor plates, glowing ${accentColor} energy core in chest, bright ${accentColor} LED eyes, clearly recognizable ${animalType} animal features (ears, tail, markings, texture patterns), ${gender === 'female' ? 'elegant cute feminine' : 'powerful masculine'} design, standing in dynamic heroic pose, ${theme} themed, simple clean solid ${accentColor} gradient glow background, pure dark backdrop, no stars no particles no cosmic effects, highly detailed octane render style, professional 3D game character art, centered composition, ultra high quality.`;
+    // Generate the avatar image using AI - chunky toy-robot action figure style to match existing avatars
+    const prompt = `A 3D toy-style robot ${animalType} fitness coach character, chunky action figure proportions with a stylized cute oversized head, clearly recognizable ${animalType} animal features (${animalType}-shaped head with distinctive ears snout or beak and tail), solid metallic robot armor body with ${accentColor} color accents, prominent glowing ${accentColor} energy heart core on chest, bright glowing ${accentColor} LED eyes, mechanical armor plates on arms and legs, ${gender === 'female' ? 'cute feminine' : 'strong masculine'} design, simple heroic standing pose facing forward with no accessories or weapons, ${accentColor} colored solid gradient glow background fading to pure black, no circles no rings no particles no cosmic effects, 3D game character render style like Funko Pop meets mecha anime, centered composition on dark background, ultra high quality render.`;
 
     console.log(`📝 Prompt: ${prompt}`);
 
