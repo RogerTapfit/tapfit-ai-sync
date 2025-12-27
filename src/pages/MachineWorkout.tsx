@@ -17,6 +17,7 @@ import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
 import { PRCelebration } from '@/components/PRCelebration';
 import { toast } from "sonner";
 import { usePageContext } from '@/hooks/usePageContext';
+import { audioManager } from '@/utils/audioUtils';
 import { 
   ArrowLeft, 
   Info, 
@@ -147,15 +148,18 @@ export default function MachineWorkout() {
     }
   }, [machine, recommendation, recommendationLoading, historyLoading, machineHistory]);
 
+  // Pre-load audio manager on mount
+  useEffect(() => {
+    audioManager.initializeAudio();
+  }, []);
+
   // Rest timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isResting && restTime > 0) {
       // Play countdown beeps at 10, 5, 4, 3, 2, 1 seconds
       if ([10, 5, 4, 3, 2, 1].includes(restTime)) {
-        import('@/utils/audioUtils').then(({ audioManager }) => {
-          audioManager.playCountdownBeep();
-        });
+        audioManager.playCountdownBeep();
       }
 
       timer = setTimeout(() => {
@@ -163,10 +167,7 @@ export default function MachineWorkout() {
       }, 1000);
     } else if (isResting && restTime === 0) {
       setIsResting(false);
-      // Play rest complete sound
-      import('@/utils/audioUtils').then(async ({ audioManager }) => {
-        await audioManager.playRestComplete();
-      });
+      audioManager.playRestComplete();
       toast.success("Rest time complete! Ready for next set");
     }
     return () => clearTimeout(timer);
@@ -197,44 +198,45 @@ export default function MachineWorkout() {
     setSets(newSets);
   };
 
-  const handleStartWorkout = async () => {
-    // Create workout session when user actually starts
+  const handleStartWorkout = () => {
+    // Optimistic UI update - instant feedback
+    setWorkoutStarted(true);
+    setWorkoutStartTime(new Date());
+    audioManager.playButtonClick();
+    toast.success('Workout started! Complete each set when ready.');
+    
+    // Fire-and-forget async operations
     if (!currentWorkoutLog && machine) {
       console.log('Starting workout session for machine workout');
-      await startWorkout(
+      startWorkout(
         `${machine.muscleGroup} Workout`,
         machine.muscleGroup,
         8 // Default total exercises for a muscle group workout
       );
     }
-    
-    setWorkoutStarted(true);
-    setWorkoutStartTime(new Date());
-    const { audioManager } = await import('@/utils/audioUtils');
-    await audioManager.playButtonClick();
-    toast.success('Workout started! Complete each set when ready.');
   };
 
-  const handleSetComplete = async (setIndex: number) => {
-    // Track actual rest time taken if there was a previous rest period
-    if (restStartTime && isResting) {
-      const actualRestSeconds = Math.round((new Date().getTime() - restStartTime.getTime()) / 1000);
-      await updateRestPreference(actualRestSeconds);
-    }
-    
+  const handleSetComplete = (setIndex: number) => {
+    // OPTIMISTIC UI UPDATE - Instant feedback first
+    const updatedSets = [...sets];
+    updatedSets[setIndex].completed = true;
+    setSets(updatedSets);
+
     // Clear any active rest timer if user continues early  
+    const wasResting = isResting;
     if (isResting) {
       setIsResting(false);
       setRestTime(0);
     }
 
-    const updatedSets = [...sets];
-    updatedSets[setIndex].completed = true;
-    setSets(updatedSets);
-
-    // Play set completion sound
-    const { audioManager } = await import('@/utils/audioUtils');
-    await audioManager.playSetComplete();
+    // Play set completion sound immediately (pre-loaded)
+    audioManager.playSetComplete();
+    
+    // Fire-and-forget: Track actual rest time taken
+    if (restStartTime && wasResting) {
+      const actualRestSeconds = Math.round((new Date().getTime() - restStartTime.getTime()) / 1000);
+      updateRestPreference(actualRestSeconds); // No await - fire and forget
+    }
     
     // Check for progress milestones
     const newCompletedSets = updatedSets.filter(set => set.completed).length;
@@ -242,12 +244,12 @@ export default function MachineWorkout() {
     const newProgress = (newCompletedSets / totalSets) * 100;
     
     if (newProgress === 25 || newProgress === 50 || newProgress === 75) {
-      setTimeout(async () => {
-        await audioManager.playProgressMilestone(newProgress);
+      setTimeout(() => {
+        audioManager.playProgressMilestone(newProgress);
       }, 200);
     } else if (newProgress === 100) {
-      setTimeout(async () => {
-        await audioManager.playWorkoutComplete();
+      setTimeout(() => {
+        audioManager.playWorkoutComplete();
       }, 300);
       // Don't auto-complete - let user add more sets or finish manually
       return;
@@ -312,13 +314,9 @@ export default function MachineWorkout() {
       actualWeight: lastSet.actualWeight || recommendation?.recommended_weight || 80
     };
     
+    // Optimistic UI update
     setSets([...sets, newSet]);
-    
-    // Play feedback sound
-    import('@/utils/audioUtils').then(({ audioManager }) => {
-      audioManager.playButtonClick();
-    });
-    
+    audioManager.playButtonClick();
     toast.success(`Set ${newSet.id} added! Total sets: ${sets.length + 1}`);
   };
 

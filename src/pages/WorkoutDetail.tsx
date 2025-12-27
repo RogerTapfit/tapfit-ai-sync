@@ -32,6 +32,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Capacitor } from "@capacitor/core";
 import { useHeartRate } from "@/hooks/useHeartRate";
 import { CardioWorkoutSession } from "@/components/CardioWorkoutSession";
+import { audioManager } from "@/utils/audioUtils";
 interface WorkoutSet {
   id: number;
   reps: number;
@@ -622,8 +623,8 @@ const WorkoutDetail = () => {
     setRestTime(0);
   };
 
-  // Enhanced startWorkout with better state management
-  const startWorkout = async () => {
+  // Enhanced startWorkout with optimistic updates
+  const startWorkout = () => {
     console.log('startWorkout called, current mode:', mode);
     setDebugInfo(prev => ({ ...prev, buttonClicks: prev.buttonClicks + 1 }));
     
@@ -633,30 +634,23 @@ const WorkoutDetail = () => {
       return;
     }
 
+    // OPTIMISTIC UI UPDATE - Instant feedback
     setIsStartingWorkout(true);
+    setAutoFlowActive(true);
+    setModeWithLogging('inset', 'start_workout_button');
+    setSetIndexAuto(1);
+    setReps(0);
     
-    try {
-      const { audioManager } = await import('@/utils/audioUtils');
-      await audioManager.playButtonClick();
-      
-      setAutoFlowActive(true);
-      setModeWithLogging('inset', 'start_workout_button');
-      setSetIndexAuto(1);
-      setReps(0);
-      
-      // Fire-and-forget BLE connection
-      connectPuck().catch(err => 
-        console.warn('Puck connection failed during workout start:', err)
-      );
-      
-      toast.success('Workout started! Begin your first set.');
-    } catch (error) {
-      console.error('Error starting workout:', error);
-      toast.error('Failed to start workout');
-      resetWorkoutState();
-    } finally {
+    // Play sound immediately (pre-loaded)
+    audioManager.playButtonClick();
+    toast.success('Workout started! Begin your first set.');
+    
+    // Fire-and-forget BLE connection
+    connectPuck().catch(err => 
+      console.warn('Puck connection failed during workout start:', err)
+    ).finally(() => {
       setIsStartingWorkout(false);
-    }
+    });
   };
 
   // Auto-connect from deep links (?autoConnect=puck) - improved logic
@@ -677,7 +671,7 @@ const WorkoutDetail = () => {
     }
   }, [location.search, mode, workout, autoFlowActive]);
 
-  const onRep = async () => {
+  const onRep = () => {
     if (mode !== 'inset') {
       console.warn('onRep called but mode is not inset:', mode);
       return;
@@ -687,33 +681,32 @@ const WorkoutDetail = () => {
     // Reflect current reps in the active set row
     setSets(prev => prev.map(s => s.id === setIndexAuto ? { ...s, actualReps: next } : s));
     if (next === MAX_REPS) {
-      const { audioManager } = await import('@/utils/audioUtils');
-      await audioManager.playSetComplete();
+      audioManager.playSetComplete();
       // Mark set complete and start rest
-      await handleSetComplete(setIndexAuto - 1);
+      handleSetComplete(setIndexAuto - 1);
       setModeWithLogging('rest', 'auto_set_complete');
     }
   };
 
-  const handleSetComplete = async (setIndex: number) => {
-    // Clear any active rest timer if user continues early
+  const handleSetComplete = (setIndex: number) => {
+    // OPTIMISTIC UI UPDATE - Clear rest timer immediately if user continues early
     if (isResting) {
       setIsResting(false);
       setRestTime(0);
     }
 
+    // Update state immediately
     const updatedSets = [...sets];
     updatedSets[setIndex].completed = true;
     setSets(updatedSets);
 
-    // Play set completion sound (custom or default)
-    const { audioManager } = await import('@/utils/audioUtils');
+    // Play set completion sound immediately (custom or default)
     const customSounds = JSON.parse(localStorage.getItem('customSounds') || '{}');
     if (customSounds['set-complete']) {
-      await audioManager.playCustomSound(customSounds['set-complete'], 'set-complete', 
+      audioManager.playCustomSound(customSounds['set-complete'], 'set-complete', 
         () => audioManager.playSetComplete());
     } else {
-      await audioManager.playSetComplete();
+      audioManager.playSetComplete();
     }
     
     // Check for progress milestones
@@ -721,12 +714,12 @@ const WorkoutDetail = () => {
     const newProgress = (newCompletedSets / totalSets) * 100;
     
     if (newProgress === 25 || newProgress === 50 || newProgress === 75) {
-      setTimeout(async () => {
-        await audioManager.playProgressMilestone(newProgress);
+      setTimeout(() => {
+        audioManager.playProgressMilestone(newProgress);
       }, 200);
     } else if (newProgress === 100) {
-      setTimeout(async () => {
-        await audioManager.playWorkoutComplete();
+      setTimeout(() => {
+        audioManager.playWorkoutComplete();
       }, 300);
     }
 
@@ -737,6 +730,7 @@ const WorkoutDetail = () => {
     resetPuckCounter();
 
     toast.success(`Set ${setIndex + 1} completed!`);
+  };
   };
 
   const handleSetEdit = (setIndex: number, field: 'actualReps' | 'actualWeight', value: number) => {
