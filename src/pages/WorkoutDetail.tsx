@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -709,6 +710,9 @@ const WorkoutDetail = () => {
       audioManager.playSetComplete();
     }
     
+    // Haptic feedback for set completion
+    try { Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) { /* Web fallback */ }
+    
     // Check for progress milestones
     const newCompletedSets = updatedSets.filter(set => set.completed).length;
     const newProgress = (newCompletedSets / totalSets) * 100;
@@ -716,10 +720,12 @@ const WorkoutDetail = () => {
     if (newProgress === 25 || newProgress === 50 || newProgress === 75) {
       setTimeout(() => {
         audioManager.playProgressMilestone(newProgress);
+        try { Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) { /* Web fallback */ }
       }, 200);
     } else if (newProgress === 100) {
       setTimeout(() => {
         audioManager.playWorkoutComplete();
+        try { Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) { /* Web fallback */ }
       }, 300);
     }
 
@@ -739,6 +745,7 @@ const WorkoutDetail = () => {
   };
 
   const handleAddSet = () => {
+    try { Haptics.impact({ style: ImpactStyle.Light }); } catch (e) { /* Web fallback */ }
     setSets(prev => {
       const last = prev[prev.length - 1];
       const defaultReps = typeof workout?.reps === 'string' ? parseInt((workout.reps as string).split('-')[0]) : (workout?.reps as number) || 10;
