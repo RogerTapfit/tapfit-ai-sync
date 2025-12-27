@@ -826,6 +826,34 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
         }
       }
     };
+
+    // Food logging tool for AI-powered food tracking with nutrition lookup and image generation
+    const foodTool = {
+      type: "function",
+      function: {
+        name: "log_food",
+        description: "Log food to the user's nutrition tracker when they mention eating something. Use this for ANY food consumption like 'I had a banana', 'ate some chicken', 'had a Chipotle burrito with rice, beans, and guac', 'just ate pizza', etc. The AI will calculate accurate nutrition data.",
+        parameters: {
+          type: "object",
+          properties: {
+            foodDescription: {
+              type: "string",
+              description: "Full description of the food including any toppings, preparation style, ingredients, or restaurant name (e.g., 'Chipotle burrito bowl with chicken, white rice, black beans, fajita veggies, and guacamole')"
+            },
+            mealType: {
+              type: "string",
+              enum: ["breakfast", "lunch", "dinner", "snack"],
+              description: "Type of meal based on context and time of day"
+            },
+            confirmationMessage: {
+              type: "string",
+              description: "A brief, friendly confirmation mentioning the food and estimated calories (e.g., 'Logged your Chipotle bowl - about 845 cal!')"
+            }
+          },
+          required: ["foodDescription", "mealType", "confirmationMessage"]
+        }
+      }
+    };
     
     // Extend system prompt with navigation capabilities
     const navigationInstructions = `
@@ -916,6 +944,31 @@ Default sizes if not specified:
 IMPORTANT: Use log_beverage for LOGGING consumed beverages.
 Use open_modal(water) only when user wants to OPEN the water tracker modal.
 
+═══════════════════════════════════════════════════════════════
+🍎 FOOD LOGGING (use log_food tool):
+═══════════════════════════════════════════════════════════════
+
+When users mention eating ANY food, LOG IT AUTOMATICALLY using the log_food tool!
+The AI will calculate accurate nutrition (calories, protein, carbs, fat) based on the food description.
+For restaurant meals like Chipotle, it will use actual menu nutrition data.
+
+Examples of when to use log_food:
+- "I had a banana" → log_food("banana, medium", "snack", "Logged your banana - 105 cal! 🍌")
+- "Ate some grilled chicken" → log_food("grilled chicken breast, ~6oz", "lunch", "Chicken logged - about 280 cal!")
+- "Had a Chipotle burrito with chicken, rice, beans, and guac" → log_food("Chipotle burrito: chicken, white rice, black beans, guacamole", "lunch", "Logged your Chipotle burrito - ~950 cal! 🌯")
+- "Just ate an apple" → log_food("apple, medium", "snack", "Apple logged - 95 cal! 🍎")
+- "Had eggs and toast for breakfast" → log_food("2 scrambled eggs with 2 slices wheat toast", "breakfast", "Breakfast logged - about 350 cal!")
+- "Grabbed a Big Mac" → log_food("McDonald's Big Mac", "lunch", "Big Mac logged - 550 cal! 🍔")
+- "Ate some pizza" → log_food("2 slices cheese pizza", "dinner", "Pizza tracked - ~530 cal! 🍕")
+
+IMPORTANT: Include as much detail as possible from the user's description:
+- Restaurant name (Chipotle, McDonald's, etc.)
+- Toppings and customizations
+- Portion sizes when mentioned
+- Cooking method (grilled, fried, baked)
+
+The AI will generate an image of the food and look up accurate nutrition data!
+
 IMPORTANT: For modals (water, sleep, mood, cycle, heartRate), use the open_modal tool.
 For pages/features, use the navigate_to_page tool.
 
@@ -944,7 +997,7 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
-        tools: [navigationTool, modalTool, beverageTool],
+        tools: [navigationTool, modalTool, beverageTool, foodTool],
         tool_choice: "auto"
       }),
     });
@@ -1119,6 +1172,234 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
           });
         } catch (parseError) {
           console.error('Error parsing beverage tool call:', parseError);
+        }
+      }
+
+      // Handle food logging tool
+      if (toolCall.function?.name === 'log_food') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Food logging requested:', args);
+
+          const today = new Date().toISOString().split('T')[0];
+          
+          // Use AI to calculate accurate nutrition from description
+          console.log('Fetching nutrition data for:', args.foodDescription);
+          
+          let nutritionData = {
+            foodItems: [{ name: args.foodDescription, calories: 200, protein: 10, carbs: 20, fat: 8 }],
+            totalCalories: 200,
+            totalProtein: 10,
+            totalCarbs: 20,
+            totalFat: 8
+          };
+
+          try {
+            const nutritionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash',
+                messages: [{
+                  role: 'system',
+                  content: `You are a certified nutritionist with access to restaurant nutrition databases. Calculate accurate nutrition for foods. For restaurant items (Chipotle, McDonald's, etc.), use ACTUAL published nutrition data from their official sources. For home-cooked or generic foods, estimate based on standard serving sizes.`
+                }, {
+                  role: 'user', 
+                  content: `Calculate detailed nutrition for: "${args.foodDescription}". 
+                  
+For each component, provide accurate data. Return ONLY valid JSON in this exact format:
+{
+  "foodItems": [
+    { "name": "item name", "calories": number, "protein": number, "carbs": number, "fat": number }
+  ],
+  "totalCalories": number,
+  "totalProtein": number,
+  "totalCarbs": number,
+  "totalFat": number
+}`
+                }],
+                tools: [{
+                  type: "function",
+                  function: {
+                    name: "return_nutrition",
+                    description: "Return calculated nutrition data",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        foodItems: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              calories: { type: "number" },
+                              protein: { type: "number" },
+                              carbs: { type: "number" },
+                              fat: { type: "number" }
+                            },
+                            required: ["name", "calories", "protein", "carbs", "fat"]
+                          }
+                        },
+                        totalCalories: { type: "number" },
+                        totalProtein: { type: "number" },
+                        totalCarbs: { type: "number" },
+                        totalFat: { type: "number" }
+                      },
+                      required: ["foodItems", "totalCalories", "totalProtein", "totalCarbs", "totalFat"]
+                    }
+                  }
+                }],
+                tool_choice: { type: "function", function: { name: "return_nutrition" } }
+              }),
+            });
+
+            if (nutritionResponse.ok) {
+              const nutritionResult = await nutritionResponse.json();
+              const toolCallResult = nutritionResult.choices?.[0]?.message?.tool_calls?.[0];
+              if (toolCallResult?.function?.arguments) {
+                nutritionData = JSON.parse(toolCallResult.function.arguments);
+                console.log('Nutrition data retrieved:', nutritionData);
+              }
+            }
+          } catch (nutritionError) {
+            console.error('Error fetching nutrition:', nutritionError);
+            // Continue with default estimates
+          }
+
+          // Generate food image using AI
+          let photoUrl: string | null = null;
+          try {
+            console.log('Generating food image for:', args.foodDescription);
+            const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash-image-preview',
+                messages: [{
+                  role: 'user',
+                  content: `Generate a photorealistic top-down food photography image of: ${args.foodDescription}. 
+                  Style: Professional food photography, appetizing presentation, clean white plate or appropriate dish, natural lighting, sharp focus.
+                  Do NOT include any text, labels, or watermarks in the image.`
+                }],
+                modalities: ['image', 'text']
+              }),
+            });
+
+            if (imageResponse.ok) {
+              const imageResult = await imageResponse.json();
+              const imageData = imageResult.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+              
+              if (imageData && userId) {
+                // Upload base64 image to Supabase Storage
+                const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+                const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+                const fileName = `${userId}/${Date.now()}-ai-food.png`;
+                
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from('food-photos')
+                  .upload(fileName, imageBuffer, {
+                    contentType: 'image/png',
+                    upsert: false
+                  });
+
+                if (!uploadError && uploadData) {
+                  const { data: urlData } = supabase.storage
+                    .from('food-photos')
+                    .getPublicUrl(fileName);
+                  photoUrl = urlData.publicUrl;
+                  console.log('Food image uploaded:', photoUrl);
+                } else {
+                  console.error('Error uploading image:', uploadError);
+                }
+              }
+            }
+          } catch (imageError) {
+            console.error('Error generating food image:', imageError);
+            // Continue without image
+          }
+
+          // Insert food entry into database
+          if (userId) {
+            const foodEntry = {
+              user_id: userId,
+              logged_date: today,
+              meal_type: args.mealType,
+              food_items: nutritionData.foodItems.map(item => ({
+                name: item.name,
+                quantity: '1 serving',
+                calories: item.calories,
+                protein: item.protein,
+                carbs: item.carbs,
+                fat: item.fat
+              })),
+              total_calories: nutritionData.totalCalories,
+              total_protein: nutritionData.totalProtein,
+              total_carbs: nutritionData.totalCarbs,
+              total_fat: nutritionData.totalFat,
+              photo_url: photoUrl,
+              ai_analyzed: true,
+              user_confirmed: true,
+              notes: `Logged via chatbot: ${args.foodDescription}`
+            };
+
+            const { error: insertError } = await supabase
+              .from('food_entries')
+              .insert(foodEntry);
+
+            if (insertError) {
+              console.error('Error logging food entry:', insertError);
+            } else {
+              console.log(`Logged food: ${args.foodDescription} (${nutritionData.totalCalories} cal)`);
+            }
+          }
+
+          // Get appropriate food icon
+          const description = args.foodDescription.toLowerCase();
+          let foodIcon = '🍽️';
+          if (description.includes('banana')) foodIcon = '🍌';
+          else if (description.includes('apple')) foodIcon = '🍎';
+          else if (description.includes('pizza')) foodIcon = '🍕';
+          else if (description.includes('burger') || description.includes('mac')) foodIcon = '🍔';
+          else if (description.includes('burrito') || description.includes('taco') || description.includes('chipotle')) foodIcon = '🌯';
+          else if (description.includes('chicken')) foodIcon = '🍗';
+          else if (description.includes('salad')) foodIcon = '🥗';
+          else if (description.includes('egg')) foodIcon = '🍳';
+          else if (description.includes('sandwich')) foodIcon = '🥪';
+          else if (description.includes('sushi')) foodIcon = '🍣';
+          else if (description.includes('pasta') || description.includes('spaghetti')) foodIcon = '🍝';
+          else if (description.includes('rice')) foodIcon = '🍚';
+          else if (description.includes('bread') || description.includes('toast')) foodIcon = '🍞';
+          else if (description.includes('fruit')) foodIcon = '🍓';
+          else if (description.includes('vegetable') || description.includes('broccoli')) foodIcon = '🥦';
+          else if (description.includes('steak') || description.includes('beef')) foodIcon = '🥩';
+          else if (description.includes('fish') || description.includes('salmon')) foodIcon = '🐟';
+
+          return new Response(JSON.stringify({ 
+            response: args.confirmationMessage,
+            action: {
+              type: 'log_food',
+              foodDescription: args.foodDescription,
+              mealType: args.mealType,
+              totalCalories: nutritionData.totalCalories,
+              totalProtein: nutritionData.totalProtein,
+              totalCarbs: nutritionData.totalCarbs,
+              totalFat: nutritionData.totalFat,
+              foodItems: nutritionData.foodItems,
+              photoUrl: photoUrl,
+              foodIcon: foodIcon
+            },
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (parseError) {
+          console.error('Error parsing food tool call:', parseError);
         }
       }
     }

@@ -191,6 +191,18 @@ export const useNutrition = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Listen for nutrition:updated events from chatbot food logging
+  useEffect(() => {
+    const handleNutritionUpdate = () => {
+      console.log('Nutrition update event received from chatbot, refreshing data...');
+      loadTodaysFoodEntries();
+      loadTodaysSummary();
+    };
+
+    window.addEventListener('nutrition:updated', handleNutritionUpdate);
+    return () => window.removeEventListener('nutrition:updated', handleNutritionUpdate);
+  }, []);
+
   // Real-time subscription for food entries
   useEffect(() => {
     const setupRealtimeSubscriptions = async () => {
