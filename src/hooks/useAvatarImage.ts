@@ -45,6 +45,8 @@ export const useAvatars = (includeInactive = false) => {
         query = query.eq('is_active', true);
       }
       
+      const { data, error } = await query;
+      
       if (error) {
         console.error('Error fetching avatars:', error);
         return [];
