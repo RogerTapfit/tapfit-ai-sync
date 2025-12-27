@@ -100,6 +100,20 @@ export const useWaterIntake = () => {
     };
   }, [user, fetchTodaysIntake]);
 
+  // Listen for hydration updates from chatbot
+  useEffect(() => {
+    const handleHydrationUpdate = () => {
+      console.log('Hydration update event received, refreshing data...');
+      fetchTodaysIntake();
+    };
+
+    window.addEventListener('hydration:updated', handleHydrationUpdate);
+
+    return () => {
+      window.removeEventListener('hydration:updated', handleHydrationUpdate);
+    };
+  }, [fetchTodaysIntake]);
+
   const addBeverage = async (amountOz: number, beverageType: string = 'water') => {
     if (!user) {
       toast.error('Please sign in to track hydration');
