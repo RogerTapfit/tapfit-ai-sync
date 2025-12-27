@@ -1060,10 +1060,12 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
                 user_id: userId,
                 logged_date: today,
                 beverage_type: args.beverageType,
+                amount_ml: amountMl,
                 total_amount_ml: amountMl,
                 effective_hydration_ml: effectiveHydrationMl,
                 is_dehydrating: beverageInfo.isDehydrating,
-                logged_time: new Date().toTimeString().split(' ')[0]
+                logged_at: new Date().toISOString(),
+                source: 'chatbot'
               });
 
             if (insertError) {
