@@ -32,14 +32,18 @@ export const useAvatarImage = (avatarId?: string) => {
   });
 };
 
-export const useAvatars = () => {
+export const useAvatars = (includeInactive = false) => {
   return useQuery({
-    queryKey: ['avatars'],
+    queryKey: ['avatars', includeInactive],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('avatars')
         .select('id, name, image_url, sort_order')
         .order('sort_order', { ascending: true });
+      
+      if (!includeInactive) {
+        query = query.eq('is_active', true);
+      }
       
       if (error) {
         console.error('Error fetching avatars:', error);
