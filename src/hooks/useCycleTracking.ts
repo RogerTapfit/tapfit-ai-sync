@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
@@ -216,6 +217,17 @@ export const useCycleTracking = () => {
       average_period_length: cycleData?.average_period_length || 5,
     });
   };
+
+  // Listen for cycle:updated events from chatbot
+  useEffect(() => {
+    const handleCycleUpdate = () => {
+      console.log('Cycle update event received, refreshing data...');
+      queryClient.invalidateQueries({ queryKey: ['cycle-tracking', user?.id] });
+    };
+
+    window.addEventListener('cycle:updated', handleCycleUpdate);
+    return () => window.removeEventListener('cycle:updated', handleCycleUpdate);
+  }, [queryClient, user?.id]);
 
   return {
     cycleData,

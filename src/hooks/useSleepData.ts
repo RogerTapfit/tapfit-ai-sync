@@ -285,6 +285,17 @@ export const useSleepData = () => {
     fetchSleepData();
   }, [fetchSleepData]);
 
+  // Listen for sleep:updated events from chatbot
+  useEffect(() => {
+    const handleSleepUpdate = () => {
+      console.log('Sleep update event received, refreshing data...');
+      fetchSleepData();
+    };
+
+    window.addEventListener('sleep:updated', handleSleepUpdate);
+    return () => window.removeEventListener('sleep:updated', handleSleepUpdate);
+  }, [fetchSleepData]);
+
   // Format duration for display
   const formatDuration = (minutes: number | null): string => {
     if (!minutes) return '--';

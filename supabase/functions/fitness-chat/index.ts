@@ -854,6 +854,65 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
         }
       }
     };
+
+    // Sleep logging tool for quick sleep tracking
+    const sleepTool = {
+      type: "function",
+      function: {
+        name: "log_sleep",
+        description: "Log sleep duration when user mentions how much they slept. Use this for statements like 'I got 6 hours of sleep', 'slept 7 hours', 'only slept 5 hours last night', 'had 8 hours of rest', etc.",
+        parameters: {
+          type: "object",
+          properties: {
+            durationHours: {
+              type: "number",
+              description: "Sleep duration in hours (e.g., 7, 7.5, 6). Support decimals like 7.5 for 'seven and a half hours'."
+            },
+            qualityScore: {
+              type: "number",
+              description: "Sleep quality 1-5 based on context. Default 3. Use 1-2 if user says 'terrible', 'bad', 'restless', 'awful'. Use 4-5 if 'great', 'amazing', 'best sleep', 'slept like a baby'."
+            },
+            notes: {
+              type: "string",
+              description: "Optional notes about the sleep quality or issues mentioned (e.g., 'woke up twice', 'vivid dreams', 'restless')"
+            },
+            confirmationMessage: {
+              type: "string",
+              description: "Brief friendly confirmation mentioning hours logged (e.g., '😴 Logged 7 hours of sleep!')"
+            }
+          },
+          required: ["durationHours", "confirmationMessage"]
+        }
+      }
+    };
+
+    // Cycle tracking tool for period start/end logging
+    const cycleTool = {
+      type: "function",
+      function: {
+        name: "log_cycle_event",
+        description: "Log menstrual cycle events when user mentions period start or end. Use when user says 'my period started', 'got my period', 'period ended', 'cycle started', 'menstrual cycle began', etc.",
+        parameters: {
+          type: "object",
+          properties: {
+            eventType: {
+              type: "string",
+              enum: ["period_start", "period_end"],
+              description: "'period_start' for beginning of period, 'period_end' when period ends"
+            },
+            eventDate: {
+              type: "string",
+              description: "Date of event in YYYY-MM-DD format. Use today's date unless user specifies 'yesterday' or a specific date."
+            },
+            confirmationMessage: {
+              type: "string",
+              description: "Supportive, friendly confirmation (e.g., '🌸 Period start logged! Your cycle info has been updated.')"
+            }
+          },
+          required: ["eventType", "confirmationMessage"]
+        }
+      }
+    };
     
     // Extend system prompt with navigation capabilities
     const navigationInstructions = `
@@ -931,6 +990,42 @@ Examples of when to use log_beverage:
 - "Glass of wine with dinner" → log_beverage(wine, 5, "Wine logged!")
 - "Drinking an energy drink" → log_beverage(energy_drink, 8, "Energy drink added!")
 - "I had 2 glasses of water" → log_beverage(water, 16, "Logged 16oz of water!")
+
+═══════════════════════════════════════════════════════════════
+😴 SLEEP LOGGING (use log_sleep tool):
+═══════════════════════════════════════════════════════════════
+
+When users mention how much they slept, LOG IT AUTOMATICALLY using the log_sleep tool!
+This is the FASTEST way for users to track sleep - just say how much they slept.
+
+Examples of when to use log_sleep:
+- "I got 6 hours of sleep" → log_sleep(6, 3, null, "😴 Logged 6 hours of sleep!")
+- "Slept 8 hours, felt great" → log_sleep(8, 5, null, "Amazing! 8 hours logged! 😴")
+- "Only got 5 hours, terrible night" → log_sleep(5, 2, "rough night", "5 hours logged. Hope you rest better tonight! 💤")
+- "Had 7 and a half hours" → log_sleep(7.5, 3, null, "7.5 hours tracked! 😴")
+- "Slept like a baby for 9 hours" → log_sleep(9, 5, null, "Wow, 9 hours! Great rest! 😴")
+- "Barely slept, maybe 4 hours" → log_sleep(4, 1, "very little sleep", "Only 4 hours logged. Take it easy today! 💤")
+
+Quality scoring (1-5):
+- 1-2: "terrible", "awful", "bad", "restless", "couldn't sleep", "tossed and turned", "insomnia"
+- 3: neutral or no quality mentioned (default)
+- 4-5: "great", "amazing", "best sleep", "slept like a baby", "fantastic", "well rested"
+
+═══════════════════════════════════════════════════════════════
+🌸 CYCLE TRACKING (use log_cycle_event tool):
+═══════════════════════════════════════════════════════════════
+
+When users mention period/menstrual cycle events, LOG IT AUTOMATICALLY using the log_cycle_event tool!
+Be supportive and normalize cycle tracking.
+
+Examples of when to use log_cycle_event:
+- "My period started" → log_cycle_event("period_start", today, "🌸 Period start logged! Your cycle tracker is updated.")
+- "I got my period today" → log_cycle_event("period_start", today, "Got it! Cycle updated 🌸")
+- "My period ended" → log_cycle_event("period_end", today, "🌸 Period end logged! Take care of yourself!")
+- "Period started yesterday" → log_cycle_event("period_start", yesterday_date, "Logged for yesterday! 🌸")
+- "Cycle began this morning" → log_cycle_event("period_start", today, "🌸 Logged! Let me know if you need any support.")
+
+Always use 🌸 emoji and be supportive. Offer workout/nutrition adjustments based on cycle phase if relevant.
 - "Just finished a bottle of water" → log_beverage(water, 16, "Great hydration!")
 - "Had some orange juice" → log_beverage(juice, 8, "OJ logged!")
 - "Drank a soda" → log_beverage(soda, 12, "Soda tracked!")
@@ -997,7 +1092,7 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
-        tools: [navigationTool, modalTool, beverageTool, foodTool],
+        tools: [navigationTool, modalTool, beverageTool, foodTool, sleepTool, cycleTool],
         tool_choice: "auto"
       }),
     });
@@ -1400,6 +1495,151 @@ For each component, provide accurate data. Return ONLY valid JSON in this exact 
           });
         } catch (parseError) {
           console.error('Error parsing food tool call:', parseError);
+        }
+      }
+
+      // Handle sleep logging tool
+      if (toolCall.function?.name === 'log_sleep') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Sleep logging requested:', args);
+
+          const today = new Date();
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const sleepDate = yesterday.toISOString().split('T')[0]; // Assume last night
+          
+          // Calculate bedtime and wake time (assume 7am wake by default)
+          const wakeTime = new Date(today);
+          wakeTime.setHours(7, 0, 0, 0);
+          const bedtime = new Date(wakeTime.getTime() - (args.durationHours * 60 * 60 * 1000));
+          
+          const durationMinutes = Math.round(args.durationHours * 60);
+          const qualityScore = args.qualityScore || 3;
+
+          if (userId) {
+            const { error: insertError } = await supabase
+              .from('sleep_logs')
+              .upsert({
+                user_id: userId,
+                sleep_date: sleepDate,
+                bedtime: bedtime.toISOString(),
+                wake_time: wakeTime.toISOString(),
+                duration_minutes: durationMinutes,
+                quality_score: qualityScore,
+                source: 'chatbot',
+                notes: args.notes || `Logged via chatbot: ${args.durationHours} hours`
+              }, { onConflict: 'user_id,sleep_date' });
+
+            if (insertError) {
+              console.error('Error logging sleep:', insertError);
+            } else {
+              console.log(`Logged sleep: ${args.durationHours} hours, quality: ${qualityScore}/5`);
+            }
+          }
+
+          return new Response(JSON.stringify({ 
+            response: args.confirmationMessage,
+            action: {
+              type: 'log_sleep',
+              durationHours: args.durationHours,
+              qualityScore: qualityScore,
+              sleepDate: sleepDate,
+              durationMinutes: durationMinutes
+            },
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (parseError) {
+          console.error('Error parsing sleep tool call:', parseError);
+        }
+      }
+
+      // Handle cycle event logging tool
+      if (toolCall.function?.name === 'log_cycle_event') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Cycle event logging requested:', args);
+
+          const today = new Date().toISOString().split('T')[0];
+          const eventDate = args.eventDate || today;
+
+          if (userId) {
+            if (args.eventType === 'period_start') {
+              // Fetch existing cycle data to preserve settings
+              const { data: existing } = await supabase
+                .from('cycle_tracking')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+              const { error: upsertError } = await supabase
+                .from('cycle_tracking')
+                .upsert({
+                  user_id: userId,
+                  is_enabled: true,
+                  last_period_start: eventDate,
+                  average_cycle_length: existing?.average_cycle_length || 28,
+                  average_period_length: existing?.average_period_length || 5
+                }, { onConflict: 'user_id' });
+
+              if (upsertError) {
+                console.error('Error logging period start:', upsertError);
+              } else {
+                console.log(`Logged period start: ${eventDate}`);
+              }
+
+              return new Response(JSON.stringify({ 
+                response: args.confirmationMessage,
+                action: {
+                  type: 'log_cycle_event',
+                  eventType: 'period_start',
+                  date: eventDate
+                },
+                timestamp: new Date().toISOString()
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+
+            } else if (args.eventType === 'period_end') {
+              // Calculate period length from last_period_start to today
+              const { data: existing } = await supabase
+                .from('cycle_tracking')
+                .select('last_period_start, average_cycle_length')
+                .eq('user_id', userId)
+                .single();
+
+              let periodLength = 5; // default
+              if (existing?.last_period_start) {
+                const startDate = new Date(existing.last_period_start);
+                const endDate = new Date(eventDate);
+                periodLength = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                
+                // Update average period length
+                await supabase.from('cycle_tracking').update({
+                  average_period_length: periodLength
+                }).eq('user_id', userId);
+                
+                console.log(`Logged period end: ${eventDate}, duration: ${periodLength} days`);
+              }
+
+              return new Response(JSON.stringify({ 
+                response: args.confirmationMessage,
+                action: {
+                  type: 'log_cycle_event',
+                  eventType: 'period_end',
+                  date: eventDate,
+                  periodLength: periodLength
+                },
+                timestamp: new Date().toISOString()
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing cycle tool call:', parseError);
         }
       }
     }
