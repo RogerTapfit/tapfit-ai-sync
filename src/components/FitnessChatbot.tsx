@@ -323,6 +323,28 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
           } 
         }));
       }
+
+      // Handle food logging action from AI
+      if (data.action?.type === 'log_food') {
+        toast({
+          title: `${data.action.foodIcon} Food Logged!`,
+          description: `${data.action.foodDescription} - ${data.action.totalCalories} cal`,
+        });
+        
+        // Dispatch event to refresh nutrition data on the dashboard
+        window.dispatchEvent(new CustomEvent('nutrition:updated', { 
+          detail: { 
+            foodDescription: data.action.foodDescription,
+            mealType: data.action.mealType,
+            totalCalories: data.action.totalCalories,
+            totalProtein: data.action.totalProtein,
+            totalCarbs: data.action.totalCarbs,
+            totalFat: data.action.totalFat,
+            foodItems: data.action.foodItems,
+            photoUrl: data.action.photoUrl
+          } 
+        }));
+      }
     } catch (error) {
       console.error('Chat error:', error);
       toast({
