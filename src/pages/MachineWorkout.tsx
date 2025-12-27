@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -232,6 +233,9 @@ export default function MachineWorkout() {
     // Play set completion sound immediately (pre-loaded)
     audioManager.playSetComplete();
     
+    // Haptic feedback for set completion
+    try { Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) { /* Web fallback */ }
+    
     // Fire-and-forget: Track actual rest time taken
     if (restStartTime && wasResting) {
       const actualRestSeconds = Math.round((new Date().getTime() - restStartTime.getTime()) / 1000);
@@ -246,10 +250,12 @@ export default function MachineWorkout() {
     if (newProgress === 25 || newProgress === 50 || newProgress === 75) {
       setTimeout(() => {
         audioManager.playProgressMilestone(newProgress);
+        try { Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) { /* Web fallback */ }
       }, 200);
     } else if (newProgress === 100) {
       setTimeout(() => {
         audioManager.playWorkoutComplete();
+        try { Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) { /* Web fallback */ }
       }, 300);
       // Don't auto-complete - let user add more sets or finish manually
       return;
@@ -317,6 +323,7 @@ export default function MachineWorkout() {
     // Optimistic UI update
     setSets([...sets, newSet]);
     audioManager.playButtonClick();
+    try { Haptics.impact({ style: ImpactStyle.Light }); } catch (e) { /* Web fallback */ }
     toast.success(`Set ${newSet.id} added! Total sets: ${sets.length + 1}`);
   };
 
