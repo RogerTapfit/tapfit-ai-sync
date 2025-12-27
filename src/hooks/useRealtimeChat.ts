@@ -372,6 +372,21 @@ export const useRealtimeChat = (userId?: string) => {
 
           const aiResponse = data?.response || "I couldn't process that. Please try again.";
           
+          // Handle beverage logging action from voice command
+          if (data?.action?.type === 'log_beverage') {
+            console.log('🥤 Voice beverage logged:', data.action);
+            toast.success(`${data.action.beverageIcon} ${aiResponse}`);
+            
+            // Dispatch event to refresh hydration data on the dashboard
+            window.dispatchEvent(new CustomEvent('hydration:updated', { 
+              detail: { 
+                beverageType: data.action.beverageType,
+                amountOz: data.action.amountOz,
+                effectiveHydrationMl: data.action.effectiveHydrationMl
+              } 
+            }));
+          }
+          
           // Add AI message
           const aiMessage: Message = {
             id: (Date.now() + 1).toString(),
