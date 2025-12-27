@@ -8,6 +8,7 @@ import { Capacitor } from '@capacitor/core';
 import { nfcService } from "./services/nfcService";
 import { App as CapacitorApp } from '@capacitor/app';
 import { ChatbotProvider } from "./contexts/ChatbotContext";
+import { WaterIntakeProvider } from "./contexts/WaterIntakeContext";
 import GlobalChatbot from "./components/GlobalChatbot";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -132,7 +133,9 @@ const App = () => {
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={
                 <AuthGuard fallback={<Auth />}>
-                  <Index />
+                  <WaterIntakeProvider>
+                    <Index />
+                  </WaterIntakeProvider>
                 </AuthGuard>
               } />
               <Route path="/workout-mode-select" element={
