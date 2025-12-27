@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.generate-avatar]
 verify_jwt = false
+
+[functions.remove-avatar-background]
+verify_jwt = false

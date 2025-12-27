@@ -22,15 +22,28 @@ serve(async (req) => {
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { name, theme, accentColor, gender, animalType } = await req.json();
+    const { avatarId } = await req.json();
     
-    console.log(`🎨 Generating avatar: ${name} (${theme} ${animalType})`);
+    if (!avatarId) {
+      throw new Error('avatarId is required');
+    }
 
-    // Generate the avatar image using AI - chunky toy-robot action figure style with TRANSPARENT background
-    const prompt = `A 3D toy-style robot ${animalType} fitness coach character, chunky action figure proportions with a stylized cute oversized head, clearly recognizable ${animalType} animal features (${animalType}-shaped head with distinctive ears snout or beak and tail), solid metallic robot armor body with ${accentColor} color accents, prominent glowing ${accentColor} energy heart core on chest, bright glowing ${accentColor} LED eyes, mechanical armor plates on arms and legs, ${gender === 'female' ? 'cute feminine' : 'strong masculine'} design, simple heroic standing pose facing forward with no accessories or weapons, ISOLATED ON A COMPLETELY TRANSPARENT BACKGROUND with absolutely no backdrop no shadows no gradients no colors behind the character, clean PNG cutout style with crisp edges, 3D game character render style like Funko Pop meets mecha anime, centered composition, ultra high quality render.`;
+    console.log(`🔄 Removing background for avatar: ${avatarId}`);
 
-    console.log(`📝 Prompt: ${prompt}`);
+    // Fetch the avatar record
+    const { data: avatar, error: fetchError } = await supabase
+      .from('avatars')
+      .select('*')
+      .eq('id', avatarId)
+      .single();
 
+    if (fetchError || !avatar) {
+      throw new Error(`Avatar not found: ${fetchError?.message || 'Unknown error'}`);
+    }
+
+    console.log(`📷 Processing avatar: ${avatar.name} - ${avatar.image_url}`);
+
+    // Use AI to remove the background
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -42,7 +55,18 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: prompt
+            content: [
+              {
+                type: "text",
+                text: "Remove the background completely from this image. Make it a clean transparent PNG cutout with ONLY the robot character visible. Remove all background colors, gradients, glows, shadows, and any elements behind the character. The output should be the character isolated on a completely transparent background with crisp clean edges, ready to be placed on any UI."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: avatar.image_url
+                }
+              }
+            ]
           }
         ],
         modalities: ["image", "text"]
@@ -56,7 +80,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('✅ Image generated successfully');
+    console.log('✅ Background removed successfully');
 
     const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!imageData) {
@@ -79,15 +103,16 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Generate unique filename
+    // Generate unique filename with -nobg suffix
     const timestamp = Date.now();
-    const filename = `${name.toLowerCase().replace(/\s+/g, '-')}-${timestamp}.${imageFormat}`;
-    const miniFilename = `${name.toLowerCase().replace(/\s+/g, '-')}-mini-${timestamp}.${imageFormat}`;
+    const safeName = avatar.name.toLowerCase().replace(/\s+/g, '-');
+    const filename = `${safeName}-nobg-${timestamp}.${imageFormat}`;
+    const miniFilename = `${safeName}-nobg-mini-${timestamp}.${imageFormat}`;
 
-    console.log(`📤 Uploading to storage: ${filename}`);
+    console.log(`📤 Uploading transparent image: ${filename}`);
 
     // Upload to Supabase storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('character-images')
       .upload(filename, bytes, {
         contentType: `image/${imageFormat}`,
@@ -99,17 +124,13 @@ serve(async (req) => {
       throw new Error(`Failed to upload image: ${uploadError.message}`);
     }
 
-    // Also upload as mini (same image for now, could resize later)
-    const { error: miniUploadError } = await supabase.storage
+    // Also upload as mini (same image for now)
+    await supabase.storage
       .from('character-images')
       .upload(miniFilename, bytes, {
         contentType: `image/${imageFormat}`,
         upsert: true
       });
-
-    if (miniUploadError) {
-      console.error('Mini upload error:', miniUploadError);
-    }
 
     // Get public URLs
     const { data: publicUrl } = supabase.storage
@@ -120,50 +141,35 @@ serve(async (req) => {
       .from('character-images')
       .getPublicUrl(miniFilename);
 
-    console.log(`✅ Uploaded successfully: ${publicUrl.publicUrl}`);
+    console.log(`✅ Uploaded: ${publicUrl.publicUrl}`);
 
-    // Get highest sort order
-    const { data: maxSortData } = await supabase
+    // Update the avatar record with new URLs
+    const { error: updateError } = await supabase
       .from('avatars')
-      .select('sort_order')
-      .order('sort_order', { ascending: false })
-      .limit(1)
-      .single();
-
-    const nextSortOrder = (maxSortData?.sort_order || 0) + 1;
-
-    // Insert into avatars table
-    const { data: avatarData, error: insertError } = await supabase
-      .from('avatars')
-      .insert({
-        name: name,
+      .update({
         image_url: publicUrl.publicUrl,
-        mini_image_url: miniPublicUrl.publicUrl,
-        accent_hex: accentColor,
-        gender: gender,
-        is_active: true,
-        sort_order: nextSortOrder
+        mini_image_url: miniPublicUrl.publicUrl
       })
-      .select()
-      .single();
+      .eq('id', avatarId);
 
-    if (insertError) {
-      console.error('Insert error:', insertError);
-      throw new Error(`Failed to insert avatar: ${insertError.message}`);
+    if (updateError) {
+      console.error('Update error:', updateError);
+      throw new Error(`Failed to update avatar: ${updateError.message}`);
     }
 
-    console.log(`🎉 Avatar created successfully: ${name} (ID: ${avatarData.id})`);
+    console.log(`🎉 Avatar ${avatar.name} background removed successfully!`);
 
     return new Response(JSON.stringify({ 
       success: true,
-      avatar: avatarData,
-      imageUrl: publicUrl.publicUrl
+      avatarId,
+      name: avatar.name,
+      newImageUrl: publicUrl.publicUrl
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error generating avatar:', error);
+    console.error('Error removing avatar background:', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'Unknown error' 
     }), {
