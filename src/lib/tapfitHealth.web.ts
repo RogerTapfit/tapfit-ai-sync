@@ -80,7 +80,7 @@ export class TapfitHealthWeb extends WebPlugin implements TapfitHealthPlugin {
           console.error('Error in heart rate listener:', error);
         }
       });
-    }, 1000); // Update every second
+    }, 2000); // Update every 2 seconds to prevent UI flashing
   }
 
   private stopMockHeartRateData() {
