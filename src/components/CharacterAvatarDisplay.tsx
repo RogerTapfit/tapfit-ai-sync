@@ -1,6 +1,4 @@
 import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { RobotAvatarData } from '@/hooks/useRobotAvatar';
 import { useAvatarImage, useAvatars } from '@/hooks/useAvatarImage';
 import { Loader2 } from 'lucide-react';
@@ -28,10 +26,9 @@ export const CharacterAvatarDisplay = ({
   isClickable = false,
   isSpeaking = false
 }: CharacterAvatarDisplayProps) => {
-  // Use character_type if available, otherwise use avatar_id for backward compatibility
   const characterId = avatarData?.character_type || avatarData?.avatar_id;
   const { data: avatar, isLoading } = useAvatarImage(characterId);
-  const { data: allAvatars } = useAvatars(); // Fetch all avatars to get default
+  const { data: allAvatars } = useAvatars();
 
   const sizeClasses = {
     small: 'w-16 h-16 min-w-16 min-h-16',
@@ -60,58 +57,45 @@ export const CharacterAvatarDisplay = ({
   };
 
   const currentPose = getCurrentPose(pose);
-
-  // Do not fallback to the first avatar to avoid showing the wrong coach
   const displayAvatar = avatar;
 
   if (isLoading) {
     return (
-      <Card className={`${sizeClasses[size]} ${className} flex items-center justify-center`}>
+      <div className={`${sizeClasses[size]} ${className} flex items-center justify-center`}>
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </Card>
+      </div>
     );
   }
 
   if (!displayAvatar) {
     return (
-      <Card className={`${sizeClasses[size]} ${className} flex flex-col items-center justify-center p-4 text-center`}>
+      <div className={`${sizeClasses[size]} ${className} flex flex-col items-center justify-center p-4 text-center`}>
         <div className="text-4xl mb-2">🤖</div>
         <div className="text-xs text-muted-foreground">No coach selected</div>
-      </Card>
+      </div>
     );
   }
 
   const clickableClasses = isClickable 
-    ? 'cursor-pointer hover:scale-105 hover:shadow-2xl hover:ring-2 hover:ring-primary/50' 
+    ? 'cursor-pointer hover:scale-105 transition-transform duration-300' 
     : '';
   const speakingClasses = isSpeaking 
-    ? 'animate-pulse ring-2 ring-primary/70 shadow-[0_0_20px_rgba(var(--primary),0.4)]' 
+    ? 'animate-pulse' 
     : '';
 
   return (
-    <Card 
-      className={`${sizeClasses[size]} ${className} relative overflow-hidden border-2 shadow-xl transition-all duration-300 ${showAnimation ? 'hover:scale-105' : ''} ${clickableClasses} ${speakingClasses}`}
+    <div 
+      className={`${sizeClasses[size]} ${className} relative ${clickableClasses} ${speakingClasses}`}
       onClick={isClickable && !isSpeaking ? onClick : undefined}
       title={isClickable ? (isSpeaking ? 'Coach is speaking...' : 'Click for encouragement!') : undefined}
     >
-      
-      {/* Character Header */}
-      <div className="absolute top-1 left-1 right-1 flex justify-between items-center z-10">
-        <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          {displayAvatar?.name || 'No coach'}
-        </Badge>
-        <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
-          ⚡{avatarData?.power_level || 100}%
-        </Badge>
-      </div>
-
       {/* Coach Image Display */}
-      <div className={`absolute inset-0 flex items-center justify-center p-2 ${currentPose} transition-transform duration-300`}>
+      <div className={`w-full h-full flex items-center justify-center ${currentPose} transition-transform duration-300`}>
         {displayAvatar ? (
           <img 
             src={displayAvatar.image_url}
             alt={`${displayAvatar.name} coach avatar`}
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full object-contain"
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement;
               target.src = '/placeholder.svg';
@@ -124,7 +108,7 @@ export const CharacterAvatarDisplay = ({
 
       {/* Speech bubble for animations */}
       {isSpeaking && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary/90 text-primary-foreground border border-primary rounded-lg px-3 py-1 text-xs animate-pulse font-medium shadow-lg">
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary/90 text-primary-foreground border border-primary rounded-lg px-3 py-1 text-xs animate-pulse font-medium">
           🔊 Speaking...
         </div>
       )}
@@ -152,7 +136,7 @@ export const CharacterAvatarDisplay = ({
           🔋 Charging...
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 
