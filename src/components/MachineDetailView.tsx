@@ -303,7 +303,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
             </div>
             <div className="flex-1">
               <CardTitle className="text-xl">{exercise.machine}</CardTitle>
-              <div className="flex items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge variant="secondary" className="text-xs">
                   <Target className="h-3 w-3 mr-1" />
                   {exercise.exercise_type || 'Strength'}
@@ -311,6 +311,16 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
                 <Badge variant="outline" className="text-xs">
                   {exercise.intensity || 'Medium'} Intensity
                 </Badge>
+                {/* Compact Machine Max Badge */}
+                <MachineMaxToggle
+                  machineName={exercise.machine}
+                  currentWeight={sets[0]?.weight || 0}
+                  specs={specs}
+                  userMax={userMax}
+                  onContributeSpec={handleContributeSpec}
+                  onUpdateUserMax={handleUpdateUserMax}
+                  compact
+                />
                 <NFCMachinePopup machineId={exercise.machine.toLowerCase().replace(/\s+/g, '-')} machineName={exercise.machine}>
                   <Button
                     size="sm"
@@ -354,7 +364,7 @@ const MachineDetailView: React.FC<MachineDetailViewProps> = ({
         </CardContent>
       </Card>
 
-      {/* Machine Max/Min Toggles - Crowdsourced */}
+      {/* Machine Max/Min Toggles - Full View Below Card */}
       <MachineMaxToggle
         machineName={exercise.machine}
         currentWeight={sets[0]?.weight || 0}
