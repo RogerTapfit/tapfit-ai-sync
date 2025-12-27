@@ -731,7 +731,6 @@ const WorkoutDetail = () => {
 
     toast.success(`Set ${setIndex + 1} completed!`);
   };
-  };
 
   const handleSetEdit = (setIndex: number, field: 'actualReps' | 'actualWeight', value: number) => {
     const updatedSets = [...sets];
