@@ -345,6 +345,45 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
           } 
         }));
       }
+
+      // Handle sleep logging action from AI
+      if (data.action?.type === 'log_sleep') {
+        toast({
+          title: "😴 Sleep Logged!",
+          description: `${data.action.durationHours} hours tracked`,
+        });
+        
+        // Dispatch event to refresh sleep data on the dashboard
+        window.dispatchEvent(new CustomEvent('sleep:updated', { 
+          detail: { 
+            durationHours: data.action.durationHours,
+            qualityScore: data.action.qualityScore,
+            sleepDate: data.action.sleepDate
+          } 
+        }));
+      }
+
+      // Handle cycle event action from AI
+      if (data.action?.type === 'log_cycle_event') {
+        const emoji = data.action.eventType === 'period_start' ? '🌸' : '✓';
+        const description = data.action.eventType === 'period_start' 
+          ? 'Period start logged' 
+          : `Period ended${data.action.periodLength ? ` (${data.action.periodLength} days)` : ''}`;
+        
+        toast({
+          title: `${emoji} Cycle Updated`,
+          description: description,
+        });
+        
+        // Dispatch event to refresh cycle data on the dashboard
+        window.dispatchEvent(new CustomEvent('cycle:updated', { 
+          detail: { 
+            eventType: data.action.eventType,
+            date: data.action.date,
+            periodLength: data.action.periodLength
+          } 
+        }));
+      }
     } catch (error) {
       console.error('Chat error:', error);
       toast({
