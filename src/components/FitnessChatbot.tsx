@@ -306,6 +306,23 @@ const FitnessChatbot: React.FC<FitnessChatbotProps> = ({ isOpen, onToggle, userI
           onToggle(); // Close chatbot
         }, 1200);
       }
+
+      // Handle beverage logging action from AI
+      if (data.action?.type === 'log_beverage') {
+        toast({
+          title: `${data.action.beverageIcon} Beverage Logged!`,
+          description: data.response,
+        });
+        
+        // Dispatch event to refresh hydration data on the dashboard
+        window.dispatchEvent(new CustomEvent('hydration:updated', { 
+          detail: { 
+            beverageType: data.action.beverageType,
+            amountOz: data.action.amountOz,
+            effectiveHydrationMl: data.action.effectiveHydrationMl
+          } 
+        }));
+      }
     } catch (error) {
       console.error('Chat error:', error);
       toast({

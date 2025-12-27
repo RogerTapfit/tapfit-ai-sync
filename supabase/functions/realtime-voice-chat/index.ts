@@ -105,6 +105,30 @@ serve(async (req) => {
                     },
                     required: ['food_item']
                   }
+                },
+                {
+                  type: 'function',
+                  name: 'log_beverage',
+                  description: 'Log a beverage when user mentions drinking something. Examples: "I had water", "just drank coffee", "had a beer"',
+                  parameters: {
+                    type: 'object',
+                    properties: {
+                      beverageType: { 
+                        type: 'string',
+                        enum: ['water', 'sparkling_water', 'coffee', 'tea', 'herbal_tea', 'milk', 'juice', 
+                               'soda', 'energy_drink', 'sports_drink', 'beer', 'wine', 'cocktail', 'spirits']
+                      },
+                      amountOz: { 
+                        type: 'number',
+                        description: 'Amount in ounces. Default: glass=8oz, can=12oz, bottle=16oz, wine=5oz, shot=1.5oz'
+                      },
+                      confirmationMessage: {
+                        type: 'string',
+                        description: 'Brief confirmation message'
+                      }
+                    },
+                    required: ['beverageType', 'amountOz', 'confirmationMessage']
+                  }
                 }
               ],
               tool_choice: 'auto',

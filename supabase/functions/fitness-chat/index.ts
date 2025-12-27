@@ -797,6 +797,35 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
         }
       }
     };
+
+    // Beverage logging tool for voice/text beverage tracking
+    const beverageTool = {
+      type: "function",
+      function: {
+        name: "log_beverage",
+        description: "Log a beverage to the user's hydration tracker when they mention drinking something. Use this when the user says things like 'I had a glass of water', 'just drank coffee', 'had a beer', etc. Automatically detect the beverage type and amount from context.",
+        parameters: {
+          type: "object",
+          properties: {
+            beverageType: {
+              type: "string",
+              enum: ["water", "sparkling_water", "coffee", "tea", "herbal_tea", "milk", "juice", 
+                     "soda", "energy_drink", "sports_drink", "beer", "wine", "cocktail", "spirits"],
+              description: "The type of beverage consumed"
+            },
+            amountOz: {
+              type: "number",
+              description: "Amount in ounces. Default sizes: glass=8oz, can/bottle=12oz, large bottle=16oz, wine=5oz, cocktail=8oz, shot/spirits=1.5oz"
+            },
+            confirmationMessage: {
+              type: "string", 
+              description: "A brief, friendly confirmation message mentioning the beverage and amount logged"
+            }
+          },
+          required: ["beverageType", "amountOz", "confirmationMessage"]
+        }
+      }
+    };
     
     // Extend system prompt with navigation capabilities
     const navigationInstructions = `
@@ -860,6 +889,33 @@ You can navigate users around the app! When they ask to go somewhere or start an
 - "cycle tracker", "period tracker", "menstrual cycle", "track period" → open_modal(cycle, "Cycle Tracker")
 - "heart rate", "check heart rate", "scan heart", "measure pulse", "BPM" → open_modal(heartRate, "Heart Rate Scanner")
 
+═══════════════════════════════════════════════════════════════
+🥤 BEVERAGE LOGGING (use log_beverage tool):
+═══════════════════════════════════════════════════════════════
+
+When users mention drinking ANY beverage, LOG IT AUTOMATICALLY using the log_beverage tool!
+This is the FASTEST way for users to track hydration - just say what they drank.
+
+Examples of when to use log_beverage:
+- "I had a glass of water" → log_beverage(water, 8, "Logged 8oz of water!")
+- "Just drank some coffee" → log_beverage(coffee, 8, "Added your coffee!")
+- "Had a beer" → log_beverage(beer, 12, "Logged your beer - stay hydrated!")
+- "Glass of wine with dinner" → log_beverage(wine, 5, "Wine logged!")
+- "Drinking an energy drink" → log_beverage(energy_drink, 8, "Energy drink added!")
+- "I had 2 glasses of water" → log_beverage(water, 16, "Logged 16oz of water!")
+- "Just finished a bottle of water" → log_beverage(water, 16, "Great hydration!")
+- "Had some orange juice" → log_beverage(juice, 8, "OJ logged!")
+- "Drank a soda" → log_beverage(soda, 12, "Soda tracked!")
+- "A couple beers" → log_beverage(beer, 24, "Two beers logged!")
+
+Default sizes if not specified:
+- Glass = 8oz, Can/Bottle = 12oz, Large bottle = 16oz
+- Wine = 5oz, Cocktail = 8oz, Shot/spirits = 1.5oz
+- "A couple" or "two" = double the default
+
+IMPORTANT: Use log_beverage for LOGGING consumed beverages.
+Use open_modal(water) only when user wants to OPEN the water tracker modal.
+
 IMPORTANT: For modals (water, sleep, mood, cycle, heartRate), use the open_modal tool.
 For pages/features, use the navigate_to_page tool.
 
@@ -888,7 +944,7 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
-        tools: [navigationTool, modalTool],
+        tools: [navigationTool, modalTool, beverageTool],
         tool_choice: "auto"
       }),
     });
@@ -964,6 +1020,103 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
           });
         } catch (parseError) {
           console.error('Error parsing modal tool call:', parseError);
+        }
+      }
+
+      // Handle beverage logging tool
+      if (toolCall.function?.name === 'log_beverage') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Beverage logging requested:', args);
+
+          // Beverage hydration factors (matches frontend beverageHydration.ts)
+          const HYDRATION_FACTORS: Record<string, { factor: number; calories: number; isDehydrating: boolean }> = {
+            'water': { factor: 1.0, calories: 0, isDehydrating: false },
+            'sparkling_water': { factor: 0.95, calories: 0, isDehydrating: false },
+            'coffee': { factor: 0.8, calories: 2, isDehydrating: false },
+            'tea': { factor: 0.9, calories: 2, isDehydrating: false },
+            'herbal_tea': { factor: 0.95, calories: 0, isDehydrating: false },
+            'milk': { factor: 0.87, calories: 18, isDehydrating: false },
+            'juice': { factor: 0.85, calories: 28, isDehydrating: false },
+            'soda': { factor: 0.75, calories: 39, isDehydrating: false },
+            'energy_drink': { factor: 0.65, calories: 27, isDehydrating: false },
+            'sports_drink': { factor: 0.9, calories: 15, isDehydrating: false },
+            'beer': { factor: -0.5, calories: 43, isDehydrating: true },
+            'wine': { factor: -0.6, calories: 25, isDehydrating: true },
+            'cocktail': { factor: -0.6, calories: 55, isDehydrating: true },
+            'spirits': { factor: -0.8, calories: 65, isDehydrating: true }
+          };
+
+          const beverageInfo = HYDRATION_FACTORS[args.beverageType] || HYDRATION_FACTORS['water'];
+          const amountMl = Math.round(args.amountOz * 29.5735);
+          const effectiveHydrationMl = Math.round(amountMl * beverageInfo.factor);
+          const today = new Date().toISOString().split('T')[0];
+
+          // Log to water_intake table
+          if (userId) {
+            const { error: insertError } = await supabase
+              .from('water_intake')
+              .insert({
+                user_id: userId,
+                logged_date: today,
+                beverage_type: args.beverageType,
+                total_amount_ml: amountMl,
+                effective_hydration_ml: effectiveHydrationMl,
+                is_dehydrating: beverageInfo.isDehydrating,
+                logged_time: new Date().toTimeString().split(' ')[0]
+              });
+
+            if (insertError) {
+              console.error('Error logging beverage:', insertError);
+            } else {
+              console.log(`Logged ${args.amountOz}oz of ${args.beverageType} (${effectiveHydrationMl}ml effective)`);
+            }
+
+            // Log calories if beverage has any (for drinks with significant calories)
+            if (beverageInfo.calories > 0) {
+              const totalCalories = Math.round((args.amountOz / 8) * beverageInfo.calories);
+              if (totalCalories > 5) {
+                await supabase.from('food_entries').insert({
+                  user_id: userId,
+                  logged_date: today,
+                  meal_type: 'snack',
+                  food_items: [{ name: args.beverageType.replace('_', ' '), amount: `${args.amountOz}oz`, calories: totalCalories }],
+                  total_calories: totalCalories,
+                  total_protein: 0,
+                  total_carbs: args.beverageType === 'juice' || args.beverageType === 'soda' ? Math.round(totalCalories / 4) : 0,
+                  total_fat: 0,
+                  ai_analyzed: false,
+                  user_confirmed: true,
+                  notes: `Logged via voice/chat: ${args.beverageType}`
+                });
+              }
+            }
+          }
+
+          // Get the beverage icon for the response
+          const beverageIcons: Record<string, string> = {
+            'water': '💧', 'sparkling_water': '✨💧', 'coffee': '☕', 'tea': '🍵',
+            'herbal_tea': '🌿', 'milk': '🥛', 'juice': '🧃', 'soda': '🥤',
+            'energy_drink': '⚡', 'sports_drink': '🏃', 'beer': '🍺',
+            'wine': '🍷', 'cocktail': '🍹', 'spirits': '🥃'
+          };
+
+          return new Response(JSON.stringify({ 
+            response: args.confirmationMessage,
+            action: {
+              type: 'log_beverage',
+              beverageType: args.beverageType,
+              amountOz: args.amountOz,
+              effectiveHydrationMl,
+              isDehydrating: beverageInfo.isDehydrating,
+              beverageIcon: beverageIcons[args.beverageType] || '💧'
+            },
+            timestamp: new Date().toISOString()
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (parseError) {
+          console.error('Error parsing beverage tool call:', parseError);
         }
       }
     }
