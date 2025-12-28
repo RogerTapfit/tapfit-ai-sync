@@ -222,10 +222,23 @@ export function useBiometricMood() {
     }
 
     toast.success('Mood logged successfully');
+    
+    // Dispatch mood:updated event for cross-component sync
+    window.dispatchEvent(new CustomEvent('mood:updated', {
+      detail: {
+        moodScore: entry.moodScore,
+        energyLevel: entry.energyLevel,
+        stressLevel: entry.stressLevel,
+        motivationLevel: entry.motivationLevel
+      }
+    }));
+    
     await fetchTodaysMood();
+    await fetchWeeklyMoods();
     await fetchReadinessScore();
+    await fetchInsights();
     return true;
-  }, [user?.id, fetchTodaysMood, fetchReadinessScore]);
+  }, [user?.id, fetchTodaysMood, fetchWeeklyMoods, fetchReadinessScore, fetchInsights]);
 
   const markInsightRead = useCallback(async (insightId: string) => {
     if (!user?.id) return;
@@ -296,6 +309,7 @@ export function useBiometricMood() {
     };
   }, [readinessScore, todaysMood]);
 
+  // Initial data fetch
   useEffect(() => {
     if (user?.id) {
       setIsLoading(true);
@@ -308,6 +322,48 @@ export function useBiometricMood() {
       ]).finally(() => setIsLoading(false));
     }
   }, [user?.id, fetchTodaysMood, fetchWeeklyMoods, fetchReadinessScore, fetchCorrelations, fetchInsights]);
+
+  // Listen for mood:updated events from other components
+  useEffect(() => {
+    const handleMoodUpdate = () => {
+      console.log('useBiometricMood: mood:updated event received, refreshing data...');
+      fetchTodaysMood();
+      fetchWeeklyMoods();
+      fetchReadinessScore();
+      fetchInsights();
+    };
+
+    window.addEventListener('mood:updated', handleMoodUpdate);
+    return () => window.removeEventListener('mood:updated', handleMoodUpdate);
+  }, [fetchTodaysMood, fetchWeeklyMoods, fetchReadinessScore, fetchInsights]);
+
+  // Real-time subscription for mood_entries changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const moodEntriesChannel = supabase
+      .channel('mood_entries_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'mood_entries',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          console.log('useBiometricMood: mood_entries table changed, refreshing...');
+          fetchTodaysMood();
+          fetchWeeklyMoods();
+          fetchReadinessScore();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(moodEntriesChannel);
+    };
+  }, [user?.id, fetchTodaysMood, fetchWeeklyMoods, fetchReadinessScore]);
 
   return {
     todaysMood,
