@@ -98,6 +98,13 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
+    // Add sobriety indicator - emerald plant for sober days
+    if (day.sobrietyCheckin) {
+      indicators.push(
+        <div key="sobriety" className="w-2 h-2 bg-emerald-500 rounded-full" title={`Day ${day.sobrietyCheckin.dayNumber} sober 🌱`} />
+      );
+    }
+
     // Add cycle tracking indicators
     if (showCycleData && cycleTrackingEnabled && day.cyclePhase) {
       if (day.cyclePhase.isInPeriod) {
@@ -218,6 +225,10 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
                   <span className="truncate">Tap Coins</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></div>
+                  <span className="truncate">Sober Day 🌱</span>
                 </div>
                 {showCycleData && cycleTrackingEnabled && (
                   <>
@@ -364,6 +375,12 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                     {calendarDays.filter(day => day?.hasActivity).length}
                   </div>
                   <div className="text-xs text-muted-foreground">Active Days</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-lg sm:text-2xl font-bold text-emerald-500">
+                    {calendarDays.filter(day => day?.sobrietyCheckin).length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Sober Days 🌱</div>
                 </div>
                 {showCycleData && cycleTrackingEnabled && (
                   <>
