@@ -144,10 +144,18 @@ export const useSobrietyTracking = () => {
     }
 
     try {
+      // Verify session before database operation
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Session expired. Please refresh and try again.');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('sobriety_tracking')
         .insert({
-          user_id: user.id,
+          user_id: session.user.id,
           target_days: targetDays,
           substance_type: substanceType,
           notes: notes || null,
@@ -156,7 +164,14 @@ export const useSobrietyTracking = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42501') {
+          toast.error('Session issue. Please try logging out and back in.');
+        } else {
+          toast.error('Failed to start journey');
+        }
+        throw error;
+      }
 
       const journey: SobrietyJourney = {
         id: data.id,
@@ -175,7 +190,6 @@ export const useSobrietyTracking = () => {
       return journey;
     } catch (error: any) {
       console.error('Error starting journey:', error);
-      toast.error('Failed to start journey');
       return null;
     }
   };
@@ -199,8 +213,16 @@ export const useSobrietyTracking = () => {
     }
 
     try {
+      // Verify session before database operation
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Session expired. Please refresh and try again.');
+        return null;
+      }
+
       const { data: coins, error } = await supabase.rpc('award_sobriety_coins', {
-        _user_id: user.id,
+        _user_id: session.user.id,
         _sobriety_id: activeJourney.id,
         _day_number: currentDay,
         _feeling: feeling || null,
@@ -233,6 +255,14 @@ export const useSobrietyTracking = () => {
     }
 
     try {
+      // Verify session before database operation
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Session expired. Please refresh and try again.');
+        return false;
+      }
+
       const { error } = await supabase
         .from('sobriety_tracking')
         .update({
@@ -263,6 +293,14 @@ export const useSobrietyTracking = () => {
     }
 
     try {
+      // Verify session before database operation
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Session expired. Please refresh and try again.');
+        return false;
+      }
+
       const { error } = await supabase
         .from('sobriety_tracking')
         .update({
