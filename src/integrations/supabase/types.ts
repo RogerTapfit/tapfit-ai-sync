@@ -3285,6 +3285,92 @@ export type Database = {
           },
         ]
       }
+      sobriety_daily_checkins: {
+        Row: {
+          checkin_date: string
+          coins_awarded: number
+          created_at: string
+          day_number: number
+          feeling: string | null
+          id: string
+          notes: string | null
+          sobriety_id: string
+          user_id: string
+        }
+        Insert: {
+          checkin_date?: string
+          coins_awarded?: number
+          created_at?: string
+          day_number: number
+          feeling?: string | null
+          id?: string
+          notes?: string | null
+          sobriety_id: string
+          user_id: string
+        }
+        Update: {
+          checkin_date?: string
+          coins_awarded?: number
+          created_at?: string
+          day_number?: number
+          feeling?: string | null
+          id?: string
+          notes?: string | null
+          sobriety_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sobriety_daily_checkins_sobriety_id_fkey"
+            columns: ["sobriety_id"]
+            isOneToOne: false
+            referencedRelation: "sobriety_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sobriety_tracking: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          reason_ended: string | null
+          start_date: string
+          substance_type: string | null
+          target_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          reason_ended?: string | null
+          start_date?: string
+          substance_type?: string | null
+          target_days: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          reason_ended?: string | null
+          start_date?: string
+          substance_type?: string | null
+          target_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       store_items: {
         Row: {
           category: string
@@ -4517,6 +4603,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      award_sobriety_coins: {
+        Args: {
+          _day_number: number
+          _feeling?: string
+          _sobriety_id: string
+          _user_id: string
+        }
+        Returns: number
       }
       award_xp: {
         Args: { p_source?: string; p_user_id: string; p_xp_amount: number }
