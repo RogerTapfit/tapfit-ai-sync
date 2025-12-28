@@ -1632,6 +1632,57 @@ export type Database = {
         }
         Relationships: []
       }
+      machine_scan_training: {
+        Row: {
+          ai_alternatives: Json | null
+          ai_confidence: number
+          ai_detected_machine_id: string
+          ai_reasoning: string | null
+          capture_method: string | null
+          created_at: string | null
+          device_type: string | null
+          gym_name: string | null
+          id: string
+          photo_storage_path: string | null
+          photo_url: string
+          user_id: string | null
+          user_selected_machine_id: string
+          was_ai_correct: boolean | null
+        }
+        Insert: {
+          ai_alternatives?: Json | null
+          ai_confidence: number
+          ai_detected_machine_id: string
+          ai_reasoning?: string | null
+          capture_method?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          gym_name?: string | null
+          id?: string
+          photo_storage_path?: string | null
+          photo_url: string
+          user_id?: string | null
+          user_selected_machine_id: string
+          was_ai_correct?: boolean | null
+        }
+        Update: {
+          ai_alternatives?: Json | null
+          ai_confidence?: number
+          ai_detected_machine_id?: string
+          ai_reasoning?: string | null
+          capture_method?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          gym_name?: string | null
+          id?: string
+          photo_storage_path?: string | null
+          photo_url?: string
+          user_id?: string | null
+          user_selected_machine_id?: string
+          was_ai_correct?: boolean | null
+        }
+        Relationships: []
+      }
       machine_weight_specs: {
         Row: {
           contributions_count: number | null

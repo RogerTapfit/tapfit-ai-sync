@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Camera, X, CheckCircle, Upload, Loader2 } from 'lucide-react';
 import { useMachineScan } from '@/hooks/useMachineScan';
 import { RecognitionResult } from '@/types/machine';
+import { MachineTrainingService } from '@/services/machineTrainingService';
 
 interface MachineScannerProps {
   onMachineSelected: (machineId: string, confidence: number, imageUrl?: string) => void;
@@ -34,10 +35,14 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     stopCamera,
     reset,
     processUploadedImage,
+    getCanvasBlob,
     
     videoRef,
     canvasRef
   } = useMachineScan({ autoStop: autoNavigate });
+
+  // Track the capture method for training data
+  const captureMethodRef = useRef<'camera' | 'upload' | 'live_scan'>('live_scan');
 
   const ANALYSIS_STAGES = [
     { progress: 10, text: 'Starting camera analysis...', duration: 1500 },
@@ -67,17 +72,35 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     }
   }, [isProcessing]);
 
+  // Save training data and auto-navigate on high confidence
   useEffect(() => {
     if (autoNavigate && isHighConfidence && bestMatch) {
       // Auto-navigate after a short delay for UX feedback
-      const timeout = setTimeout(() => {
+      const timeout = setTimeout(async () => {
+        // Save training data in background (AI was correct - user didn't need to correct)
+        try {
+          const photoBlob = await getCanvasBlob();
+          if (photoBlob) {
+            MachineTrainingService.saveTrainingData({
+              photoBlob,
+              aiResult: bestMatch,
+              userSelectedMachineId: bestMatch.machineId, // Same = AI was correct
+              captureMethod: captureMethodRef.current,
+              alternatives
+            }).catch(err => console.error('Training save failed:', err));
+          }
+        } catch (err) {
+          console.error('Failed to get canvas blob for training:', err);
+        }
+        
         onMachineSelected(bestMatch.machineId, bestMatch.confidence, bestMatch.imageUrl);
       }, 800);
       return () => clearTimeout(timeout);
     }
-  }, [isHighConfidence, bestMatch, autoNavigate, onMachineSelected]);
+  }, [isHighConfidence, bestMatch, autoNavigate, onMachineSelected, getCanvasBlob, alternatives]);
 
   const handleStart = () => {
+    captureMethodRef.current = 'live_scan';
     reset();
     startCamera();
   };
@@ -86,8 +109,25 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
     stopCamera();
   };
 
-  const handleMachineSelect = (result: RecognitionResult) => {
+  const handleMachineSelect = async (result: RecognitionResult) => {
     stopCamera();
+    
+    // Save training data in background (user manually selected - may be a correction)
+    try {
+      const photoBlob = await getCanvasBlob();
+      if (photoBlob && bestMatch) {
+        MachineTrainingService.saveTrainingData({
+          photoBlob,
+          aiResult: bestMatch,
+          userSelectedMachineId: result.machineId, // What user actually selected
+          captureMethod: captureMethodRef.current,
+          alternatives
+        }).catch(err => console.error('Training save failed:', err));
+      }
+    } catch (err) {
+      console.error('Failed to get canvas blob for training:', err);
+    }
+    
     onMachineSelected(result.machineId, result.confidence, result.imageUrl);
   };
 
@@ -97,6 +137,9 @@ export const MachineScanner: React.FC<MachineScannerProps> = ({
   };
 
   const handleUploadClick = (useCamera = false) => {
+    // Track capture method for training data
+    captureMethodRef.current = useCamera ? 'camera' : 'upload';
+    
     // Clear previous state and ensure camera is stopped before upload
     reset();
     stopCamera();
