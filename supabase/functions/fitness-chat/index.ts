@@ -230,7 +230,8 @@ serve(async (req) => {
           rideSessionsResult,
           swimSessionsResult,
           personalRecordsResult,
-          profileResult
+          profileResult,
+          sobrietyResult
         ] = await Promise.all([
           // Workout logs with exercises
           supabase
@@ -309,7 +310,15 @@ serve(async (req) => {
             .from('profiles')
             .select('primary_goal, experience_level, weight_kg, height_cm, gender, age, target_daily_calories, target_protein_grams')
             .eq('id', userId)
-            .single()
+            .single(),
+          
+          // Active sobriety journey
+          supabase
+            .from('sobriety_tracking')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .maybeSingle()
         ]);
         
         const workoutHistory = workoutHistoryResult.data || [];
@@ -322,6 +331,31 @@ serve(async (req) => {
         const swimSessions = swimSessionsResult.data || [];
         const personalRecords = personalRecordsResult.data || [];
         const profile = profileResult.data;
+        const sobrietyJourney = sobrietyResult.data;
+        
+        // Build sobriety context if active
+        let sobrietyContext = '';
+        if (sobrietyJourney) {
+          const startDate = new Date(sobrietyJourney.start_date);
+          const today = new Date();
+          const daysSober = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const progress = Math.round((daysSober / sobrietyJourney.target_days) * 100);
+          
+          sobrietyContext = `\n\n🌱 SOBRIETY JOURNEY:
+- Day ${daysSober} of ${sobrietyJourney.target_days}-day goal (${progress}% complete)
+- Focus: ${sobrietyJourney.substance_type !== 'general' ? sobrietyJourney.substance_type : 'sobriety'}
+${sobrietyJourney.notes ? `- Motivation: "${sobrietyJourney.notes}"` : ''}
+
+SOBRIETY SUPPORT (use when user mentions sobriety, cravings, or struggles):
+- Celebrate their progress enthusiastically - every day matters!
+- Offer distraction techniques: exercise, hydration, walking, deep breathing
+- Cravings typically pass in 15-20 minutes
+- Suggest a TapFit workout as a healthy coping mechanism
+- Remind them of their personal motivation
+- Be empathetic and 100% non-judgmental`;
+        }
+        
+        historyContext += sobrietyContext;
         
         // Fetch exercise logs for workouts
         let exercisesByWorkout: Record<string, any[]> = {};

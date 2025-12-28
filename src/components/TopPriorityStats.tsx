@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile, Sprout } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -18,6 +18,8 @@ import { CycleTrackerModal } from "./CycleTrackerModal";
 import { useChatbotContextOptional } from "@/contexts/ChatbotContext";
 import { MoodCheckinModal } from "./MoodCheckinModal";
 import { useBiometricMood } from "@/hooks/useBiometricMood";
+import { SobrietyTrackerModal } from "./SobrietyTrackerModal";
+import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
 
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
@@ -37,11 +39,14 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const [showSleepModal, setShowSleepModal] = useState(false);
   const [showCycleModal, setShowCycleModal] = useState(false);
   const [showMoodModal, setShowMoodModal] = useState(false);
+  const [showSobrietyModal, setShowSobrietyModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
   const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
   const { isEnabled: cycleEnabled, calculatePhaseInfo } = useCycleTracking();
   const { todaysMood, readinessScore } = useBiometricMood();
+  const { activeJourney: sobrietyJourney, getProgress: getSobrietyProgress } = useSobrietyTracking();
+  const sobrietyProgress = getSobrietyProgress();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
   const chatbotContext = useChatbotContextOptional();
   const pendingModal = chatbotContext?.pendingModal;
@@ -65,6 +70,9 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       clearPendingModal();
     } else if (pendingModal === 'mood') {
       setShowMoodModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'sobriety') {
+      setShowSobrietyModal(true);
       clearPendingModal();
     }
   }, [pendingModal, clearPendingModal]);
@@ -141,7 +149,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-10 gap-4">
         <div
           className="text-center space-y-2 cursor-pointer select-none"
           onClick={() => onCaloriesBurnedClick?.()}
@@ -333,12 +341,38 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             {isGuest ? 'to Track' : (cycleEnabled && cyclePhaseInfo ? getPhaseName(cyclePhaseInfo.phase) : 'Cycle')}
           </p>
         </div>
+
+        {/* Sobriety Tracker Tile */}
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowSobrietyModal(true)}
+          role="button"
+          aria-label="Track sobriety"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowSobrietyModal(true);
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-200">
+            <Sprout className="size-6 block text-green-500" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {isGuest ? 'Login' : (sobrietyJourney && sobrietyProgress ? `Day ${sobrietyProgress.currentDay}` : 'Start')}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {isGuest ? 'to Track' : (sobrietyJourney && sobrietyProgress ? `of ${sobrietyProgress.targetDays}` : 'Sobriety')}
+          </p>
+        </div>
       </div>
 
       <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
       <SleepTrackerModal open={showSleepModal} onOpenChange={setShowSleepModal} />
       <CycleTrackerModal open={showCycleModal} onOpenChange={setShowCycleModal} />
       <MoodCheckinModal open={showMoodModal} onOpenChange={setShowMoodModal} />
+      <SobrietyTrackerModal open={showSobrietyModal} onOpenChange={setShowSobrietyModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}
