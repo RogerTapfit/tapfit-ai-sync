@@ -356,8 +356,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             }
           }}
         >
-          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-200">
-            <Sprout className="size-6 block text-green-500" />
+          <div className={`size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-green-500/10 hover:border-green-500/30 transition-all duration-200 ${sobrietyJourney && sobrietyProgress ? 'animate-sober-glow' : ''}`}>
+            <Sprout className={`size-6 block ${sobrietyJourney && sobrietyProgress ? 'text-emerald-400' : 'text-green-500'}`} />
           </div>
           <p className="text-2xl font-bold text-white">
             {isGuest ? 'Login' : (sobrietyJourney && sobrietyProgress ? `Day ${sobrietyProgress.currentDay}` : 'Start')}
