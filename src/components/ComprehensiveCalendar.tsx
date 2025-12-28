@@ -99,12 +99,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
-    // Add sobriety indicator - plant icon for sober days with glow
-    if (day.sobrietyCheckin) {
-      indicators.push(
-        <Sprout key="sobriety" className="w-2 h-2 text-emerald-400 animate-sober-glow" strokeWidth={3} />
-      );
-    }
+    // Sobriety indicator is now shown prominently under the day number, not in the dots
 
     // Add cycle tracking indicators
     if (showCycleData && cycleTrackingEnabled && day.cyclePhase) {
@@ -301,6 +296,13 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                             <div className="text-xs sm:text-sm">
                               {day.date.getDate()}
                             </div>
+                            
+                            {/* Prominent Sober Leaf - directly under date, 2x larger */}
+                            {day.sobrietyCheckin && (
+                              <div className="flex justify-center mt-0.5">
+                                <Sprout className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-sober-glow" strokeWidth={2.5} />
+                              </div>
+                            )}
                             
                             {/* Activity indicators */}
                             {day.hasActivity && (
