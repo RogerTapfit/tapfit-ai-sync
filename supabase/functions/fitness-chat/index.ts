@@ -804,23 +804,23 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
       }
     };
 
-    // Modal tool for opening dashboard modals (water, sleep, mood, cycle, heart rate)
+    // Modal tool for opening dashboard modals (water, sleep, mood, cycle, heart rate, sobriety)
     const modalTool = {
       type: "function",
       function: {
         name: "open_modal",
-        description: "Open a modal/dialog on the user's screen for features that don't have their own page. Use this for water tracking, sleep tracking, mood logging, cycle tracking, and heart rate scanning. These are NOT pages - they are modals on the dashboard.",
+        description: "Open a modal/dialog on the user's screen for features that don't have their own page. Use this for water tracking, sleep tracking, mood logging, cycle tracking, heart rate scanning, and sobriety tracking. These are NOT pages - they are modals on the dashboard.",
         parameters: {
           type: "object",
           properties: {
             modalType: {
               type: "string",
-              enum: ["water", "sleep", "mood", "cycle", "heartRate"],
-              description: "The type of modal to open: water (hydration tracker), sleep (sleep log), mood (mood check-in), cycle (menstrual cycle tracker), heartRate (heart rate scanner)"
+              enum: ["water", "sleep", "mood", "cycle", "heartRate", "sobriety"],
+              description: "The type of modal to open: water (hydration tracker), sleep (sleep log), mood (mood check-in), cycle (menstrual cycle tracker), heartRate (heart rate scanner), sobriety (sobriety journey tracker)"
             },
             modalName: {
               type: "string",
-              description: "Human-readable name of the modal (e.g., 'Water Tracker', 'Sleep Log', 'Heart Rate Scanner')"
+              description: "Human-readable name of the modal (e.g., 'Water Tracker', 'Sleep Log', 'Heart Rate Scanner', 'Sobriety Tracker')"
             },
             confirmationMessage: {
               type: "string",
@@ -828,6 +828,30 @@ Always provide practical, evidence-based advice. If you notice injury risks, imb
             }
           },
           required: ["modalType", "modalName", "confirmationMessage"]
+        }
+      }
+    };
+
+    // Sobriety check-in tool for voice/text sobriety logging
+    const sobrietyCheckinTool = {
+      type: "function",
+      function: {
+        name: "log_sobriety_checkin",
+        description: "Log a daily sobriety check-in when user mentions staying sober. Use for phrases like 'another day sober', 'stayed clean today', 'made it through the day', 'still sober', 'day X sober', 'I didn't drink', 'no alcohol today', etc. Awards coins and celebrates progress! This is the FASTEST way for users to log sobriety - just by mentioning it in chat.",
+        parameters: {
+          type: "object",
+          properties: {
+            feeling: {
+              type: "string",
+              enum: ["great", "good", "okay", "struggling"],
+              description: "How the user is feeling based on context. Default 'good'. Use 'great' for excited/proud messages, 'struggling' if they mention difficulty/cravings/temptation."
+            },
+            confirmationMessage: {
+              type: "string",
+              description: "A VERY encouraging, celebratory message about their sobriety progress. Be warm and supportive! Use emojis like 🌱🎉💪✨"
+            }
+          },
+          required: ["confirmationMessage"]
         }
       }
     };
@@ -1009,6 +1033,24 @@ You can navigate users around the app! When they ask to go somewhere or start an
 - "mood tracker", "log mood", "how do I feel", "mood check" → open_modal(mood, "Mood Check-in")
 - "cycle tracker", "period tracker", "menstrual cycle", "track period" → open_modal(cycle, "Cycle Tracker")
 - "heart rate", "check heart rate", "scan heart", "measure pulse", "BPM" → open_modal(heartRate, "Heart Rate Scanner")
+- "sobriety tracker", "sober tracker", "track sobriety", "my sobriety", "sobriety journey", "sobriety progress" → open_modal(sobriety, "Sobriety Tracker")
+
+═══════════════════════════════════════════════════════════════
+🌱 SOBRIETY CHECK-IN (use log_sobriety_checkin tool):
+═══════════════════════════════════════════════════════════════
+
+When users mention staying sober or their sobriety progress, LOG IT AUTOMATICALLY using log_sobriety_checkin!
+Be EXTREMELY encouraging and celebratory - every day matters!
+
+Examples of when to use log_sobriety_checkin:
+- "Another day sober" → log_sobriety_checkin("good", "🌱 Amazing! Another day in the books! You're crushing it! 💪")
+- "Still going strong" → log_sobriety_checkin("great", "🎉 You're unstoppable! Keep that momentum going! ✨")
+- "Day 5 alcohol free" → log_sobriety_checkin("good", "🌱 Day 5! You're building real momentum now! So proud of you! 🙌")
+- "Didn't drink today" → log_sobriety_checkin("good", "💪 That's a win! Every sober day is a victory! Keep it up! 🌱")
+- "Struggled today but made it" → log_sobriety_checkin("struggling", "🌱 The fact that you pushed through shows incredible strength! That took real courage 💪")
+- "Had cravings but stayed strong" → log_sobriety_checkin("struggling", "✨ Cravings are temporary, your commitment is forever! You're stronger than you know! 🌱")
+- "I didn't smoke" → log_sobriety_checkin("good", "🎉 Smoke-free day logged! Your lungs thank you! 💪")
+- "One more day clean" → log_sobriety_checkin("good", "🌱 One more day closer to your goal! You're doing amazing! ✨")
 
 ═══════════════════════════════════════════════════════════════
 🥤 BEVERAGE LOGGING (use log_beverage tool):
@@ -1126,7 +1168,7 @@ Examples: "Let's go!", "Taking you there now!", "Here we go!", "On it!", "Openin
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
-        tools: [navigationTool, modalTool, beverageTool, foodTool, sleepTool, cycleTool],
+        tools: [navigationTool, modalTool, beverageTool, foodTool, sleepTool, cycleTool, sobrietyCheckinTool],
         tool_choice: "auto"
       }),
     });
@@ -1587,6 +1629,108 @@ For each component, provide accurate data. Return ONLY valid JSON in this exact 
           });
         } catch (parseError) {
           console.error('Error parsing sleep tool call:', parseError);
+        }
+      }
+
+      // Handle sobriety check-in tool
+      if (toolCall.function?.name === 'log_sobriety_checkin') {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('Sobriety check-in requested:', args);
+
+          const feeling = args.feeling || 'good';
+
+          if (userId) {
+            // Check if user has an active sobriety journey
+            const { data: activeJourney, error: journeyError } = await supabase
+              .from('sobriety_tracking')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('is_active', true)
+              .maybeSingle();
+
+            if (journeyError) {
+              console.error('Error fetching sobriety journey:', journeyError);
+            }
+
+            if (activeJourney) {
+              // Calculate current day
+              const startDate = new Date(activeJourney.start_date);
+              const today = new Date();
+              const daysSober = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+              // Check if already checked in today
+              const todayStr = today.toISOString().split('T')[0];
+              const { data: existingCheckin } = await supabase
+                .from('sobriety_daily_checkins')
+                .select('id')
+                .eq('sobriety_id', activeJourney.id)
+                .eq('checkin_date', todayStr)
+                .maybeSingle();
+
+              if (existingCheckin) {
+                return new Response(JSON.stringify({ 
+                  response: `🌱 You've already checked in today! Day ${daysSober} is going strong. Keep it up! 💪`,
+                  action: {
+                    type: 'sobriety_already_checked_in',
+                    currentDay: daysSober,
+                    targetDays: activeJourney.target_days
+                  },
+                  timestamp: new Date().toISOString()
+                }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+              }
+
+              // Award sobriety coins using the RPC function
+              const { data: coinsAwarded, error: awardError } = await supabase.rpc('award_sobriety_coins', {
+                _user_id: userId,
+                _sobriety_id: activeJourney.id,
+                _day_number: daysSober,
+                _feeling: feeling,
+              });
+
+              if (awardError) {
+                console.error('Error awarding sobriety coins:', awardError);
+              } else {
+                console.log(`Sobriety check-in: Day ${daysSober}, awarded ${coinsAwarded} coins`);
+              }
+
+              const isMilestone = [7, 14, 30, 60, 90].includes(daysSober);
+              const milestoneBonus = isMilestone ? ' 🏆 MILESTONE ACHIEVED!' : '';
+
+              return new Response(JSON.stringify({ 
+                response: `${args.confirmationMessage}${milestoneBonus} (+${coinsAwarded || 10} Tap Coins!)`,
+                action: {
+                  type: 'log_sobriety_checkin',
+                  currentDay: daysSober,
+                  targetDays: activeJourney.target_days,
+                  coinsAwarded: coinsAwarded || 10,
+                  feeling: feeling,
+                  isMilestone: isMilestone,
+                  substanceType: activeJourney.substance_type
+                },
+                timestamp: new Date().toISOString()
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            } else {
+              // No active journey - prompt to start one
+              return new Response(JSON.stringify({ 
+                response: "🌱 That's amazing that you're staying sober! Would you like to start a sobriety journey to track your progress and earn Tap Coins? I can open the Sobriety Tracker for you!",
+                action: {
+                  type: 'open_modal',
+                  modalType: 'sobriety',
+                  modalName: 'Sobriety Tracker'
+                },
+                timestamp: new Date().toISOString()
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing sobriety tool call:', parseError);
         }
       }
 
