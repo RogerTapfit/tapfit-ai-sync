@@ -18,7 +18,8 @@ import {
   Activity,
   Footprints,
   Moon,
-  Droplets
+  Droplets,
+  Sprout
 } from 'lucide-react';
 import { useAuth } from './AuthGuard';
 
@@ -98,10 +99,10 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
-    // Add sobriety indicator - emerald plant for sober days
+    // Add sobriety indicator - plant icon for sober days
     if (day.sobrietyCheckin) {
       indicators.push(
-        <div key="sobriety" className="w-2 h-2 bg-emerald-500 rounded-full" title={`Day ${day.sobrietyCheckin.dayNumber} sober 🌱`} />
+        <Sprout key="sobriety" className="w-3 h-3 text-emerald-500" strokeWidth={2.5} />
       );
     }
 
@@ -227,8 +228,8 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   <span className="truncate">Tap Coins</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                  <span className="truncate">Sober Day 🌱</span>
+                  <Sprout className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                  <span className="truncate">Sober Day</span>
                 </div>
                 {showCycleData && cycleTrackingEnabled && (
                   <>
