@@ -216,9 +216,30 @@ export const useDailyStats = (userId?: string): DailyStats => {
     };
 
     fetchDailyData();
-  }, [userId, userProfile, healthMetrics, dailySummary]);
+  }, [userId, userProfile, healthMetrics]);
 
-  // Set up real-time subscriptions for workout logs
+  // Immediate update for calories consumed when dailySummary changes
+  useEffect(() => {
+    if (dailySummary?.total_calories !== undefined) {
+      setStats(prev => ({
+        ...prev,
+        caloriesConsumed: dailySummary.total_calories
+      }));
+    }
+  }, [dailySummary?.total_calories]);
+
+  // Listen for nutrition:updated custom events
+  useEffect(() => {
+    const handleNutritionUpdate = () => {
+      console.log('useDailyStats: nutrition:updated event received');
+      setStats(prev => ({ ...prev, loading: true }));
+    };
+
+    window.addEventListener('nutrition:updated', handleNutritionUpdate);
+    return () => window.removeEventListener('nutrition:updated', handleNutritionUpdate);
+  }, []);
+
+  // Set up real-time subscriptions for workout logs and food entries
   useEffect(() => {
     if (!userId) return;
 
@@ -233,7 +254,6 @@ export const useDailyStats = (userId?: string): DailyStats => {
           filter: `user_id=eq.${userId}`
         },
         () => {
-          // Refetch data when workout logs change
           setStats(prev => ({ ...prev, loading: true }));
         }
       )
@@ -250,7 +270,6 @@ export const useDailyStats = (userId?: string): DailyStats => {
           filter: `user_id=eq.${userId}`
         },
         () => {
-          // Refetch data when smart pin data changes
           setStats(prev => ({ ...prev, loading: true }));
         }
       )
@@ -267,7 +286,23 @@ export const useDailyStats = (userId?: string): DailyStats => {
           filter: `user_id=eq.${userId}`
         },
         () => {
-          // Refetch data when exercise logs change
+          setStats(prev => ({ ...prev, loading: true }));
+        }
+      )
+      .subscribe();
+
+    const foodEntriesChannel = supabase
+      .channel('food_entries_stats_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'food_entries',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          console.log('useDailyStats: food_entries changed');
           setStats(prev => ({ ...prev, loading: true }));
         }
       )
@@ -277,6 +312,7 @@ export const useDailyStats = (userId?: string): DailyStats => {
       supabase.removeChannel(workoutChannel);
       supabase.removeChannel(smartPinChannel);
       supabase.removeChannel(exerciseLogsChannel);
+      supabase.removeChannel(foodEntriesChannel);
     };
   }, [userId]);
 
