@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -16,6 +16,8 @@ import { SleepTrackerModal } from "./SleepTrackerModal";
 import { useCycleTracking } from "@/hooks/useCycleTracking";
 import { CycleTrackerModal } from "./CycleTrackerModal";
 import { useChatbotContextOptional } from "@/contexts/ChatbotContext";
+import { MoodCheckinModal } from "./MoodCheckinModal";
+import { useBiometricMood } from "@/hooks/useBiometricMood";
 
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
@@ -34,10 +36,12 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const [showWaterModal, setShowWaterModal] = useState(false);
   const [showSleepModal, setShowSleepModal] = useState(false);
   const [showCycleModal, setShowCycleModal] = useState(false);
+  const [showMoodModal, setShowMoodModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
   const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
   const { isEnabled: cycleEnabled, calculatePhaseInfo } = useCycleTracking();
+  const { todaysMood, readinessScore } = useBiometricMood();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
   const chatbotContext = useChatbotContextOptional();
   const pendingModal = chatbotContext?.pendingModal;
@@ -58,6 +62,9 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       clearPendingModal();
     } else if (pendingModal === 'heartRate') {
       setShowScanModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'mood') {
+      setShowMoodModal(true);
       clearPendingModal();
     }
   }, [pendingModal, clearPendingModal]);
@@ -277,6 +284,31 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
           <p className="text-sm text-muted-foreground">Sleep ({targetHours}h goal)</p>
         </div>
 
+        {/* Mood Tracker Tile */}
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowMoodModal(true)}
+          role="button"
+          aria-label="Track mood"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowMoodModal(true);
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-yellow-500/10 hover:border-yellow-500/30 transition-all duration-200">
+            <Smile className="size-6 block text-yellow-500" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {isGuest ? 'Login' : (todaysMood ? `${todaysMood.moodScore}/10` : (readinessScore ? `${readinessScore.total}%` : '--'))}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {isGuest ? 'to Track' : (todaysMood ? 'Mood' : (readinessScore ? 'Readiness' : 'Log Mood'))}
+          </p>
+        </div>
+
         {/* Cycle Tracker Tile */}
         <div
           className="text-center space-y-2 cursor-pointer select-none"
@@ -306,6 +338,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
       <SleepTrackerModal open={showSleepModal} onOpenChange={setShowSleepModal} />
       <CycleTrackerModal open={showCycleModal} onOpenChange={setShowCycleModal} />
+      <MoodCheckinModal open={showMoodModal} onOpenChange={setShowMoodModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}

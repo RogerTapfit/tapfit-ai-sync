@@ -13,6 +13,8 @@ interface MoodCheckinModalProps {
   trigger?: React.ReactNode;
   context?: MoodEntry['context'];
   onComplete?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const MOOD_TAGS = [
@@ -28,8 +30,18 @@ const MOOD_TAGS = [
 
 const MOOD_EMOJIS = ['😢', '😔', '😐', '🙂', '😊', '😄', '🔥'];
 
-export function MoodCheckinModal({ trigger, context = 'general', onComplete }: MoodCheckinModalProps) {
-  const [open, setOpen] = useState(false);
+export function MoodCheckinModal({ 
+  trigger, 
+  context = 'general', 
+  onComplete,
+  open: controlledOpen,
+  onOpenChange 
+}: MoodCheckinModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use controlled state if provided, otherwise internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [moodScore, setMoodScore] = useState(5);
   const [energyLevel, setEnergyLevel] = useState(5);
   const [stressLevel, setStressLevel] = useState(5);
