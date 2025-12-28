@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -55,6 +55,7 @@ export const SobrietyTrackerModal = ({
     completeJourney,
     getProgress,
     pastJourneys,
+    refetch,
   } = useSobrietyTracking();
 
   const [internalOpen, setInternalOpen] = useState(false);
@@ -67,6 +68,13 @@ export const SobrietyTrackerModal = ({
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
+
+  // Refetch data when modal opens
+  useEffect(() => {
+    if (open) {
+      refetch();
+    }
+  }, [open, refetch]);
 
   const progress = getProgress();
 
