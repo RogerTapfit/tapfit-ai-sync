@@ -595,15 +595,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         <Button 
           variant="outline" 
           className="glow-card h-16 text-base flex items-center justify-center gap-2"
-          onClick={() => onPageChange?.('biometric-mood')}
-        >
-          <Smile className="h-4 w-4 shrink-0 text-yellow-500" />
-          <span className="truncate">Mood & Readiness</span>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          className="glow-card h-16 text-base flex items-center justify-center gap-2"
         >
           <Users className="h-4 w-4 shrink-0" />
           <span className="truncate">Social</span>
