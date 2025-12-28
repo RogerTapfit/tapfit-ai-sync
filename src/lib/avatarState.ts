@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const avatarEvents = new EventTarget();
 const GUEST_KEY = 'tapfit.avatar';
 const TEMP_SELECTION_KEY = 'tapfit.temp_avatar_selection';
+const AVATAR_CACHE_KEY = 'tapfit.avatar_cache';
 
 type AvatarRow = {
   id: string;
@@ -16,8 +17,20 @@ type AvatarRow = {
 };
 
 export function useAvatar() {
+  // Initialize avatar from cache immediately to prevent flash
+  const [avatar, setAvatar] = useState<Partial<AvatarRow> | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const cached = localStorage.getItem(AVATAR_CACHE_KEY);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
-  const [avatar, setAvatar] = useState<Partial<AvatarRow> | null>(null);
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
@@ -39,9 +52,13 @@ export function useAvatar() {
       }
 
       // If we have a temp selection, use it immediately for optimistic UI
-      if (tempSelection && !isMounted) {
-        const tempAvatar = JSON.parse(tempSelection);
-        setAvatar(tempAvatar);
+      if (tempSelection && isMounted) {
+        try {
+          const tempAvatar = JSON.parse(tempSelection.split('|')[0]);
+          setAvatar(tempAvatar);
+        } catch (e) {
+          console.error('Failed to parse temp avatar selection');
+        }
       }
 
       // signed-in: join profiles -> avatars
@@ -67,14 +84,19 @@ export function useAvatar() {
         };
         setAvatar(dbAvatar);
         
+        // Cache for next refresh - prevents flash on page reload
+        localStorage.setItem(AVATAR_CACHE_KEY, JSON.stringify(dbAvatar));
+        
         // Clear temp selection if it matches DB
         if (tempSelection) {
-          const tempAvatar = JSON.parse(tempSelection.split('|')[0]);
-          if (tempAvatar.id === dbAvatar.id) {
-            localStorage.removeItem(TEMP_SELECTION_KEY);
-          }
+          try {
+            const tempAvatar = JSON.parse(tempSelection.split('|')[0]);
+            if (tempAvatar.id === dbAvatar.id) {
+              localStorage.removeItem(TEMP_SELECTION_KEY);
+            }
+          } catch (e) {}
         }
-      } else if (!tempSelection) {
+      } else if (!tempSelection && !avatar) {
         setAvatar(null);
       }
       setLoading(false);
