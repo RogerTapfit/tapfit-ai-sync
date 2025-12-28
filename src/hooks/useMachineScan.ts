@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { RecognitionResult } from '@/types/machine';
 import { MachineRecognitionService } from '@/services/machineRecognitionService';
 import { processImageFile, isHEICFile } from '@/utils/heicConverter';
+import { MachineTrainingService } from '@/services/machineTrainingService';
 
 interface UseMachineScanOptions {
   autoStop?: boolean;
@@ -339,6 +340,12 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const alternatives = results.slice(0, 3);
   const isHighConfidence = bestMatch && bestMatch.confidence >= confidenceThreshold;
 
+  // Get canvas blob for training data upload
+  const getCanvasBlob = useCallback(async (): Promise<Blob | null> => {
+    if (!canvasRef.current) return null;
+    return MachineTrainingService.getCanvasBlob(canvasRef.current);
+  }, []);
+
   return {
     // State
     isScanning,
@@ -349,14 +356,13 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     bestMatch,
     alternatives,
     isHighConfidence,
-    
 
     // Actions
     startCamera,
     stopCamera,
     reset,
     processUploadedImage,
-    
+    getCanvasBlob,
 
     // Refs for components
     videoRef,
