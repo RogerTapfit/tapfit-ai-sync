@@ -34,7 +34,8 @@ import {
   Trophy,
   Plus,
   Brain,
-  Timer
+  Timer,
+  Loader2
 } from 'lucide-react';
 
 interface WorkoutSet {
@@ -97,6 +98,7 @@ export default function MachineWorkout() {
   const [prData, setPRData] = useState<{ oldPR: number; newPR: number; improvement: number; coins: number } | null>(null);
   const [restStartTime, setRestStartTime] = useState<Date | null>(null);
   const [currentSetNumber, setCurrentSetNumber] = useState(0);
+  const [isLoggingWorkout, setIsLoggingWorkout] = useState(false);
   
   // Get machine history for weight recommendations
   const { history: machineHistory, loading: historyLoading } = useMachineHistory(machine?.name || '');
@@ -408,10 +410,14 @@ export default function MachineWorkout() {
   };
 
   const handleWorkoutComplete = async () => {
+    if (isLoggingWorkout) return; // Prevent double-click
+    
     if (!currentWorkoutLog || !machine) {
       console.error('Missing workout log or machine data');
       return;
     }
+    
+    setIsLoggingWorkout(true);
 
     const completedSets = sets.filter(s => s.completed).length;
     const totalReps = sets.reduce((sum, set) => sum + (set.actualReps || 0), 0);
@@ -501,6 +507,7 @@ export default function MachineWorkout() {
       });
     } else {
       toast.error('Failed to save workout progress');
+      setIsLoggingWorkout(false); // Re-enable on error
     }
   };
 
@@ -1031,14 +1038,23 @@ export default function MachineWorkout() {
                           onClick={handleWorkoutComplete}
                           size="lg"
                           className="w-full"
+                          disabled={isLoggingWorkout}
                         >
-                          Complete Workout
+                          {isLoggingWorkout ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Logging Workout...
+                            </>
+                          ) : (
+                            'Complete Workout'
+                          )}
                         </Button>
                         <Button
                           onClick={handleAddSet}
                           variant="outline"
                           size="default"
                           className="w-full"
+                          disabled={isLoggingWorkout}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Add One More Set

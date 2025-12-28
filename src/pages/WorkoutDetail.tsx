@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { 
   ArrowLeft, 
   CheckCircle, 
@@ -17,7 +18,8 @@ import {
   HelpCircle,
   Activity,
   Heart,
-  Smartphone
+  Smartphone,
+  Loader2
 } from "lucide-react";
 import { CardioPrescriptionService } from '@/services/cardioPrescriptionService';
 import { CardioMachineType, CardioGoal, HeartRateZone, CardioUserProfile } from '@/types/cardio';
@@ -68,6 +70,7 @@ const WorkoutDetail = () => {
     modeChanges: [] as { mode: Mode; timestamp: number; source: string }[],
     buttonClicks: 0
   });
+  const [isLoggingWorkout, setIsLoggingWorkout] = useState(false);
 
   // Smart Puck BLE
   const [puckDevice, setPuckDevice] = useState<ConnectedDevice | null>(null);
@@ -474,7 +477,7 @@ const WorkoutDetail = () => {
               await audioManager.playWorkoutComplete();
               setModeWithLogging('done', 'auto_workout_complete');
               setAutoFlowActive(false);
-              await completeWorkout();
+              await completeWorkoutAction();
             })();
           }
         } else {
@@ -786,11 +789,18 @@ const WorkoutDetail = () => {
     }
   };
 
-  const completeWorkout = async () => {
-    await saveProgress();
-    toast.success('Exercise completed!');
-    // Auto-navigate back to workout list
-    navigate('/workout-list', { state: { fromWorkoutDetail: true } });
+  const completeWorkoutAction = async () => {
+    if (isLoggingWorkout) return; // Prevent double-click
+    setIsLoggingWorkout(true);
+    try {
+      await saveProgress();
+      toast.success('Exercise completed!');
+      navigate('/workout-list', { state: { fromWorkoutDetail: true } });
+    } catch (error) {
+      console.error('Error completing workout:', error);
+      toast.error('Failed to save workout. Please try again.');
+      setIsLoggingWorkout(false); // Re-enable on error
+    }
   };
 
   const handleBackToList = async () => {
@@ -831,14 +841,14 @@ const WorkoutDetail = () => {
 
   // Auto-complete when all sets are done (disabled during automated flow)
   useEffect(() => {
-    if (autoFlowActive) return;
+    if (autoFlowActive || isLoggingWorkout) return;
     if (completedSets === totalSets && totalSets > 0) {
       const timer = setTimeout(() => {
-        completeWorkout();
+        completeWorkoutAction();
       }, 2000); // 2 second delay to show completion
       return () => clearTimeout(timer);
     }
-  }, [completedSets, totalSets, autoFlowActive]);
+  }, [completedSets, totalSets, autoFlowActive, isLoggingWorkout]);
 
   // Cleanup BLE on unmount
   useEffect(() => {
@@ -1323,11 +1333,18 @@ const WorkoutDetail = () => {
         
         {completedSets === totalSets ? (
           <Button 
-            onClick={completeWorkout}
+            onClick={completeWorkoutAction}
             className="h-12"
-            disabled={loading}
+            disabled={loading || isLoggingWorkout}
           >
-            Complete Workout
+            {isLoggingWorkout ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Logging Workout...
+              </>
+            ) : (
+              'Complete Workout'
+            )}
           </Button>
         ) : (
           <Button 
