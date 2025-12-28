@@ -315,17 +315,24 @@ All colors MUST be HSL for proper theming.
     animation: fade-in 0.5s ease-out;
   }
 
-  /* Sobriety day celebration glow - slow and subtle */
+  /* Sobriety day celebration glow - very slow and subtle */
   @keyframes sober-glow {
     0%, 100% {
-      filter: drop-shadow(0 0 1px rgba(52, 211, 153, 0.3));
+      filter: drop-shadow(0 0 1px hsl(155 73% 52% / 0.18));
+    }
+    25% {
+      filter: drop-shadow(0 0 2px hsl(155 73% 52% / 0.22));
     }
     50% {
-      filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.6));
+      filter: drop-shadow(0 0 3px hsl(155 73% 52% / 0.28));
+    }
+    75% {
+      filter: drop-shadow(0 0 2px hsl(155 73% 52% / 0.22));
     }
   }
 
   .animate-sober-glow {
-    animation: sober-glow 5s ease-in-out infinite;
+    animation: sober-glow 14s linear infinite;
+    will-change: filter;
   }
 }
