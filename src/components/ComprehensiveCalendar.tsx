@@ -62,7 +62,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       
       if (completedCount > 0) {
         indicators.push(
-          <div key="workout-completed" className="w-2 h-2 bg-green-500 rounded-full" />
+          <div key="workout-completed" className="w-2 h-2 bg-lime-500 rounded-full" />
         );
       } else if (scheduledCount > 0) {
         indicators.push(
@@ -99,10 +99,10 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
       );
     }
 
-    // Add sobriety indicator - plant icon for sober days
+    // Add sobriety indicator - plant icon for sober days with glow
     if (day.sobrietyCheckin) {
       indicators.push(
-        <Sprout key="sobriety" className="w-2 h-2 text-emerald-500" strokeWidth={3} />
+        <Sprout key="sobriety" className="w-2 h-2 text-emerald-400 animate-sober-glow" strokeWidth={3} />
       );
     }
 
@@ -204,7 +204,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
             <Card className="p-3 glow-card">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
+                  <div className="w-3 h-3 bg-lime-500 rounded-full flex-shrink-0"></div>
                   <span className="truncate">Completed</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   <span className="truncate">Tap Coins</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Sprout className="w-3 h-3 text-emerald-500 flex-shrink-0" strokeWidth={3} />
+                  <Sprout className="w-3 h-3 text-emerald-400 animate-sober-glow flex-shrink-0" strokeWidth={3} />
                   <span className="truncate">Sober Day</span>
                 </div>
                 {showCycleData && cycleTrackingEnabled && (
@@ -378,7 +378,7 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                   <div className="text-xs text-muted-foreground">Active Days</div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-lg sm:text-2xl font-bold text-emerald-500">
+                  <div className="text-lg sm:text-2xl font-bold text-emerald-400 animate-sober-glow">
                     {calendarDays.filter(day => day?.sobrietyCheckin).length}
                   </div>
                   <div className="text-xs text-muted-foreground">Sober Days 🌱</div>

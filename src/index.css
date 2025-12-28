@@ -314,4 +314,18 @@ All colors MUST be HSL for proper theming.
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;
   }
+
+  /* Sobriety day celebration glow */
+  @keyframes sober-glow {
+    0%, 100% {
+      filter: drop-shadow(0 0 2px rgba(52, 211, 153, 0.6));
+    }
+    50% {
+      filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.9));
+    }
+  }
+
+  .animate-sober-glow {
+    animation: sober-glow 2s ease-in-out infinite;
+  }
 }
