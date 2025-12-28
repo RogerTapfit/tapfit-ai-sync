@@ -360,7 +360,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             <Sprout className={`size-6 block ${sobrietyJourney && sobrietyProgress ? 'text-emerald-400' : 'text-green-500'}`} />
           </div>
           <p className="text-2xl font-bold text-white">
-            {isGuest ? 'Login' : (sobrietyJourney && sobrietyProgress ? sobrietyProgress.currentDay : 'Start')}
+            {isGuest ? 'Login' : (sobrietyJourney && sobrietyProgress ? sobrietyProgress.currentDay : 1)}
           </p>
           <p className="text-sm text-muted-foreground">
             {isGuest ? 'to Track' : (sobrietyJourney && sobrietyProgress ? 'Sober Days' : 'Sobriety')}
