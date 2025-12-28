@@ -22,6 +22,15 @@ export interface SleepActivity {
   source: string;
 }
 
+export interface SobrietyActivity {
+  id: string;
+  dayNumber: number;
+  feeling: string | null;
+  coinsAwarded: number;
+  notes: string | null;
+  time: string;
+}
+
 export interface CalendarDay {
   date: Date;
   dateString: string;
@@ -32,6 +41,7 @@ export interface CalendarDay {
   waterEntries: WaterActivity[];
   tapCoins: TapCoinsActivity[];
   sleepLog: SleepActivity | null;
+  sobrietyCheckin: SobrietyActivity | null;
   steps: number;
   calories: number;
   dailyStats: {
@@ -138,7 +148,8 @@ export const useCalendarData = (userId?: string) => {
         dailyStepsResponse,
         tapCoinsResponse,
         exerciseLogsResponse,
-        sleepLogsResponse
+        sleepLogsResponse,
+        sobrietyCheckinsResponse
       ] = await Promise.all([
         supabase
           .from('workout_logs')
@@ -221,7 +232,15 @@ export const useCalendarData = (userId?: string) => {
           .select('*')
           .eq('user_id', userId)
           .gte('sleep_date', startDateStr)
-          .lte('sleep_date', endDateStr)
+          .lte('sleep_date', endDateStr),
+          
+        // Sobriety check-ins
+        supabase
+          .from('sobriety_daily_checkins')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('checkin_date', startDateStr)
+          .lte('checkin_date', endDateStr)
       ]);
 
       const newCalendarData = new Map<string, CalendarDay>();
@@ -236,6 +255,7 @@ export const useCalendarData = (userId?: string) => {
       const tapCoinsTransactions = tapCoinsResponse.data || [];
       const exerciseLogs = exerciseLogsResponse.data || [] as any[];
       const sleepLogs = sleepLogsResponse.data || [];
+      const sobrietyCheckins = sobrietyCheckinsResponse.data || [];
 
       // Build a quick index of exercise logs by workout_log_id with exercise names
       const exerciseByWorkout = new Map<string, {
@@ -451,6 +471,19 @@ export const useCalendarData = (userId?: string) => {
           source: daySleepLog.source || 'manual'
         } : null;
         
+        // Get sobriety check-in for this day
+        const daySobrietyCheckin = sobrietyCheckins.find(
+          (checkin: any) => checkin.checkin_date === dateString
+        );
+        const sobrietyActivity: SobrietyActivity | null = daySobrietyCheckin ? {
+          id: daySobrietyCheckin.id,
+          dayNumber: daySobrietyCheckin.day_number,
+          feeling: daySobrietyCheckin.feeling,
+          coinsAwarded: daySobrietyCheckin.coins_awarded || 0,
+          notes: daySobrietyCheckin.notes,
+          time: new Date(daySobrietyCheckin.created_at).toISOString()
+        } : null;
+        
         // Calculate daily stats
         const totalWorkoutCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0);
         const totalCardioCalories = dayCardioSessions.reduce((sum, c) => sum + c.calories, 0);
@@ -467,7 +500,7 @@ export const useCalendarData = (userId?: string) => {
         
         // Calculate cycle phase for this day
         const cyclePhase = calculatePhaseInfo(currentDate);
-        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || dayWaterEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || (cyclePhase !== null);
+        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || dayWaterEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || sobrietyActivity !== null || (cyclePhase !== null);
         
         newCalendarData.set(dateString, {
           date: currentDate,
@@ -479,6 +512,7 @@ export const useCalendarData = (userId?: string) => {
           waterEntries: dayWaterEntries,
           tapCoins: dayTapCoins,
           sleepLog: sleepActivity,
+          sobrietyCheckin: sobrietyActivity,
           steps: dayStep?.step_count || 0,
           calories: totalWorkoutCalories + totalCardioCalories,
           dailyStats: {
@@ -569,6 +603,7 @@ export const useCalendarData = (userId?: string) => {
             waterEntries: [],
             tapCoins: [],
             sleepLog: null,
+            sobrietyCheckin: null,
             steps: 0,
             calories: 0,
             dailyStats: {
