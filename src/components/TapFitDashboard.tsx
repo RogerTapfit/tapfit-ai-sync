@@ -339,49 +339,6 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* Tap Coins Widget */}
       <TapCoinsWidget />
 
-      {/* AI Workout Plan Button */}
-      <Card className="glow-card relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
-        <div className="relative p-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary/20 shadow-glow">
-                <Brain className="h-8 w-8 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">AI Workout Plan</h3>
-              </div>
-            </div>
-            <Button 
-              variant="glow" 
-              size="lg"
-              onClick={() => navigate('/workout-plan')}
-              className="shadow-glow w-full"
-            >
-              Get Started
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* 4. Social Button */}
-      <Card 
-        className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30"
-        onClick={() => navigate('/social')}
-      >
-        <div className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/20">
-              <Users className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="text-xl font-bold">Social</h3>
-          </div>
-        </div>
-      </Card>
-
-      {/* Workout Streak Tracker */}
-      <WorkoutStreakTracker showMilestones={true} />
-
       {/* Calendar Feature */}
       <Card className="glow-card animate-slide-up">
         <div className="p-6">
@@ -432,6 +389,48 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
         </div>
       </Card>
 
+      {/* AI Workout Plan Button */}
+      <Card className="glow-card relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
+        <div className="relative p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-primary/20 shadow-glow">
+                <Brain className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">AI Workout Plan</h3>
+              </div>
+            </div>
+            <Button 
+              variant="glow" 
+              size="lg"
+              onClick={() => navigate('/workout-plan')}
+              className="shadow-glow w-full"
+            >
+              Get Started
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* 4. Social Button */}
+      <Card 
+        className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30"
+        onClick={() => navigate('/social')}
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/20">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold">Social</h3>
+          </div>
+        </div>
+      </Card>
+
+      {/* Workout Streak Tracker */}
+      <WorkoutStreakTracker showMilestones={true} />
 
       {/* 3. Weekly Progress */}
       <Card className="glow-card animate-slide-up">
