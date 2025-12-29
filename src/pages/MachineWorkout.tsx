@@ -11,6 +11,7 @@ import { getMachineImageUrl } from '@/utils/machineImageUtils';
 import { useWeightRecommendation } from '@/hooks/useWeightRecommendation';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
 import { useMachineHistory } from '@/hooks/useMachineHistory';
+import { useMachineSpecs } from '@/hooks/useMachineSpecs';
 import { usePersonalRecords } from '@/hooks/usePersonalRecords';
 import { useRestTimerLearning } from '@/hooks/useRestTimerLearning';
 import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
@@ -103,6 +104,9 @@ export default function MachineWorkout() {
   // Get machine history for weight recommendations
   const { history: machineHistory, loading: historyLoading } = useMachineHistory(machine?.name || '');
   
+  // Get machine specs for max weight capping
+  const { specs, userMax } = useMachineSpecs(machine?.name || '');
+  
   // Voice coaching
   const { speak } = useWorkoutAudio();
   
@@ -141,7 +145,9 @@ export default function MachineWorkout() {
     exerciseName: machine?.type || 'chest_press',
     machineName: machine?.name || '',
     muscleGroup: machine?.muscleGroup || 'chest',
-    historicalWeight: machineHistory?.lastWeight // Pass historical weight!
+    historicalWeight: machineHistory?.lastWeight, // Pass historical weight!
+    historicalReps: machineHistory?.lastReps, // Pass historical reps!
+    machineMaxWeight: specs?.max_weight || undefined // Pass machine max from crowd-sourced specs
   });
 
   // Initialize sets when machine and recommendation are loaded
