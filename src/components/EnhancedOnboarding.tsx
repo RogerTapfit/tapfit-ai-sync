@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { User, Target, Dumbbell, Calendar, Heart, Ruler, AtSign, Check, X, Loader2 } from 'lucide-react';
+import { User, Target, Dumbbell, Calendar, Heart, Ruler, AtSign, Check, X, Loader2, Globe } from 'lucide-react';
 import { SmartWeightRecommendation } from './SmartWeightRecommendation';
 import { UserWeightProfile } from '@/services/weightCalculationService';
 import { lbsToKg, kgToLbs, feetInchesToCm, cmToFeetInches } from '@/lib/unitConversions';
 import type { UnitSystem } from '@/lib/unitConversions';
 import { useSocialProfile } from '@/hooks/useSocialProfile';
+import { useLanguage, supportedLanguages, SupportedLanguage } from '@/contexts/LanguageContext';
 
 interface EnhancedProfile {
   age: number;
@@ -39,10 +41,13 @@ interface EnhancedOnboardingProps {
 }
 
 const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) => {
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showSmartRecommendation, setShowSmartRecommendation] = useState(false);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(language);
   const [profile, setProfile] = useState<EnhancedProfile>({
     age: 25,
     weight_kg: 70,
@@ -71,7 +76,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
   const [usernameCheckStatus, setUsernameCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   
   const { checkUsernameAvailable } = useSocialProfile();
-  const totalSteps = 6;
+  const totalSteps = 7; // Updated from 6 to 7 to include language step
   const progress = (currentStep / totalSteps) * 100;
 
   // Fallback nutrition goal estimator (client-side)
@@ -202,14 +207,19 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
     return true;
   };
 
-  const handleNext = () => {
-    // Validate step-specific input before moving on
+  const handleNext = async () => {
+    // Handle language selection on step 1
     if (currentStep === 1) {
+      await setLanguage(selectedLanguage);
+    }
+    
+    // Validate step-specific input before moving on
+    if (currentStep === 2) {
       const ok = commitBasicInfo();
       if (!ok) return;
     }
     
-    if (currentStep === 6) {
+    if (currentStep === 7) {
       // Username is optional but if provided, must be valid
       if (username.trim() && !validateUsername()) {
         return;
@@ -279,6 +289,7 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           health_conditions: healthConditionsArray,
           previous_injuries: previousInjuriesArray,
           unit_preference: unitSystem,
+          language_preference: selectedLanguage,
           username: username.trim() || null,
           bio: bio.trim() || null,
           is_profile_public: isProfilePublic,
@@ -376,9 +387,43 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
+              <Globe className="h-12 w-12 text-primary mx-auto" />
+              <h2 className="text-2xl font-bold">{t('onboarding.selectLanguage')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.selectLanguageDesc')}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {supportedLanguages.map((lang) => (
+                <Card
+                  key={lang.code}
+                  className={`cursor-pointer transition-all hover:border-primary/50 ${
+                    selectedLanguage === lang.code ? 'ring-2 ring-primary border-primary' : ''
+                  }`}
+                  onClick={() => setSelectedLanguage(lang.code as SupportedLanguage)}
+                >
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <span className="text-2xl">{lang.flag}</span>
+                    <div>
+                      <div className="font-semibold">{lang.nativeName}</div>
+                      <div className="text-sm text-muted-foreground">{lang.name}</div>
+                    </div>
+                    {selectedLanguage === lang.code && (
+                      <Check className="h-5 w-5 text-primary ml-auto" />
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
               <User className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="text-2xl font-bold">Basic Information</h2>
-              <p className="text-muted-foreground">Help us personalize your experience</p>
+              <h2 className="text-2xl font-bold">{t('onboarding.basicInfo')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.basicInfoDesc')}</p>
             </div>
 
             {/* Unit System Selector */}
@@ -528,13 +573,13 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <Target className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="text-2xl font-bold">Fitness Goals</h2>
-              <p className="text-muted-foreground">What do you want to achieve?</p>
+              <h2 className="text-2xl font-bold">{t('onboarding.fitnessGoals')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.fitnessGoalsDesc')}</p>
             </div>
 
             <div className="space-y-4">
@@ -562,13 +607,13 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <Dumbbell className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="text-2xl font-bold">Experience Level</h2>
-              <p className="text-muted-foreground">Help us set the right intensity</p>
+              <h2 className="text-2xl font-bold">{t('onboarding.experienceLevel')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.experienceLevelDesc')}</p>
             </div>
 
             <div className="space-y-4">
@@ -620,13 +665,13 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <Calendar className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="text-2xl font-bold">Equipment Preferences</h2>
-              <p className="text-muted-foreground">What type of equipment do you prefer?</p>
+              <h2 className="text-2xl font-bold">{t('onboarding.equipment')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.equipmentDesc')}</p>
             </div>
 
             <div className="space-y-4">
@@ -670,13 +715,13 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <Heart className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="text-2xl font-bold">Health & Safety</h2>
-              <p className="text-muted-foreground">Help us keep you safe during workouts</p>
+              <h2 className="text-2xl font-bold">{t('onboarding.healthSafety')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.healthSafetyDesc')}</p>
             </div>
 
             <div className="space-y-4">
@@ -705,13 +750,13 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <AtSign className="h-12 w-12 text-primary mx-auto" />
-              <h2 className="text-2xl font-bold">Create Your Profile</h2>
-              <p className="text-muted-foreground">Set up your username and customize your social presence</p>
+              <h2 className="text-2xl font-bold">{t('onboarding.socialProfile')}</h2>
+              <p className="text-muted-foreground">{t('onboarding.socialProfileDesc')}</p>
             </div>
 
             <div className="space-y-4">
@@ -844,13 +889,13 @@ const EnhancedOnboarding: React.FC<EnhancedOnboardingProps> = ({ onComplete }) =
               onClick={handleBack}
               disabled={currentStep === 1}
             >
-              Back
+              {t('common.back')}
             </Button>
             <Button 
               onClick={handleNext}
               disabled={loading}
             >
-              {loading ? 'Saving...' : currentStep === totalSteps ? 'Complete Setup' : 'Next'}
+              {loading ? t('common.loading') : currentStep === totalSteps ? t('onboarding.completeSetup') : t('common.next')}
             </Button>
           </div>
         </CardContent>
