@@ -1,6 +1,17 @@
 import { RunPoint } from '@/types/run';
 
 /**
+ * Estimate steps from distance based on activity type
+ * Running: ~1,400 steps per km (longer stride)
+ * Walking: ~1,300 steps per km (shorter stride)
+ */
+export function estimateSteps(distanceMeters: number, activityType: 'run' | 'walk' = 'run'): number {
+  const stepsPerKm = activityType === 'walk' ? 1300 : 1400;
+  const distanceKm = distanceMeters / 1000;
+  return Math.round(distanceKm * stepsPerKm);
+}
+
+/**
  * Format distance in meters to user-friendly string
  */
 export function formatDistance(meters: number, unit: 'km' | 'mi'): string {

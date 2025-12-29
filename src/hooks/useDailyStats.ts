@@ -4,6 +4,7 @@ import { useHealthKit } from './useHealthKit';
 import { useNutrition } from './useNutrition';
 import { CalorieCalculationService } from '@/services/calorieCalculationService';
 import { getLocalDateString } from '@/utils/dateUtils';
+import { estimateSteps } from '@/utils/runFormatters';
 
 interface DailyStats {
   caloriesBurned: number;
@@ -174,8 +175,14 @@ export const useDailyStats = (userId?: string): DailyStats => {
           });
         }
 
-        // Get steps from Apple Watch (if available)
-        const steps = healthMetrics.steps || 0;
+        // Calculate steps from run/walk sessions
+        const runWalkSteps = (runSessions || []).reduce((sum, session) => {
+          const activityType = (session.activity_type === 'walk' ? 'walk' : 'run') as 'run' | 'walk';
+          return sum + estimateSteps(session.total_distance_m || 0, activityType);
+        }, 0);
+
+        // Get steps from Apple Watch (if available) + run/walk estimated steps
+        const steps = (healthMetrics.steps || 0) + runWalkSteps;
 
         // Calculate cardio calories
         const cardioCalories = (runSessions || []).reduce((sum, run) => sum + run.calories, 0) +
