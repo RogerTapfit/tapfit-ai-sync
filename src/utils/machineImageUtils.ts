@@ -2,6 +2,15 @@ export const getMachineImageUrl = (machineName: string): string => {
   const name = machineName.toLowerCase();
   
   // Map machine names to match WorkoutHub images exactly
+  
+  // Hip/Thigh Machines - Check early for specificity
+  if (name.includes('inner') && name.includes('thigh') || name.includes('adductor')) return '/lovable-uploads/inner-thigh-adductor-machine-red-black.png';
+  if (name.includes('outer') && name.includes('thigh') || name.includes('abductor') || name.includes('hip abduction')) return '/lovable-uploads/outer-thigh-abductor-machine-red-black.png';
+  if (name.includes('glute') && name.includes('kickback')) return '/lovable-uploads/glute-kickback-machine-red-black.png';
+  
+  // Hoist specific machines - Check before general categories
+  if (name.includes('hoist') && name.includes('lat')) return '/lovable-uploads/hoist-lat-pulldown-red-black.png';
+  
   // Chest Machines
   if (name.includes('chest') && name.includes('press') && !name.includes('incline') && !name.includes('decline')) return '/lovable-uploads/72acfefe-3a0e-4d74-b92f-ce88b0a38d7e.png';
   if (name.includes('pec') && name.includes('deck')) return '/lovable-uploads/af389dea-9b59-4435-99bb-8c851f048940.png';
@@ -44,7 +53,13 @@ export const getMachineImageUrl = (machineName: string): string => {
   // Cardio Machines
   if (name.includes('treadmill')) return '/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png';
   if (name.includes('rowing') && name.includes('machine')) return '/lovable-uploads/ac6dd467-37ab-4e6a-9ecc-d7e6ecb97913.png';
-  if (name.includes('stairmaster')) return '/lovable-uploads/53858814-478c-431c-8c54-feecf0b00e19.png';
+  if (name.includes('stairmaster') || name.includes('stair climber')) return '/lovable-uploads/53858814-478c-431c-8c54-feecf0b00e19.png';
+  if (name.includes('elliptical') || name.includes('cross trainer')) return '/assets/precor-elliptical-red.png';
+  if ((name.includes('stationary') && name.includes('bike')) || (name.includes('cycling') && name.includes('bike')) || name.includes('indoor cycling')) return '/assets/indoor-cycling-bike-red.png';
+  
+  // Free Weights
+  if (name.includes('dumbbell')) return '/assets/dumbbells-red-black.png';
+  if (name.includes('barbell') && name.includes('rack')) return '/assets/barbell-rack-red.png';
   
   // Default fallback image (Leg Press Machine)
   return '/lovable-uploads/f62a3fb2-b5ea-4582-b7ff-550a03b3c767.png';
