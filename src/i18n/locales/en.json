@@ -149,6 +149,7 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "languageDescription": "Choose your preferred language",
     "units": "Units",
     "notifications": "Notifications",
     "privacy": "Privacy",

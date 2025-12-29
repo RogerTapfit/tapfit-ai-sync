@@ -42,6 +42,7 @@ const NutritionDashboard = lazyWithRetry(() => import("./NutritionDashboard"));
 const NFCTagWriter = lazyWithRetry(() => import("./NFCTagWriter"));
 const LogoGenerator = lazyWithRetry(() => import("./LogoGenerator").then(module => ({ default: module.LogoGenerator })));
 const UnitPreferenceSettings = lazyWithRetry(() => import("./UnitPreferenceSettings").then(module => ({ default: module.UnitPreferenceSettings })));
+const LanguagePreferenceSettings = lazyWithRetry(() => import("./LanguagePreferenceSettings").then(module => ({ default: module.LanguagePreferenceSettings })));
 const InjuryPreventionDashboard = lazyWithRetry(() => import("./InjuryPreventionDashboard"));
 const BiometricMoodDashboard = lazyWithRetry(() => import("./BiometricMoodDashboard"));
 
@@ -121,10 +122,11 @@ const TapFitApp = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl">
+        {/* Language Preference Settings */}
+        <LanguagePreferenceSettings />
+
         {/* Unit Preference Settings */}
-        <div className="lg:col-span-2">
-          <UnitPreferenceSettings userId={user?.id} />
-        </div>
+        <UnitPreferenceSettings userId={user?.id} />
 
         <Card className="glow-card p-6">
           <div className="flex items-center gap-3 mb-4">
