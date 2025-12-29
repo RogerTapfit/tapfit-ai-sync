@@ -2690,6 +2690,7 @@ export type Database = {
       }
       run_sessions: {
         Row: {
+          activity_type: string | null
           avg_heart_rate: number | null
           avg_pace_sec_per_km: number
           calories: number
@@ -2717,6 +2718,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activity_type?: string | null
           avg_heart_rate?: number | null
           avg_pace_sec_per_km?: number
           calories?: number
@@ -2744,6 +2746,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activity_type?: string | null
           avg_heart_rate?: number | null
           avg_pace_sec_per_km?: number
           calories?: number
