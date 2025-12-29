@@ -37,6 +37,10 @@ export const getMachineImageUrl = (machineName: string): string => {
   if (name.includes('leg') && name.includes('extension')) return '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png';
   if (name.includes('leg') && name.includes('curl')) return '/lovable-uploads/8b855abd-c6fe-4cef-9549-7c3a6cd70fae.png';
   
+  // Functional Machines
+  if (name.includes('rope') && name.includes('trainer')) return '/assets/marpo-rope-trainer-red.png';
+  if (name.includes('marpo')) return '/assets/marpo-rope-trainer-red.png';
+  
   // Cardio Machines
   if (name.includes('treadmill')) return '/lovable-uploads/6630a6e4-06d7-48ce-9212-f4d4991f4b35.png';
   if (name.includes('rowing') && name.includes('machine')) return '/lovable-uploads/ac6dd467-37ab-4e6a-9ecc-d7e6ecb97913.png';
