@@ -4,7 +4,7 @@ export interface Notification {
   id: string;
   user_id: string;
   actor_id: string;
-  notification_type: 'new_follower' | 'pr_achievement' | 'workout_milestone' | 'achievement_unlocked' | 'streak_milestone';
+  notification_type: 'new_follower' | 'pr_achievement' | 'workout_milestone' | 'achievement_unlocked' | 'streak_milestone' | 'cardio_completed';
   notification_data: any;
   reference_id: string | null;
   read: boolean;
