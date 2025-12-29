@@ -13,22 +13,25 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { i18n } = useTranslation();
-  const [language, setLanguageState] = useState<SupportedLanguage>(
-    (i18n.language?.substring(0, 2) as SupportedLanguage) || 'en'
-  );
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize from i18n's detected language immediately (no loading state needed)
+  const [language, setLanguageState] = useState<SupportedLanguage>(() => {
+    const detected = i18n.language?.substring(0, 2) as SupportedLanguage;
+    return supportedLanguages.some(l => l.code === detected) ? detected : 'en';
+  });
+  // Don't block UI - start as not loading since we have browser-detected language
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load user's language preference from database
+  // Load user's language preference from database (non-blocking)
   useEffect(() => {
     const loadLanguagePreference = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (user) {
+        if (session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('language_preference')
-            .eq('id', user.id)
+            .eq('id', session.user.id)
             .single();
           
           if (profile?.language_preference) {
@@ -41,8 +44,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       } catch (error) {
         console.warn('Failed to load language preference:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -51,18 +52,22 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('language_preference')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (profile?.language_preference) {
-          const lang = profile.language_preference as SupportedLanguage;
-          if (supportedLanguages.some(l => l.code === lang)) {
-            await i18n.changeLanguage(lang);
-            setLanguageState(lang);
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('language_preference')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile?.language_preference) {
+            const lang = profile.language_preference as SupportedLanguage;
+            if (supportedLanguages.some(l => l.code === lang)) {
+              await i18n.changeLanguage(lang);
+              setLanguageState(lang);
+            }
           }
+        } catch (error) {
+          console.warn('Failed to load language preference on auth change:', error);
         }
       }
     });
