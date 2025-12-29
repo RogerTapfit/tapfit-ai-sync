@@ -7,6 +7,7 @@ interface DayWorkout {
   dayName: string;
   hasWorkout: boolean;
   workoutCount: number;
+  workoutIds: string[];
 }
 
 interface WeeklyStats {
@@ -76,7 +77,8 @@ export const useWeeklyWorkoutStats = (userId: string | null) => {
             date,
             dayName: format(date, 'EEE'),
             hasWorkout: workoutsOnDay.length > 0,
-            workoutCount: workoutsOnDay.length
+            workoutCount: workoutsOnDay.length,
+            workoutIds: workoutsOnDay.map(w => w.id)
           };
         });
 
