@@ -9,7 +9,6 @@ import { nfcService } from "./services/nfcService";
 import { App as CapacitorApp } from '@capacitor/app';
 import { ChatbotProvider } from "./contexts/ChatbotContext";
 import { WaterIntakeProvider } from "./contexts/WaterIntakeContext";
-import { LanguageProvider } from "./contexts/LanguageContext";
 import GlobalChatbot from "./components/GlobalChatbot";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -122,7 +121,6 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <LanguageProvider>
         <Toaster />
         <Sonner />
       <HashRouter>
@@ -281,7 +279,6 @@ const App = () => {
           </SafeAreaLayout>
         </ChatbotProvider>
       </HashRouter>
-      </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

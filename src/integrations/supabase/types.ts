@@ -2484,7 +2484,6 @@ export type Database = {
           hr_rest: number | null
           id: string
           is_profile_public: boolean | null
-          language_preference: string | null
           onboarding_completed: boolean | null
           preferred_equipment_type: string | null
           previous_injuries: string[] | null
@@ -2525,7 +2524,6 @@ export type Database = {
           hr_rest?: number | null
           id: string
           is_profile_public?: boolean | null
-          language_preference?: string | null
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
           previous_injuries?: string[] | null
@@ -2566,7 +2564,6 @@ export type Database = {
           hr_rest?: number | null
           id?: string
           is_profile_public?: boolean | null
-          language_preference?: string | null
           onboarding_completed?: boolean | null
           preferred_equipment_type?: string | null
           previous_injuries?: string[] | null
