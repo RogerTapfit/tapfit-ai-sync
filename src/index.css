@@ -254,18 +254,18 @@ All colors MUST be HSL for proper theming.
     }
   }
 
-  /* Slow breathing glow animation for Start Workout button */
+  /* Slow pull animation for Start Workout button */
   .animate-heartbeat-glow {
-    animation: slowBreathingGlow 2.5s ease-in-out infinite;
-    will-change: box-shadow;
+    animation: slowPull 2s ease-in-out infinite;
+    will-change: transform;
   }
 
-  @keyframes slowBreathingGlow {
+  @keyframes slowPull {
     0%, 100% {
-      box-shadow: 0 0 8px hsl(348 83% 47% / 0.3);
+      transform: scale(1);
     }
     50% {
-      box-shadow: 0 0 16px hsl(348 83% 47% / 0.5), 0 0 24px hsl(348 83% 47% / 0.25);
+      transform: scale(1.03);
     }
   }
 
