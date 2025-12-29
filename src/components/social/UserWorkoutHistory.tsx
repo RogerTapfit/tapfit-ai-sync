@@ -46,6 +46,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useWorkoutLogger } from '@/hooks/useWorkoutLogger';
+import { getMachineImageUrl } from '@/utils/machineImageUtils';
 
 interface UserWorkoutHistoryProps {
   userId: string;
@@ -466,10 +467,24 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                     <div key={idx} className="rounded-lg border border-border overflow-hidden">
                       {/* Exercise Header */}
                       <div className="p-4 bg-muted/30 border-b border-border">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
+                        <div className="flex items-start gap-4">
+                          {/* Machine Image */}
+                          <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted border border-border">
+                            <img 
+                              src={getMachineImageUrl(exercise.machine_name || exercise.exercise_name)} 
+                              alt={exercise.machine_name || exercise.exercise_name}
+                              className="w-full h-full object-contain bg-background/50"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                target.src = getMachineImageUrl('default');
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Exercise Details */}
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h5 className="font-semibold text-base">{exercise.exercise_name}</h5>
+                              <h5 className="font-semibold text-base truncate">{exercise.exercise_name}</h5>
                               {exercise.is_pr && <PRBadge variant="full" />}
                               {!hasSetData && (
                                 <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 border-yellow-500/20">
@@ -477,10 +492,26 @@ export default function UserWorkoutHistory({ userId }: UserWorkoutHistoryProps) 
                                 </Badge>
                               )}
                             </div>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs mb-2">
                               {exercise.machine_name}
                             </Badge>
+                            
+                            {/* Quick Stats Row */}
+                            {hasSetData && (
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                                <span className="flex items-center gap-1">
+                                  <Dumbbell className="h-3 w-3" />
+                                  {exercise.sets_completed} sets × {exercise.reps_completed} reps
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <TrendingUp className="h-3 w-3" />
+                                  {exercise.weight_used} lbs
+                                </span>
+                              </div>
+                            )}
                           </div>
+                          
+                          {/* Actions & Volume */}
                           <div className="flex items-center gap-2">
                             {exercise.id && !isEditing && (
                               <Button
