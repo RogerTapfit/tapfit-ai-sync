@@ -20,6 +20,8 @@ import { PRCelebration } from '@/components/PRCelebration';
 import { RopeTrainerWorkout } from '@/components/workout/RopeTrainerWorkout';
 import { toast } from "sonner";
 import { usePageContext } from '@/hooks/usePageContext';
+import { useWorkoutVoiceCoaching } from '@/hooks/useWorkoutVoiceCoaching';
+import { useVoiceCoaching } from '@/hooks/useVoiceCoaching';
 import { audioManager } from '@/utils/audioUtils';
 import { 
   ArrowLeft, 
@@ -37,7 +39,9 @@ import {
   Plus,
   Brain,
   Timer,
-  Loader2
+  Loader2,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 
 interface WorkoutSet {
@@ -110,7 +114,8 @@ export default function MachineWorkout() {
   
   // Voice coaching
   const { speak } = useWorkoutAudio();
-  
+  const voiceCoach = useVoiceCoaching();
+  const { isEnabled: voiceCoachingEnabled, toggleEnabled: toggleVoiceCoaching } = useWorkoutVoiceCoaching();
   // Handle PR voice coaching
   const handleNewPR = (prCheckResult: any) => {
     const prPhrase = getCoachingPhrase({ 
@@ -290,8 +295,48 @@ export default function MachineWorkout() {
       toast.success(`Set ${setIndex + 1} completed! Rest: ${suggestion.suggestedRestSeconds}s`, {
         description: suggestion.reason
       });
+      
+      // Voice coaching feedback (if enabled) - delayed slightly to not overlap with sound effects
+      if (voiceCoachingEnabled) {
+        const completedSetsCount = updatedSets.filter(s => s.completed).length;
+        const isLastSet = completedSetsCount === totalSets;
+        const isHalfway = completedSetsCount === Math.ceil(totalSets / 2);
+        const workoutDuration = workoutStartTime 
+          ? Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60))
+          : 0;
+        const totalReps = updatedSets.filter(s => s.completed).reduce((sum, s) => sum + (s.actualReps || 0), 0);
+        
+        setTimeout(() => {
+          if (isLastSet) {
+            voiceCoach.speak({ type: 'workout_complete', data: { totalReps, duration: workoutDuration } });
+          } else if (isHalfway) {
+            voiceCoach.speak({ type: 'halfway_point', data: { currentSet: completedSetsCount, totalSets } });
+          } else {
+            voiceCoach.speak({ 
+              type: 'set_complete', 
+              data: { 
+                currentSet: setIndex + 1, 
+                totalSets,
+                reps: updatedSets[setIndex].actualReps || 0
+              } 
+            });
+          }
+        }, 500);
+      }
     } else {
       toast.success(`Set ${setIndex + 1} completed!`);
+      
+      // Voice coaching for last set complete
+      if (voiceCoachingEnabled) {
+        const workoutDuration = workoutStartTime 
+          ? Math.round((new Date().getTime() - workoutStartTime.getTime()) / (1000 * 60))
+          : 0;
+        const totalReps = updatedSets.filter(s => s.completed).reduce((sum, s) => sum + (s.actualReps || 0), 0);
+        
+        setTimeout(() => {
+          voiceCoach.speak({ type: 'workout_complete', data: { totalReps, duration: workoutDuration } });
+        }, 500);
+      }
     }
   };
 
@@ -605,6 +650,22 @@ export default function MachineWorkout() {
             <h1 className="text-xl font-bold">{machine.name}</h1>
             <p className="text-sm text-muted-foreground">{machine.muscleGroup}</p>
           </div>
+          
+          {/* Voice Coaching Toggle */}
+          <Button
+            variant={voiceCoachingEnabled ? "default" : "outline"}
+            size="sm"
+            onClick={toggleVoiceCoaching}
+            className="gap-2"
+            title={voiceCoachingEnabled ? "Voice coaching ON" : "Voice coaching OFF"}
+          >
+            {voiceCoachingEnabled ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">Coach</span>
+          </Button>
         </div>
       </div>
 
