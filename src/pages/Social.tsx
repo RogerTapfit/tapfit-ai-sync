@@ -8,7 +8,7 @@ import { UsernameSetupDialog } from '@/components/social/UsernameSetupDialog';
 import { ProfilePhotoUpload } from '@/components/social/ProfilePhotoUpload';
 import { NetworkList } from '@/components/social/NetworkList';
 import { WorkoutVisibilitySettings } from '@/components/social/WorkoutVisibilitySettings';
-import { Search, Home, Trophy, Settings, UtensilsCrossed } from 'lucide-react';
+import { Search, Home, Trophy, Settings, UtensilsCrossed, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { usePageContext } from '@/hooks/usePageContext';
@@ -95,14 +95,24 @@ export default function Social() {
                   </div>
                   Your Profile
                 </CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/profile-customize')}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Customize Profile
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate(`/user/${username}`)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View as Others
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/profile-customize')}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Customize Profile
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="relative">
