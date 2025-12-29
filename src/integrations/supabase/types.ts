@@ -1357,8 +1357,10 @@ export type Database = {
       friend_challenges: {
         Row: {
           challenge_type: string
+          challenged_coins_escrowed: boolean | null
           challenged_id: string
           challenged_progress: number | null
+          challenger_coins_escrowed: boolean | null
           challenger_id: string
           challenger_progress: number | null
           coin_reward: number | null
@@ -1376,8 +1378,10 @@ export type Database = {
         }
         Insert: {
           challenge_type: string
+          challenged_coins_escrowed?: boolean | null
           challenged_id: string
           challenged_progress?: number | null
+          challenger_coins_escrowed?: boolean | null
           challenger_id: string
           challenger_progress?: number | null
           coin_reward?: number | null
@@ -1395,8 +1399,10 @@ export type Database = {
         }
         Update: {
           challenge_type?: string
+          challenged_coins_escrowed?: boolean | null
           challenged_id?: string
           challenged_progress?: number | null
+          challenger_coins_escrowed?: boolean | null
           challenger_id?: string
           challenger_progress?: number | null
           coin_reward?: number | null
@@ -4725,6 +4731,10 @@ export type Database = {
         Returns: undefined
       }
       cleanup_rate_limit_logs: { Args: never; Returns: undefined }
+      complete_friend_challenge: {
+        Args: { _challenge_id: string; _winner_id: string }
+        Returns: boolean
+      }
       complete_user_calibration: {
         Args: { _user_id: string }
         Returns: boolean
@@ -4767,6 +4777,15 @@ export type Database = {
           operation_type?: string
           time_window_seconds: number
           user_identifier: string
+        }
+        Returns: boolean
+      }
+      escrow_challenge_coins: {
+        Args: {
+          _amount: number
+          _challenge_id: string
+          _is_challenger: boolean
+          _user_id: string
         }
         Returns: boolean
       }
@@ -4875,6 +4894,10 @@ export type Database = {
       refresh_daily_nutrition_summary_for_user: {
         Args: { _user_id: string }
         Returns: undefined
+      }
+      refund_challenge_coins: {
+        Args: { _amount: number; _challenge_id: string; _user_id: string }
+        Returns: boolean
       }
       spend_tap_coins: {
         Args: {

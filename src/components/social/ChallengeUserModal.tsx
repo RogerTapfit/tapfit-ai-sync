@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Swords, Coins } from 'lucide-react';
+import { Swords, Coins, AlertCircle } from 'lucide-react';
 import { useFriendChallenges } from '@/hooks/useFriendChallenges';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ChallengeUserModalProps {
   isOpen: boolean;
@@ -39,13 +41,38 @@ export const ChallengeUserModal = ({ isOpen, onClose, targetUserId, targetUserna
   const [message, setMessage] = useState('');
   const [coinReward, setCoinReward] = useState(50);
   const [submitting, setSubmitting] = useState(false);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
 
   const { createChallenge } = useFriendChallenges();
 
   const selectedType = CHALLENGE_TYPES.find(t => t.value === challengeType);
+  const hasInsufficientFunds = userBalance !== null && userBalance < coinReward;
+
+  // Fetch user's coin balance when modal opens
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('tap_coins_balance')
+          .eq('id', user.id)
+          .single();
+        setUserBalance(profile?.tap_coins_balance ?? 0);
+      }
+    };
+    if (isOpen) {
+      fetchBalance();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!targetValue || parseFloat(targetValue) <= 0) return;
+    
+    if (hasInsufficientFunds) {
+      toast.error(`You need ${coinReward} coins to wager. Current balance: ${userBalance}`);
+      return;
+    }
 
     setSubmitting(true);
     const success = await createChallenge(
@@ -133,11 +160,11 @@ export const ChallengeUserModal = ({ isOpen, onClose, targetUserId, targetUserna
             </Select>
           </div>
 
-          {/* Coin Reward */}
+          {/* Coin Wager */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Coins className="h-4 w-4 text-yellow-500" />
-              Winner's Reward
+              Coin Wager (each player)
             </Label>
             <Select value={coinReward.toString()} onValueChange={(v) => setCoinReward(parseInt(v))}>
               <SelectTrigger>
@@ -150,6 +177,20 @@ export const ChallengeUserModal = ({ isOpen, onClose, targetUserId, targetUserna
                 <SelectItem value="250">250 coins</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Winner takes {coinReward * 2} coins (your stake + opponent's stake)
+            </p>
+            {userBalance !== null && (
+              <p className={`text-xs ${hasInsufficientFunds ? 'text-destructive' : 'text-muted-foreground'}`}>
+                Your balance: {userBalance} coins
+                {hasInsufficientFunds && (
+                  <span className="flex items-center gap-1 mt-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Insufficient funds for this wager
+                  </span>
+                )}
+              </p>
+            )}
           </div>
 
           {/* Message */}
@@ -168,8 +209,8 @@ export const ChallengeUserModal = ({ isOpen, onClose, targetUserId, targetUserna
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !targetValue}>
-            {submitting ? 'Sending...' : 'Send Challenge'}
+          <Button onClick={handleSubmit} disabled={submitting || !targetValue || hasInsufficientFunds}>
+            {submitting ? 'Sending...' : `Wager ${coinReward} Coins`}
           </Button>
         </div>
       </DialogContent>

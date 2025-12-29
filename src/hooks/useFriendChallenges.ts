@@ -95,7 +95,10 @@ export const useFriendChallenges = (userId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const reward = coinReward || 50;
+
+      // Create the challenge first
+      const { data: challenge, error } = await supabase
         .from('friend_challenges')
         .insert({
           challenger_id: user.id,
@@ -105,12 +108,30 @@ export const useFriendChallenges = (userId?: string) => {
           target_unit: targetUnit,
           time_limit_days: timeLimitDays,
           message,
-          coin_reward: coinReward || 50
-        });
+          coin_reward: reward
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      toast.success('Challenge sent!');
+      // Escrow challenger's coins
+      const { data: escrowResult, error: escrowError } = await supabase
+        .rpc('escrow_challenge_coins', {
+          _user_id: user.id,
+          _amount: reward,
+          _challenge_id: challenge.id,
+          _is_challenger: true
+        });
+
+      if (escrowError || !escrowResult) {
+        // Rollback - delete the challenge if escrow fails
+        await supabase.from('friend_challenges').delete().eq('id', challenge.id);
+        toast.error('Insufficient coins for this wager');
+        return false;
+      }
+
+      toast.success(`Challenge sent! ${reward} coins wagered.`);
       fetchChallenges();
       return true;
     } catch (error) {
@@ -122,9 +143,26 @@ export const useFriendChallenges = (userId?: string) => {
 
   const acceptChallenge = async (challengeId: string): Promise<boolean> => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const now = new Date();
       const challenge = challenges.find(c => c.id === challengeId);
       if (!challenge) return false;
+
+      // First escrow the accepting user's coins
+      const { data: escrowResult, error: escrowError } = await supabase
+        .rpc('escrow_challenge_coins', {
+          _user_id: user.id,
+          _amount: challenge.coin_reward,
+          _challenge_id: challengeId,
+          _is_challenger: false
+        });
+
+      if (escrowError || !escrowResult) {
+        toast.error(`Insufficient coins. You need ${challenge.coin_reward} coins to accept.`);
+        return false;
+      }
 
       const endsAt = new Date(now.getTime() + challenge.time_limit_days * 24 * 60 * 60 * 1000);
 
@@ -139,7 +177,7 @@ export const useFriendChallenges = (userId?: string) => {
 
       if (error) throw error;
 
-      toast.success('Challenge accepted! Game on! 🎮');
+      toast.success(`Challenge accepted! ${challenge.coin_reward} coins wagered. Game on! 🎮`);
       fetchChallenges();
       return true;
     } catch (error) {
@@ -151,6 +189,18 @@ export const useFriendChallenges = (userId?: string) => {
 
   const declineChallenge = async (challengeId: string): Promise<boolean> => {
     try {
+      const challenge = challenges.find(c => c.id === challengeId);
+      if (!challenge) return false;
+
+      // Refund challenger's escrowed coins
+      if (challenge.coin_reward > 0) {
+        await supabase.rpc('refund_challenge_coins', {
+          _user_id: challenge.challenger_id,
+          _amount: challenge.coin_reward,
+          _challenge_id: challengeId
+        });
+      }
+
       const { error } = await supabase
         .from('friend_challenges')
         .update({ status: 'declined' })
@@ -158,7 +208,7 @@ export const useFriendChallenges = (userId?: string) => {
 
       if (error) throw error;
 
-      toast.success('Challenge declined');
+      toast.success('Challenge declined. Coins refunded to challenger.');
       fetchChallenges();
       return true;
     } catch (error) {
