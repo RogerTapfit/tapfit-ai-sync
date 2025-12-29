@@ -57,7 +57,7 @@ class RunTrackerService {
     await this.initialize();
 
     // Create new session
-    const sessionId = `run_${Date.now()}`;
+    const sessionId = crypto.randomUUID();
     this.currentSession = {
       id: sessionId,
       user_id: userId,
@@ -445,9 +445,9 @@ class RunTrackerService {
         started_at: session.started_at,
         ended_at: session.ended_at,
         status: session.status,
-        total_distance_m: session.total_distance_m,
-        moving_time_s: session.moving_time_s,
-        elapsed_time_s: session.elapsed_time_s,
+        total_distance_m: Math.round(session.total_distance_m),
+        moving_time_s: Math.round(session.moving_time_s),
+        elapsed_time_s: Math.round(session.elapsed_time_s),
         avg_pace_sec_per_km: session.avg_pace_sec_per_km,
         calories: session.calories,
         unit: session.unit,
