@@ -13,13 +13,17 @@ interface UseWeightRecommendationProps {
   machineName: string;
   muscleGroup: string;
   historicalWeight?: number; // Priority override from last workout
+  historicalReps?: number; // Reps from last workout
+  machineMaxWeight?: number; // Machine's max weight from crowd-sourced specs
 }
 
 export const useWeightRecommendation = ({ 
   exerciseName, 
   machineName, 
   muscleGroup,
-  historicalWeight
+  historicalWeight,
+  historicalReps,
+  machineMaxWeight
 }: UseWeightRecommendationProps) => {
   const [recommendation, setRecommendation] = useState<ExerciseWeightCalculation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,14 +66,39 @@ export const useWeightRecommendation = ({
       };
 
       // Calculate weight recommendation
-      const recommendedWeight = calculateOptimalWeight(userProfile, exerciseName, machineName);
+      let recommendedWeight = calculateOptimalWeight(userProfile, exerciseName, machineName);
+      
+      // Prioritize historical weight if available
+      if (historicalWeight) {
+        recommendedWeight = historicalWeight;
+      }
       
       // Calculate sets and reps
-      const { sets, reps, rest_seconds } = calculateSetsAndReps(
+      let { sets, reps, rest_seconds } = calculateSetsAndReps(
         userProfile.primary_goal,
         userProfile.experience_level,
         'compound' // Default to compound exercise
       );
+
+      // If weight is same as last time and we have historical reps, use them
+      if (historicalWeight && historicalReps && recommendedWeight === historicalWeight) {
+        reps = historicalReps;
+        console.log(`[Weight Rec] Using historical reps: ${reps}`);
+      }
+
+      // Check if we need to cap weight at machine max
+      let atMachineMax = false;
+      if (machineMaxWeight && recommendedWeight >= machineMaxWeight) {
+        recommendedWeight = machineMaxWeight;
+        atMachineMax = true;
+        
+        // If at machine max, recommend rep progression instead
+        // Add 2-3 reps for progression
+        if (historicalReps) {
+          reps = Math.min(historicalReps + 2, 20); // Cap at 20 reps
+          console.log(`[Weight Rec] At machine max (${machineMaxWeight} lbs). Progressing via reps: ${reps}`);
+        }
+      }
 
       // Determine confidence level
       let confidence: 'high' | 'medium' | 'learning' = 'learning';
@@ -87,11 +116,12 @@ export const useWeightRecommendation = ({
       const exerciseRecommendation: ExerciseWeightCalculation = {
         exercise_name: exerciseName,
         machine_name: machineName,
-        recommended_weight: historicalWeight || recommendedWeight, // Prioritize history!
+        recommended_weight: recommendedWeight,
         sets,
         reps,
         rest_seconds,
-        confidence: historicalWeight ? 'high' : confidence // Boost confidence if using history
+        confidence: historicalWeight ? 'high' : confidence, // Boost confidence if using history
+        atMachineMax // NEW: Flag to indicate we're at machine max
       };
 
       console.log(`[Weight Rec] Recommendation: ${exerciseRecommendation.recommended_weight} lbs (${exerciseRecommendation.confidence} confidence)`);

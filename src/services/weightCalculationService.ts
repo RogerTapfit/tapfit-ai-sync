@@ -15,6 +15,7 @@ export interface ExerciseWeightCalculation {
   reps: number;
   rest_seconds: number;
   confidence?: 'high' | 'medium' | 'learning';
+  atMachineMax?: boolean; // Flag when weight is capped at machine max
 }
 
 export interface WeightRecommendationInput {
