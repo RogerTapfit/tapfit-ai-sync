@@ -132,14 +132,28 @@ export const FriendChallengeCard = ({ challenge, currentUserId, onAction }: Frie
                   <span>Ends {formatDistanceToNow(new Date(challenge.ends_at), { addSuffix: true })}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1">
-                <Coins className="h-3 w-3 text-yellow-500" />
-                <span>{challenge.coin_reward} coins</span>
-              </div>
+              {challenge.status === 'pending' && (
+                <div className="flex items-center gap-1">
+                  <Coins className="h-3 w-3 text-yellow-500" />
+                  <span>Wager: {challenge.coin_reward} coins each</span>
+                </div>
+              )}
+              {challenge.status === 'active' && (
+                <div className="flex items-center gap-1">
+                  <Coins className="h-3 w-3 text-yellow-500" />
+                  <span>Pot: {challenge.coin_reward * 2} coins</span>
+                </div>
+              )}
               {challenge.status === 'completed' && challenge.winner_id === currentUserId && (
                 <div className="flex items-center gap-1 text-green-600">
                   <Trophy className="h-3 w-3" />
-                  <span>You won!</span>
+                  <span>Won {challenge.coin_reward * 2} coins!</span>
+                </div>
+              )}
+              {challenge.status === 'completed' && challenge.winner_id && challenge.winner_id !== currentUserId && (
+                <div className="flex items-center gap-1 text-destructive">
+                  <Coins className="h-3 w-3" />
+                  <span>Lost {challenge.coin_reward} coins</span>
                 </div>
               )}
             </div>
