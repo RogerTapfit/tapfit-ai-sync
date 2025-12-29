@@ -108,7 +108,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-xl font-bold">Today's Performance</h3>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0 animate-heartbeat-glow" onClick={onStartWorkout}>
+          <Button id="top-start-workout" className="bg-stats-heart hover:bg-stats-heart/90 text-white border-0" onClick={onStartWorkout}>
             <span className="inline-flex items-center gap-2 leading-none">
               <span className="w-5 h-5 flex items-center justify-center shrink-0">
                 <Activity className="size-4 block" />
