@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Trophy, Award, TrendingUp, Flame, Utensils, Wine } from 'lucide-react';
+import { Trophy, Award, TrendingUp, Flame, Utensils, Wine, Footprints, Waves } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,12 @@ export const ActivityFeedItem = ({ activity }: ActivityFeedItemProps) => {
         return <Utensils className="h-5 w-5 text-green-500" />;
       case 'alcohol_logged':
         return <Wine className="h-5 w-5 text-amber-500" />;
+      case 'run_completed':
+        return <Footprints className="h-5 w-5 text-blue-500" />;
+      case 'walk_completed':
+        return <Footprints className="h-5 w-5 text-green-500" />;
+      case 'swim_completed':
+        return <Waves className="h-5 w-5 text-cyan-500" />;
       default:
         return null;
     }
@@ -101,6 +107,33 @@ export const ActivityFeedItem = ({ activity }: ActivityFeedItemProps) => {
           <>
             <span className="font-semibold">logged</span>{' '}
             <span className="text-amber-600 dark:text-amber-400">{data.drink_type}</span>
+          </>
+        );
+      case 'run_completed':
+        return (
+          <>
+            <span className="font-semibold">completed a run:</span>{' '}
+            <span className="text-blue-600 dark:text-blue-400">{data.distance_km} km</span> in {data.duration_min} min
+            {data.pace_min_per_km && (
+              <span className="text-muted-foreground text-sm ml-2">
+                ({data.pace_min_per_km} min/km)
+              </span>
+            )}
+          </>
+        );
+      case 'walk_completed':
+        return (
+          <>
+            <span className="font-semibold">completed a walk:</span>{' '}
+            <span className="text-green-600 dark:text-green-400">{data.distance_km} km</span> in {data.duration_min} min
+          </>
+        );
+      case 'swim_completed':
+        return (
+          <>
+            <span className="font-semibold">completed a swim:</span>{' '}
+            <span className="text-cyan-600 dark:text-cyan-400">{data.distance_m} m</span>
+            {data.laps && <span> ({data.laps} laps)</span>} in {data.duration_min} min
           </>
         );
       default:

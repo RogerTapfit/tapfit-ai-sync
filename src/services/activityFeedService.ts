@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ActivityFeedItem {
   id: string;
   user_id: string;
-  activity_type: 'pr' | 'achievement' | 'workout_milestone' | 'streak_milestone' | 'meal_logged' | 'restaurant_meal' | 'alcohol_logged';
+  activity_type: 'pr' | 'achievement' | 'workout_milestone' | 'streak_milestone' | 'meal_logged' | 'restaurant_meal' | 'alcohol_logged' | 'run_completed' | 'walk_completed' | 'swim_completed';
   activity_data: any;
   reference_id: string | null;
   created_at: string;
