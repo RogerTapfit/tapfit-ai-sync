@@ -416,15 +416,33 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
 
       {/* 4. Social Button */}
       <Card 
-        className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-primary/30"
+        className="group relative cursor-pointer overflow-hidden border-primary/40 bg-gradient-to-br from-primary/10 via-background to-primary/5 hover:border-primary/60 hover:shadow-[0_0_30px_rgba(239,68,68,0.3)] transition-all duration-500"
         onClick={() => navigate('/social')}
       >
-        <div className="p-6">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+        
+        {/* Subtle pulse effect */}
+        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse" />
+        
+        <div className="relative p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/20">
-              <Users className="h-8 w-8 text-primary" />
+            <div className="relative p-3 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 group-hover:from-primary/40 group-hover:to-primary/20 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              {/* Icon glow */}
+              <div className="absolute inset-0 rounded-xl bg-primary/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <Users className="relative h-8 w-8 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
             </div>
-            <h3 className="text-xl font-bold">Social</h3>
+            <div className="flex flex-col">
+              <h3 className="text-xl font-bold group-hover:text-primary transition-colors duration-300">Social</h3>
+              <span className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors duration-300">Connect & Compete</span>
+            </div>
+            <div className="ml-auto opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+              <div className="p-2 rounded-full bg-primary/20">
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
