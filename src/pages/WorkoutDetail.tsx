@@ -19,13 +19,16 @@ import {
   Activity,
   Heart,
   Smartphone,
-  Loader2
+  Loader2,
+  TrendingUp,
+  History
 } from "lucide-react";
 import { CardioPrescriptionService } from '@/services/cardioPrescriptionService';
 import { CardioMachineType, CardioGoal, HeartRateZone, CardioUserProfile } from '@/types/cardio';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkoutPlan } from "@/hooks/useWorkoutPlan";
 import { useWorkoutLogger } from "@/hooks/useWorkoutLogger";
+import { useMachineHistory } from "@/hooks/useMachineHistory";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { NFCMachinePopup } from "@/components/NFCMachinePopup";
@@ -199,9 +202,15 @@ const WorkoutDetail = () => {
   };
 
   const [workout, setWorkout] = useState<any>(null);
+  const [historyApplied, setHistoryApplied] = useState(false);
 
   // Use machine data from navigation state if available, fallback to static data
   const machineData = location.state?.machineData;
+
+  // Fetch machine history for this workout
+  const { history: machineHistory, loading: historyLoading } = useMachineHistory(
+    machineData?.name || workout?.name || ''
+  );
 
   // Load workout data - prioritize database prescription, fallback to generated or static
   useEffect(() => {
@@ -438,11 +447,12 @@ const WorkoutDetail = () => {
     return zoneName;
   }
 
+  // Re-initialize sets when workout or machine history changes
   useEffect(() => {
-    if (workout) {
+    if (workout && !historyLoading) {
       initializeSets();
     }
-  }, [workout, workoutId]);
+  }, [workout, workoutId, machineHistory, historyLoading]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -512,17 +522,47 @@ const WorkoutDetail = () => {
         return match ? parseInt(match[1]) : 0;
       };
       
-      const defaultWeight = extractWeight(workout.weight);
+      // Prioritize machine history over template defaults
+      const templateWeight = extractWeight(workout.weight);
+      const templateReps = typeof workout.reps === 'string' 
+        ? parseInt(workout.reps.split('-')[0]) 
+        : workout.reps;
+      const templateSets = workout.sets || 3;
+      
+      // Use machine history if available, with progressive overload consideration
+      const useHistoryWeight = machineHistory?.shouldProgressWeight && machineHistory?.suggestedWeight
+        ? machineHistory.suggestedWeight
+        : machineHistory?.lastWeight;
+      const historyWeight = useHistoryWeight || templateWeight;
+      const historyReps = machineHistory?.lastReps || templateReps;
+      const historySets = machineHistory?.lastSets || templateSets;
+      
+      // Log what we're using for debugging
+      if (machineHistory) {
+        console.log('📊 Using machine history for sets:', {
+          templateWeight,
+          templateReps,
+          templateSets,
+          historyWeight,
+          historyReps,
+          historySets,
+          shouldProgress: machineHistory.shouldProgressWeight,
+          suggestedWeight: machineHistory.suggestedWeight
+        });
+        setHistoryApplied(true);
+      } else {
+        setHistoryApplied(false);
+      }
       
       const newSets: WorkoutSet[] = [];
-      for (let i = 0; i < workout.sets; i++) {
+      for (let i = 0; i < historySets; i++) {
         newSets.push({
           id: i + 1,
-          reps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
+          reps: historyReps,
           weight: 0,
           completed: false,
-          actualReps: typeof workout.reps === 'string' ? parseInt(workout.reps.split('-')[0]) : workout.reps,
-          actualWeight: defaultWeight
+          actualReps: historyReps,
+          actualWeight: historyWeight
         });
       }
       setSets(newSets);
@@ -944,6 +984,45 @@ const WorkoutDetail = () => {
         <div className="w-full text-center text-amber-600 text-sm">Puck disconnected – reconnecting…</div>
       )}
 
+      {/* Machine History Indicators */}
+      {!workout?.isCardio && machineHistory && (
+        <div className="space-y-2">
+          {/* History-based values badge */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="bg-green-900/30 text-green-400 border-green-600/30">
+              <History className="h-3 w-3 mr-1" />
+              Based on your last workout
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              {new Date(machineHistory.lastWorkoutDate).toLocaleDateString()} • {machineHistory.lastWeight} lbs × {machineHistory.lastReps} reps × {machineHistory.lastSets} sets
+            </span>
+          </div>
+          
+          {/* Progressive overload suggestion */}
+          {machineHistory.shouldProgressWeight && machineHistory.suggestedWeight && (
+            <div className="bg-yellow-900/20 p-3 rounded-lg border border-yellow-600/30 flex items-start gap-2">
+              <TrendingUp className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-yellow-400 text-sm font-medium">
+                  Ready for progression!
+                </p>
+                <p className="text-yellow-400/80 text-xs">
+                  You've completed {machineHistory.consecutiveSuccessfulWorkouts}+ workouts at {machineHistory.lastWeight} lbs. 
+                  Weight has been increased to {machineHistory.suggestedWeight} lbs.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Show loading indicator while fetching history */}
+      {!workout?.isCardio && historyLoading && !machineHistory && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading your workout history...
+        </div>
+      )}
       {/* Exercise Progress */}
       <Card className="glow-card p-6">
         <div className="flex items-center justify-between mb-4">
