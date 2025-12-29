@@ -17,6 +17,7 @@ import { useRestTimerLearning } from '@/hooks/useRestTimerLearning';
 import { useWorkoutAudio } from '@/hooks/useWorkoutAudio';
 import { getCoachingPhrase } from '@/services/workoutVoiceCoaching';
 import { PRCelebration } from '@/components/PRCelebration';
+import { RopeTrainerWorkout } from '@/components/workout/RopeTrainerWorkout';
 import { toast } from "sonner";
 import { usePageContext } from '@/hooks/usePageContext';
 import { audioManager } from '@/utils/audioUtils';
@@ -557,6 +558,18 @@ export default function MachineWorkout() {
           <p>Loading machine...</p>
         </div>
       </div>
+    );
+  }
+
+  // Special handling for Rope Trainer - uses time/distance + resistance level instead of sets/reps
+  if (machine.type === 'Functional' && machine.workoutId === 'rope-trainer') {
+    return (
+      <RopeTrainerWorkout
+        machine={machine}
+        onBack={handleBackToList}
+        onComplete={() => navigate('/workout-list', { state: { fromWorkoutDetail: true } })}
+        workoutLogId={currentWorkoutLog?.id}
+      />
     );
   }
 
