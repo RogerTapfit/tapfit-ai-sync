@@ -1354,6 +1354,66 @@ export type Database = {
           },
         ]
       }
+      friend_challenges: {
+        Row: {
+          challenge_type: string
+          challenged_id: string
+          challenged_progress: number | null
+          challenger_id: string
+          challenger_progress: number | null
+          coin_reward: number | null
+          completed_at: string | null
+          created_at: string
+          ends_at: string | null
+          id: string
+          message: string | null
+          started_at: string | null
+          status: string
+          target_unit: string
+          target_value: number
+          time_limit_days: number
+          winner_id: string | null
+        }
+        Insert: {
+          challenge_type: string
+          challenged_id: string
+          challenged_progress?: number | null
+          challenger_id: string
+          challenger_progress?: number | null
+          coin_reward?: number | null
+          completed_at?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          message?: string | null
+          started_at?: string | null
+          status?: string
+          target_unit?: string
+          target_value: number
+          time_limit_days?: number
+          winner_id?: string | null
+        }
+        Update: {
+          challenge_type?: string
+          challenged_id?: string
+          challenged_progress?: number | null
+          challenger_id?: string
+          challenger_progress?: number | null
+          coin_reward?: number | null
+          completed_at?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          message?: string | null
+          started_at?: string | null
+          status?: string
+          target_unit?: string
+          target_value?: number
+          time_limit_days?: number
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       gamer_achievements: {
         Row: {
           badge_emoji: string

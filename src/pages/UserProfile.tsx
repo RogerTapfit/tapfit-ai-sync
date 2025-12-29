@@ -8,9 +8,10 @@ import { useUserFollow } from '@/hooks/useUserFollow';
 import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { usePublicGamerStats } from '@/hooks/usePublicGamerStats';
 import { useWeeklyWorkoutStats } from '@/hooks/useWeeklyWorkoutStats';
+import { useFriendChallenges } from '@/hooks/useFriendChallenges';
 import { socialService } from '@/services/socialService';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Dumbbell, Trophy, Home, Settings, Calendar } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Trophy, Home, Settings, Calendar, Footprints, Swords } from 'lucide-react';
 import { usePageContext } from '@/hooks/usePageContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -20,6 +21,9 @@ import { WorkoutHeatmap } from '@/components/social/WorkoutHeatmap';
 import { ProfileHero } from '@/components/social/ProfileHero';
 import { ProfileGamerStats } from '@/components/social/ProfileGamerStats';
 import { WeeklyActivitySummary } from '@/components/social/WeeklyActivitySummary';
+import { UserCardioHistory } from '@/components/social/UserCardioHistory';
+import { ChallengeUserModal } from '@/components/social/ChallengeUserModal';
+import { FriendChallengeCard } from '@/components/social/FriendChallengeCard';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -27,12 +31,15 @@ export default function UserProfile() {
   const [userId, setUserId] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState("overview");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
   const { achievements, loading: achievementsLoading } = useUserAchievements(userId);
   const { stats: gamerStats, loading: gamerLoading, getProgressPercentage } = usePublicGamerStats(userId || null);
   const { stats: weeklyStats, loading: weeklyLoading } = useWeeklyWorkoutStats(userId || null);
+  const { challenges, activeChallenges, pendingChallenges, refetch: refetchChallenges } = useFriendChallenges(currentUserId || undefined);
 
   // Register page context for chatbot
   usePageContext({
@@ -52,9 +59,13 @@ export default function UserProfile() {
   }, [userId]);
 
   const checkIfOwnProfile = async () => {
-    if (!userId) return;
     const { data: { user } } = await supabase.auth.getUser();
-    setIsOwnProfile(user?.id === userId);
+    if (user) {
+      setCurrentUserId(user.id);
+      if (userId) {
+        setIsOwnProfile(user.id === userId);
+      }
+    }
   };
 
   const loadUserByUsername = async () => {
@@ -116,6 +127,17 @@ export default function UserProfile() {
             Customize
           </Button>
         )}
+        {!isOwnProfile && isFollowing && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowChallengeModal(true)}
+            className="ml-auto"
+          >
+            <Swords className="h-4 w-4 mr-2" />
+            Challenge
+          </Button>
+        )}
       </div>
 
       {/* Enhanced Profile Hero Section */}
@@ -164,17 +186,21 @@ export default function UserProfile() {
       <div className="px-4">
         {profile.share_workout_stats ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
-              <TabsTrigger value="overview" className="gap-1">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
+              <TabsTrigger value="overview" className="gap-1 text-xs sm:text-sm">
                 <Calendar className="w-4 h-4 hidden sm:block" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="workouts" className="gap-1">
+              <TabsTrigger value="workouts" className="gap-1 text-xs sm:text-sm">
                 <Dumbbell className="w-4 h-4 hidden sm:block" />
                 Workouts
               </TabsTrigger>
-              <TabsTrigger value="challenges">Challenges</TabsTrigger>
-              <TabsTrigger value="achievements" className="gap-1">
+              <TabsTrigger value="cardio" className="gap-1 text-xs sm:text-sm">
+                <Footprints className="w-4 h-4 hidden sm:block" />
+                Cardio
+              </TabsTrigger>
+              <TabsTrigger value="challenges" className="text-xs sm:text-sm">Challenges</TabsTrigger>
+              <TabsTrigger value="achievements" className="gap-1 text-xs sm:text-sm">
                 <Trophy className="w-4 h-4 hidden sm:block" />
                 Badges
               </TabsTrigger>
@@ -264,9 +290,54 @@ export default function UserProfile() {
               </Card>
             </TabsContent>
 
+            <TabsContent value="cardio">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Footprints className="h-5 w-5 text-blue-500" />
+                    Cardio Activities
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {userId ? (
+                    <UserCardioHistory userId={userId} />
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      Loading cardio history...
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="challenges">
               {userId ? (
-                <ProfileChallengesStreaks userId={userId} />
+                <>
+                  {/* Friend Challenges Section */}
+                  {currentUserId && (activeChallenges.length > 0 || pendingChallenges.length > 0) && (
+                    <Card className="mb-4">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Swords className="h-5 w-5 text-primary" />
+                          Friend Challenges
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {[...pendingChallenges, ...activeChallenges]
+                          .filter(c => c.challenger_id === userId || c.challenged_id === userId)
+                          .map(challenge => (
+                            <FriendChallengeCard
+                              key={challenge.id}
+                              challenge={challenge}
+                              currentUserId={currentUserId}
+                              onAction={refetchChallenges}
+                            />
+                          ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                  <ProfileChallengesStreaks userId={userId} />
+                </>
               ) : (
                 <Card>
                   <CardContent className="py-8">
@@ -306,6 +377,16 @@ export default function UserProfile() {
           </Card>
         )}
       </div>
+
+      {/* Challenge Modal */}
+      {userId && profile?.username && (
+        <ChallengeUserModal
+          isOpen={showChallengeModal}
+          onClose={() => setShowChallengeModal(false)}
+          targetUserId={userId}
+          targetUsername={profile.username}
+        />
+      )}
     </div>
   );
 }
