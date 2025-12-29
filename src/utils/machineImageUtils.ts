@@ -29,6 +29,9 @@ export const getMachineImageUrl = (machineName: string): string => {
   if (name.includes('preacher') && name.includes('curl')) return '/lovable-uploads/9b6efa63-f917-4f9e-8b82-31076b66aff5.png';
   if (name.includes('tricep') && name.includes('dip')) return '/lovable-uploads/81dac889-b82f-4359-a3a6-a77b066d007c.png';
   
+  // Core Machines
+  if (name.includes('abdominal') || name.includes('ab crunch') || name.includes('crunch machine')) return '/lovable-uploads/abdominal-crunch-machine-hoist-red.png';
+  
   // Leg Machines
   if (name.includes('leg') && name.includes('press')) return '/lovable-uploads/f62a3fb2-b5ea-4582-b7ff-550a03b3c767.png';
   if (name.includes('leg') && name.includes('extension')) return '/lovable-uploads/2bdee4e4-d58f-4a51-96fc-5d7e92eeced9.png';
