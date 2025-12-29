@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Dumbbell, Flame, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { DayWorkoutDetail } from './DayWorkoutDetail';
 
 interface DayWorkout {
   date: Date;
   dayName: string;
   hasWorkout: boolean;
   workoutCount: number;
+  workoutIds: string[];
 }
 
 interface WeeklyActivitySummaryProps {
@@ -24,6 +27,8 @@ interface WeeklyActivitySummaryProps {
 }
 
 export const WeeklyActivitySummary = ({ stats, loading }: WeeklyActivitySummaryProps) => {
+  const [selectedDay, setSelectedDay] = useState<DayWorkout | null>(null);
+
   if (loading) {
     return (
       <div className="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border/50 animate-pulse">
@@ -53,6 +58,12 @@ export const WeeklyActivitySummary = ({ stats, loading }: WeeklyActivitySummaryP
   const isToday = (date: Date) => 
     date.toDateString() === today.toDateString();
 
+  const handleDayClick = (day: DayWorkout) => {
+    if (day.hasWorkout) {
+      setSelectedDay(selectedDay?.date.toDateString() === day.date.toDateString() ? null : day);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -80,12 +91,14 @@ export const WeeklyActivitySummary = ({ stats, loading }: WeeklyActivitySummaryP
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
+            onClick={() => handleDayClick(day)}
             className={cn(
               "flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all",
               isToday(day.date) && "ring-2 ring-primary/50",
               day.hasWorkout 
-                ? "bg-primary/20 text-primary" 
-                : "bg-muted/30 text-muted-foreground"
+                ? "bg-primary/20 text-primary cursor-pointer hover:bg-primary/30" 
+                : "bg-muted/30 text-muted-foreground",
+              selectedDay?.date.toDateString() === day.date.toDateString() && "ring-2 ring-primary bg-primary/30"
             )}
           >
             <span className="text-xs font-medium">{day.dayName}</span>
@@ -107,6 +120,15 @@ export const WeeklyActivitySummary = ({ stats, loading }: WeeklyActivitySummaryP
           </motion.div>
         ))}
       </div>
+
+      {/* Selected Day Workout Details */}
+      {selectedDay && (
+        <DayWorkoutDetail
+          date={selectedDay.date}
+          workoutIds={selectedDay.workoutIds}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3 mb-4">
