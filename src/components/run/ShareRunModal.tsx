@@ -537,7 +537,7 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
       if (!isOpen) resetState();
       onOpenChange(isOpen);
     }}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-[100] bg-background">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
