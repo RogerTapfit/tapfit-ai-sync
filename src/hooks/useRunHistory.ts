@@ -13,7 +13,7 @@ export function useRunHistory() {
         .from('run_sessions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'completed')
+        .in('status', ['completed', 'active', 'paused'])
         .order('started_at', { ascending: false });
 
       if (error) throw error;
@@ -24,7 +24,8 @@ export function useRunHistory() {
         user_id: record.user_id,
         started_at: record.started_at,
         ended_at: record.ended_at || undefined,
-        status: record.status as 'completed',
+        status: record.status as RunSession['status'],
+        activity_type: record.activity_type as 'run' | 'walk' | undefined,
         total_distance_m: Number(record.total_distance_m),
         moving_time_s: record.moving_time_s,
         elapsed_time_s: record.elapsed_time_s,

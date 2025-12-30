@@ -9,6 +9,7 @@ export interface RunSession {
   started_at: string;
   ended_at?: string;
   status: 'active' | 'paused' | 'completed' | 'abandoned';
+  activity_type?: 'run' | 'walk';
   total_distance_m: number;
   moving_time_s: number;
   elapsed_time_s: number;
