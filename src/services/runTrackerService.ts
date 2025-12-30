@@ -88,8 +88,8 @@ class RunTrackerService {
       await this.startHeartRateMonitoring();
     }
 
-    // Save initial session
-    await runStorageService.saveSession(this.currentSession);
+    // Save initial session to IndexedDB only (not Supabase yet - we'll sync at completion)
+    await runStorageService.saveToIndexedDBOnly(this.currentSession);
 
     // Detect platform for GPS method selection
     this.isNative = Capacitor.isNativePlatform();
@@ -223,9 +223,12 @@ class RunTrackerService {
   private handleLocationUpdate(point: RunPoint): void {
     if (!this.currentSession || this.status !== 'running') return;
 
-    // Filter poor accuracy points - more lenient on web (cell tower triangulation can be 50-150m)
-    const maxAccuracy = this.isNative ? 50 : 150;
-    if (point.accuracy > maxAccuracy) {
+    // Filter poor accuracy points - more lenient on web (cell tower triangulation can be 50-200m)
+    const maxAccuracy = this.isNative ? 50 : 200;
+    const isFirstPoint = this.currentSession.points.length === 0;
+    const isNthPoint = this.currentSession.points.length % 5 === 0; // Save every 5th point regardless
+    
+    if (point.accuracy > maxAccuracy && !isFirstPoint && !isNthPoint) {
       console.log(`📍 Skipping low accuracy point: ${point.accuracy}m (max: ${maxAccuracy}m)`);
       return;
     }
@@ -235,6 +238,7 @@ class RunTrackerService {
 
     // Add point to session
     this.currentSession.points.push(point);
+    console.log(`📍 Point added: #${this.currentSession.points.length}, accuracy: ${point.accuracy}m`);
 
     // Calculate distance if we have a previous point
     if (this.lastPoint) {
@@ -335,7 +339,8 @@ class RunTrackerService {
   private startAutoSave(): void {
     this.saveTimer = setInterval(() => {
       if (this.currentSession) {
-        runStorageService.saveSession(this.currentSession);
+        // Only save to IndexedDB during active tracking (backup)
+        runStorageService.saveToIndexedDBOnly(this.currentSession);
       }
     }, 10000); // Save every 10 seconds
   }
@@ -346,7 +351,7 @@ class RunTrackerService {
     this.pauseStartTime = Date.now(); // Track when pause started for wall-clock calculation
     if (this.currentSession) {
       this.currentSession.status = 'paused';
-      await runStorageService.saveSession(this.currentSession);
+      await runStorageService.saveToIndexedDBOnly(this.currentSession);
     }
     this.notifyListeners();
   }
@@ -363,7 +368,7 @@ class RunTrackerService {
     this.status = 'running';
     if (this.currentSession) {
       this.currentSession.status = 'active';
-      await runStorageService.saveSession(this.currentSession);
+      await runStorageService.saveToIndexedDBOnly(this.currentSession);
     }
     this.notifyListeners();
   }
@@ -418,9 +423,13 @@ class RunTrackerService {
     // Finalize session
     this.currentSession.ended_at = new Date().toISOString();
     this.currentSession.status = 'completed';
-    await runStorageService.saveSession(this.currentSession);
+    
+    console.log(`📊 Completing session with ${this.currentSession.points.length} route points`);
+    
+    // Save to IndexedDB as backup first
+    await runStorageService.saveToIndexedDBOnly(this.currentSession);
 
-    // Sync to Supabase
+    // Single authoritative sync to Supabase with all the data
     await this.syncToSupabase(this.currentSession);
 
     const session = this.currentSession;

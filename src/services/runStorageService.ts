@@ -46,43 +46,8 @@ class RunStorageService {
     });
   }
 
-  async saveSession(session: RunSession): Promise<void> {
-    // Save to Supabase
-    try {
-      const { error } = await supabase
-        .from('run_sessions')
-        .upsert({
-          id: session.id,
-          user_id: session.user_id,
-          started_at: session.started_at,
-          ended_at: session.ended_at,
-          status: session.status,
-          total_distance_m: Math.round(session.total_distance_m),
-          moving_time_s: Math.round(session.moving_time_s),
-          elapsed_time_s: Math.round(session.elapsed_time_s),
-          avg_pace_sec_per_km: session.avg_pace_sec_per_km,
-          calories: session.calories,
-          unit: session.unit,
-          notes: session.notes,
-          elevation_gain_m: session.elevation_gain_m,
-          elevation_loss_m: session.elevation_loss_m,
-          source: session.source,
-          route_points: session.points as any,
-          splits: session.splits as any,
-          training_mode: session.training_mode,
-          target_hr_zone: session.target_hr_zone as any,
-          avg_heart_rate: session.avg_heart_rate,
-          max_heart_rate: session.max_heart_rate,
-          time_in_zone_s: session.time_in_zone_s,
-          hr_samples: session.hr_samples as any,
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Failed to save run to Supabase:', error);
-    }
-
-    // Also save to IndexedDB as backup
+  // Save to IndexedDB only (local backup, used during active tracking)
+  async saveToIndexedDBOnly(session: RunSession): Promise<void> {
     if (!this.db) await this.init();
     
     return new Promise((resolve, reject) => {
@@ -93,6 +58,50 @@ class RunStorageService {
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
+  }
+
+  // Save to both IndexedDB and Supabase (used during pauses and periodic saves)
+  async saveSession(session: RunSession): Promise<void> {
+    // Save to IndexedDB first as backup
+    await this.saveToIndexedDBOnly(session);
+    
+    // Only sync to Supabase if session is completed (to avoid race conditions)
+    // During active tracking, we just save to IndexedDB
+    if (session.status === 'completed') {
+      try {
+        const { error } = await supabase
+          .from('run_sessions')
+          .upsert({
+            id: session.id,
+            user_id: session.user_id,
+            started_at: session.started_at,
+            ended_at: session.ended_at,
+            status: session.status,
+            total_distance_m: Math.round(session.total_distance_m),
+            moving_time_s: Math.round(session.moving_time_s),
+            elapsed_time_s: Math.round(session.elapsed_time_s),
+            avg_pace_sec_per_km: session.avg_pace_sec_per_km,
+            calories: session.calories,
+            unit: session.unit,
+            notes: session.notes,
+            elevation_gain_m: session.elevation_gain_m,
+            elevation_loss_m: session.elevation_loss_m,
+            source: session.source,
+            route_points: session.points as any,
+            splits: session.splits as any,
+            training_mode: session.training_mode,
+            target_hr_zone: session.target_hr_zone as any,
+            avg_heart_rate: session.avg_heart_rate,
+            max_heart_rate: session.max_heart_rate,
+            time_in_zone_s: session.time_in_zone_s,
+            hr_samples: session.hr_samples as any,
+          });
+
+        if (error) throw error;
+      } catch (error) {
+        console.error('Failed to save run to Supabase:', error);
+      }
+    }
   }
 
   async getSession(id: string): Promise<RunSession | null> {
