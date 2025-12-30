@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Share2, ImagePlus, Download, X, Camera, RotateCcw } from 'lucide-react';
 import { RunSession } from '@/types/run';
 import RunShareCard from './RunShareCard';
@@ -27,6 +28,7 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [compositeImage, setCompositeImage] = useState<string | null>(null);
+  const [shareUnit, setShareUnit] = useState<'km' | 'mi'>(run.unit || 'km');
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -94,8 +96,8 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
       }
 
       if (photoUri) {
-        // Create Strava-style overlay
-        const composite = await compositeSelfieWithStats(photoUri, run);
+        // Create Strava-style overlay with selected unit
+        const composite = await compositeSelfieWithStats(photoUri, run, shareUnit);
         setCompositeImage(composite);
         setViewMode('selfie-preview');
       }
@@ -296,6 +298,20 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
               </>
             ) : (
               <>
+                {/* Unit Toggle */}
+                <div className="flex items-center justify-center gap-3 py-2 px-4 bg-muted/50 rounded-lg">
+                  <span className={`text-sm font-medium transition-colors ${shareUnit === 'km' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    km
+                  </span>
+                  <Switch 
+                    checked={shareUnit === 'mi'} 
+                    onCheckedChange={(checked) => setShareUnit(checked ? 'mi' : 'km')} 
+                  />
+                  <span className={`text-sm font-medium transition-colors ${shareUnit === 'mi' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    mi
+                  </span>
+                </div>
+
                 {/* Primary: Take Selfie - Strava-style overlay */}
                 <Button
                   className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
