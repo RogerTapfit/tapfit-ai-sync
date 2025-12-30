@@ -72,6 +72,10 @@ export const useDailyStats = (userId?: string): DailyStats => {
 
       try {
         const today = getLocalDateString();
+        // Create start of today in local timezone as ISO string for accurate filtering
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayStartISO = todayStart.toISOString();
         
         // Get today's workout logs and cardio sessions in parallel
         // Include both completed and in-progress workouts
@@ -87,14 +91,14 @@ export const useDailyStats = (userId?: string): DailyStats => {
             .from('workout_logs')
             .select('*')
             .eq('user_id', userId)
-            .gte('started_at', today)
+            .gte('started_at', todayStartISO)
             .order('created_at', { ascending: false }),
           
           supabase
             .from('smart_pin_data')
             .select('*')
             .eq('user_id', userId)
-            .gte('created_at', today)
+            .gte('created_at', todayStartISO)
             .order('created_at', { ascending: false }),
           
           supabase
@@ -102,27 +106,27 @@ export const useDailyStats = (userId?: string): DailyStats => {
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'completed')
-            .gte('started_at', today),
+            .gte('started_at', todayStartISO),
           
           supabase
             .from('ride_sessions')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'completed')
-            .gte('started_at', today),
+            .gte('started_at', todayStartISO),
           
           supabase
             .from('swim_sessions')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'completed')
-            .gte('started_at', today),
+            .gte('started_at', todayStartISO),
           
           supabase
             .from('exercise_logs')
             .select('*')
             .eq('user_id', userId)
-            .gte('created_at', today)
+            .gte('created_at', todayStartISO)
         ]);
 
         // Calculate workout-based stats from exercise_logs
