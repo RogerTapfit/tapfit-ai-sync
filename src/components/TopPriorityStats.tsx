@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile, Sprout } from "lucide-react";
@@ -48,6 +49,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const { activeJourney: sobrietyJourney, getProgress: getSobrietyProgress } = useSobrietyTracking();
   const sobrietyProgress = getSobrietyProgress();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+  const navigate = useNavigate();
   const chatbotContext = useChatbotContextOptional();
   const pendingModal = chatbotContext?.pendingModal;
   const clearPendingModal = chatbotContext?.clearPendingModal;
@@ -194,8 +196,20 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
           <p className="text-sm text-muted-foreground">Calories Consumed</p>
         </div>
 
-        <div className="text-center space-y-2">
-          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center">
+        <div 
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => navigate('/run-history')}
+          role="button"
+          aria-label="View run and walk history"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/run-history');
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-200">
             <Footprints className="size-6 block text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-white">
