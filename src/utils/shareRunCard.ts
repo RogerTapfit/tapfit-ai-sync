@@ -42,65 +42,92 @@ export async function compositeOnPhoto(
   photoUri: string,
   cardDataUrl: string
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
+  const timeoutMs = 10000;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Photo compositing timed out')), timeoutMs);
+  });
+
+  const compositePromise = (async () => {
+    const [photo, card] = await Promise.all([
+      loadImage(photoUri),
+      loadImage(cardDataUrl),
+    ]);
+
+    // Avoid very large canvases on mobile Safari (can hang or crash)
+    const maxDim = 2048;
+    const photoW = photo.naturalWidth || photo.width;
+    const photoH = photo.naturalHeight || photo.height;
+    const downscale = Math.min(1, maxDim / Math.max(photoW, photoH));
+
     const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(photoW * downscale));
+    canvas.height = Math.max(1, Math.round(photoH * downscale));
+
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      reject(new Error('Could not get canvas context'));
-      return;
+    if (!ctx) throw new Error('Could not get canvas context');
+
+    // Draw background photo
+    ctx.drawImage(photo, 0, 0, canvas.width, canvas.height);
+
+    // Card size (40% of photo width, maintain aspect ratio)
+    const cardW = card.naturalWidth || card.width;
+    const cardH = card.naturalHeight || card.height;
+    const cardWidth = canvas.width * 0.4;
+    const cardHeight = (cardH / Math.max(1, cardW)) * cardWidth;
+
+    // Bottom-right positioning
+    const padding = canvas.width * 0.03;
+    const x = canvas.width - cardWidth - padding;
+    const y = canvas.height - cardHeight - padding;
+
+    // Shadow + draw overlay
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 5;
+    ctx.drawImage(card, x, y, cardWidth, cardHeight);
+    ctx.restore();
+
+    return canvas.toDataURL('image/png');
+  })();
+
+  return Promise.race([compositePromise, timeoutPromise]);
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    // Only needed for remote URLs; data: URLs are always same-origin.
+    if (!src.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
     }
 
-    const photo = new Image();
-    const card = new Image();
-    
-    let loadedCount = 0;
-    const checkLoaded = () => {
-      loadedCount++;
-      if (loadedCount === 2) {
-        // Set canvas size to photo size
-        canvas.width = photo.width;
-        canvas.height = photo.height;
-
-        // Draw photo
-        ctx.drawImage(photo, 0, 0);
-
-        // Calculate card size (40% of photo width, maintain aspect ratio)
-        const cardWidth = photo.width * 0.4;
-        const cardHeight = (card.height / card.width) * cardWidth;
-
-        // Position at bottom-right with padding
-        const padding = photo.width * 0.03;
-        const x = photo.width - cardWidth - padding;
-        const y = photo.height - cardHeight - padding;
-
-        // Add subtle shadow behind card
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = 20;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 5;
-
-        // Draw card
-        ctx.drawImage(card, x, y, cardWidth, cardHeight);
-
-        // Reset shadow
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-
-        resolve(canvas.toDataURL('image/png', 1));
-      }
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      resolve(img);
+    };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      reject(new Error('Failed to load image'));
     };
 
-    photo.crossOrigin = 'anonymous';
-    card.crossOrigin = 'anonymous';
+    img.onload = done;
+    img.onerror = fail;
+    img.src = src;
 
-    photo.onload = checkLoaded;
-    card.onload = checkLoaded;
-    
-    photo.onerror = () => reject(new Error('Failed to load photo'));
-    card.onerror = () => reject(new Error('Failed to load card'));
-
-    photo.src = photoUri;
-    card.src = cardDataUrl;
+    // Some browsers (Safari) behave better when we await decode().
+    // It can resolve before onload; guard with `settled`.
+    if (typeof (img as any).decode === 'function') {
+      (img as any).decode().then(done).catch(() => {
+        // ignore; onload/onerror will handle
+      });
+    }
   });
 }
 
