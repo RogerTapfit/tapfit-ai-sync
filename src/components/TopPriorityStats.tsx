@@ -198,14 +198,14 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
 
         <div 
           className="text-center space-y-2 cursor-pointer select-none"
-          onClick={() => navigate('/run-history')}
+          onClick={() => navigate('/run/history')}
           role="button"
           aria-label="View run and walk history"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              navigate('/run-history');
+              navigate('/run/history');
             }
           }}
         >
