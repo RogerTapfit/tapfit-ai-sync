@@ -5,6 +5,20 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { RunSession } from '@/types/run';
 import { formatDistance, formatTime, formatPace } from '@/utils/runFormatters';
 
+// Dynamic import for Media plugin (may not be available on all platforms)
+let Media: any = null;
+const loadMediaPlugin = async () => {
+  if (!Media && Capacitor.isNativePlatform()) {
+    try {
+      const mediaModule = await import('@capacitor-community/media');
+      Media = mediaModule.Media;
+    } catch (e) {
+      console.log('Media plugin not available');
+    }
+  }
+  return Media;
+};
+
 /**
  * Capture the run share card as a PNG data URL with timeout
  */
@@ -457,4 +471,181 @@ export async function downloadImage(dataUrl: string, fileName: string): Promise<
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
   const response = await fetch(dataUrl);
   return response.blob();
+}
+
+/**
+ * Save image to photo album/camera roll
+ */
+export async function saveToPhotoAlbum(dataUrl: string, fileName: string): Promise<void> {
+  if (Capacitor.isNativePlatform()) {
+    const MediaPlugin = await loadMediaPlugin();
+    
+    if (MediaPlugin) {
+      // Use Media plugin to save to camera roll
+      const base64Data = dataUrl.split(',')[1];
+      const tempPath = `tapfit_temp_${Date.now()}.png`;
+      
+      // First save to cache
+      const savedFile = await Filesystem.writeFile({
+        path: tempPath,
+        data: base64Data,
+        directory: Directory.Cache,
+      });
+      
+      // Then save to photo album
+      await MediaPlugin.savePhoto({
+        path: savedFile.uri,
+      });
+      
+      // Clean up temp file
+      try {
+        await Filesystem.deleteFile({
+          path: tempPath,
+          directory: Directory.Cache,
+        });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    } else {
+      // Fallback: save to Documents and share
+      const base64Data = dataUrl.split(',')[1];
+      await Filesystem.writeFile({
+        path: `Pictures/${fileName}`,
+        data: base64Data,
+        directory: Directory.Documents,
+        recursive: true,
+      });
+    }
+  } else {
+    // Web: trigger download
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
+/**
+ * Share a video file
+ */
+export async function shareVideo(blob: Blob, title: string): Promise<boolean> {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      const fileName = `tapfit-run-${Date.now()}.webm`;
+      
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      
+      await Share.share({
+        title: title,
+        url: savedFile.uri,
+        dialogTitle: 'Share your run video',
+      });
+      
+      // Clean up
+      try {
+        await Filesystem.deleteFile({
+          path: fileName,
+          directory: Directory.Cache,
+        });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
+      return true;
+    } else if (navigator.share && navigator.canShare) {
+      const file = new File([blob], 'tapfit-run.webm', { type: 'video/webm' });
+      
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: title,
+          files: [file],
+        });
+        return true;
+      }
+    }
+  } catch (error) {
+    console.error('Share video error:', error);
+  }
+  
+  return false;
+}
+
+/**
+ * Save video to photo album/camera roll
+ */
+export async function saveVideoToPhotoAlbum(blob: Blob, fileName: string): Promise<void> {
+  if (Capacitor.isNativePlatform()) {
+    const MediaPlugin = await loadMediaPlugin();
+    
+    // Convert blob to base64
+    const reader = new FileReader();
+    const base64 = await new Promise<string>((resolve, reject) => {
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    
+    const tempPath = `tapfit_temp_${Date.now()}.webm`;
+    
+    // Save to cache first
+    const savedFile = await Filesystem.writeFile({
+      path: tempPath,
+      data: base64,
+      directory: Directory.Cache,
+    });
+    
+    if (MediaPlugin) {
+      // Use Media plugin to save to camera roll
+      await MediaPlugin.saveVideo({
+        path: savedFile.uri,
+      });
+      
+      // Clean up temp file
+      try {
+        await Filesystem.deleteFile({
+          path: tempPath,
+          directory: Directory.Cache,
+        });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    } else {
+      // Fallback: move to Documents/Videos
+      await Filesystem.copy({
+        from: savedFile.uri,
+        to: `Videos/${fileName}`,
+        toDirectory: Directory.Documents,
+      });
+    }
+  } else {
+    // Web: trigger download
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 }
