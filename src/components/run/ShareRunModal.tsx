@@ -234,12 +234,16 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
         <div className="space-y-4">
           {/* Preview Area */}
           <div className="flex justify-center">
-            {viewMode !== 'card' && compositeImage ? (
-              <div className="relative">
+            {isProcessing ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : viewMode !== 'card' && compositeImage ? (
+              <div className="relative w-full">
                 <img 
                   src={compositeImage} 
                   alt="Preview" 
-                  className="max-w-full max-h-[400px] rounded-xl"
+                  className="w-full max-h-[450px] object-contain rounded-xl"
                 />
                 <Button
                   size="icon"
