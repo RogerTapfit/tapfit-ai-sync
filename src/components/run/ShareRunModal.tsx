@@ -65,6 +65,81 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
     }
   };
 
+  const pickImageAsDataUrl = (options?: { capture?: 'user' | 'environment'; timeoutMs?: number }) => {
+    const timeoutMs = options?.timeoutMs ?? 30000;
+
+    return new Promise<string | null>((resolve, reject) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      if (options?.capture) {
+        input.setAttribute('capture', options.capture);
+      }
+
+      // iOS Safari is more reliable when the input is in the DOM.
+      input.style.position = 'fixed';
+      input.style.left = '-9999px';
+      input.style.top = '0';
+      document.body.appendChild(input);
+
+      let settled = false;
+      let didChange = false;
+
+      const cleanup = () => {
+        window.removeEventListener('focus', onWindowFocus);
+        input.remove();
+      };
+
+      const settleResolve = (value: string | null) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        cleanup();
+        resolve(value);
+      };
+
+      const settleReject = (err: unknown) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        cleanup();
+        reject(err);
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        settleResolve(null);
+      }, timeoutMs);
+
+      const onWindowFocus = () => {
+        // When users cancel the picker/camera on iOS, `change` may never fire.
+        // After returning focus, if no file was chosen, treat as cancel.
+        window.setTimeout(() => {
+          if (settled || didChange) return;
+          const hasFile = !!input.files && input.files.length > 0;
+          if (!hasFile) settleResolve(null);
+        }, 1200);
+      };
+
+      window.addEventListener('focus', onWindowFocus);
+
+      input.onchange = () => {
+        didChange = true;
+        const file = input.files?.[0];
+        if (!file) {
+          settleResolve(null);
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => settleResolve(reader.result as string);
+        reader.onerror = () => settleReject(reader.error ?? new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      };
+
+      input.click();
+    });
+  };
+
   const handleShareAsImage = async () => {
     if (!cardRef.current) return;
     
@@ -95,8 +170,8 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
   const handleTakeSelfie = async () => {
     setIsProcessing(true);
     try {
-      let photoUri: string;
-      
+      let photoUri: string | null = null;
+
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
           resultType: CameraResultType.DataUrl,
@@ -104,26 +179,9 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
           direction: CameraDirection.Front,
           quality: 90,
         });
-        photoUri = photo.dataUrl || '';
+        photoUri = photo.dataUrl || null;
       } else {
-        photoUri = await new Promise<string>((resolve, reject) => {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*';
-          input.capture = 'user';
-          input.onchange = (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            } else {
-              reject(new Error('No file selected'));
-            }
-          };
-          input.click();
-        });
+        photoUri = await pickImageAsDataUrl({ capture: 'user' });
       }
 
       if (photoUri) {
@@ -133,13 +191,11 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
       }
     } catch (error) {
       console.error('Error taking selfie:', error);
-      if ((error as Error).message !== 'No file selected') {
-        toast({
-          title: "Could not take photo",
-          description: "Please try again or use the gallery option.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Could not take photo",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -358,38 +414,22 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
 
   const handleAddToPhoto = async () => {
     if (!cardRef.current) return;
-    
+
     setIsProcessing(true);
     try {
       const cardDataUrl = await captureRunCard(cardRef.current);
-      
-      let photoUri: string;
-      
+
+      let photoUri: string | null = null;
+
       if (Capacitor.isNativePlatform()) {
         const photo = await CapCamera.getPhoto({
           resultType: CameraResultType.DataUrl,
           source: CameraSource.Photos,
           quality: 90,
         });
-        photoUri = photo.dataUrl || photo.webPath || '';
+        photoUri = photo.dataUrl || photo.webPath || null;
       } else {
-        photoUri = await new Promise<string>((resolve, reject) => {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*';
-          input.onchange = (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            } else {
-              reject(new Error('No file selected'));
-            }
-          };
-          input.click();
-        });
+        photoUri = await pickImageAsDataUrl();
       }
 
       if (photoUri) {
@@ -399,13 +439,11 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
       }
     } catch (error) {
       console.error('Error adding to photo:', error);
-      if ((error as Error).message !== 'No file selected') {
-        toast({
-          title: "Could not add to photo",
-          description: error instanceof Error ? error.message : "Try selecting a different photo.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Could not add to photo",
+        description: error instanceof Error ? error.message : "Try selecting a different photo.",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -525,6 +563,7 @@ const ShareRunModal = ({ run, open, onOpenChange }: ShareRunModalProps) => {
 
   const resetState = () => {
     stopVideoStream();
+    setIsProcessing(false);
     setViewMode('card');
     setCompositeImage(null);
     setRecordedVideo(null);
