@@ -82,7 +82,8 @@ export const useDailyStats = (userId?: string): DailyStats => {
         const [
           { data: workoutLogs },
           { data: smartPinData },
-          { data: runSessions },
+          { data: completedRunSessions },
+          { data: allRunSessions },
           { data: rideSessions },
           { data: swimSessions },
           { data: exerciseLogs }
@@ -101,11 +102,19 @@ export const useDailyStats = (userId?: string): DailyStats => {
             .gte('created_at', todayStartISO)
             .order('created_at', { ascending: false }),
           
+          // Completed run sessions only (for calorie calculations)
           supabase
             .from('run_sessions')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'completed')
+            .gte('started_at', todayStartISO),
+          
+          // ALL run sessions including active/paused (for step estimation)
+          supabase
+            .from('run_sessions')
+            .select('id, total_distance_m, activity_type, status')
+            .eq('user_id', userId)
             .gte('started_at', todayStartISO),
           
           supabase
@@ -179,8 +188,8 @@ export const useDailyStats = (userId?: string): DailyStats => {
           });
         }
 
-        // Calculate steps from run/walk sessions
-        const runWalkSteps = (runSessions || []).reduce((sum, session) => {
+        // Calculate steps from ALL run/walk sessions (including active/paused)
+        const runWalkSteps = (allRunSessions || []).reduce((sum, session) => {
           const activityType = (session.activity_type === 'walk' ? 'walk' : 'run') as 'run' | 'walk';
           return sum + estimateSteps(session.total_distance_m || 0, activityType);
         }, 0);
@@ -188,10 +197,10 @@ export const useDailyStats = (userId?: string): DailyStats => {
         // Get steps from Apple Watch (if available) + run/walk estimated steps
         const steps = (healthMetrics.steps || 0) + runWalkSteps;
 
-        // Calculate cardio calories
-        const cardioCalories = (runSessions || []).reduce((sum, run) => sum + run.calories, 0) +
-                               (rideSessions || []).reduce((sum, ride) => sum + ride.calories, 0) +
-                               (swimSessions || []).reduce((sum, swim) => sum + swim.calories, 0);
+        // Calculate cardio calories (completed sessions only to avoid double-counting)
+        const cardioCalories = (completedRunSessions || []).reduce((sum, run) => sum + (run.calories || 0), 0) +
+                               (rideSessions || []).reduce((sum, ride) => sum + (ride.calories || 0), 0) +
+                               (swimSessions || []).reduce((sum, swim) => sum + (swim.calories || 0), 0);
 
         // Calculate workout calories
         const workoutCalories = CalorieCalculationService.calculateTotalDailyCalories(
