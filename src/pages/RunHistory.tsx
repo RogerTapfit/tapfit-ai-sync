@@ -1,15 +1,23 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock, Flame, Activity, Play } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Flame, Activity, Play, Layers } from "lucide-react";
 import { useRunHistory } from "@/hooks/useRunHistory";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { format } from "date-fns";
 import { MiniRoutePreview } from "@/components/MiniRoutePreview";
 import { Badge } from "@/components/ui/badge";
+import { mergeConsecutiveSessions } from "@/utils/mergeRunSessions";
 const RunHistory = () => {
   const navigate = useNavigate();
   const { data: runs, isLoading } = useRunHistory();
+  
+  // Merge sessions with < 10 min gaps
+  const mergedRuns = useMemo(() => 
+    mergeConsecutiveSessions(runs || [], 10), 
+    [runs]
+  );
 
   if (isLoading) {
     return (
@@ -39,7 +47,7 @@ const RunHistory = () => {
         </div>
 
         {/* Runs List */}
-        {!runs || runs.length === 0 ? (
+        {mergedRuns.length === 0 ? (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground mb-4">No runs recorded yet</p>
             <Button onClick={() => navigate('/run/setup')}>
@@ -48,7 +56,7 @@ const RunHistory = () => {
           </Card>
         ) : (
           <div className="space-y-4">
-            {runs.map((run) => (
+            {mergedRuns.map((run) => (
               <Card
                 key={run.id}
                 className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -65,7 +73,7 @@ const RunHistory = () => {
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-lg">
                           {format(new Date(run.started_at), "EEEE, MMM d")}
                         </h3>
@@ -73,6 +81,12 @@ const RunHistory = () => {
                           <Badge variant="secondary" className="bg-green-500/20 text-green-400 text-xs">
                             <Play className="h-3 w-3 mr-1" />
                             Active
+                          </Badge>
+                        )}
+                        {run.sessionCount > 1 && (
+                          <Badge variant="outline" className="text-xs">
+                            <Layers className="h-3 w-3 mr-1" />
+                            {run.sessionCount} segments
                           </Badge>
                         )}
                       </div>
