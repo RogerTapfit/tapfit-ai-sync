@@ -60,7 +60,11 @@ const RunHistory = () => {
               <Card
                 key={run.id}
                 className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/run/summary/${run.id}`)}
+                onClick={() => {
+                  // Pass merged session IDs as query param
+                  const ids = run.mergedSessionIds.join(',');
+                  navigate(`/run/summary/${run.id}?ids=${ids}`);
+                }}
               >
                 {/* Route preview map */}
                 {run.points && run.points.length >= 2 && (
