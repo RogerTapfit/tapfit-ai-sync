@@ -137,7 +137,8 @@ function loadImage(src: string): Promise<HTMLImageElement> {
  */
 export async function compositeSelfieWithStats(
   photoUri: string,
-  run: RunSession
+  run: RunSession,
+  displayUnit: 'km' | 'mi' = 'km'
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const photo = new Image();
@@ -151,75 +152,111 @@ export async function compositeSelfieWithStats(
         return;
       }
 
-      // Set canvas to photo dimensions
-      canvas.width = photo.width;
-      canvas.height = photo.height;
+      // Limit canvas size for mobile performance
+      const maxDim = 2048;
+      const photoW = photo.naturalWidth || photo.width;
+      const photoH = photo.naturalHeight || photo.height;
+      const downscale = Math.min(1, maxDim / Math.max(photoW, photoH));
+
+      canvas.width = Math.round(photoW * downscale);
+      canvas.height = Math.round(photoH * downscale);
 
       // Draw the photo
-      ctx.drawImage(photo, 0, 0);
+      ctx.drawImage(photo, 0, 0, canvas.width, canvas.height);
 
       const width = canvas.width;
       const height = canvas.height;
 
       // Draw gradient overlay at top for text visibility
-      const topGradient = ctx.createLinearGradient(0, 0, 0, height * 0.25);
-      topGradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)');
+      const topGradient = ctx.createLinearGradient(0, 0, 0, height * 0.22);
+      topGradient.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
       topGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = topGradient;
-      ctx.fillRect(0, 0, width, height * 0.25);
+      ctx.fillRect(0, 0, width, height * 0.22);
 
       // Draw gradient overlay at bottom for branding
-      const bottomGradient = ctx.createLinearGradient(0, height * 0.75, 0, height);
+      const bottomGradient = ctx.createLinearGradient(0, height * 0.8, 0, height);
       bottomGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
       bottomGradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
       ctx.fillStyle = bottomGradient;
-      ctx.fillRect(0, height * 0.75, width, height * 0.25);
+      ctx.fillRect(0, height * 0.8, width, height * 0.2);
 
-      // Scale factor based on image size
-      const scale = Math.min(width, height) / 400;
+      // Scale factor based on image size (normalized to ~1000px reference)
+      const scale = Math.min(width, height) / 500;
       
-      // Format stats
-      const distance = formatDistance(run.total_distance_m, run.unit);
-      const time = formatTime(run.moving_time_s);
-      const pace = formatPace(run.avg_pace_sec_per_km, run.unit);
+      // Format stats with the selected unit
+      const distanceValue = displayUnit === 'mi' 
+        ? (run.total_distance_m / 1609.34).toFixed(2)
+        : (run.total_distance_m / 1000).toFixed(2);
+      
+      const minutes = Math.floor(run.moving_time_s / 60);
+      const seconds = Math.round(run.moving_time_s % 60);
+      const timeValue = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Calculate pace in the selected unit
+      const distanceInUnit = displayUnit === 'mi' 
+        ? run.total_distance_m / 1609.34 
+        : run.total_distance_m / 1000;
+      const paceSeconds = distanceInUnit > 0 ? run.moving_time_s / distanceInUnit : 0;
+      const paceMin = Math.floor(paceSeconds / 60);
+      const paceSec = Math.round(paceSeconds % 60);
+      const paceValue = `${paceMin}:${paceSec.toString().padStart(2, '0')}`;
+      
       const isWalk = run.avg_pace_sec_per_km > 600;
-      const unit = run.unit === 'mi' ? 'mi' : 'km';
-      const paceUnit = run.unit === 'mi' ? '/mi' : '/km';
 
-      // Draw main stats
-      ctx.textAlign = 'center';
-      ctx.fillStyle = 'white';
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-      ctx.shadowBlur = 10 * scale;
+      // Column setup - 3 equal columns with padding
+      const padding = width * 0.04;
+      const usableWidth = width - (padding * 2);
+      const colWidth = usableWidth / 3;
+      const colCenters = [
+        padding + colWidth * 0.5,
+        padding + colWidth * 1.5,
+        padding + colWidth * 2.5
+      ];
+
+      // Calculate font sizes that fit within columns
+      const maxValueFontSize = Math.min(36 * scale, colWidth * 0.4);
+      const unitFontSize = maxValueFontSize * 0.4;
+      const labelFontSize = maxValueFontSize * 0.35;
+
+      // Stats positioning - start from top
+      const startY = height * 0.045;
+      const valueY = startY + maxValueFontSize;
+      const unitY = valueY + unitFontSize + 4 * scale;
+      const labelY = unitY + labelFontSize + 2 * scale;
+
+      // Shadow for all text
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 8 * scale;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 2 * scale;
+      ctx.textAlign = 'center';
 
-      // Stats positioning
-      const statsY = height * 0.08;
-      const statSpacing = width / 3;
+      // Stats data
+      const stats = [
+        { value: distanceValue, unit: displayUnit.toUpperCase(), label: 'DISTANCE' },
+        { value: timeValue, unit: 'MIN', label: 'TIME' },
+        { value: paceValue, unit: `/${displayUnit.toUpperCase()}`, label: 'PACE' }
+      ];
 
-      // Distance
-      ctx.font = `bold ${48 * scale}px system-ui, -apple-system, sans-serif`;
-      ctx.fillText(distance, statSpacing * 0.5, statsY);
-      ctx.font = `${14 * scale}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillText('DISTANCE', statSpacing * 0.5, statsY + 24 * scale);
-
-      // Time
-      ctx.fillStyle = 'white';
-      ctx.font = `bold ${48 * scale}px system-ui, -apple-system, sans-serif`;
-      ctx.fillText(time, statSpacing * 1.5, statsY);
-      ctx.font = `${14 * scale}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillText('TIME', statSpacing * 1.5, statsY + 24 * scale);
-
-      // Pace
-      ctx.fillStyle = 'white';
-      ctx.font = `bold ${48 * scale}px system-ui, -apple-system, sans-serif`;
-      ctx.fillText(pace, statSpacing * 2.5, statsY);
-      ctx.font = `${14 * scale}px system-ui, -apple-system, sans-serif`;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.fillText(`PACE ${paceUnit}`, statSpacing * 2.5, statsY + 24 * scale);
+      stats.forEach((stat, i) => {
+        const x = colCenters[i];
+        
+        // Draw value (bold, large)
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${maxValueFontSize}px system-ui, -apple-system, sans-serif`;
+        ctx.fillText(stat.value, x, valueY);
+        
+        // Draw unit (smaller, slightly muted)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.font = `600 ${unitFontSize}px system-ui, -apple-system, sans-serif`;
+        ctx.fillText(stat.unit, x, unitY);
+        
+        // Draw label (smallest, muted)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = `500 ${labelFontSize}px system-ui, -apple-system, sans-serif`;
+        ctx.fillText(stat.label, x, labelY);
+      });
 
       // Draw small route visualization in bottom right corner
       if (run.points.length > 1) {
