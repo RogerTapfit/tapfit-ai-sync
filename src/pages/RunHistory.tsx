@@ -70,7 +70,7 @@ const RunHistory = () => {
                 {run.points && run.points.length >= 2 && (
                   <MiniRoutePreview 
                     points={run.points} 
-                    className="h-32 w-full"
+                    className="h-48 w-full"
                   />
                 )}
                 
