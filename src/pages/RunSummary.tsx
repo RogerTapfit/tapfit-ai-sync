@@ -1,19 +1,75 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock, Flame, Activity, TrendingUp, TrendingDown, Share2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Flame, Activity, TrendingUp, TrendingDown, Share2, Layers } from "lucide-react";
 import ShareRunModal from "@/components/run/ShareRunModal";
-import { useRunById } from "@/hooks/useRunHistory";
+import { useRunsByIds } from "@/hooks/useRunHistory";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { format } from "date-fns";
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { RunSession } from "@/types/run";
+import { Badge } from "@/components/ui/badge";
+
+// Merge multiple sessions into one for display
+function mergeSessionsForSummary(sessions: RunSession[]): RunSession & { sessionCount: number } {
+  if (sessions.length === 0) return null as any;
+  if (sessions.length === 1) return { ...sessions[0], sessionCount: 1 };
+  
+  const sorted = [...sessions].sort(
+    (a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime()
+  );
+  
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  
+  const totalDistance = sorted.reduce((sum, s) => sum + (s.total_distance_m || 0), 0);
+  const totalTime = sorted.reduce((sum, s) => sum + (s.moving_time_s || 0), 0);
+  const totalCalories = sorted.reduce((sum, s) => sum + (s.calories || 0), 0);
+  const totalElevGain = sorted.reduce((sum, s) => sum + (s.elevation_gain_m || 0), 0);
+  const totalElevLoss = sorted.reduce((sum, s) => sum + (s.elevation_loss_m || 0), 0);
+  const allPoints = sorted.flatMap(s => s.points || []);
+  const allSplits = sorted.flatMap(s => s.splits || []);
+  const avgPace = totalDistance > 0 ? (totalTime / (totalDistance / 1000)) : 0;
+  
+  return {
+    ...first,
+    ended_at: last.ended_at,
+    total_distance_m: totalDistance,
+    moving_time_s: totalTime,
+    calories: totalCalories,
+    avg_pace_sec_per_km: avgPace,
+    elevation_gain_m: totalElevGain,
+    elevation_loss_m: totalElevLoss,
+    points: allPoints,
+    splits: allSplits,
+    sessionCount: sorted.length,
+  };
+}
 
 const RunSummary = () => {
   const { runId } = useParams<{ runId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { data: run, isLoading } = useRunById(runId);
+  
+  // Get session IDs from query param, fallback to just runId
+  const sessionIds = useMemo(() => {
+    const idsParam = searchParams.get('ids');
+    if (idsParam) {
+      return idsParam.split(',').filter(Boolean);
+    }
+    return runId ? [runId] : [];
+  }, [searchParams, runId]);
+  
+  const { data: sessions, isLoading } = useRunsByIds(sessionIds);
+  
+  // Merge sessions for display
+  const run = useMemo(() => {
+    if (!sessions || sessions.length === 0) return null;
+    return mergeSessionsForSummary(sessions);
+  }, [sessions]);
+  
   const [showShareModal, setShowShareModal] = useState(false);
 
   // Initialize map with the run route
@@ -106,7 +162,15 @@ const RunSummary = () => {
             Back
           </Button>
           <div className="text-center">
-            <h1 className="text-xl font-bold">Run Summary</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-xl font-bold">Run Summary</h1>
+              {run.sessionCount > 1 && (
+                <Badge variant="outline" className="text-xs">
+                  <Layers className="h-3 w-3 mr-1" />
+                  {run.sessionCount} segments
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {format(new Date(run.started_at), "EEEE, MMM d 'at' h:mm a")}
             </p>
