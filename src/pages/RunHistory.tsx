@@ -1,17 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock, Flame, Activity, Play, Layers } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Flame, Activity, Play, Layers, Share2 } from "lucide-react";
 import { useRunHistory } from "@/hooks/useRunHistory";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { format } from "date-fns";
 import { MiniRoutePreview } from "@/components/MiniRoutePreview";
 import { Badge } from "@/components/ui/badge";
-import { mergeConsecutiveSessions } from "@/utils/mergeRunSessions";
+import { mergeConsecutiveSessions, MergedRunSession } from "@/utils/mergeRunSessions";
+import ShareRunModal from "@/components/run/ShareRunModal";
+import { RunSession } from "@/types/run";
 const RunHistory = () => {
   const navigate = useNavigate();
   const { data: runs, isLoading } = useRunHistory();
+  const [selectedRun, setSelectedRun] = useState<RunSession | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   
   // Merge sessions with < 10 min gaps
   const mergedRuns = useMemo(() => 
@@ -67,12 +71,27 @@ const RunHistory = () => {
                 }}
               >
                 {/* Route preview map */}
-                {run.points && run.points.length >= 2 && (
-                  <MiniRoutePreview 
-                    points={run.points} 
-                    className="h-48 w-full"
-                  />
-                )}
+                <div className="relative">
+                  {run.points && run.points.length >= 2 && (
+                    <MiniRoutePreview 
+                      points={run.points} 
+                      className="h-48 w-full"
+                    />
+                  )}
+                  {/* Share button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRun(run as RunSession);
+                      setShareModalOpen(true);
+                    }}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
@@ -146,6 +165,18 @@ const RunHistory = () => {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Share Modal */}
+        {selectedRun && (
+          <ShareRunModal
+            run={selectedRun}
+            open={shareModalOpen}
+            onOpenChange={(open) => {
+              setShareModalOpen(open);
+              if (!open) setSelectedRun(null);
+            }}
+          />
         )}
       </div>
     </div>
