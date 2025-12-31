@@ -238,6 +238,28 @@ class AudioManager {
     setTimeout(() => this.createTone(1400, 0.3, 'triangle'), 800);
   }
 
+  async playSobrietyCheckIn(): Promise<void> {
+    await this.initializeAudio();
+    // Bright, happy ascending chime - short and rewarding
+    
+    // Quick sparkle intro
+    this.createTone(1200, 0.08, 'sine');
+    
+    // Happy ascending notes (like collecting coins in a game)
+    setTimeout(() => this.createTone(880, 0.12, 'triangle'), 80);    // A5
+    setTimeout(() => this.createTone(988, 0.12, 'triangle'), 160);   // B5
+    setTimeout(() => this.createTone(1174.66, 0.15, 'triangle'), 240); // D6
+    
+    // Final triumphant note with sparkle
+    setTimeout(() => {
+      this.createTone(1318.51, 0.25, 'triangle'); // E6
+      this.createTone(1567.98, 0.25, 'sine');     // G6 harmony
+    }, 350);
+    
+    // Satisfying "ding" finish
+    setTimeout(() => this.createTone(2093, 0.15, 'sine'), 500); // High C
+  }
+
   // Settings
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
