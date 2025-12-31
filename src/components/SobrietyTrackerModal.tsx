@@ -9,7 +9,15 @@ import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles } from
 import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
 import { useAuth } from "./AuthGuard";
 import { cn } from "@/lib/utils";
+import { SobrietyCelebration } from "./SobrietyCelebration";
 
+interface CelebrationData {
+  currentDay: number;
+  targetDays: number;
+  percentComplete: number;
+  coinsEarned: number;
+  substanceType: string;
+}
 interface SobrietyTrackerModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -65,6 +73,8 @@ export const SobrietyTrackerModal = ({
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [view, setView] = useState<"main" | "setup" | "history">("main");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
@@ -85,8 +95,21 @@ export const SobrietyTrackerModal = ({
   };
 
   const handleCheckin = async () => {
-    await dailyCheckin(selectedFeeling || undefined);
+    const currentProgress = getProgress();
+    const result = await dailyCheckin(selectedFeeling || undefined);
     setSelectedFeeling(null);
+    
+    // Show celebration if check-in was successful (result is the coins number)
+    if (result !== null && currentProgress) {
+      setCelebrationData({
+        currentDay: currentProgress.currentDay,
+        targetDays: currentProgress.targetDays,
+        percentComplete: currentProgress.percentComplete,
+        coinsEarned: result,
+        substanceType: activeJourney?.substanceType || 'general',
+      });
+      setShowCelebration(true);
+    }
   };
 
   const handleReset = async () => {
@@ -376,29 +399,43 @@ export const SobrietyTrackerModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {controlledOpen === undefined && (
-        <DialogTrigger asChild>
-          {trigger || (
-            <Button variant="outline" className="gap-2">
-              <Sprout className="h-4 w-4" />
-              Sobriety
-            </Button>
-          )}
-        </DialogTrigger>
-      )}
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sprout className="h-5 w-5 text-green-500" />
-            Sobriety Tracker
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {controlledOpen === undefined && (
+          <DialogTrigger asChild>
+            {trigger || (
+              <Button variant="outline" className="gap-2">
+                <Sprout className="h-4 w-4" />
+                Sobriety
+              </Button>
+            )}
+          </DialogTrigger>
+        )}
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sprout className="h-5 w-5 text-green-500" />
+              Sobriety Tracker
+            </DialogTitle>
+          </DialogHeader>
 
-        {view === "setup" && renderSetupView()}
-        {view === "history" && renderHistoryView()}
-        {view === "main" && renderMainView()}
-      </DialogContent>
-    </Dialog>
+          {view === "setup" && renderSetupView()}
+          {view === "history" && renderHistoryView()}
+          {view === "main" && renderMainView()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Celebration Overlay */}
+      {showCelebration && celebrationData && (
+        <SobrietyCelebration
+          currentDay={celebrationData.currentDay}
+          targetDays={celebrationData.targetDays}
+          percentComplete={celebrationData.percentComplete}
+          coinsEarned={celebrationData.coinsEarned}
+          substanceType={celebrationData.substanceType}
+          onComplete={() => setShowCelebration(false)}
+        />
+      )}
+    </>
   );
 };
