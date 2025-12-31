@@ -134,39 +134,15 @@ export const SobrietyCelebration = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm"
         onClick={onComplete}
       >
-        {/* Confetti */}
-        {confettiPieces.map((piece) => (
-          <motion.div
-            key={piece.id}
-            className="absolute w-3 h-3 rounded-sm"
-            style={{
-              backgroundColor: piece.color,
-              left: `${piece.x}%`,
-              top: '-5%',
-            }}
-            initial={{ y: 0, rotate: 0, opacity: 1 }}
-            animate={{
-              y: '120vh',
-              rotate: 720,
-              opacity: [1, 1, 0],
-            }}
-            transition={{
-              duration: piece.duration,
-              delay: piece.delay,
-              ease: 'linear',
-            }}
-          />
-        ))}
-
-        {/* Main Content */}
+        {/* Main Content - rendered first so confetti appears on top */}
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-          className="relative bg-card border-2 border-emerald-500 rounded-2xl p-8 shadow-2xl max-w-sm mx-4"
+          className="relative z-[101] bg-card border-2 border-emerald-500 rounded-2xl p-8 shadow-2xl max-w-sm mx-4"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Glow Effect */}
@@ -251,6 +227,30 @@ export const SobrietyCelebration = ({
             </motion.div>
           </div>
         </motion.div>
+
+        {/* Confetti - rendered last to be on top of everything */}
+        {confettiPieces.map((piece) => (
+          <motion.div
+            key={piece.id}
+            className="fixed w-3 h-3 rounded-sm z-[200] pointer-events-none"
+            style={{
+              backgroundColor: piece.color,
+              left: `${piece.x}%`,
+              top: '-5%',
+            }}
+            initial={{ y: 0, rotate: 0, opacity: 1 }}
+            animate={{
+              y: '120vh',
+              rotate: 720,
+              opacity: [1, 1, 0],
+            }}
+            transition={{
+              duration: piece.duration,
+              delay: piece.delay,
+              ease: 'linear',
+            }}
+          />
+        ))}
       </motion.div>
     </AnimatePresence>
   );
