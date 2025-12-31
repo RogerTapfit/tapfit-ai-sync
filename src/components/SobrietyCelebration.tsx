@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Sprout, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCoinsForDisplay } from '@/lib/coinUtils';
+import { audioManager } from '@/utils/audioUtils';
 
 interface SobrietyCelebrationProps {
   currentDay: number;
@@ -111,6 +112,11 @@ export const SobrietyCelebration = ({
 }: SobrietyCelebrationProps) => {
   const [affirmation] = useState(() => getAffirmation(currentDay, targetDays));
   const isMilestone = isMilestoneDay(currentDay);
+
+  useEffect(() => {
+    // Play celebratory sound immediately
+    audioManager.playSobrietyCheckIn();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
