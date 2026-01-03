@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
+import { getLocalDateString } from '@/utils/dateUtils';
 
 export interface SobrietyJourney {
   id: string;
@@ -153,10 +154,10 @@ export const useSobrietyTracking = () => {
         return null;
       }
 
-      // Use custom start date if provided, otherwise use today
+      // Use custom start date if provided, otherwise use today (local timezone)
       const startDate = customStartDate 
-        ? customStartDate.toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
+        ? getLocalDateString(customStartDate)
+        : getLocalDateString(new Date());
 
       const { data, error } = await supabase
         .from('sobriety_tracking')
@@ -207,10 +208,10 @@ export const useSobrietyTracking = () => {
 
     const currentDay = getCurrentDay();
     
-    // Check if already checked in today
-    const today = new Date().toISOString().split('T')[0];
+    // Check if already checked in today (local timezone)
+    const today = getLocalDateString(new Date());
     const alreadyCheckedIn = checkins.some(
-      c => c.checkinDate.toISOString().split('T')[0] === today
+      c => getLocalDateString(c.checkinDate) === today
     );
 
     if (alreadyCheckedIn) {
@@ -273,7 +274,7 @@ export const useSobrietyTracking = () => {
         .from('sobriety_tracking')
         .update({
           is_active: false,
-          end_date: new Date().toISOString().split('T')[0],
+          end_date: getLocalDateString(new Date()),
           reason_ended: reason,
           updated_at: new Date().toISOString(),
         })
@@ -311,7 +312,7 @@ export const useSobrietyTracking = () => {
         .from('sobriety_tracking')
         .update({
           is_active: false,
-          end_date: new Date().toISOString().split('T')[0],
+          end_date: getLocalDateString(new Date()),
           reason_ended: 'completed',
           updated_at: new Date().toISOString(),
         })
@@ -342,9 +343,9 @@ export const useSobrietyTracking = () => {
     if (!activeJourney) return null;
 
     const currentDay = getCurrentDay();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString(new Date());
     const checkedInToday = checkins.some(
-      c => c.checkinDate.toISOString().split('T')[0] === today
+      c => getLocalDateString(c.checkinDate) === today
     );
     const totalCoinsEarned = checkins.reduce((sum, c) => sum + c.coinsAwarded, 0);
     
@@ -380,7 +381,7 @@ export const useSobrietyTracking = () => {
       const { error } = await supabase
         .from('sobriety_tracking')
         .update({
-          start_date: newStartDate.toISOString().split('T')[0],
+          start_date: getLocalDateString(newStartDate),
           updated_at: new Date().toISOString(),
         })
         .eq('id', activeJourney.id);
@@ -397,6 +398,50 @@ export const useSobrietyTracking = () => {
     }
   };
 
+  // Add missed sober days - user taps specific days they were sober
+  const addMissedSoberDays = async (dates: Date[]) => {
+    if (!user || isGuest || !activeJourney || dates.length === 0) {
+      return false;
+    }
+
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Session expired. Please refresh and try again.');
+        return false;
+      }
+
+      // Convert dates to local date strings and sort them
+      const localDates = dates.map(d => getLocalDateString(d)).sort();
+      const earliestDate = localDates[0];
+
+      // Update start date to the earliest selected date
+      const { error: updateError } = await supabase
+        .from('sobriety_tracking')
+        .update({
+          start_date: earliestDate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeJourney.id);
+
+      if (updateError) throw updateError;
+
+      toast.success(`Added ${dates.length} sober day${dates.length > 1 ? 's' : ''}! 🌱`);
+      await fetchActiveJourney();
+      return true;
+    } catch (error: any) {
+      console.error('Error adding missed sober days:', error);
+      toast.error('Failed to add sober days');
+      return false;
+    }
+  };
+
+  // Get dates that have been checked in (for calendar display)
+  const getCheckedInDates = (): string[] => {
+    return checkins.map(c => getLocalDateString(c.checkinDate));
+  };
+
   return {
     activeJourney,
     checkins,
@@ -407,6 +452,8 @@ export const useSobrietyTracking = () => {
     resetJourney,
     completeJourney,
     updateStartDate,
+    addMissedSoberDays,
+    getCheckedInDates,
     getCurrentDay,
     getProgress,
     refetch: fetchActiveJourney,
