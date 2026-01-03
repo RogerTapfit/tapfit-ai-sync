@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Plus, Flame, Trash2, Sparkles } from "lucide-react";
-import { useHabitTracking, HABIT_TEMPLATES, UserHabit } from "@/hooks/useHabitTracking";
+import { useHabitTracking, HABIT_TEMPLATES, CATEGORY_EMOJIS, detectCategoryAndIcon, UserHabit } from "@/hooks/useHabitTracking";
 import { useAuth } from "@/components/AuthGuard";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,13 @@ interface HabitTrackerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  wellness: '🧘 Wellness',
+  hygiene: '✨ Hygiene',
+  content: '📱 Content',
+  fitness: '💪 Fitness'
+};
 
 export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps) => {
   const { isGuest } = useAuth();
@@ -28,14 +35,57 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
     getHabitStreak
   } = useHabitTracking();
 
-  const [showAddHabit, setShowAddHabit] = useState(false);
   const [customName, setCustomName] = useState("");
   const [customIcon, setCustomIcon] = useState("✓");
   const [selectedCategory, setSelectedCategory] = useState("wellness");
   const [togglingHabit, setTogglingHabit] = useState<string | null>(null);
+  const [hasManuallySelectedIcon, setHasManuallySelectedIcon] = useState(false);
+  const [hasManuallySelectedCategory, setHasManuallySelectedCategory] = useState(false);
 
   const { completed, total } = getTodaysProgress();
   const allCompleted = total > 0 && completed === total;
+
+  // Auto-detect category and icon as user types
+  useEffect(() => {
+    if (customName.trim()) {
+      const detected = detectCategoryAndIcon(customName);
+      if (!hasManuallySelectedCategory) {
+        setSelectedCategory(detected.category);
+      }
+      if (!hasManuallySelectedIcon) {
+        setCustomIcon(detected.icon);
+      }
+    }
+  }, [customName, hasManuallySelectedCategory, hasManuallySelectedIcon]);
+
+  // Reset manual selections when name is cleared
+  useEffect(() => {
+    if (!customName.trim()) {
+      setHasManuallySelectedIcon(false);
+      setHasManuallySelectedCategory(false);
+    }
+  }, [customName]);
+
+  // Get emojis for current category (show category-specific first)
+  const currentEmojis = useMemo(() => {
+    const categoryEmojis = CATEGORY_EMOJIS[selectedCategory] || [];
+    const generalEmojis = CATEGORY_EMOJIS.general || [];
+    return [...new Set([...categoryEmojis, ...generalEmojis])];
+  }, [selectedCategory]);
+
+  // Group habits by category
+  const habitsByCategory = useMemo(() => {
+    const grouped: Record<string, UserHabit[]> = {};
+    habits.forEach(habit => {
+      if (!grouped[habit.category]) {
+        grouped[habit.category] = [];
+      }
+      grouped[habit.category].push(habit);
+    });
+    return grouped;
+  }, [habits]);
+
+  const categories = ['wellness', 'hygiene', 'content', 'fitness'];
 
   const handleToggle = async (habitId: string) => {
     setTogglingHabit(habitId);
@@ -49,7 +99,8 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
     if (success) {
       setCustomName("");
       setCustomIcon("✓");
-      setShowAddHabit(false);
+      setHasManuallySelectedIcon(false);
+      setHasManuallySelectedCategory(false);
     }
   };
 
@@ -57,9 +108,19 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
     await addHabit(template.name, template.icon, template.category);
   };
 
-  const categories = ['wellness', 'hygiene', 'content', 'fitness'];
+  const handleCategorySelect = (cat: string) => {
+    setSelectedCategory(cat);
+    setHasManuallySelectedCategory(true);
+    // Update icon to match new category if not manually selected
+    if (!hasManuallySelectedIcon) {
+      setCustomIcon(CATEGORY_EMOJIS[cat]?.[0] || '✓');
+    }
+  };
 
-  const emojiOptions = ['✓', '⭐', '💪', '🎯', '📝', '💡', '🔥', '⚡', '🌟', '💎', '🏆', '🎨'];
+  const handleIconSelect = (icon: string) => {
+    setCustomIcon(icon);
+    setHasManuallySelectedIcon(true);
+  };
 
   if (isGuest) {
     return (
@@ -196,27 +257,42 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
           <TabsContent value="manage" className="flex-1 overflow-hidden">
             <ScrollArea className="h-[400px] pr-4">
               {/* Current habits with delete option */}
+              {/* Your habits grouped by category */}
               {habits.length > 0 && (
                 <div className="mb-6">
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">Your Habits</h4>
-                  <div className="space-y-2">
-                    {habits.map((habit) => (
-                      <div
-                        key={habit.id}
-                        className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
-                      >
-                        <span className="text-xl">{habit.icon}</span>
-                        <span className="flex-1 text-sm">{habit.name}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteHabit(habit.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                  <div className="space-y-4">
+                    {categories.map(category => {
+                      const categoryHabits = habitsByCategory[category];
+                      if (!categoryHabits || categoryHabits.length === 0) return null;
+                      
+                      return (
+                        <div key={category}>
+                          <p className="text-xs text-muted-foreground uppercase mb-2">
+                            {CATEGORY_LABELS[category] || category}
+                          </p>
+                          <div className="space-y-2">
+                            {categoryHabits.map((habit) => (
+                              <div
+                                key={habit.id}
+                                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                              >
+                                <span className="text-xl">{habit.icon}</span>
+                                <span className="flex-1 text-sm">{habit.name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => deleteHabit(habit.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -225,38 +301,68 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
               <div className="mb-6">
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">Add Custom Habit</h4>
                 <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border">
-                  <div className="flex gap-2">
-                    <div className="relative">
-                      <select
-                        value={customIcon}
-                        onChange={(e) => setCustomIcon(e.target.value)}
-                        className="w-12 h-10 text-xl text-center bg-background border border-border rounded-md appearance-none cursor-pointer"
-                      >
-                        {emojiOptions.map((emoji) => (
-                          <option key={emoji} value={emoji}>{emoji}</option>
-                        ))}
-                      </select>
-                    </div>
+                  {/* Name input with preview */}
+                  <div className="flex gap-2 items-center">
                     <Input
-                      placeholder="Habit name..."
+                      placeholder="e.g. Fix hair, brush teeth, post video..."
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
                       className="flex-1"
                     />
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {categories.map((cat) => (
-                      <Button
-                        key={cat}
-                        variant={selectedCategory === cat ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedCategory(cat)}
-                        className="capitalize"
-                      >
-                        {cat}
-                      </Button>
-                    ))}
+                  
+                  {/* Auto-detected preview */}
+                  {customName.trim() && (
+                    <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/20">
+                      <span className="text-xl">{customIcon}</span>
+                      <span className="font-medium text-sm">{customName}</span>
+                      <span className="text-xs text-muted-foreground">→</span>
+                      <span className="text-xs capitalize px-2 py-0.5 rounded-full bg-muted">
+                        {selectedCategory}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Category selection */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1.5">Category:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {categories.map((cat) => (
+                        <Button
+                          key={cat}
+                          variant={selectedCategory === cat ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleCategorySelect(cat)}
+                          className="capitalize text-xs"
+                        >
+                          {CATEGORY_LABELS[cat]?.split(' ')[0]} {cat}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
+                  
+                  {/* Icon selection */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1.5">Icon:</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {currentEmojis.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => handleIconSelect(emoji)}
+                          className={cn(
+                            "w-9 h-9 text-lg rounded-md flex items-center justify-center transition-all",
+                            customIcon === emoji 
+                              ? "bg-primary text-primary-foreground ring-2 ring-primary" 
+                              : "bg-muted hover:bg-muted/80"
+                          )}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
                   <Button
                     className="w-full"
                     onClick={handleAddCustomHabit}

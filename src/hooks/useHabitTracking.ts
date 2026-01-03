@@ -29,6 +29,79 @@ export interface HabitStreak {
   lastCompletedDate: string | null;
 }
 
+// Keyword mappings for auto-detection
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  hygiene: ['hair', 'teeth', 'brush', 'floss', 'shower', 'bath', 'skincare', 'wash', 'shave', 'deodorant', 'nails', 'lotion', 'moisturize', 'face', 'comb', 'trim', 'groom'],
+  wellness: ['meditat', 'stretch', 'yoga', 'relax', 'breathe', 'mindful', 'journal', 'gratitude', 'morning routine', 'night routine', 'routine', 'pray', 'affirmation', 'therapy'],
+  fitness: ['run', 'walk', 'gym', 'workout', 'exercise', 'cardio', 'lift', 'steps', 'vitamin', 'protein', 'water', 'hydrat', 'sleep', 'rest', 'jog', 'bike', 'swim', 'sport'],
+  content: ['post', 'tiktok', 'instagram', 'youtube', 'content', 'video', 'photo', 'edit', 'upload', 'create', 'write', 'blog', 'podcast', 'read', 'study', 'learn', 'work', 'email', 'task']
+};
+
+const ICON_KEYWORDS: Record<string, string[]> = {
+  '💇': ['hair', 'haircut', 'style hair', 'comb', 'brush hair'],
+  '🦷': ['teeth', 'brush teeth', 'dental', 'floss'],
+  '🧵': ['floss'],
+  '🚿': ['shower', 'bath', 'wash'],
+  '✨': ['skincare', 'lotion', 'moistur', 'face'],
+  '🧴': ['lotion', 'cream', 'moistur'],
+  '💅': ['nails', 'manicure'],
+  '🪒': ['shave', 'trim', 'groom'],
+  '🧘': ['meditat', 'yoga', 'stretch', 'mindful'],
+  '☀️': ['morning', 'wake', 'sunrise'],
+  '🌙': ['night', 'evening', 'pm'],
+  '😴': ['sleep', 'rest', 'nap'],
+  '🙏': ['pray', 'gratitude', 'affirmation', 'thank'],
+  '📔': ['journal', 'diary', 'write'],
+  '📱': ['tiktok', 'post', 'social'],
+  '📸': ['instagram', 'photo', 'picture'],
+  '🎬': ['video', 'content', 'youtube', 'film'],
+  '📚': ['read', 'book', 'study'],
+  '💻': ['work', 'computer', 'email', 'task'],
+  '🎙️': ['podcast', 'record', 'audio'],
+  '🏃': ['run', 'cardio', 'jog'],
+  '🚴': ['bike', 'cycle'],
+  '🏊': ['swim'],
+  '💪': ['gym', 'workout', 'lift', 'exercise'],
+  '👟': ['walk', 'steps', 'hike'],
+  '💊': ['vitamin', 'supplement', 'medicine'],
+  '💧': ['water', 'hydrat', 'drink'],
+  '🥗': ['eat', 'food', 'diet', 'healthy'],
+};
+
+// Category-specific emoji options for the picker
+export const CATEGORY_EMOJIS: Record<string, string[]> = {
+  hygiene: ['💇', '🦷', '🧵', '🚿', '✨', '🧴', '💅', '🪒', '🧼', '🪥'],
+  wellness: ['🧘', '🧘‍♂️', '☀️', '🌙', '🌛', '😴', '🧠', '🙏', '💆', '🕯️'],
+  fitness: ['🏃', '💪', '👟', '🏋️', '💊', '💧', '🥗', '🚴', '🏊', '⚽'],
+  content: ['📱', '📸', '🎬', '📔', '📚', '✍️', '🎙️', '💻', '🎨', '📝'],
+  general: ['✓', '⭐', '🎯', '🔥', '⚡', '🌟', '💎', '🏆', '❤️', '✅']
+};
+
+// Detect category and icon from habit name
+export const detectCategoryAndIcon = (habitName: string): { category: string; icon: string } => {
+  const name = habitName.toLowerCase();
+  
+  // Detect category
+  let detectedCategory = 'wellness'; // default
+  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(keyword => name.includes(keyword))) {
+      detectedCategory = category;
+      break;
+    }
+  }
+  
+  // Detect icon
+  let detectedIcon = CATEGORY_EMOJIS[detectedCategory]?.[0] || '✓';
+  for (const [icon, keywords] of Object.entries(ICON_KEYWORDS)) {
+    if (keywords.some(keyword => name.includes(keyword))) {
+      detectedIcon = icon;
+      break;
+    }
+  }
+  
+  return { category: detectedCategory, icon: detectedIcon };
+};
+
 // Pre-built habit templates
 export const HABIT_TEMPLATES = [
   // Wellness
