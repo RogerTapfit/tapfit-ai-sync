@@ -44,6 +44,7 @@ export const useBarcodeScanner = () => {
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastBarcode, setLastBarcode] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [codeReader] = useState(() => new BrowserMultiFormatReader());
   const activeStreamRef = useRef<MediaStream | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -60,6 +61,7 @@ export const useBarcodeScanner = () => {
   // When barcode is detected, just set it and stop scanning - let consumer handle the lookup
   const handleBarcodeDetected = (barcode: string) => {
     console.log('📷 Barcode detected in hook:', barcode);
+    setError(null);
     setLastBarcode(barcode);
     stopScanning();
     setLoading(false);
@@ -72,6 +74,18 @@ export const useBarcodeScanner = () => {
     // Clear previous scan so scanning the same code again still triggers
     setLastBarcode(null);
     setProductData(null);
+    setError(null);
+
+    // Surface unsupported environments early
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const msg = 'Camera is not supported in this browser.';
+      console.error('📷 getUserMedia not available');
+      toast.error(msg);
+      setError(msg);
+      setIsScanning(false);
+      setLoading(false);
+      return;
+    }
 
     setIsScanning(true);
     setLoading(true);
@@ -102,9 +116,25 @@ export const useBarcodeScanner = () => {
       } else {
         console.log('📷 Video element not ready yet; will attach when available');
       }
-    } catch (error) {
-      console.error('📷 Error starting camera:', error);
-      toast.error('Failed to access camera. Please check permissions.');
+    } catch (e) {
+      const err = e as any;
+      const name = String(err?.name || 'Error');
+      const rawMessage = String(err?.message || '');
+
+      let msg = 'Failed to access camera. Please check permissions.';
+      if (name === 'NotAllowedError') {
+        msg = 'Camera permission denied. Allow camera access and try again.';
+      } else if (name === 'NotFoundError') {
+        msg = 'No camera found on this device.';
+      } else if (name === 'NotReadableError') {
+        msg = 'Camera is busy or unavailable. Close other apps using the camera and try again.';
+      } else if (name === 'SecurityError') {
+        msg = 'Camera is blocked in this embedded view. Open the app in a new tab to scan.';
+      }
+
+      console.error('📷 Error starting camera:', name, rawMessage);
+      setError(msg);
+      toast.error(msg);
       setIsScanning(false);
       setLoading(false);
     }
@@ -179,6 +209,11 @@ export const useBarcodeScanner = () => {
       }
     ).catch((err) => {
       console.error('📷 Decode stream error:', err);
+      const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
+      setError(msg);
+      toast.error(msg);
+      setIsScanning(false);
+      setLoading(false);
     });
   };
 
@@ -256,6 +291,7 @@ export const useBarcodeScanner = () => {
     isScanning,
     productData,
     loading,
+    error,
     lastBarcode,
     startScanning,
     stopScanning,
