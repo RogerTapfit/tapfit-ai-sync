@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile, Sprout, ListChecks } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile, Sprout, ListChecks, Timer } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -23,7 +23,8 @@ import { SobrietyTrackerModal } from "./SobrietyTrackerModal";
 import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
 import { HabitTrackerModal } from "./HabitTrackerModal";
 import { useHabitTracking } from "@/hooks/useHabitTracking";
-
+import { FastingTrackerModal } from "./FastingTrackerModal";
+import { useFastingTracking } from "@/hooks/useFastingTracking";
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
   onStartRun?: () => void;
@@ -44,6 +45,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [showSobrietyModal, setShowSobrietyModal] = useState(false);
   const [showHabitModal, setShowHabitModal] = useState(false);
+  const [showFastingModal, setShowFastingModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
   const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
@@ -53,6 +55,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const sobrietyProgress = getSobrietyProgress();
   const { getTodaysProgress: getHabitProgress } = useHabitTracking();
   const habitProgress = getHabitProgress();
+  const { activeFast, getProgress: fastingProgress } = useFastingTracking();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
   const navigate = useNavigate();
   const chatbotContext = useChatbotContextOptional();
@@ -83,6 +86,9 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       clearPendingModal();
     } else if (pendingModal === 'habits') {
       setShowHabitModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'fasting') {
+      setShowFastingModal(true);
       clearPendingModal();
     }
   }, [pendingModal, clearPendingModal]);
@@ -413,6 +419,34 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             {isGuest ? 'to Track' : 'Habits'}
           </p>
         </div>
+
+        {/* Fasting Tracker Tile */}
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowFastingModal(true)}
+          role="button"
+          aria-label="Track fasting"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowFastingModal(true);
+            }
+          }}
+        >
+          <div className={`size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-amber-500/10 hover:border-amber-500/30 transition-all duration-200 ${activeFast ? 'animate-pulse' : ''}`}>
+            <Timer className={`size-6 block ${activeFast ? 'text-amber-400' : 'text-amber-500'}`} />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {isGuest ? 'Login' : (activeFast && fastingProgress 
+              ? `${fastingProgress.elapsedHours}:${fastingProgress.elapsedMinutes.toString().padStart(2, '0')}`
+              : '--'
+            )}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {isGuest ? 'to Track' : (activeFast ? 'Fasting' : 'Start Fast')}
+          </p>
+        </div>
       </div>
 
       <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
@@ -421,6 +455,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       <MoodCheckinModal open={showMoodModal} onOpenChange={setShowMoodModal} />
       <SobrietyTrackerModal open={showSobrietyModal} onOpenChange={setShowSobrietyModal} />
       <HabitTrackerModal open={showHabitModal} onOpenChange={setShowHabitModal} />
+      <FastingTrackerModal open={showFastingModal} onOpenChange={setShowFastingModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}
