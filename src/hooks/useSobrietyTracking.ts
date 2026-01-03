@@ -136,7 +136,8 @@ export const useSobrietyTracking = () => {
   const startJourney = async (
     targetDays: number,
     substanceType: string = 'general',
-    notes?: string
+    notes?: string,
+    customStartDate?: Date
   ) => {
     if (!user || isGuest) {
       toast.error('Please log in to start tracking');
@@ -152,6 +153,11 @@ export const useSobrietyTracking = () => {
         return null;
       }
 
+      // Use custom start date if provided, otherwise use today
+      const startDate = customStartDate 
+        ? customStartDate.toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
+
       const { data, error } = await supabase
         .from('sobriety_tracking')
         .insert({
@@ -159,7 +165,7 @@ export const useSobrietyTracking = () => {
           target_days: targetDays,
           substance_type: substanceType,
           notes: notes || null,
-          start_date: new Date().toISOString().split('T')[0],
+          start_date: startDate,
         })
         .select()
         .single();
