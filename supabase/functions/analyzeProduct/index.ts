@@ -826,22 +826,29 @@ serve(async (req) => {
 
     console.log('Processing image for universal product analysis...');
 
-    const systemPrompt = `You are an expert product analyst combining food science, pharmacology, and nutritional expertise. Analyze ANY product - food, beverages, supplements, vitamins, or medications.
+const systemPrompt = `You are an expert product analyst combining food science, pharmacology, toxicology, environmental science, and nutritional expertise. Analyze ANY product - food, beverages, supplements, vitamins, medications, OR household/personal care products.
 
 FIRST: Detect the product type from the image:
 - "food" = edible food items (cookies, snacks, candy, chips, meals, etc.)
 - "beverage" = drinks ONLY (water, soda, juice, milk, coffee, tea, alcohol)
 - "supplement" = vitamins, minerals, herbal supplements
 - "medication" = prescription/OTC drugs, medicines
+- "household" = cleaning products, laundry detergent, dish soap, air fresheners, paper products
+- "personal_care" = skincare, haircare, body wash, shampoo, conditioner, lotion, deodorant, sunscreen, cosmetics, toothpaste, mouthwash
 
 CRITICAL DETECTION RULES:
 - Look for "Supplement Facts" label → supplement/vitamin
-- Look for "Drug Facts" label → medication
+- Look for "Drug Facts" label → medication (topical medicines like acne cream, eczema cream)
 - Look for "Nutrition Facts" label → food OR beverage (determine by product itself)
 - Look for pill bottles, capsules, tablets → supplement or medication
 - Look for vitamin names (D3, B12, C, etc.) → supplement
 - Cookies, crackers, snacks, candy, chips = "food" (NOT beverage!)
 - Only liquid drinks are "beverage"
+- Look for "CAUTION:", "WARNING:", "DANGER:", "Keep out of reach of children" → household OR personal_care
+- Look for cleaning spray bottles, detergent containers, bleach → household
+- Look for pump bottles, tubes, cosmetic packaging, skincare/haircare → personal_care
+- Shampoo, conditioner, body wash, lotion, deodorant, sunscreen, makeup → personal_care
+- Dish soap, laundry pods, toilet cleaner, surface cleaner, air freshener → household
 
 ⚠️ BARCODE/UPC DETECTION - EXTREMELY IMPORTANT:
 Look for ANY barcode (UPC, EAN, QR code) visible in the image:
@@ -919,10 +926,55 @@ Carefully scan the packaging for sourcing information:
    - "Atlantic Salmon" = almost 100% farm-raised regardless of packaging claims
    - Best choices: Wild Alaskan, Sockeye, Pink salmon, Coho (wild)
 
+⚠️ HOUSEHOLD/PERSONAL CARE PRODUCT ANALYSIS (CRITICAL for non-food products):
+When product_type is "household" or "personal_care", you MUST analyze for harmful chemicals:
+
+1. FOREVER CHEMICALS (PFAS) - VERY HIGH CONCERN:
+   - Look for: PTFE, PFOA, PFOS, perfluoro-, polyfluoro-
+   - Found in: Non-stick sprays, stain-resistant products, some cosmetics
+   - Health effects: Hormone disruption, cancer, immune damage
+
+2. MICROPLASTICS - HIGH CONCERN:
+   - Look for: polyethylene (PE), polypropylene (PP), nylon, PMMA, microbeads
+   - Found in: Exfoliating scrubs, toothpaste, some cleaning products
+   - Health effects: Environmental pollution, potential ingestion
+
+3. ENDOCRINE DISRUPTORS - HIGH CONCERN:
+   - Look for: parabens (methylparaben, propylparaben), phthalates (often hidden in "fragrance"), BPA/BPS, triclosan, oxybenzone
+   - Found in: Cosmetics, sunscreen, antibacterial products
+   - Health effects: Hormone mimicking, reproductive issues
+
+4. CARCINOGENS - CRITICAL CONCERN:
+   - Look for: 1,4-dioxane (contamination), benzene, formaldehyde, coal tar, talc
+   - Found in: Hair dyes, aerosols, baby powder
+   - Health effects: Cancer risk, DNA damage
+
+5. SKIN SENSITIZERS/IRRITANTS - MODERATE CONCERN:
+   - Look for: SLS/SLES, formaldehyde-releasing preservatives (DMDM hydantoin, quaternium-15), MIT/CMIT, synthetic fragrance
+   - Found in: Shampoo, body wash, lotions, cleaning products
+   - Health effects: Allergic reactions, contact dermatitis
+
+6. ENVIRONMENTAL HAZARDS - ENVIRONMENTAL CONCERN:
+   - Look for: phosphates, chlorine bleach, ammonia, nonylphenol ethoxylate
+   - Found in: Laundry detergent, dishwasher pods, cleaning sprays
+   - Health effects: Aquatic toxicity, indoor air pollution
+
+7. SAFETY WARNINGS TO DETECT:
+   - Read ALL warning labels: "Causes eye irritation", "Harmful if swallowed", "Skin sensitizer"
+   - Look for: skull & crossbones, exclamation mark, corrosion, environmental hazard symbols
+   - First aid instructions indicate severity
+
+8. CERTIFICATIONS TO LOOK FOR:
+   - EPA Safer Choice (green circle with checkmark) = EXCELLENT
+   - EWG Verified = EXCELLENT for safety
+   - Leaping Bunny / PETA Cruelty-Free = no animal testing
+   - USDA Certified Biobased = sustainable sourcing
+   - Fragrance-Free ≠ Unscented (unscented may have masking fragrance)
+
 FOR ALL PRODUCTS - Return valid JSON with this structure:
 
 {
-  "product_type": "food|beverage|supplement|medication",
+  "product_type": "food|beverage|supplement|medication|household|personal_care",
   "barcode": "EXACT digits from UPC/EAN barcode if visible, or null if not visible",
   "barcode_type": "UPC-A|EAN-13|UPC-E|null",
   "product": {
@@ -1145,6 +1197,100 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
       "verdict": "",
       "alternative_suggestions": []
     }
+  },
+  
+  "household_analysis": {
+    "safety_grade": "A|B|C|D|F",
+    "safety_score": 0-100,
+    "product_category": "cleaning|laundry|dish|paper|skincare|haircare|deodorant|sunscreen|cosmetic|oral_care|baby|pet|other",
+    
+    "chemical_concerns": {
+      "forever_chemicals": {
+        "detected": ["list of PFAS compounds found"],
+        "risk_level": "none|low|moderate|high|critical",
+        "health_effects": ["hormone disruption", "cancer risk"],
+        "bioaccumulation_warning": true
+      },
+      "microplastics": {
+        "detected": ["polyethylene", "etc"],
+        "risk_level": "none|low|moderate|high",
+        "environmental_impact": "description"
+      },
+      "endocrine_disruptors": {
+        "detected": ["parabens", "phthalates in fragrance", "etc"],
+        "risk_level": "none|low|moderate|high|critical",
+        "health_effects": ["list of effects"]
+      },
+      "carcinogens": {
+        "detected": ["any carcinogens found"],
+        "risk_level": "none|low|moderate|high|critical"
+      },
+      "sensitizers_irritants": {
+        "detected": ["SLS", "fragrance", "etc"],
+        "risk_level": "none|low|moderate|high"
+      },
+      "environmental_toxins": {
+        "detected": ["phosphates", "etc"],
+        "risk_level": "none|low|moderate|high",
+        "environmental_impact": "description"
+      }
+    },
+    
+    "safety_warnings": {
+      "label_warnings": ["EXACT text from warning labels"],
+      "skin_contact": "safe|caution|irritant|avoid|corrosive",
+      "eye_contact": "safe|irritant|serious_damage|dangerous",
+      "inhalation": "safe|ventilate|mask_required|avoid",
+      "ingestion": "safe|harmful|toxic|fatal",
+      "first_aid": "First aid instructions from label",
+      "keep_away_children": true/false,
+      "pregnancy_warning": true/false
+    },
+    
+    "environmental_rating": {
+      "grade": "A|B|C|D|F",
+      "score": 0-100,
+      "biodegradable": true/false,
+      "aquatic_toxicity": "none|low|moderate|high|very_high",
+      "ozone_depleting": true/false,
+      "packaging_recyclable": true/false,
+      "cruelty_free": true/false,
+      "vegan": true/false,
+      "concerns": ["list of environmental concerns"]
+    },
+    
+    "certifications": {
+      "detected": ["EPA Safer Choice", "EWG Verified", "Leaping Bunny", "etc"],
+      "missing_important": ["Notable certifications not present"]
+    },
+    
+    "ingredients_of_concern": [
+      {
+        "name": "Ingredient name",
+        "category": "forever_chemical|microplastic|endocrine_disruptor|carcinogen|irritant|environmental",
+        "concern_level": "low|moderate|high|critical",
+        "health_effects": ["specific health effects"],
+        "alternatives": ["safer alternatives"]
+      }
+    ],
+    
+    "better_alternatives": [
+      {
+        "product_name": "Name of safer alternative",
+        "brand": "Brand name",
+        "why_better": "Explanation of why it's safer",
+        "chemical_comparison": "What harmful chemicals it avoids",
+        "where_to_find": "Where to buy"
+      }
+    ],
+    
+    "overall_assessment": {
+      "pros": ["positive aspects"],
+      "cons": ["negative aspects/concerns"],
+      "verdict": "Overall safety assessment",
+      "recommendation": "Specific recommendation for user",
+      "who_should_avoid": ["pregnant women", "sensitive skin", "children", "pets", etc if applicable]
+    }
   }
 }
 
@@ -1157,6 +1303,13 @@ SUPPLEMENT/VITAMIN QUALITY RATING CRITERIA:
 - C (55-64): Below average, poor forms, unnecessary additives
 - D (40-54): Low quality, poor bioavailability, many fillers
 - F (<40): Very poor, potentially harmful, no testing verification
+
+HOUSEHOLD/PERSONAL CARE SAFETY GRADING:
+- A (90-100): No chemicals of concern, EPA Safer Choice or EWG Verified, eco-friendly
+- B (75-89): Minor concerns only (e.g., fragrance), mostly clean ingredients
+- C (60-74): Moderate concerns - contains some irritants or questionable ingredients
+- D (40-59): Significant concerns - contains endocrine disruptors, carcinogens, or multiple irritants
+- F (<40): Severe concerns - contains known harmful chemicals, multiple PFAS, high carcinogen risk
 
 BIOAVAILABILITY EXAMPLES:
 - Vitamin D3 (Cholecalciferol) > D2 (Ergocalciferol)

@@ -6,7 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Camera, Upload, Loader2, X, Zap, Star, AlertTriangle,
   CheckCircle, Info, Sparkles, Shield, Utensils, Settings,
-  Beaker, Atom, Droplet, Factory, ChevronDown, ChevronRight, Pill, Clock, Leaf
+  Beaker, Atom, Droplet, Factory, ChevronDown, ChevronRight, Pill, Clock, Leaf,
+  SprayCan, Bath
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
@@ -83,7 +84,7 @@ interface SupplementAnalysis {
 }
 
 interface ProductAnalysis {
-  product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin';
+  product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin' | 'household' | 'personal_care';
   barcode?: string | null;
   barcode_type?: string | null;
   nutrition_label_visible?: boolean;
@@ -241,6 +242,67 @@ interface ProductAnalysis {
   ingredients_analysis?: string;
   supplement_analysis?: SupplementAnalysis;
   sourcing_analysis?: SourcingAnalysis;
+  household_analysis?: HouseholdAnalysis;
+}
+
+interface HouseholdAnalysis {
+  safety_grade: string;
+  safety_score: number;
+  product_category: string;
+  chemical_concerns?: {
+    forever_chemicals?: { detected: string[]; risk_level: string; health_effects?: string[]; bioaccumulation_warning?: boolean };
+    microplastics?: { detected: string[]; risk_level: string; environmental_impact?: string };
+    endocrine_disruptors?: { detected: string[]; risk_level: string; health_effects?: string[] };
+    carcinogens?: { detected: string[]; risk_level: string };
+    sensitizers_irritants?: { detected: string[]; risk_level: string };
+    environmental_toxins?: { detected: string[]; risk_level: string; environmental_impact?: string };
+  };
+  safety_warnings?: {
+    label_warnings: string[];
+    skin_contact: string;
+    eye_contact: string;
+    inhalation: string;
+    ingestion: string;
+    first_aid?: string;
+    keep_away_children?: boolean;
+    pregnancy_warning?: boolean;
+  };
+  environmental_rating?: {
+    grade: string;
+    score: number;
+    biodegradable: boolean;
+    aquatic_toxicity: string;
+    ozone_depleting?: boolean;
+    packaging_recyclable?: boolean;
+    cruelty_free?: boolean;
+    vegan?: boolean;
+    concerns: string[];
+  };
+  certifications?: {
+    detected: string[];
+    missing_important: string[];
+  };
+  ingredients_of_concern?: Array<{
+    name: string;
+    category: string;
+    concern_level: string;
+    health_effects: string[];
+    alternatives?: string[];
+  }>;
+  better_alternatives?: Array<{
+    product_name: string;
+    brand?: string;
+    why_better: string;
+    chemical_comparison?: string;
+    where_to_find?: string;
+  }>;
+  overall_assessment?: {
+    pros: string[];
+    cons: string[];
+    verdict: string;
+    recommendation: string;
+    who_should_avoid?: string[];
+  };
 }
 
 interface SourcingAnalysis {
@@ -831,6 +893,10 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     <Pill className="h-7 w-7 text-primary drop-shadow-lg" />
                   ) : analysisResult?.product_type === 'beverage' ? (
                     <Droplet className="h-7 w-7 text-primary drop-shadow-lg" />
+                  ) : analysisResult?.product_type === 'household' ? (
+                    <SprayCan className="h-7 w-7 text-primary drop-shadow-lg" />
+                  ) : analysisResult?.product_type === 'personal_care' ? (
+                    <Bath className="h-7 w-7 text-primary drop-shadow-lg" />
                   ) : (
                     <Sparkles className="h-7 w-7 text-primary drop-shadow-lg" />
                   )}
@@ -888,6 +954,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </div>
                   <p className="text-xs bg-background/50 p-2 rounded-lg">
                     🍎 Food & beverages • 💊 Vitamins & supplements • 💉 Medications
+                  </p>
+                  <p className="text-xs bg-background/50 p-2 rounded-lg">
+                    🧴 Skincare & cosmetics • 🧹 Cleaning supplies • 🧻 Household items
                   </p>
                 </div>
               </div>
@@ -2402,6 +2471,381 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                         </div>
                       )}
                     </div>
+                  </motion.div>
+                )}
+
+                {/* Household/Personal Care Product Analysis */}
+                {analysisResult.household_analysis && (analysisResult.product_type === 'household' || analysisResult.product_type === 'personal_care') && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="space-y-4"
+                  >
+                    {/* Safety Grade Header */}
+                    <div className={`rounded-xl p-6 border-2 shadow-xl ${
+                      analysisResult.household_analysis.safety_score >= 80 ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/50' :
+                      analysisResult.household_analysis.safety_score >= 60 ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-yellow-500/50' :
+                      analysisResult.household_analysis.safety_score >= 40 ? 'bg-gradient-to-br from-orange-500/20 to-red-500/10 border-orange-500/50' :
+                      'bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/50'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-lg font-bold flex items-center gap-2">
+                            {analysisResult.product_type === 'personal_care' ? '🧴' : '🧹'} Safety Analysis
+                          </h4>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {analysisResult.household_analysis.product_category?.replace('_', ' ')} Product
+                          </p>
+                        </div>
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 ${
+                          analysisResult.household_analysis.safety_score >= 80 ? 'bg-green-500/80 border-green-400 text-white' :
+                          analysisResult.household_analysis.safety_score >= 60 ? 'bg-yellow-500/80 border-yellow-400 text-white' :
+                          analysisResult.household_analysis.safety_score >= 40 ? 'bg-orange-500/80 border-orange-400 text-white' :
+                          'bg-red-500/80 border-red-400 text-white'
+                        }`}>
+                          {analysisResult.household_analysis.safety_grade}
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <Progress value={analysisResult.household_analysis.safety_score} className="h-3" />
+                        <p className="text-xs text-muted-foreground mt-1">Safety Score: {analysisResult.household_analysis.safety_score}/100</p>
+                      </div>
+                    </div>
+
+                    {/* Safety Warnings */}
+                    {analysisResult.household_analysis.safety_warnings && (
+                      <div className="bg-gradient-to-br from-red-500/15 to-orange-500/10 border-2 border-red-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-red-600 mb-3 flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5" />
+                          ⚠️ Safety Warnings
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          {analysisResult.household_analysis.safety_warnings.skin_contact !== 'safe' && (
+                            <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30">
+                              <span className="text-2xl">🖐️</span>
+                              <p className="font-medium text-sm text-red-700 mt-1">Skin Contact</p>
+                              <p className="text-xs text-red-600 capitalize">{analysisResult.household_analysis.safety_warnings.skin_contact}</p>
+                            </div>
+                          )}
+                          {analysisResult.household_analysis.safety_warnings.eye_contact !== 'safe' && (
+                            <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/30">
+                              <span className="text-2xl">👁️</span>
+                              <p className="font-medium text-sm text-red-700 mt-1">Eye Contact</p>
+                              <p className="text-xs text-red-600 capitalize">{analysisResult.household_analysis.safety_warnings.eye_contact?.replace('_', ' ')}</p>
+                            </div>
+                          )}
+                          {analysisResult.household_analysis.safety_warnings.inhalation !== 'safe' && (
+                            <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                              <span className="text-2xl">🫁</span>
+                              <p className="font-medium text-sm text-orange-700 mt-1">Inhalation</p>
+                              <p className="text-xs text-orange-600 capitalize">{analysisResult.household_analysis.safety_warnings.inhalation?.replace('_', ' ')}</p>
+                            </div>
+                          )}
+                          {analysisResult.household_analysis.safety_warnings.ingestion !== 'safe' && (
+                            <div className="p-3 bg-red-600/10 rounded-lg border border-red-600/30">
+                              <span className="text-2xl">☠️</span>
+                              <p className="font-medium text-sm text-red-700 mt-1">If Swallowed</p>
+                              <p className="text-xs text-red-600 capitalize">{analysisResult.household_analysis.safety_warnings.ingestion}</p>
+                            </div>
+                          )}
+                          {analysisResult.household_analysis.safety_warnings.keep_away_children && (
+                            <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                              <span className="text-2xl">👶</span>
+                              <p className="font-medium text-sm text-purple-700 mt-1">Keep Away</p>
+                              <p className="text-xs text-purple-600">From Children</p>
+                            </div>
+                          )}
+                          {analysisResult.household_analysis.safety_warnings.pregnancy_warning && (
+                            <div className="p-3 bg-pink-500/10 rounded-lg border border-pink-500/30">
+                              <span className="text-2xl">🤰</span>
+                              <p className="font-medium text-sm text-pink-700 mt-1">Pregnancy</p>
+                              <p className="text-xs text-pink-600">Consult Doctor</p>
+                            </div>
+                          )}
+                        </div>
+                        {analysisResult.household_analysis.safety_warnings.label_warnings?.length > 0 && (
+                          <div className="mt-4 p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                            <p className="font-medium text-sm text-yellow-700 mb-2">📋 Label Warnings:</p>
+                            <ul className="text-sm text-yellow-700 space-y-1">
+                              {analysisResult.household_analysis.safety_warnings.label_warnings.map((warning, i) => (
+                                <li key={i} className="flex items-start gap-2">
+                                  <span>•</span> {warning}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {analysisResult.household_analysis.safety_warnings.first_aid && (
+                          <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                            <p className="font-medium text-sm text-blue-700">🩹 First Aid:</p>
+                            <p className="text-sm text-blue-600">{analysisResult.household_analysis.safety_warnings.first_aid}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Chemical Concerns */}
+                    {analysisResult.household_analysis.chemical_concerns && (
+                      <div className="bg-gradient-to-br from-purple-500/15 to-pink-500/10 border-2 border-purple-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+                          <Beaker className="h-5 w-5" />
+                          🧪 Chemical Analysis
+                        </h5>
+                        <div className="space-y-3">
+                          {analysisResult.household_analysis.chemical_concerns.forever_chemicals?.detected?.length > 0 && (
+                            <div className="p-4 bg-red-600/20 rounded-lg border-2 border-red-600/50">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">☠️</span>
+                                <span className="font-bold text-red-700">FOREVER CHEMICALS (PFAS)</span>
+                                <Badge className="bg-red-600 text-white">CRITICAL</Badge>
+                              </div>
+                              <p className="text-sm text-red-700">
+                                Detected: {analysisResult.household_analysis.chemical_concerns.forever_chemicals.detected.join(', ')}
+                              </p>
+                              {analysisResult.household_analysis.chemical_concerns.forever_chemicals.health_effects && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Health effects: {analysisResult.household_analysis.chemical_concerns.forever_chemicals.health_effects.join(', ')}
+                                </p>
+                              )}
+                              {analysisResult.household_analysis.chemical_concerns.forever_chemicals.bioaccumulation_warning && (
+                                <p className="text-xs text-red-700 font-medium mt-2">
+                                  ⚠️ Bioaccumulates in body - cannot be eliminated once absorbed
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {analysisResult.household_analysis.chemical_concerns.endocrine_disruptors?.detected?.length > 0 && (
+                            <div className="p-4 bg-orange-500/15 rounded-lg border border-orange-500/40">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">⚠️</span>
+                                <span className="font-bold text-orange-700">Endocrine Disruptors</span>
+                                <Badge className={`${
+                                  analysisResult.household_analysis.chemical_concerns.endocrine_disruptors.risk_level === 'critical' ? 'bg-red-600' :
+                                  analysisResult.household_analysis.chemical_concerns.endocrine_disruptors.risk_level === 'high' ? 'bg-orange-600' : 'bg-yellow-600'
+                                } text-white`}>
+                                  {analysisResult.household_analysis.chemical_concerns.endocrine_disruptors.risk_level}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-orange-700">
+                                Detected: {analysisResult.household_analysis.chemical_concerns.endocrine_disruptors.detected.join(', ')}
+                              </p>
+                              {analysisResult.household_analysis.chemical_concerns.endocrine_disruptors.health_effects && (
+                                <p className="text-xs text-orange-600 mt-1">
+                                  Effects: {analysisResult.household_analysis.chemical_concerns.endocrine_disruptors.health_effects.join(', ')}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {analysisResult.household_analysis.chemical_concerns.carcinogens?.detected?.length > 0 && (
+                            <div className="p-4 bg-red-500/15 rounded-lg border border-red-500/40">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">🚨</span>
+                                <span className="font-bold text-red-700">Potential Carcinogens</span>
+                                <Badge className="bg-red-600 text-white">HIGH CONCERN</Badge>
+                              </div>
+                              <p className="text-sm text-red-700">
+                                Detected: {analysisResult.household_analysis.chemical_concerns.carcinogens.detected.join(', ')}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {analysisResult.household_analysis.chemical_concerns.sensitizers_irritants?.detected?.length > 0 && (
+                            <div className="p-4 bg-yellow-500/15 rounded-lg border border-yellow-500/40">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">🖐️</span>
+                                <span className="font-bold text-yellow-700">Skin Irritants/Sensitizers</span>
+                              </div>
+                              <p className="text-sm text-yellow-700">
+                                {analysisResult.household_analysis.chemical_concerns.sensitizers_irritants.detected.join(', ')}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {analysisResult.household_analysis.chemical_concerns.microplastics?.detected?.length > 0 && (
+                            <div className="p-4 bg-blue-500/15 rounded-lg border border-blue-500/40">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">🌊</span>
+                                <span className="font-bold text-blue-700">Microplastics</span>
+                              </div>
+                              <p className="text-sm text-blue-700">
+                                {analysisResult.household_analysis.chemical_concerns.microplastics.detected.join(', ')}
+                              </p>
+                              {analysisResult.household_analysis.chemical_concerns.microplastics.environmental_impact && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  🌍 {analysisResult.household_analysis.chemical_concerns.microplastics.environmental_impact}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {analysisResult.household_analysis.chemical_concerns.environmental_toxins?.detected?.length > 0 && (
+                            <div className="p-4 bg-teal-500/15 rounded-lg border border-teal-500/40">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xl">🐟</span>
+                                <span className="font-bold text-teal-700">Environmental Hazards</span>
+                              </div>
+                              <p className="text-sm text-teal-700">
+                                {analysisResult.household_analysis.chemical_concerns.environmental_toxins.detected.join(', ')}
+                              </p>
+                              {analysisResult.household_analysis.chemical_concerns.environmental_toxins.environmental_impact && (
+                                <p className="text-xs text-teal-600 mt-1">
+                                  Impact: {analysisResult.household_analysis.chemical_concerns.environmental_toxins.environmental_impact}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Environmental Rating */}
+                    {analysisResult.household_analysis.environmental_rating && (
+                      <div className="bg-gradient-to-br from-emerald-500/15 to-teal-500/10 border-2 border-emerald-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-emerald-600 mb-4 flex items-center gap-2">
+                          <Leaf className="h-5 w-5" />
+                          🌍 Environmental Impact
+                        </h5>
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Eco Score</p>
+                            <Progress value={analysisResult.household_analysis.environmental_rating.score} className="w-32 h-2 mt-1" />
+                          </div>
+                          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold ${
+                            analysisResult.household_analysis.environmental_rating.score >= 80 ? 'bg-green-500 text-white' :
+                            analysisResult.household_analysis.environmental_rating.score >= 60 ? 'bg-yellow-500 text-white' :
+                            'bg-red-500 text-white'
+                          }`}>
+                            {analysisResult.household_analysis.environmental_rating.grade}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className={`p-2 rounded-lg ${analysisResult.household_analysis.environmental_rating.biodegradable ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                            <span className="text-lg">{analysisResult.household_analysis.environmental_rating.biodegradable ? '✅' : '❌'}</span>
+                            <p className="text-xs mt-1">Biodegradable</p>
+                          </div>
+                          <div className={`p-2 rounded-lg ${analysisResult.household_analysis.environmental_rating.cruelty_free ? 'bg-green-500/20' : 'bg-gray-500/10'}`}>
+                            <span className="text-lg">{analysisResult.household_analysis.environmental_rating.cruelty_free ? '🐰' : '❓'}</span>
+                            <p className="text-xs mt-1">Cruelty Free</p>
+                          </div>
+                          <div className={`p-2 rounded-lg ${analysisResult.household_analysis.environmental_rating.packaging_recyclable ? 'bg-green-500/20' : 'bg-gray-500/10'}`}>
+                            <span className="text-lg">{analysisResult.household_analysis.environmental_rating.packaging_recyclable ? '♻️' : '🗑️'}</span>
+                            <p className="text-xs mt-1">Recyclable</p>
+                          </div>
+                        </div>
+                        {analysisResult.household_analysis.environmental_rating.concerns?.length > 0 && (
+                          <div className="mt-3 p-2 bg-orange-500/10 rounded-lg">
+                            <p className="text-xs text-orange-700">
+                              ⚠️ {analysisResult.household_analysis.environmental_rating.concerns.join(' • ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Certifications */}
+                    {analysisResult.household_analysis.certifications && (
+                      <div className="bg-gradient-to-br from-blue-500/15 to-indigo-500/10 border-2 border-blue-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                          <Shield className="h-5 w-5" />
+                          ✓ Certifications
+                        </h5>
+                        {analysisResult.household_analysis.certifications.detected?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {analysisResult.household_analysis.certifications.detected.map((cert, i) => (
+                              <Badge key={i} className="bg-green-500/20 text-green-700 border-green-500/50">
+                                ✅ {cert}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {analysisResult.household_analysis.certifications.missing_important?.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground mb-1">Missing certifications:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {analysisResult.household_analysis.certifications.missing_important.map((cert, i) => (
+                                <Badge key={i} variant="outline" className="text-xs opacity-60">
+                                  {cert}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Better Alternatives */}
+                    {analysisResult.household_analysis.better_alternatives && analysisResult.household_analysis.better_alternatives.length > 0 && (
+                      <div className="bg-gradient-to-br from-green-500/15 to-emerald-500/10 border-2 border-green-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-green-600 mb-3 flex items-center gap-2">
+                          <Sparkles className="h-5 w-5" />
+                          💡 Safer Alternatives
+                        </h5>
+                        <div className="space-y-3">
+                          {analysisResult.household_analysis.better_alternatives.map((alt, i) => (
+                            <div key={i} className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                              <p className="font-bold text-green-700">{alt.product_name}</p>
+                              {alt.brand && <p className="text-sm text-green-600">by {alt.brand}</p>}
+                              <p className="text-sm text-foreground mt-2">{alt.why_better}</p>
+                              {alt.chemical_comparison && (
+                                <p className="text-xs text-green-600 mt-1">✅ {alt.chemical_comparison}</p>
+                              )}
+                              {alt.where_to_find && (
+                                <p className="text-xs text-muted-foreground mt-1">📍 {alt.where_to_find}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overall Assessment */}
+                    {analysisResult.household_analysis.overall_assessment && (
+                      <div className="bg-gradient-to-br from-slate-500/15 to-gray-500/10 border-2 border-slate-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-slate-600 mb-3">📋 Overall Assessment</h5>
+                        <p className="text-sm font-medium mb-3">{analysisResult.household_analysis.overall_assessment.verdict}</p>
+                        
+                        {analysisResult.household_analysis.overall_assessment.pros?.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-xs font-bold text-green-600">Pros:</span>
+                            <ul className="text-sm text-green-700 ml-4">
+                              {analysisResult.household_analysis.overall_assessment.pros.map((pro, i) => (
+                                <li key={i}>✓ {pro}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {analysisResult.household_analysis.overall_assessment.cons?.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-xs font-bold text-red-600">Cons:</span>
+                            <ul className="text-sm text-red-700 ml-4">
+                              {analysisResult.household_analysis.overall_assessment.cons.map((con, i) => (
+                                <li key={i}>✗ {con}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {analysisResult.household_analysis.overall_assessment.recommendation && (
+                          <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                            <p className="text-sm text-blue-700">
+                              💡 <strong>Recommendation:</strong> {analysisResult.household_analysis.overall_assessment.recommendation}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {analysisResult.household_analysis.overall_assessment.who_should_avoid?.length > 0 && (
+                          <div className="mt-3 p-3 bg-red-500/10 rounded-lg border border-red-500/30">
+                            <p className="text-sm text-red-700">
+                              ⚠️ <strong>Who should avoid:</strong> {analysisResult.household_analysis.overall_assessment.who_should_avoid.join(', ')}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
