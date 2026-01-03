@@ -479,6 +479,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const { 
     isScanning, 
     loading: barcodeLoading, 
+    error: barcodeScannerError,
     startScanning, 
     stopScanning, 
     attachToVideoElement,
@@ -602,6 +603,26 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   // Start barcode scanning - starts the camera stream
   const startBarcodeScanning = async () => {
     console.log('📊 Starting barcode scan...');
+
+    // Camera APIs are often blocked in embedded previews/iframes.
+    const isInIframe = (() => {
+      try {
+        return window.self !== window.top;
+      } catch {
+        return true;
+      }
+    })();
+
+    if (isInIframe) {
+      toast.error('Camera access is blocked in the embedded preview. Open the app in a new tab to scan.');
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error('Camera is not supported in this browser.');
+      return;
+    }
+
     await startScanning(barcodeVideoRef.current ?? undefined);
   };
   
@@ -836,51 +857,75 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
         toast.error('Failed to capture image');
       }
     } else {
-      // Web fallback - create and append input to DOM for browser compatibility
+      // Web fallback - use a DOM-attached input and click synchronously (mobile Safari requirement)
       console.log('Opening file picker for:', source);
+
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*'; // Accept all image formats including HEIC
-      input.style.display = 'none'; // Hide the input
-      
+      input.accept = 'image/*';
+      input.multiple = false;
+
       if (source === 'camera') {
         input.setAttribute('capture', 'environment');
       }
-      
-      // Append to document body for browser compatibility
+
+      // iOS Safari is more reliable when the input is in the DOM.
+      input.style.position = 'fixed';
+      input.style.left = '-9999px';
+      input.style.top = '0';
       document.body.appendChild(input);
-      
-      input.onchange = async (event) => {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        console.log('File selected:', file?.name, file?.type, file?.size);
-        
-        if (file) {
-          try {
-            // Convert HEIC files if needed
-            const processedFile = await processImageFile(file);
-            
-            const base64 = await convertToBase64(processedFile);
-            const dataUrl = `data:${processedFile.type};base64,${base64}`;
-            setSelectedImage(dataUrl);
-            await analyzeProduct(base64);
-          } catch (error) {
-            console.error('Failed to process image:', error);
-            toast.error('Failed to process image. Please try again.');
-          }
-        }
-        
-        // Clean up - remove from DOM
-        document.body.removeChild(input);
-      };
-      
-      // Also remove input if user cancels the file picker
-      input.addEventListener('cancel', () => {
-        console.log('File picker cancelled');
-        document.body.removeChild(input);
+
+      const file = await new Promise<File | null>((resolve) => {
+        let didChange = false;
+
+        const cleanup = () => {
+          window.removeEventListener('focus', onWindowFocus);
+          input.remove();
+        };
+
+        const onWindowFocus = () => {
+          // When users cancel the picker/camera on iOS, `change` may never fire.
+          window.setTimeout(() => {
+            if (didChange) return;
+            const hasFile = !!input.files && input.files.length > 0;
+            if (!hasFile) {
+              cleanup();
+              resolve(null);
+            }
+          }, 1200);
+        };
+
+        window.addEventListener('focus', onWindowFocus);
+
+        input.onchange = () => {
+          didChange = true;
+          const f = input.files?.[0] ?? null;
+          cleanup();
+          resolve(f);
+        };
+
+        // MUST be synchronous from the user's click/tap
+        input.click();
       });
-      
-      // Trigger click after slight delay to ensure DOM attachment
-      setTimeout(() => input.click(), 0);
+
+      if (!file) {
+        console.log('File picker cancelled');
+        return;
+      }
+
+      console.log('File selected:', file?.name, file?.type, file?.size);
+
+      try {
+        // Convert HEIC files if needed
+        const processedFile = await processImageFile(file);
+        const base64 = await convertToBase64(processedFile);
+        const dataUrl = `data:${processedFile.type};base64,${base64}`;
+        setSelectedImage(dataUrl);
+        await analyzeProduct(base64);
+      } catch (error) {
+        console.error('Failed to process image:', error);
+        toast.error('Failed to process image. Please try again.');
+      }
     }
   };
 
@@ -1151,6 +1196,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   <div className="space-y-4">
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
+                        type="button"
                         onClick={startBarcodeScanning}
                         className="w-full h-24 flex flex-col gap-2 text-lg bg-gradient-to-r from-primary to-stats-heart hover:from-primary-glow hover:to-stats-heart shadow-lg"
                         size="lg"
@@ -1169,10 +1215,16 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                         onKeyDown={(e) => e.key === 'Enter' && handleManualBarcodeLookup()}
                         className="flex-1"
                       />
-                      <Button onClick={handleManualBarcodeLookup} variant="outline">
+                      <Button type="button" onClick={handleManualBarcodeLookup} variant="outline">
                         Lookup
                       </Button>
                     </div>
+
+                    {barcodeScannerError && (
+                      <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                        {barcodeScannerError}
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -1181,6 +1233,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                       <Button
+                        type="button"
                         onClick={() => handlePhotoCapture('camera')}
                         className="w-full h-24 flex flex-col gap-2 text-lg glow-button bg-gradient-to-r from-primary to-stats-heart hover:from-primary-glow hover:to-stats-heart shadow-lg"
                         size="lg"
@@ -1192,6 +1245,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     
                     <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                       <Button
+                        type="button"
                         onClick={() => handlePhotoCapture('gallery')}
                         variant="outline"
                         className="w-full h-24 flex flex-col gap-2 text-lg border-2 border-stats-duration/50 hover:border-stats-duration hover:bg-stats-duration/10 hover:text-stats-duration transition-all duration-300"
