@@ -92,23 +92,26 @@ export const useBarcodeScanner = () => {
       
       console.log('📷 Requesting camera access...');
       // Request camera permission and get stream
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
-        } 
+        }
       });
-      
+
       console.log('📷 Camera access granted');
       activeStreamRef.current = stream;
-      
-      // If video element was passed, attach immediately
-      if (videoElement) {
-        videoElementRef.current = videoElement;
-        await attachStreamToVideo(videoElement, stream);
+
+      // Attach immediately if we already have a mounted video element (prevents race where
+      // component calls attachToVideoElement before the stream is ready).
+      const targetVideo = videoElement ?? videoElementRef.current;
+      if (targetVideo) {
+        videoElementRef.current = targetVideo;
+        await attachStreamToVideo(targetVideo, stream);
+      } else {
+        console.log('📷 Video element not ready yet; will attach when available');
       }
-      // Otherwise, the useEffect in the component will call attachToVideoElement when ready
       
     } catch (error) {
       console.error('📷 Error starting camera:', error);
@@ -193,13 +196,14 @@ export const useBarcodeScanner = () => {
   const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
     codeReader.reset();
     setIsScanning(false);
-    
+    setLoading(false);
+
     // Stop active stream
     if (activeStreamRef.current) {
       activeStreamRef.current.getTracks().forEach(track => track.stop());
       activeStreamRef.current = null;
     }
-    
+
     // Also stop any video tracks from the passed element
     const videoEl = videoElement || videoElementRef.current;
     if (videoEl?.srcObject) {
