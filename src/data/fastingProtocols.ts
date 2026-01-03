@@ -8,6 +8,9 @@ export interface FastingProtocol {
   benefits: string[];
   icon: string;
   allowedItems?: string[];
+  isMultiDay?: boolean;
+  minDays?: number;
+  maxDays?: number;
 }
 
 export const FASTING_PROTOCOLS: FastingProtocol[] = [
@@ -60,6 +63,19 @@ export const FASTING_PROTOCOLS: FastingProtocol[] = [
     difficulty: 'advanced',
     benefits: ['Significant weight loss', 'Longevity benefits', 'Metabolic reset'],
     icon: '📅'
+  },
+  {
+    id: 'extended',
+    name: 'Extended Fast',
+    fastHours: 48,
+    eatHours: 0,
+    description: 'Multi-day fast (2-7 days)',
+    difficulty: 'expert',
+    benefits: ['Deep autophagy', 'Stem cell regeneration', 'Immune reset', 'Maximum metabolic benefits'],
+    icon: '🗓️',
+    isMultiDay: true,
+    minDays: 2,
+    maxDays: 7
   },
   {
     id: 'water_fast',

@@ -34,6 +34,7 @@ export const FastingTrackerModal = ({ open, onOpenChange }: FastingTrackerModalP
   
   const [selectedProtocol, setSelectedProtocol] = useState<string | null>(null);
   const [customHours, setCustomHours] = useState<number>(16);
+  const [extendedDays, setExtendedDays] = useState<number>(2);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [tick, setTick] = useState(0);
 
@@ -48,7 +49,12 @@ export const FastingTrackerModal = ({ open, onOpenChange }: FastingTrackerModalP
 
   const handleStartFast = async () => {
     if (!selectedProtocol) return;
-    const hours = selectedProtocol === 'custom' ? customHours : undefined;
+    let hours: number | undefined;
+    if (selectedProtocol === 'custom') {
+      hours = customHours;
+    } else if (selectedProtocol === 'extended') {
+      hours = extendedDays * 24;
+    }
     const success = await startFast(selectedProtocol, hours);
     if (success) {
       setSelectedProtocol(null);
@@ -123,7 +129,7 @@ export const FastingTrackerModal = ({ open, onOpenChange }: FastingTrackerModalP
                 {/* Protocol Selection */}
                 <h4 className="font-medium">Choose a Protocol</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {FASTING_PROTOCOLS.filter(p => p.id !== 'custom').map((protocol) => (
+                  {FASTING_PROTOCOLS.filter(p => p.id !== 'custom' && p.id !== 'extended').map((protocol) => (
                     <button
                       key={protocol.id}
                       onClick={() => setSelectedProtocol(protocol.id)}
@@ -144,6 +150,44 @@ export const FastingTrackerModal = ({ open, onOpenChange }: FastingTrackerModalP
                     </button>
                   ))}
                 </div>
+
+                {/* Extended Fast (Multi-day) */}
+                <button
+                  onClick={() => setSelectedProtocol('extended')}
+                  className={`w-full p-3 rounded-lg border text-left transition-all ${
+                    selectedProtocol === 'extended'
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-border hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🗓️</span>
+                      <div>
+                        <span className="font-medium">Extended Fast (Multi-day)</span>
+                        <p className="text-xs text-muted-foreground">2-7 days for deep autophagy & regeneration</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs text-red-400">expert</Badge>
+                  </div>
+                  {selectedProtocol === 'extended' && (
+                    <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+                      <span className="text-sm text-muted-foreground">Duration:</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={extendedDays}
+                          onChange={(e) => setExtendedDays(Math.min(7, Math.max(2, parseInt(e.target.value) || 2)))}
+                          className="w-16 h-8"
+                          min={2}
+                          max={7}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="text-sm">days ({extendedDays * 24}h)</span>
+                      </div>
+                    </div>
+                  )}
+                </button>
 
                 {/* Custom Duration */}
                 <button
@@ -183,7 +227,13 @@ export const FastingTrackerModal = ({ open, onOpenChange }: FastingTrackerModalP
                     size="lg"
                   >
                     <Play className="size-4 mr-2" />
-                    Start {selectedProtocol === 'custom' ? `${customHours}h` : getProtocolById(selectedProtocol)?.fastHours + 'h'} Fast
+                    Start {
+                      selectedProtocol === 'custom' 
+                        ? `${customHours}h` 
+                        : selectedProtocol === 'extended'
+                        ? `${extendedDays} Day`
+                        : getProtocolById(selectedProtocol)?.fastHours + 'h'
+                    } Fast
                   </Button>
                 )}
               </div>
