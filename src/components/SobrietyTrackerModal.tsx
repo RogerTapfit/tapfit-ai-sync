@@ -5,11 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
-import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles, CalendarIcon } from "lucide-react";
 import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
 import { useAuth } from "./AuthGuard";
 import { cn } from "@/lib/utils";
 import { SobrietyCelebration } from "./SobrietyCelebration";
+import { format, subDays, startOfDay } from "date-fns";
 
 interface CelebrationData {
   currentDay: number;
@@ -70,6 +73,7 @@ export const SobrietyTrackerModal = ({
   const [targetDays, setTargetDays] = useState(30);
   const [substanceType, setSubstanceType] = useState("general");
   const [notes, setNotes] = useState("");
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [view, setView] = useState<"main" | "setup" | "history">("main");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -89,9 +93,10 @@ export const SobrietyTrackerModal = ({
   const progress = getProgress();
 
   const handleStartJourney = async () => {
-    await startJourney(targetDays, substanceType, notes || undefined);
+    await startJourney(targetDays, substanceType, notes || undefined, startDate);
     setView("main");
     setNotes("");
+    setStartDate(new Date());
   };
 
   const handleCheckin = async () => {
@@ -156,6 +161,37 @@ export const SobrietyTrackerModal = ({
             </div>
           ))}
         </RadioGroup>
+      </div>
+
+      <div>
+        <Label className="text-base font-medium mb-2 block">
+          When did you start?
+          <span className="text-sm text-muted-foreground ml-2">(Optional - backdate if needed)</span>
+        </Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start text-left font-normal">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(startDate, "MMMM d, yyyy")}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={startDate}
+              onSelect={(date) => date && setStartDate(date)}
+              disabled={(date) => 
+                date > new Date() || date < subDays(new Date(), 14)
+              }
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {startOfDay(startDate) < startOfDay(new Date()) && (
+          <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
+            ⚠️ You won't earn daily coins for past days, but you'll still get the completion jackpot!
+          </p>
+        )}
       </div>
 
       <div>
