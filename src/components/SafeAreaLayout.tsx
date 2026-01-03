@@ -10,7 +10,7 @@ interface SafeAreaLayoutProps {
  */
 export const SafeAreaLayout: React.FC<SafeAreaLayoutProps> = ({ children }) => {
   return (
-    <div className="pt-safe pb-safe">
+    <div className="pt-safe pb-safe w-full max-w-full overflow-x-hidden">
       {children}
     </div>
   );
