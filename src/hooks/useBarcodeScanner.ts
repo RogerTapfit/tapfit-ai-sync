@@ -68,21 +68,26 @@ export const useBarcodeScanner = () => {
   // Start scanning - sets isScanning true first, then gets camera
   const startScanning = useCallback(async (videoElement?: HTMLVideoElement) => {
     console.log('📷 Starting barcode scanner...');
+
+    // Clear previous scan so scanning the same code again still triggers
+    setLastBarcode(null);
+    setProductData(null);
+
     setIsScanning(true);
     setLoading(true);
-    
+
     try {
       // First, stop any existing scanning
       codeReader.reset();
-      
+
       console.log('📷 Requesting camera access...');
       // Request camera permission and get stream
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment',
           width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
+          height: { ideal: 720 },
+        },
       });
 
       console.log('📷 Camera access granted');
@@ -97,7 +102,6 @@ export const useBarcodeScanner = () => {
       } else {
         console.log('📷 Video element not ready yet; will attach when available');
       }
-      
     } catch (error) {
       console.error('📷 Error starting camera:', error);
       toast.error('Failed to access camera. Please check permissions.');

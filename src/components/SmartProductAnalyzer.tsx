@@ -444,46 +444,71 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     }
   }, [lastBarcode]);
   
-  const handleBarcodeDetected = async (barcode: string) => {
+  const handleBarcodeDetected = async (barcodeRaw: string) => {
+    const barcode = barcodeRaw.replace(/[^0-9]/g, '');
+    if (barcode.length < 8 || barcode.length > 14) {
+      toast.error('Invalid barcode detected. Please try again.');
+      return;
+    }
+
     console.log('📊 Barcode detected:', barcode);
     setIsAnalyzing(true);
     stopScanning();
-    
+
     try {
       const { data, error } = await supabase.functions.invoke('analyzeProduct', {
-        body: { barcode }
+        body: { barcode },
       });
 
-      if (error) throw error;
+      if (error) {
+        const status = (error as any)?.context?.status ?? (error as any)?.status;
+        if (status === 404) {
+          toast.error('Barcode not found — try Photo mode.');
+          setScanMode('photo');
+          return;
+        }
 
-      if (data?.error) {
-        toast.error(data.message || 'Product not found');
-        setIsAnalyzing(false);
+        console.error('Barcode lookup error:', error);
+        toast.error('Barcode lookup failed. Please try again.');
         return;
       }
 
-      if (data) {
-        setAnalysisResult(data);
-        
-        // Check safety for the product
-        await checkProductSafety(data.product?.name, data.product?.brand);
-        
-        // Look up pricing if available
-        try {
-          const priceData = await PriceLookupService.lookupPrice(barcode, data.product?.name);
-          setPricing(priceData);
-        } catch (priceError) {
-          console.log('Price lookup unavailable');
-        }
-        
-        toast.success(`Product found: ${data.product?.name || 'Unknown'}`);
+      if (!data || (data as any)?.error) {
+        toast.error((data as any)?.message || (data as any)?.error || 'Product not found');
+        setScanMode('photo');
+        return;
       }
+
+      // Defensive: prevent blank screens if a partial response comes back
+      if (!(data as any)?.product?.name) {
+        console.error('Invalid analyzeProduct response (missing product.name):', data);
+        toast.error('Could not read product details — try Photo mode.');
+        setScanMode('photo');
+        return;
+      }
+
+      setAnalysisResult(data);
+
+      // Check safety for the product
+      await checkProductSafety((data as any).product?.name, (data as any).product?.brand);
+
+      // Look up pricing if available
+      try {
+        const priceData = await PriceLookupService.lookupPrice(barcode, (data as any).product?.name);
+        setPricing(priceData);
+      } catch (priceError) {
+        console.log('Price lookup unavailable');
+      }
+
+      toast.success(`Product found: ${(data as any).product?.name || 'Unknown'}`);
     } catch (error) {
-      console.error('Barcode lookup error:', error);
-      toast.error('Barcode not found — try Photo mode.');
+      console.error('Barcode lookup exception:', error);
+      toast.error('Barcode lookup failed. Please try again.');
       setScanMode('photo');
     } finally {
       setIsAnalyzing(false);
+      // Allow scanning the same barcode again
+      resetBarcodeScanner();
     }
   };
   
@@ -662,39 +687,50 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
 
   const analyzeProduct = async (imageBase64: string) => {
     setIsAnalyzing(true);
-    
+
     try {
       const { data, error } = await supabase.functions.invoke('analyzeProduct', {
-        body: { imageBase64 }
+        body: { imageBase64 },
       });
 
       if (error) {
+        const status = (error as any)?.context?.status ?? (error as any)?.status;
+        if (status === 429) {
+          toast.error('Too many requests — please wait a moment and try again.');
+        } else if (status === 402) {
+          toast.error('AI credits required — please add credits and try again.');
+        } else {
+          toast.error('Failed to analyze product. Please try again.');
+        }
         console.error('Analysis error:', error);
-        toast.error('Failed to analyze product. Please try again.');
         return;
       }
 
-      if (data.error) {
-        toast.error(data.error);
+      if (!data || (data as any)?.error) {
+        toast.error((data as any)?.error || 'Failed to analyze product. Please try again.');
+        return;
+      }
+
+      // Defensive: prevent blank screens if response is partial
+      if (!(data as any)?.product?.name) {
+        console.error('Invalid analyzeProduct response (missing product.name):', data);
+        toast.error('Could not read product details — please try a clearer photo.');
         return;
       }
 
       setAnalysisResult(data);
-      
+
       // Check product safety after successful analysis
-      await checkProductSafety(data.product.name, data.product.brand);
-      
+      await checkProductSafety((data as any).product?.name, (data as any).product?.brand);
+
       // Look up pricing information
       try {
-        const priceData = await PriceLookupService.lookupPrice(
-          data.barcode || '',
-          data.product.name
-        );
+        const priceData = await PriceLookupService.lookupPrice((data as any).barcode || '', (data as any).product?.name);
         setPricing(priceData);
       } catch (priceError) {
         console.log('Price lookup unavailable:', priceError);
       }
-      
+
       toast.success('Product analyzed successfully!');
     } catch (error) {
       console.error('Error analyzing product:', error);
