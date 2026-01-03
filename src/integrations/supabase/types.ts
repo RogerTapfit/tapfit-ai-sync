@@ -1095,6 +1095,96 @@ export type Database = {
         }
         Relationships: []
       }
+      fasting_goals: {
+        Row: {
+          created_at: string | null
+          id: string
+          notifications_enabled: boolean | null
+          preferred_eating_window_end: string | null
+          preferred_eating_window_start: string | null
+          preferred_protocol: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_target_fasts: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notifications_enabled?: boolean | null
+          preferred_eating_window_end?: string | null
+          preferred_eating_window_start?: string | null
+          preferred_protocol?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_target_fasts?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notifications_enabled?: boolean | null
+          preferred_eating_window_end?: string | null
+          preferred_eating_window_start?: string | null
+          preferred_protocol?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_target_fasts?: number | null
+        }
+        Relationships: []
+      }
+      fasting_sessions: {
+        Row: {
+          actual_hours: number | null
+          allow_liquids: boolean | null
+          allow_zero_cal: boolean | null
+          break_reason: string | null
+          coins_earned: number | null
+          created_at: string | null
+          ended_at: string | null
+          fast_type: string
+          id: string
+          notes: string | null
+          started_at: string
+          status: string | null
+          target_end_at: string
+          target_hours: number
+          user_id: string
+        }
+        Insert: {
+          actual_hours?: number | null
+          allow_liquids?: boolean | null
+          allow_zero_cal?: boolean | null
+          break_reason?: string | null
+          coins_earned?: number | null
+          created_at?: string | null
+          ended_at?: string | null
+          fast_type: string
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: string | null
+          target_end_at: string
+          target_hours: number
+          user_id: string
+        }
+        Update: {
+          actual_hours?: number | null
+          allow_liquids?: boolean | null
+          allow_zero_cal?: boolean | null
+          break_reason?: string | null
+          coins_earned?: number | null
+          created_at?: string | null
+          ended_at?: string | null
+          fast_type?: string
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: string | null
+          target_end_at?: string
+          target_hours?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       fitness_alarms: {
         Row: {
           alarm_sound: string
@@ -4793,6 +4883,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      award_fasting_coins: {
+        Args: {
+          _actual_hours: number
+          _session_id: string
+          _target_hours: number
+          _user_id: string
+        }
+        Returns: number
       }
       award_sobriety_coins: {
         Args: {
