@@ -57,27 +57,12 @@ export const useBarcodeScanner = () => {
     }
   };
 
-  const handleBarcodeDetected = async (barcode: string) => {
-    setLoading(true);
+  // When barcode is detected, just set it and stop scanning - let consumer handle the lookup
+  const handleBarcodeDetected = (barcode: string) => {
+    console.log('📷 Barcode detected in hook:', barcode);
     setLastBarcode(barcode);
     stopScanning();
-    
-    try {
-      const product = await fetchProductData(barcode);
-      
-      if (product) {
-        setProductData(product);
-        toast.success(`Product found: ${product.name}`);
-      } else {
-        toast.error('Product not found in database. Try manual entry or photo analysis.');
-        setProductData(null);
-      }
-    } catch (error) {
-      console.error('Error processing barcode:', error);
-      toast.error('Failed to process barcode. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   // Start scanning - sets isScanning true first, then gets camera
