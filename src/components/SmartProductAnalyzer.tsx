@@ -85,8 +85,84 @@ interface SupplementAnalysis {
   };
 }
 
+interface PetFoodAnalysis {
+  animal_type?: string;
+  life_stage?: string;
+  food_type?: string;
+  quality_grade?: {
+    letter: string;
+    score: number;
+    aafco_compliant?: boolean;
+    reasoning: string;
+  };
+  protein_analysis?: {
+    primary_protein_source?: string;
+    protein_quality?: string;
+    is_named_protein?: boolean;
+    animal_digest_present?: boolean;
+    protein_percentage?: number;
+  };
+  ingredient_sourcing?: {
+    country_of_origin?: string;
+    manufacturing_location?: string;
+    sourcing_transparency?: string;
+    made_in_usa?: boolean;
+  };
+  synthetic_ingredients?: Array<{
+    name: string;
+    category?: string;
+    concern_level?: string;
+    effects?: string[];
+    banned_in?: string[];
+  }>;
+  concerning_ingredients?: {
+    artificial_colors?: string[];
+    artificial_preservatives?: string[];
+    fillers?: string[];
+    meat_by_products?: boolean;
+    rendered_fat?: boolean;
+    corn_syrup?: boolean;
+    propylene_glycol?: boolean;
+    carrageenan?: boolean;
+  };
+  toxic_ingredients_check?: {
+    xylitol?: boolean;
+    onion_garlic?: boolean;
+    grapes_raisins?: boolean;
+    chocolate?: boolean;
+    macadamia?: boolean;
+    avocado?: boolean;
+    detected_toxic?: string[];
+  };
+  recalls?: {
+    has_recent_recalls?: boolean;
+    recall_history?: string[];
+    brand_recall_frequency?: string;
+  };
+  healthier_alternatives?: Array<{
+    product_name: string;
+    brand?: string;
+    why_better: string;
+    price_comparison?: string;
+    key_improvements?: string[];
+  }>;
+  guaranteed_analysis?: {
+    crude_protein_min?: number;
+    crude_fat_min?: number;
+    crude_fiber_max?: number;
+    moisture_max?: number;
+  };
+  overall_assessment?: {
+    pros?: string[];
+    cons?: string[];
+    verdict?: string;
+    recommendation?: string;
+    suitable_for?: string[];
+  };
+}
+
 interface ProductAnalysis {
-  product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin' | 'household' | 'personal_care';
+  product_type?: 'food' | 'beverage' | 'supplement' | 'medication' | 'vitamin' | 'household' | 'personal_care' | 'pet_food';
   barcode?: string | null;
   barcode_type?: string | null;
   nutrition_label_visible?: boolean;
@@ -245,6 +321,7 @@ interface ProductAnalysis {
   supplement_analysis?: SupplementAnalysis;
   sourcing_analysis?: SourcingAnalysis;
   household_analysis?: HouseholdAnalysis;
+  pet_food_analysis?: PetFoodAnalysis;
 }
 
 interface HouseholdAnalysis {
@@ -1142,6 +1219,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </p>
                   <p className="text-xs bg-background/50 p-2 rounded-lg">
                     🧴 Skincare & cosmetics • 🧹 Cleaning supplies • 🧻 Household items
+                  </p>
+                  <p className="text-xs bg-background/50 p-2 rounded-lg">
+                    🐕 Dog food • 🐈 Cat food • 🐾 Pet treats & supplies
                   </p>
                 </div>
               </div>
@@ -3097,8 +3177,396 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Processing Deep Dive - Only show for food/beverage */}
-                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.detailed_processing && (
+                {/* Pet Food Analysis Section */}
+                {analysisResult.product_type === 'pet_food' && analysisResult.pet_food_analysis && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="space-y-5"
+                  >
+                    {/* Pet Food Quality Grade Card */}
+                    <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border-2 border-amber-500/40 rounded-xl p-6 shadow-xl">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-bold text-lg flex items-center gap-2 text-amber-600">
+                          🐾 Pet Food Quality Grade
+                        </h4>
+                        {analysisResult.pet_food_analysis.quality_grade && (
+                          <motion.div 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className={`inline-flex items-center justify-center w-16 h-16 rounded-xl text-2xl font-bold border-3 shadow-lg ${
+                              analysisResult.pet_food_analysis.quality_grade.letter?.startsWith('A') ? 'bg-green-500/20 border-green-500 text-green-700' :
+                              analysisResult.pet_food_analysis.quality_grade.letter?.startsWith('B') ? 'bg-blue-500/20 border-blue-500 text-blue-700' :
+                              analysisResult.pet_food_analysis.quality_grade.letter?.startsWith('C') ? 'bg-yellow-500/20 border-yellow-500 text-yellow-700' :
+                              analysisResult.pet_food_analysis.quality_grade.letter?.startsWith('D') ? 'bg-orange-500/20 border-orange-500 text-orange-700' :
+                              'bg-red-500/20 border-red-500 text-red-700'
+                            }`}
+                          >
+                            {analysisResult.pet_food_analysis.quality_grade.letter}
+                          </motion.div>
+                        )}
+                      </div>
+                      
+                      {analysisResult.pet_food_analysis.quality_grade && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Progress value={analysisResult.pet_food_analysis.quality_grade.score} className="flex-1 h-3" />
+                            <span className="text-sm font-bold text-amber-700">{analysisResult.pet_food_analysis.quality_grade.score}/100</span>
+                          </div>
+                          {analysisResult.pet_food_analysis.quality_grade.aafco_compliant !== undefined && (
+                            <Badge className={`${analysisResult.pet_food_analysis.quality_grade.aafco_compliant ? 'bg-green-500/20 text-green-700 border-green-500/50' : 'bg-red-500/20 text-red-700 border-red-500/50'}`}>
+                              {analysisResult.pet_food_analysis.quality_grade.aafco_compliant ? '✅ AAFCO Compliant' : '❌ Not AAFCO Compliant'}
+                            </Badge>
+                          )}
+                          {analysisResult.pet_food_analysis.quality_grade.reasoning && (
+                            <p className="text-sm text-muted-foreground">{analysisResult.pet_food_analysis.quality_grade.reasoning}</p>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Pet Info */}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {analysisResult.pet_food_analysis.animal_type && (
+                          <Badge className="bg-amber-500/20 text-amber-700 border-amber-500/50 capitalize">
+                            {analysisResult.pet_food_analysis.animal_type === 'dog' ? '🐕' : analysisResult.pet_food_analysis.animal_type === 'cat' ? '🐈' : '🐾'} {analysisResult.pet_food_analysis.animal_type}
+                          </Badge>
+                        )}
+                        {analysisResult.pet_food_analysis.life_stage && (
+                          <Badge variant="outline" className="capitalize">{analysisResult.pet_food_analysis.life_stage.replace('_', ' ')}</Badge>
+                        )}
+                        {analysisResult.pet_food_analysis.food_type && (
+                          <Badge variant="outline" className="capitalize">{analysisResult.pet_food_analysis.food_type.replace('_', ' ')}</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Protein Analysis Card */}
+                    {analysisResult.pet_food_analysis.protein_analysis && (
+                      <div className="bg-gradient-to-br from-red-500/15 to-orange-500/10 border-2 border-red-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-red-600 mb-3 flex items-center gap-2">
+                          🥩 Protein Analysis
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          {analysisResult.pet_food_analysis.protein_analysis.primary_protein_source && (
+                            <div className="p-3 bg-red-500/10 rounded-lg">
+                              <span className="text-xs text-muted-foreground">Primary Protein</span>
+                              <p className="font-medium capitalize">{analysisResult.pet_food_analysis.protein_analysis.primary_protein_source.replace('_', ' ')}</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.protein_analysis.protein_quality && (
+                            <div className={`p-3 rounded-lg ${
+                              analysisResult.pet_food_analysis.protein_analysis.protein_quality === 'whole_meat' ? 'bg-green-500/10' :
+                              analysisResult.pet_food_analysis.protein_analysis.protein_quality === 'meat_meal' ? 'bg-yellow-500/10' :
+                              'bg-red-500/10'
+                            }`}>
+                              <span className="text-xs text-muted-foreground">Quality</span>
+                              <p className="font-medium capitalize">{analysisResult.pet_food_analysis.protein_analysis.protein_quality.replace('_', ' ')}</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {analysisResult.pet_food_analysis.protein_analysis.is_named_protein && (
+                            <Badge className="bg-green-500/20 text-green-700 border-green-500/50">✅ Named Protein</Badge>
+                          )}
+                          {analysisResult.pet_food_analysis.protein_analysis.animal_digest_present && (
+                            <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/50">⚠️ Contains Animal Digest</Badge>
+                          )}
+                          {analysisResult.pet_food_analysis.protein_analysis.protein_percentage !== undefined && (
+                            <Badge variant="outline">Protein: {analysisResult.pet_food_analysis.protein_analysis.protein_percentage}%</Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Toxic Ingredients Alert */}
+                    {analysisResult.pet_food_analysis.toxic_ingredients_check?.detected_toxic?.length > 0 && (
+                      <div className="bg-gradient-to-br from-red-600/30 to-red-500/20 border-2 border-red-600 rounded-xl p-5">
+                        <h5 className="font-bold text-red-700 mb-3 flex items-center gap-2">
+                          <Skull className="h-5 w-5" />
+                          ☠️ TOXIC INGREDIENTS DETECTED
+                        </h5>
+                        <div className="space-y-2">
+                          {analysisResult.pet_food_analysis.toxic_ingredients_check.detected_toxic.map((toxic, i) => (
+                            <div key={i} className="p-3 bg-red-600/20 rounded-lg border border-red-600/50">
+                              <span className="font-bold text-red-700">{toxic}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-sm text-red-700 mt-3 font-medium">
+                          ⚠️ DO NOT FEED TO YOUR PET - These ingredients can cause serious harm or death!
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Concerning Ingredients Grid */}
+                    {analysisResult.pet_food_analysis.concerning_ingredients && (
+                      <div className="bg-gradient-to-br from-yellow-500/15 to-orange-500/10 border-2 border-yellow-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-yellow-700 mb-3 flex items-center gap-2">
+                          ⚠️ Concerning Ingredients
+                        </h5>
+                        <div className="space-y-3">
+                          {analysisResult.pet_food_analysis.concerning_ingredients.artificial_colors?.length > 0 && (
+                            <div className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                              <span className="text-xs font-bold text-yellow-700">🎨 Artificial Colors:</span>
+                              <p className="text-sm">{analysisResult.pet_food_analysis.concerning_ingredients.artificial_colors.join(', ')}</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.concerning_ingredients.artificial_preservatives?.length > 0 && (
+                            <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                              <span className="text-xs font-bold text-orange-700">🧪 Artificial Preservatives:</span>
+                              <p className="text-sm">{analysisResult.pet_food_analysis.concerning_ingredients.artificial_preservatives.join(', ')}</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.concerning_ingredients.fillers?.length > 0 && (
+                            <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                              <span className="text-xs font-bold text-amber-700">🌾 Fillers:</span>
+                              <p className="text-sm">{analysisResult.pet_food_analysis.concerning_ingredients.fillers.join(', ')}</p>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {analysisResult.pet_food_analysis.concerning_ingredients.meat_by_products && (
+                              <Badge className="bg-orange-500/20 text-orange-700 border-orange-500/50">Contains By-Products</Badge>
+                            )}
+                            {analysisResult.pet_food_analysis.concerning_ingredients.corn_syrup && (
+                              <Badge className="bg-red-500/20 text-red-700 border-red-500/50">Contains Corn Syrup</Badge>
+                            )}
+                            {analysisResult.pet_food_analysis.concerning_ingredients.propylene_glycol && (
+                              <Badge className="bg-red-500/20 text-red-700 border-red-500/50">⚠️ Propylene Glycol</Badge>
+                            )}
+                            {analysisResult.pet_food_analysis.concerning_ingredients.carrageenan && (
+                              <Badge className="bg-yellow-500/20 text-yellow-700 border-yellow-500/50">Carrageenan</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Synthetic Ingredients */}
+                    {analysisResult.pet_food_analysis.synthetic_ingredients && analysisResult.pet_food_analysis.synthetic_ingredients.length > 0 && (
+                      <div className="bg-gradient-to-br from-purple-500/15 to-pink-500/10 border-2 border-purple-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-purple-700 mb-3 flex items-center gap-2">
+                          <Beaker className="h-5 w-5" />
+                          🧪 Synthetic Ingredients
+                        </h5>
+                        <div className="space-y-2">
+                          {analysisResult.pet_food_analysis.synthetic_ingredients.map((synthetic, i) => (
+                            <div key={i} className={`p-3 rounded-lg border ${
+                              synthetic.concern_level === 'critical' ? 'bg-red-500/20 border-red-500/50' :
+                              synthetic.concern_level === 'high' ? 'bg-orange-500/20 border-orange-500/50' :
+                              synthetic.concern_level === 'moderate' ? 'bg-yellow-500/20 border-yellow-500/50' :
+                              'bg-purple-500/10 border-purple-500/30'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{synthetic.name}</span>
+                                {synthetic.concern_level && (
+                                  <Badge className={`text-xs ${
+                                    synthetic.concern_level === 'critical' ? 'bg-red-600 text-white' :
+                                    synthetic.concern_level === 'high' ? 'bg-orange-500 text-white' :
+                                    synthetic.concern_level === 'moderate' ? 'bg-yellow-500 text-black' :
+                                    'bg-gray-500 text-white'
+                                  }`}>
+                                    {synthetic.concern_level}
+                                  </Badge>
+                                )}
+                              </div>
+                              {synthetic.effects?.length > 0 && (
+                                <p className="text-xs text-muted-foreground mt-1">{synthetic.effects.join(', ')}</p>
+                              )}
+                              {synthetic.banned_in?.length > 0 && (
+                                <p className="text-xs text-red-600 mt-1">⚠️ Banned in: {synthetic.banned_in.join(', ')}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ingredient Sourcing */}
+                    {analysisResult.pet_food_analysis.ingredient_sourcing && (
+                      <div className="bg-gradient-to-br from-blue-500/15 to-cyan-500/10 border-2 border-blue-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-blue-600 mb-3 flex items-center gap-2">
+                          <Globe className="h-5 w-5" />
+                          🌍 Ingredient Sourcing
+                        </h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          {analysisResult.pet_food_analysis.ingredient_sourcing.country_of_origin && (
+                            <div className="p-3 bg-blue-500/10 rounded-lg">
+                              <span className="text-xs text-muted-foreground">Origin</span>
+                              <p className="font-medium">{analysisResult.pet_food_analysis.ingredient_sourcing.country_of_origin}</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.ingredient_sourcing.manufacturing_location && (
+                            <div className="p-3 bg-blue-500/10 rounded-lg">
+                              <span className="text-xs text-muted-foreground">Made In</span>
+                              <p className="font-medium">{analysisResult.pet_food_analysis.ingredient_sourcing.manufacturing_location}</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {analysisResult.pet_food_analysis.ingredient_sourcing.made_in_usa && (
+                            <Badge className="bg-blue-500/20 text-blue-700 border-blue-500/50">🇺🇸 Made in USA</Badge>
+                          )}
+                          {analysisResult.pet_food_analysis.ingredient_sourcing.sourcing_transparency && (
+                            <Badge variant="outline" className={`capitalize ${
+                              analysisResult.pet_food_analysis.ingredient_sourcing.sourcing_transparency === 'high' ? 'border-green-500 text-green-700' :
+                              analysisResult.pet_food_analysis.ingredient_sourcing.sourcing_transparency === 'medium' ? 'border-yellow-500 text-yellow-700' :
+                              'border-red-500 text-red-700'
+                            }`}>
+                              Transparency: {analysisResult.pet_food_analysis.ingredient_sourcing.sourcing_transparency}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recalls */}
+                    {analysisResult.pet_food_analysis.recalls?.has_recent_recalls && (
+                      <div className="bg-gradient-to-br from-red-500/20 to-orange-500/15 border-2 border-red-500/50 rounded-xl p-5">
+                        <h5 className="font-bold text-red-700 mb-3 flex items-center gap-2">
+                          🚨 Recall Alert
+                        </h5>
+                        {analysisResult.pet_food_analysis.recalls.recall_history?.length > 0 && (
+                          <ul className="space-y-2">
+                            {analysisResult.pet_food_analysis.recalls.recall_history.map((recall, i) => (
+                              <li key={i} className="p-2 bg-red-500/10 rounded border border-red-500/30 text-sm">
+                                {recall}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {analysisResult.pet_food_analysis.recalls.brand_recall_frequency && (
+                          <Badge className={`mt-3 ${
+                            analysisResult.pet_food_analysis.recalls.brand_recall_frequency === 'frequent' ? 'bg-red-600 text-white' :
+                            analysisResult.pet_food_analysis.recalls.brand_recall_frequency === 'occasional' ? 'bg-orange-500 text-white' :
+                            'bg-yellow-500 text-black'
+                          }`}>
+                            Brand Recall History: {analysisResult.pet_food_analysis.recalls.brand_recall_frequency}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Guaranteed Analysis */}
+                    {analysisResult.pet_food_analysis.guaranteed_analysis && (
+                      <div className="bg-gradient-to-br from-slate-500/15 to-gray-500/10 border-2 border-slate-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-slate-600 mb-3">📊 Guaranteed Analysis</h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          {analysisResult.pet_food_analysis.guaranteed_analysis.crude_protein_min !== undefined && (
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <span className="text-xs text-muted-foreground">Crude Protein (min)</span>
+                              <p className="font-bold text-lg">{analysisResult.pet_food_analysis.guaranteed_analysis.crude_protein_min}%</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.guaranteed_analysis.crude_fat_min !== undefined && (
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <span className="text-xs text-muted-foreground">Crude Fat (min)</span>
+                              <p className="font-bold text-lg">{analysisResult.pet_food_analysis.guaranteed_analysis.crude_fat_min}%</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.guaranteed_analysis.crude_fiber_max !== undefined && (
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <span className="text-xs text-muted-foreground">Crude Fiber (max)</span>
+                              <p className="font-bold text-lg">{analysisResult.pet_food_analysis.guaranteed_analysis.crude_fiber_max}%</p>
+                            </div>
+                          )}
+                          {analysisResult.pet_food_analysis.guaranteed_analysis.moisture_max !== undefined && (
+                            <div className="p-3 bg-background rounded-lg border border-border">
+                              <span className="text-xs text-muted-foreground">Moisture (max)</span>
+                              <p className="font-bold text-lg">{analysisResult.pet_food_analysis.guaranteed_analysis.moisture_max}%</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Healthier Alternatives */}
+                    {analysisResult.pet_food_analysis.healthier_alternatives && analysisResult.pet_food_analysis.healthier_alternatives.length > 0 && (
+                      <div className="bg-gradient-to-br from-green-500/15 to-emerald-500/10 border-2 border-green-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-green-600 mb-3 flex items-center gap-2">
+                          <Sparkles className="h-5 w-5" />
+                          💡 Healthier Alternatives
+                        </h5>
+                        <div className="space-y-3">
+                          {analysisResult.pet_food_analysis.healthier_alternatives.map((alt, i) => (
+                            <div key={i} className="p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                              <p className="font-bold text-green-700">{alt.product_name}</p>
+                              {alt.brand && <p className="text-sm text-green-600">by {alt.brand}</p>}
+                              <p className="text-sm text-foreground mt-2">{alt.why_better}</p>
+                              {alt.key_improvements?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {alt.key_improvements.map((improvement, j) => (
+                                    <Badge key={j} className="bg-green-500/20 text-green-700 border-green-500/50 text-xs">
+                                      ✓ {improvement}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {alt.price_comparison && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  💵 Price: {alt.price_comparison}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Overall Assessment */}
+                    {analysisResult.pet_food_analysis.overall_assessment && (
+                      <div className="bg-gradient-to-br from-amber-500/15 to-orange-500/10 border-2 border-amber-500/40 rounded-xl p-5">
+                        <h5 className="font-bold text-amber-700 mb-3">📋 Overall Assessment</h5>
+                        
+                        {analysisResult.pet_food_analysis.overall_assessment.verdict && (
+                          <p className="text-sm font-medium mb-3">{analysisResult.pet_food_analysis.overall_assessment.verdict}</p>
+                        )}
+                        
+                        {analysisResult.pet_food_analysis.overall_assessment.pros?.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-xs font-bold text-green-600">Pros:</span>
+                            <ul className="text-sm text-green-700 ml-4">
+                              {analysisResult.pet_food_analysis.overall_assessment.pros.map((pro, i) => (
+                                <li key={i}>✓ {pro}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {analysisResult.pet_food_analysis.overall_assessment.cons?.length > 0 && (
+                          <div className="mb-2">
+                            <span className="text-xs font-bold text-red-600">Cons:</span>
+                            <ul className="text-sm text-red-700 ml-4">
+                              {analysisResult.pet_food_analysis.overall_assessment.cons.map((con, i) => (
+                                <li key={i}>✗ {con}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {analysisResult.pet_food_analysis.overall_assessment.recommendation && (
+                          <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                            <p className="text-sm text-blue-700">
+                              💡 <strong>Recommendation:</strong> {analysisResult.pet_food_analysis.overall_assessment.recommendation}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {analysisResult.pet_food_analysis.overall_assessment.suitable_for?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1">
+                            <span className="text-xs text-muted-foreground">Best for:</span>
+                            {analysisResult.pet_food_analysis.overall_assessment.suitable_for.map((suit, i) => (
+                              <Badge key={i} variant="outline" className="text-xs capitalize">{suit}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* Processing Deep Dive - Only show for food/beverage (not pet food or household) */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' && analysisResult.detailed_processing && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3165,8 +3633,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Sugar Analysis Deep Dive - Only for food/beverage */}
-                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.sugar_analysis && (
+                {/* Sugar Analysis Deep Dive - Only for food/beverage (not pet food) */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' && analysisResult.sugar_analysis && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3415,8 +3883,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Chemical Analysis Deep Dive - Only for food/beverage */}
-                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.chemical_analysis && (
+                {/* Chemical Analysis Deep Dive - Only for food/beverage (not pet food) */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' && analysisResult.chemical_analysis && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3687,8 +4155,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Enhanced Safety Information - Only for food/beverage */}
-                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && 
+                {/* Enhanced Safety Information - Only for food/beverage (not pet food) */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' &&
                  (analysisResult.safety.concerning_additives.length > 0 || 
                   analysisResult.safety.forever_chemicals || 
                   analysisResult.safety.chemical_load) && (
@@ -3953,8 +4421,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   transition={{ delay: 0.8 }}
                   className="flex flex-col sm:flex-row gap-4 pt-6"
                 >
-                  {/* Only show Add to Food Log for edible products */}
-                  {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && (
+                  {/* Only show Add to Food Log for edible products (not pet food, household, personal care) */}
+                  {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' && (
                     <Button
                       onClick={handleOpenFoodLogModal}
                       className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-xl"

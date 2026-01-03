@@ -25,7 +25,7 @@ interface SafetyResponse {
   safetyAlerts: string[];
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   lastUpdated: string;
-  productCategory?: 'food' | 'household' | 'personal_care' | 'unknown';
+  productCategory?: 'food' | 'household' | 'personal_care' | 'pet_food' | 'unknown';
   chemicalConcerns?: {
     forever_chemicals: boolean;
     endocrine_disruptors: boolean;
@@ -127,12 +127,15 @@ serve(async (req) => {
     const productInfo = `${productName || ''} ${brandName || ''}`.toLowerCase();
     
     // Detect product category
-    let productCategory: 'food' | 'household' | 'personal_care' | 'unknown' = 'unknown';
+    let productCategory: 'food' | 'household' | 'personal_care' | 'pet_food' | 'unknown' = 'unknown';
     
     const householdKeywords = ['cleaner', 'detergent', 'bleach', 'dish soap', 'laundry', 'disinfectant', 'spray', 'toilet', 'air freshener', 'fabric softener'];
     const personalCareKeywords = ['shampoo', 'conditioner', 'lotion', 'sunscreen', 'deodorant', 'body wash', 'soap', 'skincare', 'cosmetic', 'makeup', 'toothpaste', 'mouthwash', 'moisturizer'];
+    const petFoodKeywords = ['dog food', 'cat food', 'pet food', 'puppy', 'kitten', 'for dogs', 'for cats', 'kibble', 'pet treats', 'dog treats', 'cat treats', 'canine', 'feline'];
     
-    if (householdKeywords.some(k => productInfo.includes(k))) {
+    if (petFoodKeywords.some(k => productInfo.includes(k))) {
+      productCategory = 'pet_food';
+    } else if (householdKeywords.some(k => productInfo.includes(k))) {
       productCategory = 'household';
     } else if (personalCareKeywords.some(k => productInfo.includes(k))) {
       productCategory = 'personal_care';
@@ -303,6 +306,69 @@ serve(async (req) => {
           productInfo.includes('pork') || productInfo.includes('turkey') || productInfo.includes('sausage')) {
         safetyResponse.safetyAlerts.push('ℹ️ For meat/poultry products, check USDA FSIS website for latest recalls');
       }
+    }
+    
+    // Check FDA Animal & Veterinary API for pet food recalls
+    if (productCategory === 'pet_food') {
+      try {
+        const searchTerms = [productName, brandName].filter(Boolean).join(' ');
+        const fdaPetUrl = `https://api.fda.gov/animalandveterinary/event.json?search=product.brand_name:"${encodeURIComponent(searchTerms)}"&limit=10`;
+        
+        console.log('Querying FDA Animal & Veterinary API:', fdaPetUrl);
+        
+        const fdaPetResponse = await fetch(fdaPetUrl);
+        
+        if (fdaPetResponse.ok) {
+          const fdaPetData = await fdaPetResponse.json();
+          
+          if (fdaPetData.results && fdaPetData.results.length > 0) {
+            console.log(`Found ${fdaPetData.results.length} FDA pet adverse event records`);
+            
+            // Check for serious adverse events
+            const seriousEvents = fdaPetData.results.filter((event: any) => 
+              event.outcome?.some((o: any) => 
+                o.medical_status?.toLowerCase().includes('died') || 
+                o.medical_status?.toLowerCase().includes('euthanized') ||
+                o.medical_status?.toLowerCase().includes('hospitalized')
+              )
+            );
+            
+            if (seriousEvents.length > 0) {
+              safetyResponse.hasActiveRecalls = true;
+              safetyResponse.riskLevel = seriousEvents.length >= 3 ? 'critical' : 'high';
+              safetyResponse.safetyAlerts.push(`⚠️ FDA has ${seriousEvents.length} serious adverse event report(s) for this pet food brand (deaths, hospitalizations)`);
+            } else if (fdaPetData.results.length >= 5) {
+              if (safetyResponse.riskLevel === 'low') safetyResponse.riskLevel = 'medium';
+              safetyResponse.safetyAlerts.push(`ℹ️ FDA has ${fdaPetData.results.length} adverse event reports for this pet food brand`);
+            }
+          }
+        }
+      } catch (petFdaError) {
+        console.error('FDA Pet API Error:', petFdaError);
+      }
+      
+      // Pet food specific ingredient concerns
+      const petFoodConcerns = [
+        { ingredient: 'propylene glycol', alert: '🚨 Contains Propylene Glycol: Toxic to cats, can cause Heinz body anemia. Banned in cat food by FDA.' },
+        { ingredient: 'ethoxyquin', alert: '⚠️ Contains Ethoxyquin: Controversial preservative, linked to liver and kidney issues in pets.' },
+        { ingredient: 'bha', alert: '⚠️ Contains BHA: Possible carcinogen, banned in pet foods in some countries.' },
+        { ingredient: 'bht', alert: '⚠️ Contains BHT: Potential carcinogen, some countries restrict use in pet food.' },
+        { ingredient: 'by-product', alert: 'ℹ️ Contains By-Products: Lower quality protein source, includes organs and parts not typically eaten by humans.' },
+        { ingredient: 'corn syrup', alert: '⚠️ Contains Corn Syrup: Unnecessary sugar, can contribute to obesity and diabetes in pets.' },
+        { ingredient: 'menadione', alert: '⚠️ Contains Menadione (Vitamin K3): Synthetic vitamin linked to toxicity in high doses.' },
+        { ingredient: 'xylitol', alert: '🚨 XYLITOL DETECTED: EXTREMELY TOXIC to dogs - can cause hypoglycemia, liver failure, death.' },
+      ];
+
+      petFoodConcerns.forEach(concern => {
+        if (productInfo.includes(concern.ingredient)) {
+          safetyResponse.safetyAlerts.push(concern.alert);
+          if (concern.ingredient === 'xylitol' || concern.ingredient === 'propylene glycol') {
+            safetyResponse.riskLevel = 'critical';
+          } else if (safetyResponse.riskLevel === 'low') {
+            safetyResponse.riskLevel = 'medium';
+          }
+        }
+      });
     }
 
     console.log('Safety check completed:', {
