@@ -7,12 +7,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles, CalendarIcon, Pencil } from "lucide-react";
+import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles, CalendarIcon, Pencil, Check } from "lucide-react";
 import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
 import { useAuth } from "./AuthGuard";
 import { cn } from "@/lib/utils";
 import { SobrietyCelebration } from "./SobrietyCelebration";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays, startOfDay, isSameDay } from "date-fns";
+import { getLocalDateString } from "@/utils/dateUtils";
 
 interface CelebrationData {
   currentDay: number;
@@ -64,7 +65,8 @@ export const SobrietyTrackerModal = ({
     dailyCheckin,
     resetJourney,
     completeJourney,
-    updateStartDate,
+    addMissedSoberDays,
+    getCheckedInDates,
     getProgress,
     pastJourneys,
     refetch,
@@ -78,8 +80,8 @@ export const SobrietyTrackerModal = ({
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [view, setView] = useState<"main" | "setup" | "history">("main");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showDateEdit, setShowDateEdit] = useState(false);
-  const [editStartDate, setEditStartDate] = useState<Date | null>(null);
+  const [showAddMissedDays, setShowAddMissedDays] = useState(false);
+  const [selectedMissedDays, setSelectedMissedDays] = useState<Date[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
 
@@ -131,13 +133,24 @@ export const SobrietyTrackerModal = ({
     setView("main");
   };
 
-  const handleUpdateStartDate = async () => {
-    if (editStartDate) {
-      await updateStartDate(editStartDate);
-      setShowDateEdit(false);
-      setEditStartDate(null);
+  const handleAddMissedDays = async () => {
+    if (selectedMissedDays.length > 0) {
+      await addMissedSoberDays(selectedMissedDays);
+      setShowAddMissedDays(false);
+      setSelectedMissedDays([]);
     }
   };
+
+  const toggleMissedDay = (date: Date) => {
+    const isSelected = selectedMissedDays.some(d => isSameDay(d, date));
+    if (isSelected) {
+      setSelectedMissedDays(prev => prev.filter(d => !isSameDay(d, date)));
+    } else {
+      setSelectedMissedDays(prev => [...prev, date]);
+    }
+  };
+
+  const checkedInDates = getCheckedInDates();
 
   const renderSetupView = () => (
     <div className="space-y-6">
@@ -249,56 +262,76 @@ export const SobrietyTrackerModal = ({
             <span>of {progress.targetDays} days • {activeJourney?.substanceType !== 'general' ? activeJourney?.substanceType : 'sobriety'}</span>
             <button 
               onClick={() => {
-                setEditStartDate(activeJourney?.startDate || new Date());
-                setShowDateEdit(true);
+                setSelectedMissedDays([]);
+                setShowAddMissedDays(true);
               }}
               className="text-muted-foreground hover:text-green-400 transition-colors"
-              title="Edit start date"
+              title="Add missed sober days"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Edit Start Date */}
-        {showDateEdit && (
+        {/* Add Missed Sober Days */}
+        {showAddMissedDays && (
           <div className="p-4 bg-primary/5 rounded-lg border border-border space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Adjust Start Date</Label>
+              <Label className="text-sm font-medium">Add Missed Sober Days</Label>
               <button 
-                onClick={() => setShowDateEdit(false)}
+                onClick={() => {
+                  setShowAddMissedDays(false);
+                  setSelectedMissedDays([]);
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Cancel
               </button>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {editStartDate ? format(editStartDate, "MMMM d, yyyy") : "Select date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={editStartDate || undefined}
-                  onSelect={(date) => date && setEditStartDate(date)}
-                  disabled={(date) => date > new Date() || date < subDays(new Date(), 30)}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
             <p className="text-xs text-muted-foreground">
-              Your existing check-ins will be kept. Only future days will earn coins.
+              Tap the days you stayed sober to add them
+            </p>
+            <CalendarComponent
+              mode="multiple"
+              selected={selectedMissedDays}
+              onSelect={(dates) => setSelectedMissedDays(dates || [])}
+              disabled={(date) => {
+                const dateStr = getLocalDateString(date);
+                const today = getLocalDateString(new Date());
+                // Disable: future dates, already checked-in dates, and dates older than 14 days
+                return dateStr > today || 
+                       checkedInDates.includes(dateStr) || 
+                       date < subDays(new Date(), 14);
+              }}
+              modifiers={{
+                checkedIn: (date) => checkedInDates.includes(getLocalDateString(date)),
+              }}
+              modifiersClassNames={{
+                checkedIn: "bg-green-500/30 text-green-400 font-bold",
+              }}
+              className="pointer-events-auto rounded-md border"
+            />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-green-500/30" />
+                <span>Already logged</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-primary" />
+                <span>Selected</span>
+              </div>
+            </div>
+            <p className="text-xs text-amber-500 flex items-center gap-1">
+              ⚠️ You won't earn daily coins for past days, but they count toward your goal!
             </p>
             <Button 
-              onClick={handleUpdateStartDate} 
+              onClick={handleAddMissedDays} 
               size="sm" 
               className="w-full bg-green-600 hover:bg-green-700"
+              disabled={selectedMissedDays.length === 0}
             >
-              Update Start Date
+              <Check className="h-4 w-4 mr-2" />
+              Add {selectedMissedDays.length} Sober Day{selectedMissedDays.length !== 1 ? 's' : ''}
             </Button>
           </div>
         )}
