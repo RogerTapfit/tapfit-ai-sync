@@ -31,6 +31,15 @@ export interface SobrietyActivity {
   time: string;
 }
 
+export interface HabitActivity {
+  id: string;
+  habitId: string;
+  habitName: string;
+  habitIcon: string;
+  completedAt: string;
+  coinsAwarded: number;
+}
+
 export interface CalendarDay {
   date: Date;
   dateString: string;
@@ -42,6 +51,7 @@ export interface CalendarDay {
   tapCoins: TapCoinsActivity[];
   sleepLog: SleepActivity | null;
   sobrietyCheckin: SobrietyActivity | null;
+  habitCompletions: HabitActivity[];
   steps: number;
   calories: number;
   dailyStats: {
@@ -54,6 +64,7 @@ export interface CalendarDay {
     waterIntakeOz: number;
     sleepDuration: number;
     sleepQuality: number;
+    habitsCompleted: number;
   };
   hasActivity: boolean;
   cyclePhase?: CyclePhaseInfo | null;
@@ -149,7 +160,8 @@ export const useCalendarData = (userId?: string) => {
         tapCoinsResponse,
         exerciseLogsResponse,
         sleepLogsResponse,
-        sobrietyCheckinsResponse
+        sobrietyCheckinsResponse,
+        habitCompletionsResponse
       ] = await Promise.all([
         supabase
           .from('workout_logs')
@@ -240,7 +252,15 @@ export const useCalendarData = (userId?: string) => {
           .select('*')
           .eq('user_id', userId)
           .gte('checkin_date', startDateStr)
-          .lte('checkin_date', endDateStr)
+          .lte('checkin_date', endDateStr),
+          
+        // Habit completions with habit details
+        supabase
+          .from('habit_completions')
+          .select('*, user_habits(name, icon)')
+          .eq('user_id', userId)
+          .gte('completed_date', startDateStr)
+          .lte('completed_date', endDateStr)
       ]);
 
       const newCalendarData = new Map<string, CalendarDay>();
@@ -256,6 +276,7 @@ export const useCalendarData = (userId?: string) => {
       const exerciseLogs = exerciseLogsResponse.data || [] as any[];
       const sleepLogs = sleepLogsResponse.data || [];
       const sobrietyCheckins = sobrietyCheckinsResponse.data || [];
+      const habitCompletions = habitCompletionsResponse.data || [];
 
       // Build a quick index of exercise logs by workout_log_id with exercise names
       const exerciseByWorkout = new Map<string, {
@@ -484,6 +505,18 @@ export const useCalendarData = (userId?: string) => {
           time: new Date(daySobrietyCheckin.created_at).toISOString()
         } : null;
         
+        // Get habit completions for this day
+        const dayHabitCompletions: HabitActivity[] = habitCompletions
+          .filter((hc: any) => hc.completed_date === dateString)
+          .map((hc: any) => ({
+            id: hc.id,
+            habitId: hc.habit_id,
+            habitName: hc.user_habits?.name || 'Habit',
+            habitIcon: hc.user_habits?.icon || '✓',
+            completedAt: hc.completed_at,
+            coinsAwarded: hc.coins_awarded || 0
+          }));
+        
         // Calculate daily stats
         const totalWorkoutCalories = dayWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0);
         const totalCardioCalories = dayCardioSessions.reduce((sum, c) => sum + c.calories, 0);
@@ -500,7 +533,7 @@ export const useCalendarData = (userId?: string) => {
         
         // Calculate cycle phase for this day
         const cyclePhase = calculatePhaseInfo(currentDate);
-        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || dayWaterEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || sobrietyActivity !== null || (cyclePhase !== null);
+        const hasActivity = dayWorkouts.length > 0 || dayCardioSessions.length > 0 || dayFoodEntries.length > 0 || dayAlcoholEntries.length > 0 || dayWaterEntries.length > 0 || (dayStep?.step_count || 0) > 0 || dayTapCoins.length > 0 || sleepActivity !== null || sobrietyActivity !== null || dayHabitCompletions.length > 0 || (cyclePhase !== null);
         
         newCalendarData.set(dateString, {
           date: currentDate,
@@ -513,6 +546,7 @@ export const useCalendarData = (userId?: string) => {
           tapCoins: dayTapCoins,
           sleepLog: sleepActivity,
           sobrietyCheckin: sobrietyActivity,
+          habitCompletions: dayHabitCompletions,
           steps: dayStep?.step_count || 0,
           calories: totalWorkoutCalories + totalCardioCalories,
           dailyStats: {
@@ -524,7 +558,8 @@ export const useCalendarData = (userId?: string) => {
             alcoholDrinks: totalAlcoholDrinks,
             waterIntakeOz: totalWaterIntakeOz,
             sleepDuration: sleepActivity?.durationMinutes || 0,
-            sleepQuality: sleepActivity?.qualityScore || 0
+            sleepQuality: sleepActivity?.qualityScore || 0,
+            habitsCompleted: dayHabitCompletions.length
           },
           hasActivity,
           cyclePhase
@@ -604,6 +639,7 @@ export const useCalendarData = (userId?: string) => {
             tapCoins: [],
             sleepLog: null,
             sobrietyCheckin: null,
+            habitCompletions: [],
             steps: 0,
             calories: 0,
             dailyStats: {
@@ -615,7 +651,8 @@ export const useCalendarData = (userId?: string) => {
               alcoholDrinks: 0,
               waterIntakeOz: 0,
               sleepDuration: 0,
-              sleepQuality: 0
+              sleepQuality: 0,
+              habitsCompleted: 0
             },
             hasActivity: cyclePhase !== null,
             cyclePhase

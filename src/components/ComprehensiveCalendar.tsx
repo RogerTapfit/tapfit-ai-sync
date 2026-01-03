@@ -19,7 +19,8 @@ import {
   Footprints,
   Moon,
   Droplets,
-  Sprout
+  Sprout,
+  ListChecks
 } from 'lucide-react';
 import { useAuth } from './AuthGuard';
 
@@ -96,6 +97,13 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
     if (day.tapCoins.length > 0 && day.dailyStats.tapCoinsEarned > 0) {
       indicators.push(
         <div key="coins" className="w-2 h-2 bg-yellow-500 rounded-full" />
+      );
+    }
+
+    // Habits indicator
+    if (day.habitCompletions && day.habitCompletions.length > 0) {
+      indicators.push(
+        <div key="habits" className="w-2 h-2 bg-teal-500 rounded-full" />
       );
     }
 
@@ -225,6 +233,10 @@ export const ComprehensiveCalendar: React.FC<ComprehensiveCalendarProps> = ({ tr
                 <div className="flex items-center gap-2">
                   <Sprout className="w-3 h-3 text-emerald-400 animate-sober-glow flex-shrink-0" strokeWidth={3} />
                   <span className="truncate">Sober Day</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-teal-500 rounded-full flex-shrink-0"></div>
+                  <span className="truncate">Habits</span>
                 </div>
                 {showCycleData && cycleTrackingEnabled && (
                   <>

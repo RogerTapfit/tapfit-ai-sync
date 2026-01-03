@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile, Sprout } from "lucide-react";
+import { Activity, Clock, Dumbbell, Heart, Utensils, Footprints, Bike, Waves, Droplet, Moon, Droplets, Smile, Sprout, ListChecks } from "lucide-react";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { useDailyStats } from "@/hooks/useDailyStats";
 import { useAuth } from "./AuthGuard";
@@ -21,6 +21,8 @@ import { MoodCheckinModal } from "./MoodCheckinModal";
 import { useBiometricMood } from "@/hooks/useBiometricMood";
 import { SobrietyTrackerModal } from "./SobrietyTrackerModal";
 import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
+import { HabitTrackerModal } from "./HabitTrackerModal";
+import { useHabitTracking } from "@/hooks/useHabitTracking";
 
 interface TodaysPerformanceProps {
   onStartWorkout: () => void;
@@ -41,6 +43,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const [showCycleModal, setShowCycleModal] = useState(false);
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [showSobrietyModal, setShowSobrietyModal] = useState(false);
+  const [showHabitModal, setShowHabitModal] = useState(false);
   const { bpm, start: startHR } = useHeartRate();
   const { todaysIntake: waterIntake, dailyGoal: waterGoal } = useWaterIntake();
   const { lastNightSleep, formatDurationShort, targetHours } = useSleepData();
@@ -48,6 +51,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
   const { todaysMood, readinessScore } = useBiometricMood();
   const { activeJourney: sobrietyJourney, getProgress: getSobrietyProgress } = useSobrietyTracking();
   const sobrietyProgress = getSobrietyProgress();
+  const { getTodaysProgress: getHabitProgress } = useHabitTracking();
+  const habitProgress = getHabitProgress();
   const isIOSNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
   const navigate = useNavigate();
   const chatbotContext = useChatbotContextOptional();
@@ -75,6 +80,9 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       clearPendingModal();
     } else if (pendingModal === 'sobriety') {
       setShowSobrietyModal(true);
+      clearPendingModal();
+    } else if (pendingModal === 'habits') {
+      setShowHabitModal(true);
       clearPendingModal();
     }
   }, [pendingModal, clearPendingModal]);
@@ -380,6 +388,31 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             {isGuest ? 'to Track' : (sobrietyJourney && sobrietyProgress ? 'Sober Days' : 'Sobriety')}
           </p>
         </div>
+
+        {/* Habit Tracker Tile */}
+        <div
+          className="text-center space-y-2 cursor-pointer select-none"
+          onClick={() => setShowHabitModal(true)}
+          role="button"
+          aria-label="Track habits"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowHabitModal(true);
+            }
+          }}
+        >
+          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-teal-500/10 hover:border-teal-500/30 transition-all duration-200">
+            <ListChecks className="size-6 block text-teal-500" />
+          </div>
+          <p className="text-2xl font-bold text-white">
+            {isGuest ? 'Login' : (habitProgress.total > 0 ? `${habitProgress.completed}/${habitProgress.total}` : '0')}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {isGuest ? 'to Track' : 'Habits'}
+          </p>
+        </div>
       </div>
 
       <WaterQuickAddModal open={showWaterModal} onOpenChange={setShowWaterModal} />
@@ -387,6 +420,7 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
       <CycleTrackerModal open={showCycleModal} onOpenChange={setShowCycleModal} />
       <MoodCheckinModal open={showMoodModal} onOpenChange={setShowMoodModal} />
       <SobrietyTrackerModal open={showSobrietyModal} onOpenChange={setShowSobrietyModal} />
+      <HabitTrackerModal open={showHabitModal} onOpenChange={setShowHabitModal} />
 
       <HeartRateScanModal
         isOpen={showScanModal}
