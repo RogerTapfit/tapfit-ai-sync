@@ -364,6 +364,39 @@ export const useSobrietyTracking = () => {
     };
   };
 
+  const updateStartDate = async (newStartDate: Date) => {
+    if (!user || isGuest || !activeJourney) {
+      return false;
+    }
+
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Session expired. Please refresh and try again.');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('sobriety_tracking')
+        .update({
+          start_date: newStartDate.toISOString().split('T')[0],
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeJourney.id);
+
+      if (error) throw error;
+
+      toast.success('Start date updated! 🗓️');
+      await fetchActiveJourney();
+      return true;
+    } catch (error: any) {
+      console.error('Error updating start date:', error);
+      toast.error('Failed to update start date');
+      return false;
+    }
+  };
+
   return {
     activeJourney,
     checkins,
@@ -373,6 +406,7 @@ export const useSobrietyTracking = () => {
     dailyCheckin,
     resetJourney,
     completeJourney,
+    updateStartDate,
     getCurrentDay,
     getProgress,
     refetch: fetchActiveJourney,

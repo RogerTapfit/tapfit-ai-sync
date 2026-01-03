@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles, CalendarIcon } from "lucide-react";
+import { Sprout, Trophy, Coins, Calendar, ArrowRight, RotateCcw, Sparkles, CalendarIcon, Pencil } from "lucide-react";
 import { useSobrietyTracking } from "@/hooks/useSobrietyTracking";
 import { useAuth } from "./AuthGuard";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,7 @@ export const SobrietyTrackerModal = ({
     dailyCheckin,
     resetJourney,
     completeJourney,
+    updateStartDate,
     getProgress,
     pastJourneys,
     refetch,
@@ -77,6 +78,8 @@ export const SobrietyTrackerModal = ({
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [view, setView] = useState<"main" | "setup" | "history">("main");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDateEdit, setShowDateEdit] = useState(false);
+  const [editStartDate, setEditStartDate] = useState<Date | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState<CelebrationData | null>(null);
 
@@ -126,6 +129,14 @@ export const SobrietyTrackerModal = ({
   const handleComplete = async () => {
     await completeJourney();
     setView("main");
+  };
+
+  const handleUpdateStartDate = async () => {
+    if (editStartDate) {
+      await updateStartDate(editStartDate);
+      setShowDateEdit(false);
+      setEditStartDate(null);
+    }
   };
 
   const renderSetupView = () => (
@@ -234,10 +245,63 @@ export const SobrietyTrackerModal = ({
             )}
           </div>
           <h3 className="text-3xl font-bold text-green-400">Day {progress.currentDay}</h3>
-          <p className="text-muted-foreground">
-            of {progress.targetDays} days • {activeJourney?.substanceType !== 'general' ? activeJourney?.substanceType : 'sobriety'}
-          </p>
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <span>of {progress.targetDays} days • {activeJourney?.substanceType !== 'general' ? activeJourney?.substanceType : 'sobriety'}</span>
+            <button 
+              onClick={() => {
+                setEditStartDate(activeJourney?.startDate || new Date());
+                setShowDateEdit(true);
+              }}
+              className="text-muted-foreground hover:text-green-400 transition-colors"
+              title="Edit start date"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
+
+        {/* Edit Start Date */}
+        {showDateEdit && (
+          <div className="p-4 bg-primary/5 rounded-lg border border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Adjust Start Date</Label>
+              <button 
+                onClick={() => setShowDateEdit(false)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {editStartDate ? format(editStartDate, "MMMM d, yyyy") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={editStartDate || undefined}
+                  onSelect={(date) => date && setEditStartDate(date)}
+                  disabled={(date) => date > new Date() || date < subDays(new Date(), 30)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              Your existing check-ins will be kept. Only future days will earn coins.
+            </p>
+            <Button 
+              onClick={handleUpdateStartDate} 
+              size="sm" 
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              Update Start Date
+            </Button>
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div className="space-y-2">
