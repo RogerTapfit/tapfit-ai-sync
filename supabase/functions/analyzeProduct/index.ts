@@ -800,17 +800,297 @@ Return ONLY this JSON:
   }
 }
 
+// Lookup product from OpenBeautyFacts or OpenProductsFacts (for non-food products)
+async function lookupNonFoodProduct(barcode: string): Promise<any> {
+  const cleanBarcode = barcode.replace(/[^0-9]/g, '');
+  
+  // Try OpenBeautyFacts first (cosmetics, personal care)
+  try {
+    console.log('Checking OpenBeautyFacts for:', cleanBarcode);
+    const obfResponse = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${cleanBarcode}.json`, {
+      headers: { 'User-Agent': 'TapFit App - Contact: support@tapfit.app' }
+    });
+    
+    if (obfResponse.ok) {
+      const obfData = await obfResponse.json();
+      if (obfData.status === 1 && obfData.product) {
+        console.log('✅ Found in OpenBeautyFacts:', obfData.product.product_name);
+        return {
+          source: 'openbeautyfacts',
+          product_type: 'personal_care',
+          is_edible: false,
+          ...obfData.product
+        };
+      }
+    }
+  } catch (e) {
+    console.log('OpenBeautyFacts error:', e);
+  }
+  
+  // Try OpenProductsFacts (household products)
+  try {
+    console.log('Checking OpenProductsFacts for:', cleanBarcode);
+    const opfResponse = await fetch(`https://world.openproductsfacts.org/api/v0/product/${cleanBarcode}.json`, {
+      headers: { 'User-Agent': 'TapFit App - Contact: support@tapfit.app' }
+    });
+    
+    if (opfResponse.ok) {
+      const opfData = await opfResponse.json();
+      if (opfData.status === 1 && opfData.product) {
+        console.log('✅ Found in OpenProductsFacts:', opfData.product.product_name);
+        return {
+          source: 'openproductsfacts',
+          product_type: 'household',
+          is_edible: false,
+          ...opfData.product
+        };
+      }
+    }
+  } catch (e) {
+    console.log('OpenProductsFacts error:', e);
+  }
+  
+  return null;
+}
+
+// Determine if product is edible based on type and categories
+function isProductEdible(productType: string, categories?: string[]): boolean {
+  const nonEdibleTypes = ['household', 'personal_care', 'cleaning'];
+  if (nonEdibleTypes.includes(productType)) return false;
+  if (productType === 'medication') return false; // Meds are separate
+  
+  // Check categories for non-edible indicators
+  if (categories) {
+    const nonEdibleKeywords = ['cleaning', 'detergent', 'soap', 'shampoo', 'lotion', 'cosmetic', 'skincare', 'haircare', 'deodorant', 'sunscreen', 'toothpaste', 'mouthwash', 'air-freshener', 'paper-products'];
+    for (const cat of categories) {
+      const lowerCat = cat.toLowerCase();
+      if (nonEdibleKeywords.some(k => lowerCat.includes(k))) return false;
+    }
+  }
+  
+  return true;
+}
+
+// Build non-edible product response from database lookup
+function buildNonEdibleResponse(dbProduct: any, barcode: string): any {
+  const product = dbProduct;
+  const ingredients = product.ingredients_text || '';
+  const labelsTags = product.labels_tags || [];
+  const categoriesTags = product.categories_tags || [];
+  
+  // Detect harmful chemicals
+  const chemicalConcerns: any = {};
+  const ingredientsLower = ingredients.toLowerCase();
+  
+  // PFAS / Forever Chemicals
+  const pfasKeywords = ['ptfe', 'pfoa', 'pfos', 'perfluor', 'polyfluor', 'teflon'];
+  const detectedPfas = pfasKeywords.filter(k => ingredientsLower.includes(k));
+  if (detectedPfas.length > 0) {
+    chemicalConcerns.forever_chemicals = {
+      detected: detectedPfas,
+      risk_level: 'high',
+      health_effects: ['Hormone disruption', 'Cancer risk', 'Immune system effects'],
+      bioaccumulation_warning: true
+    };
+  }
+  
+  // Endocrine disruptors
+  const edcKeywords = ['paraben', 'phthalate', 'triclosan', 'oxybenzone', 'bpa', 'bps'];
+  const detectedEdc = edcKeywords.filter(k => ingredientsLower.includes(k));
+  if (detectedEdc.length > 0) {
+    chemicalConcerns.endocrine_disruptors = {
+      detected: detectedEdc,
+      risk_level: detectedEdc.length > 2 ? 'high' : 'moderate',
+      health_effects: ['Hormone mimicking', 'Reproductive effects', 'Developmental concerns']
+    };
+  }
+  
+  // Irritants
+  const irritantKeywords = ['sodium lauryl sulfate', 'sls', 'sodium laureth sulfate', 'sles', 'fragrance', 'parfum', 'methylisothiazolinone', 'mit', 'formaldehyde'];
+  const detectedIrritants = irritantKeywords.filter(k => ingredientsLower.includes(k));
+  if (detectedIrritants.length > 0) {
+    chemicalConcerns.sensitizers_irritants = {
+      detected: detectedIrritants,
+      risk_level: detectedIrritants.length > 2 ? 'moderate' : 'low'
+    };
+  }
+  
+  // Calculate safety score
+  let safetyScore = 85;
+  if (chemicalConcerns.forever_chemicals) safetyScore -= 30;
+  if (chemicalConcerns.endocrine_disruptors) safetyScore -= 20;
+  if (chemicalConcerns.sensitizers_irritants) safetyScore -= 10;
+  safetyScore = Math.max(10, safetyScore);
+  
+  // Determine safety grade
+  const getGrade = (score: number) => {
+    if (score >= 90) return 'A';
+    if (score >= 80) return 'B';
+    if (score >= 65) return 'C';
+    if (score >= 50) return 'D';
+    return 'F';
+  };
+  
+  // Environmental rating
+  const ecoScore = product.ecoscore_grade ? 
+    { 'a': 90, 'b': 75, 'c': 60, 'd': 40, 'e': 20 }[product.ecoscore_grade.toLowerCase()] || 50 : 50;
+  
+  const isCrueltyFree = labelsTags.some((l: string) => l.includes('cruelty-free') || l.includes('leaping-bunny'));
+  const isVegan = labelsTags.some((l: string) => l.includes('vegan'));
+  
+  return {
+    product_type: dbProduct.product_type || 'household',
+    is_edible: false,
+    barcode: barcode,
+    product: {
+      name: product.product_name || 'Unknown Product',
+      brand: product.brands || null,
+      size: product.quantity || null,
+      confidence: 0.9
+    },
+    manufacturing: {
+      country_of_origin: product.countries_tags?.[0]?.replace('en:', '') || null,
+      made_in: product.manufacturing_places || null,
+      company: product.brands || null
+    },
+    household_analysis: {
+      safety_grade: getGrade(safetyScore),
+      safety_score: safetyScore,
+      product_category: categoriesTags[0]?.replace('en:', '') || 'household',
+      chemical_concerns: Object.keys(chemicalConcerns).length > 0 ? chemicalConcerns : null,
+      safety_warnings: {
+        label_warnings: [],
+        skin_contact: chemicalConcerns.sensitizers_irritants ? 'caution' : 'safe',
+        eye_contact: ingredientsLower.includes('bleach') || ingredientsLower.includes('ammonia') ? 'dangerous' : 'caution',
+        inhalation: ingredientsLower.includes('aerosol') || ingredientsLower.includes('spray') ? 'ventilate' : 'safe',
+        ingestion: 'dangerous',
+        keep_away_children: true,
+        pregnancy_warning: !!chemicalConcerns.endocrine_disruptors
+      },
+      environmental_rating: {
+        grade: getGrade(ecoScore),
+        score: ecoScore,
+        biodegradable: labelsTags.some((l: string) => l.includes('biodegradable')),
+        aquatic_toxicity: ingredientsLower.includes('phosphate') ? 'high' : 'low',
+        cruelty_free: isCrueltyFree,
+        vegan: isVegan,
+        packaging_recyclable: labelsTags.some((l: string) => l.includes('recyclable')),
+        concerns: []
+      },
+      certifications: {
+        detected: labelsTags.filter((l: string) => 
+          l.includes('certified') || l.includes('organic') || l.includes('epa') || l.includes('ewg')
+        ).map((l: string) => l.replace('en:', '').replace(/-/g, ' ')),
+        missing_important: []
+      },
+      overall_assessment: {
+        pros: isCrueltyFree ? ['Cruelty-free'] : [],
+        cons: Object.keys(chemicalConcerns).map(k => `Contains ${k.replace(/_/g, ' ')}`),
+        verdict: safetyScore >= 70 ? 'Generally safe for use' : 'Use with caution - contains chemicals of concern',
+        recommendation: safetyScore < 70 ? 'Consider switching to a cleaner alternative' : 'Safe for regular use',
+        who_should_avoid: chemicalConcerns.endocrine_disruptors ? ['Pregnant women', 'Children'] : []
+      }
+    },
+    // Include empty nutrition for non-edible
+    nutrition: null,
+    health_grade: { letter: getGrade(safetyScore), score: safetyScore, breakdown: {} },
+    detailed_processing: null,
+    chemical_analysis: null,
+    sugar_analysis: null,
+    analysis: { pros: [], cons: [], concerns: [], alternatives: [] },
+    safety: { forever_chemicals: !!chemicalConcerns.forever_chemicals, concerning_additives: [], allergens: [], processing_level: 'N/A' }
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { imageBase64 } = await req.json();
+    const body = await req.json();
+    const { imageBase64, barcode: inputBarcode } = body;
 
+    // BARCODE-ONLY MODE: When a barcode is provided without an image
+    if (inputBarcode && !imageBase64) {
+      console.log('🔍 Barcode-only lookup mode for:', inputBarcode);
+      
+      // Try OpenFoodFacts first (food/beverage)
+      let dbResult = await lookupUPCMultiple(inputBarcode);
+      
+      if (dbResult && dbResult.nutrition?.calories > 0) {
+        // It's a food/beverage product with nutrition data
+        console.log('Found edible product in OpenFoodFacts');
+        
+        // Build a full edible product response
+        return new Response(
+          JSON.stringify({
+            product_type: 'food',
+            is_edible: true,
+            barcode: inputBarcode,
+            product: {
+              name: dbResult.product_name || 'Unknown Product',
+              brand: dbResult.brand || null,
+              size: dbResult.serving_size || null,
+              confidence: 0.95
+            },
+            nutrition: {
+              serving_size: dbResult.serving_size || '100g',
+              serving_size_grams: dbResult.serving_size_grams || 100,
+              servings_per_container: 1,
+              data_source: 'upc_verified',
+              per_serving: {
+                calories: Math.round(dbResult.nutrition.calories || 0),
+                protein_g: Math.round((dbResult.nutrition.protein_g || 0) * 10) / 10,
+                carbs_g: Math.round((dbResult.nutrition.carbs_g || 0) * 10) / 10,
+                fat_g: Math.round((dbResult.nutrition.fat_g || 0) * 10) / 10,
+                fiber_g: Math.round((dbResult.nutrition.fiber_g || 0) * 10) / 10,
+                sugars_g: Math.round((dbResult.nutrition.sugars_g || 0) * 10) / 10,
+                sodium_mg: Math.round(dbResult.nutrition.sodium_mg || 0)
+              }
+            },
+            health_grade: {
+              letter: dbResult.nutriscore?.toUpperCase() || 'C',
+              score: 70,
+              breakdown: {}
+            },
+            detailed_processing: { nova_score: dbResult.nova_group || 3, classification: 'Processed', processing_methods: [], why_processed: '' },
+            chemical_analysis: { food_dyes: [], preservatives: [], flavor_enhancers: [], emulsifiers: [], artificial_ingredients: [], total_additives_count: 0 },
+            sugar_analysis: { primary_sweetener: 'Unknown', healthier_alternatives: [] },
+            analysis: { pros: [], cons: [], concerns: [], alternatives: [] },
+            safety: { forever_chemicals: false, concerning_additives: [], allergens: [], processing_level: 'Unknown' }
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Try non-food databases
+      const nonFoodResult = await lookupNonFoodProduct(inputBarcode);
+      
+      if (nonFoodResult) {
+        // Build non-edible response
+        const response = buildNonEdibleResponse(nonFoodResult, inputBarcode);
+        return new Response(
+          JSON.stringify(response),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // If nothing found in any database, return error
+      return new Response(
+        JSON.stringify({ 
+          error: 'Product not found', 
+          barcode: inputBarcode,
+          message: 'This barcode was not found in our databases. Try taking a photo of the product label instead.'
+        }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // IMAGE MODE: Original image-based analysis
     if (!imageBase64) {
       return new Response(
-        JSON.stringify({ error: 'Image is required' }),
+        JSON.stringify({ error: 'Image or barcode is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
