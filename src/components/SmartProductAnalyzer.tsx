@@ -499,7 +499,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   // Start barcode scanning - starts the camera stream
   const startBarcodeScanning = async () => {
     console.log('📊 Starting barcode scan...');
-    await startScanning();
+    await startScanning(barcodeVideoRef.current ?? undefined);
   };
   
   // When isScanning becomes true and video element mounts, attach the stream
