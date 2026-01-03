@@ -269,6 +269,7 @@ interface ProductAnalysis {
       sweetener_category: string;
       manufacturing_process?: string;
       chemical_composition?: string;
+      detected_sweeteners?: string[];
     };
     metabolic_analysis?: {
       glycemic_index: number;
@@ -3687,6 +3688,70 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
+                {/* Ingredients Deep Dive - Only for food/beverage with ingredients */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' && analysisResult.ingredients_analysis && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 }}
+                    className="bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border-2 border-emerald-500/40 rounded-xl p-6 shadow-xl"
+                  >
+                    <h4 className="font-bold mb-4 flex items-center gap-2 text-lg text-emerald-600">
+                      <Leaf className="h-5 w-5" />
+                      🥗 Ingredients Deep Dive
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {/* Ingredients Analysis Text */}
+                      <div className="p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {analysisResult.ingredients_analysis}
+                        </p>
+                      </div>
+                      
+                      {/* Quick Ingredient Highlights */}
+                      {analysisResult.chemical_analysis && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Additives Count */}
+                          <div className="p-3 bg-background/50 rounded-lg border border-border">
+                            <div className="text-2xl font-bold text-center text-foreground">
+                              {analysisResult.chemical_analysis.total_additives_count}
+                            </div>
+                            <div className="text-xs text-center text-muted-foreground">Additives Detected</div>
+                          </div>
+                          
+                          {/* Processing Level */}
+                          {analysisResult.detailed_processing?.nova_score && (
+                            <div className={`p-3 rounded-lg border ${
+                              analysisResult.detailed_processing.nova_score === 4 ? 'bg-red-500/10 border-red-500/30' :
+                              analysisResult.detailed_processing.nova_score === 3 ? 'bg-orange-500/10 border-orange-500/30' :
+                              analysisResult.detailed_processing.nova_score === 2 ? 'bg-yellow-500/10 border-yellow-500/30' :
+                              'bg-green-500/10 border-green-500/30'
+                            }`}>
+                              <div className="text-2xl font-bold text-center">
+                                NOVA {analysisResult.detailed_processing.nova_score}
+                              </div>
+                              <div className="text-xs text-center text-muted-foreground">
+                                {analysisResult.detailed_processing.classification}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Missing Ingredients Warning */}
+                      {analysisResult.ingredients_analysis?.includes('not available') && (
+                        <div className="p-3 bg-amber-500/15 rounded-lg border border-amber-500/30">
+                          <p className="text-sm text-amber-700 flex items-center gap-2">
+                            <Camera className="h-4 w-4" />
+                            Scan the ingredients panel for a complete breakdown
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Sugar Analysis Deep Dive - Only for food/beverage (not pet food) */}
                 {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.product_type !== 'pet_food' && analysisResult.sugar_analysis && (
                   <motion.div
@@ -3702,6 +3767,24 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     
                        {/* Enhanced Sugar Analysis */}
                        <div className="space-y-4">
+                         {/* Sugar From Label - Always show if we have nutrition data */}
+                         {analysisResult.nutrition?.per_serving?.sugars_g !== undefined && (
+                           <div className="p-4 bg-gradient-to-r from-pink-600/20 to-red-500/20 rounded-lg border-2 border-pink-500/50">
+                             <div className="flex items-center justify-between">
+                               <span className="font-bold text-pink-700">📊 From Nutrition Label:</span>
+                               <div className="text-right">
+                                 <span className="text-2xl font-bold text-pink-700">{analysisResult.nutrition.per_serving.sugars_g}g</span>
+                                 <span className="text-sm text-muted-foreground ml-1">sugars per serving</span>
+                               </div>
+                             </div>
+                             {analysisResult.nutrition.serving_size && (
+                               <p className="text-xs text-muted-foreground mt-1">
+                                 Serving: {analysisResult.nutrition.serving_size}
+                               </p>
+                             )}
+                           </div>
+                         )}
+                         
                          {/* Primary Sweetener with Enhanced Details */}
                          <div className="p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
                            <div className="flex items-center justify-between mb-3">
@@ -3712,12 +3795,27 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                                 analysisResult.sugar_analysis.sweetener_type?.includes('artificial') || 
                                 analysisResult.sugar_analysis.sweetener_type?.includes('processed'))
                                  ? 'bg-red-500/20 text-red-700 border-red-500/50'
-                                 : 'bg-green-500/20 text-green-700 border-green-500/50'
+                                 : (analysisResult.sugar_analysis.sweetener_breakdown?.sweetener_category === 'none' || 
+                                    analysisResult.sugar_analysis.primary_sweetener?.includes('None'))
+                                   ? 'bg-green-500/20 text-green-700 border-green-500/50'
+                                   : 'bg-yellow-500/20 text-yellow-700 border-yellow-500/50'
                              }`}>
-                               {analysisResult.sugar_analysis.sweetener_breakdown?.sweetener_category || analysisResult.sugar_analysis.sweetener_type}
+                               {analysisResult.sugar_analysis.sweetener_breakdown?.sweetener_category || analysisResult.sugar_analysis.sweetener_type || 'detected'}
                              </Badge>
                            </div>
                            <p className="text-lg font-semibold text-pink-700">{analysisResult.sugar_analysis.primary_sweetener}</p>
+                           
+                           {/* Detected Sweeteners List */}
+                           {analysisResult.sugar_analysis.sweetener_breakdown?.detected_sweeteners && 
+                            analysisResult.sugar_analysis.sweetener_breakdown.detected_sweeteners.length > 0 && (
+                             <div className="mt-3 flex flex-wrap gap-2">
+                               {analysisResult.sugar_analysis.sweetener_breakdown.detected_sweeteners.map((sw: string, i: number) => (
+                                 <Badge key={i} variant="outline" className="text-xs bg-pink-500/10 border-pink-500/30">
+                                   {sw}
+                                 </Badge>
+                               ))}
+                             </div>
+                           )}
                            
                            {/* Enhanced Chemical Details */}
                            {analysisResult.sugar_analysis.sweetener_breakdown && (
@@ -3731,6 +3829,17 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                                {analysisResult.sugar_analysis.sweetener_breakdown.chemical_composition && (
                                  <p className="text-xs text-muted-foreground font-mono">⚗️ {analysisResult.sugar_analysis.sweetener_breakdown.chemical_composition}</p>
                                )}
+                             </div>
+                           )}
+                           
+                           {/* Warning if ingredients needed */}
+                           {analysisResult.sugar_analysis.primary_sweetener?.includes('Unknown') && 
+                            analysisResult.nutrition?.per_serving?.sugars_g > 0 && (
+                             <div className="mt-3 p-2 bg-amber-500/15 rounded border border-amber-500/30">
+                               <p className="text-xs text-amber-700">
+                                 ⚠️ This product has {analysisResult.nutrition.per_serving.sugars_g}g sugar but ingredients aren't in our database.
+                                 Take a photo of the ingredients list for exact sweetener identification.
+                               </p>
                              </div>
                            )}
                            
