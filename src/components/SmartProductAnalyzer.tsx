@@ -404,6 +404,7 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     loading: barcodeLoading, 
     startScanning, 
     stopScanning, 
+    attachToVideoElement,
     lastBarcode,
     resetScanner: resetBarcodeScanner
   } = useBarcodeScanner();
@@ -495,11 +496,19 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     }
   };
   
+  // Start barcode scanning - starts the camera stream
   const startBarcodeScanning = async () => {
-    if (barcodeVideoRef.current) {
-      await startScanning(barcodeVideoRef.current);
-    }
+    console.log('📊 Starting barcode scan...');
+    await startScanning();
   };
+  
+  // When isScanning becomes true and video element mounts, attach the stream
+  useEffect(() => {
+    if (isScanning && barcodeVideoRef.current) {
+      console.log('📊 Video element mounted, attaching stream...');
+      attachToVideoElement(barcodeVideoRef.current);
+    }
+  }, [isScanning, attachToVideoElement]);
   
   // Auto-set package size based on detected servings per container
   useEffect(() => {

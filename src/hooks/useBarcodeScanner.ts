@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import { toast } from 'sonner';
 import { EnhancedBarcodeService } from '../services/enhancedBarcodeService';
@@ -45,7 +45,8 @@ export const useBarcodeScanner = () => {
   const [loading, setLoading] = useState(false);
   const [lastBarcode, setLastBarcode] = useState<string | null>(null);
   const [codeReader] = useState(() => new BrowserMultiFormatReader());
-  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+  const activeStreamRef = useRef<MediaStream | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
   const fetchProductData = async (barcode: string): Promise<ProductData | null> => {
     try {
@@ -55,108 +56,6 @@ export const useBarcodeScanner = () => {
       return null;
     }
   };
-
-  const startScanning = useCallback(async (videoElement: HTMLVideoElement) => {
-    console.log('📷 Starting barcode scanner...');
-    setIsScanning(true);
-    setLoading(true);
-    activeVideoRef.current = videoElement;
-    
-    try {
-      // First, stop any existing scanning
-      codeReader.reset();
-      
-      console.log('📷 Requesting camera access...');
-      // Request camera permission and get stream
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
-      });
-      
-      console.log('📷 Camera access granted, setting up video element...');
-      
-      // Set up video element
-      videoElement.srcObject = stream;
-      videoElement.setAttribute('playsinline', 'true');
-      videoElement.setAttribute('autoplay', 'true');
-      videoElement.muted = true;
-      
-      // Wait for video to be ready
-      await new Promise<void>((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          reject(new Error('Video load timeout'));
-        }, 10000);
-        
-        videoElement.onloadedmetadata = () => {
-          console.log('📷 Video metadata loaded');
-          clearTimeout(timeoutId);
-          videoElement.play()
-            .then(() => {
-              console.log('📷 Video playing');
-              resolve();
-            })
-            .catch((err) => {
-              console.error('📷 Video play error:', err);
-              reject(err);
-            });
-        };
-        
-        videoElement.onerror = (e) => {
-          console.error('📷 Video element error:', e);
-          clearTimeout(timeoutId);
-          reject(new Error('Video element error'));
-        };
-      });
-      
-      setLoading(false);
-      console.log('📷 Starting barcode detection...');
-      
-      // Debounce the barcode detection
-      let lastScanTime = 0;
-      const scanCooldown = 2000;
-      
-      // Use decodeFromStream for continuous scanning with the existing stream
-      codeReader.decodeFromStream(
-        stream,
-        videoElement,
-        (result: Result | null, error?: Error) => {
-          if (result) {
-            const now = Date.now();
-            if (now - lastScanTime > scanCooldown) {
-              lastScanTime = now;
-              console.log('📷 Barcode detected:', result.getText());
-              handleBarcodeDetected(result.getText());
-            }
-          }
-        }
-      ).catch((err) => {
-        console.error('📷 Decode stream error:', err);
-      });
-      
-    } catch (error) {
-      console.error('📷 Error starting camera:', error);
-      toast.error('Failed to access camera. Please check permissions.');
-      setIsScanning(false);
-      setLoading(false);
-    }
-  }, [codeReader]);
-
-  const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
-    codeReader.reset();
-    setIsScanning(false);
-    
-    const videoEl = videoElement || activeVideoRef.current;
-    // Also stop any video tracks
-    if (videoEl?.srcObject) {
-      const stream = videoEl.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      videoEl.srcObject = null;
-    }
-    activeVideoRef.current = null;
-  }, [codeReader]);
 
   const handleBarcodeDetected = async (barcode: string) => {
     setLoading(true);
@@ -180,6 +79,136 @@ export const useBarcodeScanner = () => {
       setLoading(false);
     }
   };
+
+  // Start scanning - sets isScanning true first, then gets camera
+  const startScanning = useCallback(async (videoElement?: HTMLVideoElement) => {
+    console.log('📷 Starting barcode scanner...');
+    setIsScanning(true);
+    setLoading(true);
+    
+    try {
+      // First, stop any existing scanning
+      codeReader.reset();
+      
+      console.log('📷 Requesting camera access...');
+      // Request camera permission and get stream
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      console.log('📷 Camera access granted');
+      activeStreamRef.current = stream;
+      
+      // If video element was passed, attach immediately
+      if (videoElement) {
+        videoElementRef.current = videoElement;
+        await attachStreamToVideo(videoElement, stream);
+      }
+      // Otherwise, the useEffect in the component will call attachToVideoElement when ready
+      
+    } catch (error) {
+      console.error('📷 Error starting camera:', error);
+      toast.error('Failed to access camera. Please check permissions.');
+      setIsScanning(false);
+      setLoading(false);
+    }
+  }, [codeReader]);
+
+  // Attach stream to a video element (called when video element becomes available)
+  const attachToVideoElement = useCallback(async (videoElement: HTMLVideoElement) => {
+    console.log('📷 Attaching to video element...');
+    videoElementRef.current = videoElement;
+    
+    if (activeStreamRef.current) {
+      await attachStreamToVideo(videoElement, activeStreamRef.current);
+    }
+  }, []);
+
+  // Internal function to attach stream and start decoding
+  const attachStreamToVideo = async (videoElement: HTMLVideoElement, stream: MediaStream) => {
+    console.log('📷 Setting up video element...');
+    
+    videoElement.srcObject = stream;
+    videoElement.setAttribute('playsinline', 'true');
+    videoElement.setAttribute('autoplay', 'true');
+    videoElement.muted = true;
+    
+    // Wait for video to be ready
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Video load timeout'));
+      }, 10000);
+      
+      videoElement.onloadedmetadata = () => {
+        console.log('📷 Video metadata loaded');
+        clearTimeout(timeoutId);
+        videoElement.play()
+          .then(() => {
+            console.log('📷 Video playing');
+            resolve();
+          })
+          .catch((err) => {
+            console.error('📷 Video play error:', err);
+            reject(err);
+          });
+      };
+      
+      videoElement.onerror = (e) => {
+        console.error('📷 Video element error:', e);
+        clearTimeout(timeoutId);
+        reject(new Error('Video element error'));
+      };
+    });
+    
+    setLoading(false);
+    console.log('📷 Starting barcode detection...');
+    
+    // Debounce the barcode detection
+    let lastScanTime = 0;
+    const scanCooldown = 2000;
+    
+    // Use decodeFromStream for continuous scanning
+    codeReader.decodeFromStream(
+      stream,
+      videoElement,
+      (result: Result | null, error?: Error) => {
+        if (result) {
+          const now = Date.now();
+          if (now - lastScanTime > scanCooldown) {
+            lastScanTime = now;
+            console.log('📷 Barcode detected:', result.getText());
+            handleBarcodeDetected(result.getText());
+          }
+        }
+      }
+    ).catch((err) => {
+      console.error('📷 Decode stream error:', err);
+    });
+  };
+
+  const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
+    codeReader.reset();
+    setIsScanning(false);
+    
+    // Stop active stream
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach(track => track.stop());
+      activeStreamRef.current = null;
+    }
+    
+    // Also stop any video tracks from the passed element
+    const videoEl = videoElement || videoElementRef.current;
+    if (videoEl?.srcObject) {
+      const stream = videoEl.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoEl.srcObject = null;
+    }
+    videoElementRef.current = null;
+  }, [codeReader]);
 
   const scanBarcodeFromImage = async (imageFile: File): Promise<ProductData | null> => {
     setLoading(true);
@@ -237,6 +266,7 @@ export const useBarcodeScanner = () => {
     lastBarcode,
     startScanning,
     stopScanning,
+    attachToVideoElement,
     scanBarcodeFromImage,
     convertToFoodItem,
     resetScanner,
