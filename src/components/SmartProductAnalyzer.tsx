@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
 import { 
   Camera, Upload, Loader2, X, Zap, Star, AlertTriangle,
   CheckCircle, Info, Sparkles, Shield, Utensils, Settings,
   Beaker, Atom, Droplet, Factory, ChevronDown, ChevronRight, Pill, Clock, Leaf,
-  SprayCan, Bath
+  SprayCan, Bath, ScanLine, Barcode, Eye, Wind, Baby, Skull, Globe, Recycle, Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
@@ -21,6 +22,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useChatbotContext } from '@/contexts/ChatbotContext';
 import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
 import { ProductPriceCard } from './ProductPriceCard';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 
 interface SupplementAnalysis {
   dosage_form?: string;
@@ -391,6 +393,21 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
   
+  // Scan mode state
+  const [scanMode, setScanMode] = useState<'barcode' | 'photo'>('barcode');
+  const [manualBarcodeInput, setManualBarcodeInput] = useState('');
+  const barcodeVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // Barcode scanner hook
+  const { 
+    isScanning, 
+    loading: barcodeLoading, 
+    startScanning, 
+    stopScanning, 
+    lastBarcode,
+    resetScanner: resetBarcodeScanner
+  } = useBarcodeScanner();
+  
   // Package size selector state - auto-populated from detected servings
   const [packageSize, setPackageSize] = useState<'single' | 'regular' | 'large' | 'custom'>('single');
   const [customServings, setCustomServings] = useState<number>(1);
@@ -418,6 +435,71 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
   
   // Price lookup state
   const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
+  
+  // Handle barcode detection from scanner
+  useEffect(() => {
+    if (lastBarcode && !isAnalyzing) {
+      handleBarcodeDetected(lastBarcode);
+    }
+  }, [lastBarcode]);
+  
+  const handleBarcodeDetected = async (barcode: string) => {
+    console.log('📊 Barcode detected:', barcode);
+    setIsAnalyzing(true);
+    stopScanning();
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('analyzeProduct', {
+        body: { barcode }
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.message || 'Product not found');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      if (data) {
+        setAnalysisResult(data);
+        
+        // Check safety for the product
+        await checkProductSafety(data.product?.name, data.product?.brand);
+        
+        // Look up pricing if available
+        try {
+          const priceData = await PriceLookupService.lookupPrice(barcode, data.product?.name);
+          setPricing(priceData);
+        } catch (priceError) {
+          console.log('Price lookup unavailable');
+        }
+        
+        toast.success(`Product found: ${data.product?.name || 'Unknown'}`);
+      }
+    } catch (error) {
+      console.error('Barcode lookup error:', error);
+      toast.error('Failed to lookup product. Try photo mode.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  
+  const handleManualBarcodeLookup = () => {
+    const cleanBarcode = manualBarcodeInput.replace(/[^0-9]/g, '');
+    if (cleanBarcode.length >= 8 && cleanBarcode.length <= 14) {
+      handleBarcodeDetected(cleanBarcode);
+      setManualBarcodeInput('');
+    } else {
+      toast.error('Please enter a valid barcode (8-14 digits)');
+    }
+  };
+  
+  const startBarcodeScanning = async () => {
+    if (barcodeVideoRef.current) {
+      await startScanning(barcodeVideoRef.current);
+    }
+  };
   
   // Auto-set package size based on detected servings per container
   useEffect(() => {
@@ -766,6 +848,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
     setManualUPCInput('');
     setShowDataSources(false);
     setPricing(null);
+    setManualBarcodeInput('');
+    stopScanning();
+    resetBarcodeScanner();
     
     // Clear product context from chatbot
     setAnalysisContext(null);
@@ -915,32 +1000,86 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
           </CardHeader>
           
           <CardContent className="space-y-6 max-h-[70vh] overflow-y-auto p-6">
-            {!analysisResult && !isAnalyzing && (
-              <div className="text-center space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={() => handlePhotoCapture('camera')}
-                      className="w-full h-24 flex flex-col gap-2 text-lg glow-button bg-gradient-to-r from-primary to-stats-heart hover:from-primary-glow hover:to-stats-heart shadow-lg"
-                      size="lg"
-                    >
-                      <Camera className="h-8 w-8 drop-shadow-sm" />
-                      Take Photo
-                    </Button>
-                  </motion.div>
-                  
-                  <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={() => handlePhotoCapture('gallery')}
-                      variant="outline"
-                      className="w-full h-24 flex flex-col gap-2 text-lg border-2 border-stats-duration/50 hover:border-stats-duration hover:bg-stats-duration/10 hover:text-stats-duration transition-all duration-300"
-                      size="lg"
-                    >
-                      <Upload className="h-8 w-8" />
-                      Upload Photo
-                    </Button>
-                  </motion.div>
+            {/* Initial Scan Mode Selection */}
+            {!analysisResult && !isAnalyzing && !isScanning && (
+              <div className="space-y-6">
+                {/* Mode Toggle */}
+                <div className="flex gap-2">
+                  <Button
+                    variant={scanMode === 'barcode' ? 'default' : 'outline'}
+                    onClick={() => setScanMode('barcode')}
+                    className="flex-1 gap-2"
+                  >
+                    <Barcode className="h-4 w-4" />
+                    Barcode
+                  </Button>
+                  <Button
+                    variant={scanMode === 'photo' ? 'default' : 'outline'}
+                    onClick={() => setScanMode('photo')}
+                    className="flex-1 gap-2"
+                  >
+                    <Camera className="h-4 w-4" />
+                    Photo
+                  </Button>
                 </div>
+                
+                {/* Barcode Mode */}
+                {scanMode === 'barcode' && (
+                  <div className="space-y-4">
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        onClick={startBarcodeScanning}
+                        className="w-full h-24 flex flex-col gap-2 text-lg bg-gradient-to-r from-primary to-stats-heart hover:from-primary-glow hover:to-stats-heart shadow-lg"
+                        size="lg"
+                      >
+                        <ScanLine className="h-8 w-8" />
+                        Scan Barcode
+                      </Button>
+                    </motion.div>
+                    
+                    {/* Manual Entry */}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Or enter barcode manually..."
+                        value={manualBarcodeInput}
+                        onChange={(e) => setManualBarcodeInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleManualBarcodeLookup()}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleManualBarcodeLookup} variant="outline">
+                        Lookup
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Photo Mode */}
+                {scanMode === 'photo' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={() => handlePhotoCapture('camera')}
+                        className="w-full h-24 flex flex-col gap-2 text-lg glow-button bg-gradient-to-r from-primary to-stats-heart hover:from-primary-glow hover:to-stats-heart shadow-lg"
+                        size="lg"
+                      >
+                        <Camera className="h-8 w-8 drop-shadow-sm" />
+                        Take Photo
+                      </Button>
+                    </motion.div>
+                    
+                    <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={() => handlePhotoCapture('gallery')}
+                        variant="outline"
+                        className="w-full h-24 flex flex-col gap-2 text-lg border-2 border-stats-duration/50 hover:border-stats-duration hover:bg-stats-duration/10 hover:text-stats-duration transition-all duration-300"
+                        size="lg"
+                      >
+                        <Upload className="h-8 w-8" />
+                        Upload Photo
+                      </Button>
+                    </motion.div>
+                  </div>
+                )}
                 
                 <div className="text-sm text-muted-foreground space-y-3 bg-gradient-to-r from-stats-exercises/10 to-stats-calories/10 p-4 rounded-xl border border-stats-exercises/20">
                   <div className="flex items-center gap-2 justify-center">
@@ -960,6 +1099,56 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </p>
                 </div>
               </div>
+            )}
+            
+            {/* Barcode Scanner Camera View */}
+            {isScanning && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-4"
+              >
+                <div className="relative aspect-[4/3] bg-black rounded-xl overflow-hidden">
+                  <video 
+                    ref={barcodeVideoRef} 
+                    className="w-full h-full object-cover"
+                    autoPlay 
+                    playsInline 
+                    muted 
+                  />
+                  {/* Scanning overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-64 h-24 border-2 border-primary rounded-lg relative">
+                      <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-lg" />
+                      <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg" />
+                      <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                      <motion.div
+                        className="absolute left-2 right-2 h-0.5 bg-primary"
+                        animate={{ top: ['10%', '90%', '10%'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      />
+                    </div>
+                  </div>
+                  {barcodeLoading && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+                
+                <p className="text-center text-muted-foreground text-sm">
+                  Point camera at product barcode
+                </p>
+                
+                <Button 
+                  onClick={() => stopScanning()} 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Cancel
+                </Button>
+              </motion.div>
             )}
 
             {isAnalyzing && (
