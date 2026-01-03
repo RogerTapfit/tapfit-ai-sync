@@ -800,6 +800,35 @@ Return ONLY this JSON:
   }
 }
 
+// Lookup product from Open Pet Food Facts
+async function lookupPetFoodFacts(barcode: string): Promise<any> {
+  const cleanBarcode = barcode.replace(/[^0-9]/g, '');
+  
+  try {
+    console.log('Checking Open Pet Food Facts for:', cleanBarcode);
+    const response = await fetch(`https://world.openpetfoodfacts.org/api/v0/product/${cleanBarcode}.json`, {
+      headers: { 'User-Agent': 'TapFit App - Contact: support@tapfit.app' }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === 1 && data.product) {
+        console.log('✅ Found in Open Pet Food Facts:', data.product.product_name);
+        return {
+          source: 'openpetfoodfacts',
+          product_type: 'pet_food',
+          is_edible: false,
+          ...data.product
+        };
+      }
+    }
+  } catch (e) {
+    console.log('Open Pet Food Facts error:', e);
+  }
+  
+  return null;
+}
+
 // Lookup product from OpenBeautyFacts or OpenProductsFacts (for non-food products)
 async function lookupNonFoodProduct(barcode: string): Promise<any> {
   const cleanBarcode = barcode.replace(/[^0-9]/g, '');
@@ -1106,15 +1135,16 @@ serve(async (req) => {
 
     console.log('Processing image for universal product analysis...');
 
-const systemPrompt = `You are an expert product analyst combining food science, pharmacology, toxicology, environmental science, and nutritional expertise. Analyze ANY product - food, beverages, supplements, vitamins, medications, OR household/personal care products.
+const systemPrompt = `You are an expert product analyst combining food science, pharmacology, toxicology, environmental science, and nutritional expertise. Analyze ANY product - food, beverages, supplements, vitamins, medications, household/personal care products, OR PET FOOD.
 
 FIRST: Detect the product type from the image:
-- "food" = edible food items (cookies, snacks, candy, chips, meals, etc.)
+- "food" = edible food items for humans (cookies, snacks, candy, chips, meals, etc.)
 - "beverage" = drinks ONLY (water, soda, juice, milk, coffee, tea, alcohol)
-- "supplement" = vitamins, minerals, herbal supplements
+- "supplement" = vitamins, minerals, herbal supplements for humans
 - "medication" = prescription/OTC drugs, medicines
 - "household" = cleaning products, laundry detergent, dish soap, air fresheners, paper products
 - "personal_care" = skincare, haircare, body wash, shampoo, conditioner, lotion, deodorant, sunscreen, cosmetics, toothpaste, mouthwash
+- "pet_food" = dog food, cat food, pet treats, bird food, fish food, any animal food products
 
 CRITICAL DETECTION RULES:
 - Look for "Supplement Facts" label → supplement/vitamin
@@ -1129,6 +1159,15 @@ CRITICAL DETECTION RULES:
 - Look for pump bottles, tubes, cosmetic packaging, skincare/haircare → personal_care
 - Shampoo, conditioner, body wash, lotion, deodorant, sunscreen, makeup → personal_care
 - Dish soap, laundry pods, toilet cleaner, surface cleaner, air freshener → household
+
+🐾 PET FOOD DETECTION - CRITICAL:
+- Look for: "Dog", "Cat", "Pet", "Puppy", "Kitten", "For Dogs", "For Cats" on packaging
+- Look for: AAFCO statement (Association of American Feed Control Officials)
+- Look for: animal imagery (dogs, cats, birds, fish) as primary branding
+- Look for: "kibble", "wet food", "dry food", "pet treats", "dog food", "cat food"
+- Look for: feeding guidelines for pets by weight
+- If packaging shows "For Human Consumption" or no animal references → NOT pet_food
+- Dog food bags, cat food cans, pet treat packaging → pet_food
 
 ⚠️ BARCODE/UPC DETECTION - EXTREMELY IMPORTANT:
 Look for ANY barcode (UPC, EAN, QR code) visible in the image:
@@ -1571,8 +1610,105 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
       "recommendation": "Specific recommendation for user",
       "who_should_avoid": ["pregnant women", "sensitive skin", "children", "pets", etc if applicable]
     }
+  },
+  
+  "pet_food_analysis": {
+    "animal_type": "dog|cat|bird|fish|small_animal|reptile|universal",
+    "life_stage": "puppy|kitten|adult|senior|all_stages",
+    "food_type": "dry_kibble|wet_canned|freeze_dried|raw|treats|dental|prescription",
+    
+    "quality_grade": {
+      "letter": "A|B|C|D|F",
+      "score": 0-100,
+      "aafco_compliant": true/false,
+      "reasoning": "Detailed explanation of grade"
+    },
+    
+    "protein_analysis": {
+      "primary_protein_source": "chicken|beef|salmon|lamb|turkey|fish|by-product|plant_based",
+      "protein_quality": "whole_meat|meat_meal|by_product|plant_based",
+      "is_named_protein": true/false,
+      "animal_digest_present": true/false,
+      "protein_percentage": 0
+    },
+    
+    "ingredient_sourcing": {
+      "country_of_origin": "USA|Canada|China|Thailand|etc.",
+      "manufacturing_location": "Country/region where made",
+      "sourcing_transparency": "high|medium|low|unknown",
+      "made_in_usa": true/false
+    },
+    
+    "synthetic_ingredients": [
+      {
+        "name": "BHA|BHT|Ethoxyquin|Propylene Glycol|etc.",
+        "category": "preservative|colorant|flavor_enhancer|texture_agent",
+        "concern_level": "low|moderate|high|critical",
+        "effects": ["what this ingredient does/concerns"],
+        "banned_in": ["EU", "certain countries if applicable"]
+      }
+    ],
+    
+    "concerning_ingredients": {
+      "artificial_colors": ["Red 40", "Yellow 5", "etc."],
+      "artificial_preservatives": ["BHA", "BHT", "Ethoxyquin"],
+      "fillers": ["corn", "wheat", "soy", "by-products"],
+      "meat_by_products": true/false,
+      "rendered_fat": true/false,
+      "corn_syrup": true/false,
+      "propylene_glycol": true/false,
+      "carrageenan": true/false
+    },
+    
+    "toxic_ingredients_check": {
+      "xylitol": false,
+      "onion_garlic": false,
+      "grapes_raisins": false,
+      "chocolate": false,
+      "macadamia": false,
+      "avocado": false,
+      "detected_toxic": ["list of any toxic ingredients found"]
+    },
+    
+    "recalls": {
+      "has_recent_recalls": false,
+      "recall_history": ["list of past recalls for this brand"],
+      "brand_recall_frequency": "none|rare|occasional|frequent"
+    },
+    
+    "healthier_alternatives": [
+      {
+        "product_name": "Recommended alternative product",
+        "brand": "Brand name",
+        "why_better": "Explanation of improvements",
+        "price_comparison": "similar|higher|lower",
+        "key_improvements": ["better protein", "no fillers", "etc."]
+      }
+    ],
+    
+    "guaranteed_analysis": {
+      "crude_protein_min": 0,
+      "crude_fat_min": 0,
+      "crude_fiber_max": 0,
+      "moisture_max": 0
+    },
+    
+    "overall_assessment": {
+      "pros": ["list of positive aspects"],
+      "cons": ["list of negative aspects"],
+      "verdict": "Overall quality assessment",
+      "recommendation": "Specific recommendation for pet owners",
+      "suitable_for": ["puppies", "senior dogs", "sensitive stomach", "weight management", etc.]
+    }
   }
 }
+
+PET FOOD QUALITY GRADING CRITERIA:
+- A (90-100): Named whole meat as first ingredient, no by-products, no artificial preservatives, AAFCO compliant, USA-sourced, no recalls, high protein
+- B (75-89): Meat meal as first ingredient, minimal fillers, clean preservatives, AAFCO compliant, reputable brand
+- C (60-74): Contains some fillers (corn/wheat), meat meal present, may have some artificial ingredients
+- D (40-59): By-products as main protein, artificial colors/preservatives, high grain content, questionable sourcing
+- F (<40): Unnamed meat sources, multiple concerning chemicals, propylene glycol, extensive artificial ingredients, recall history, toxic ingredients detected
 
 SUPPLEMENT/VITAMIN QUALITY RATING CRITERIA:
 - A+ (95-100): Pharmaceutical-grade, third-party tested, optimal bioavailability forms, minimal fillers, gold-standard certifications
@@ -1607,7 +1743,10 @@ FOOD/BEVERAGE GRADING (be strict on processed foods):
 - D = Ultra-processed, artificial ingredients
 - F = Severe safety concerns, harmful additives
 
-IMPORTANT: Only populate supplement_analysis fields when product_type is "supplement" or "medication". For food/beverage, leave supplement_analysis as null or empty object.
+IMPORTANT: 
+- Only populate supplement_analysis fields when product_type is "supplement" or "medication". For food/beverage, leave supplement_analysis as null or empty object.
+- Only populate pet_food_analysis fields when product_type is "pet_food". For all other types, leave pet_food_analysis as null or empty object.
+- Only populate household_analysis fields when product_type is "household" or "personal_care". For food/beverage, leave household_analysis as null or empty object.
 
 Return ONLY valid JSON, no markdown formatting.`;
 
