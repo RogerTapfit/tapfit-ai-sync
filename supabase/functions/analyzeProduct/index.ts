@@ -1047,14 +1047,115 @@ serve(async (req) => {
       // Try OpenFoodFacts first (food/beverage)
       let dbResult = await lookupUPCMultiple(inputBarcode);
       
-      if (dbResult && dbResult.nutrition?.calories > 0) {
+      if (dbResult && dbResult.nutrition?.calories >= 0) {
         // It's a food/beverage product with nutrition data
         console.log('Found edible product in OpenFoodFacts');
         
-        // Build a full edible product response
+        // Parse ingredients for sweetener detection
+        const ingredientsText = (dbResult.ingredients || '').toLowerCase();
+        const sugarsG = dbResult.nutrition.sugars_g || 0;
+        
+        // Sweetener detection from ingredients
+        const sweetenerPatterns: Array<{ pattern: RegExp; name: string; category: string; gi: number }> = [
+          { pattern: /high fructose corn syrup|hfcs/i, name: 'High Fructose Corn Syrup', category: 'processed', gi: 87 },
+          { pattern: /corn syrup(?! solids)/i, name: 'Corn Syrup', category: 'processed', gi: 75 },
+          { pattern: /cane sugar|evaporated cane/i, name: 'Cane Sugar', category: 'refined', gi: 65 },
+          { pattern: /(?<![a-z])sugar(?![a-z])|sucrose/i, name: 'Sugar', category: 'refined', gi: 65 },
+          { pattern: /dextrose/i, name: 'Dextrose', category: 'refined', gi: 100 },
+          { pattern: /maltodextrin/i, name: 'Maltodextrin', category: 'processed', gi: 85 },
+          { pattern: /glucose(?! syrup)/i, name: 'Glucose', category: 'refined', gi: 100 },
+          { pattern: /fructose(?! corn)/i, name: 'Fructose', category: 'refined', gi: 25 },
+          { pattern: /honey/i, name: 'Honey', category: 'natural', gi: 58 },
+          { pattern: /maple syrup/i, name: 'Maple Syrup', category: 'natural', gi: 54 },
+          { pattern: /agave/i, name: 'Agave', category: 'natural', gi: 15 },
+          { pattern: /stevia|reb ?a/i, name: 'Stevia', category: 'natural_zero', gi: 0 },
+          { pattern: /monk fruit|luo han guo/i, name: 'Monk Fruit', category: 'natural_zero', gi: 0 },
+          { pattern: /erythritol/i, name: 'Erythritol', category: 'sugar_alcohol', gi: 0 },
+          { pattern: /xylitol/i, name: 'Xylitol', category: 'sugar_alcohol', gi: 7 },
+          { pattern: /sorbitol/i, name: 'Sorbitol', category: 'sugar_alcohol', gi: 9 },
+          { pattern: /maltitol/i, name: 'Maltitol', category: 'sugar_alcohol', gi: 35 },
+          { pattern: /aspartame/i, name: 'Aspartame', category: 'artificial', gi: 0 },
+          { pattern: /sucralose|splenda/i, name: 'Sucralose', category: 'artificial', gi: 0 },
+          { pattern: /acesulfame(?:-k| potassium)?|ace-k/i, name: 'Acesulfame-K', category: 'artificial', gi: 0 },
+          { pattern: /saccharin/i, name: 'Saccharin', category: 'artificial', gi: 0 },
+        ];
+        
+        let primarySweetener = 'None (0g sugar)';
+        let sweetenerCategory = 'none';
+        let detectedSweeteners: string[] = [];
+        let glycemicIndex = 0;
+        
+        // Check ingredients for sweeteners
+        for (const sw of sweetenerPatterns) {
+          if (sw.pattern.test(ingredientsText)) {
+            detectedSweeteners.push(sw.name);
+            if (!primarySweetener || primarySweetener === 'None (0g sugar)') {
+              primarySweetener = sw.name;
+              sweetenerCategory = sw.category;
+              glycemicIndex = sw.gi;
+            }
+          }
+        }
+        
+        // Determine final sweetener status
+        if (detectedSweeteners.length === 0) {
+          if (sugarsG === 0) {
+            primarySweetener = 'None (0g sugar)';
+            sweetenerCategory = 'none';
+          } else if (sugarsG > 0 && ingredientsText.length === 0) {
+            primarySweetener = 'Unknown (scan ingredients label for details)';
+            sweetenerCategory = 'unknown';
+          } else if (sugarsG > 0) {
+            // Has sugar but no detected sweetener pattern - natural sugars
+            primarySweetener = 'Natural Sugars';
+            sweetenerCategory = 'natural';
+            glycemicIndex = 50;
+          }
+        }
+        
+        // Detect product type (beverage vs food)
+        const categories = dbResult.sourcing?.categories_tags || [];
+        const isBeverage = categories.some((c: string) => 
+          c.includes('beverage') || c.includes('drink') || c.includes('juice') || 
+          c.includes('soda') || c.includes('tea') || c.includes('coffee') || 
+          c.includes('water') || c.includes('energy-drink') || c.includes('soft-drink')
+        );
+        const productType = isBeverage ? 'beverage' : 'food';
+        
+        // Parse additives from OpenFoodFacts
+        const additivesTags = dbResult.additives_tags || [];
+        const foodDyes: any[] = [];
+        const preservatives: any[] = [];
+        const flavorEnhancers: any[] = [];
+        
+        for (const additive of additivesTags) {
+          const code = additive.replace('en:', '').toUpperCase();
+          if (/^E1[0-8]\d$/.test(code)) {
+            foodDyes.push({ name: code, purpose: 'Coloring', health_concerns: ['May affect attention in children'], safety_rating: 'caution' });
+          } else if (/^E2\d{2}$/.test(code)) {
+            preservatives.push({ name: code, purpose: 'Preservative', health_concerns: ['May cause sensitivities'], safety_rating: 'caution' });
+          } else if (/^E6[0-3]\d$/.test(code)) {
+            flavorEnhancers.push({ name: code, details: 'Flavor enhancer', concern: 'May mask low quality ingredients' });
+          }
+        }
+        
+        // Build healthier alternatives based on sweetener type
+        const healthierAlternatives: any[] = [];
+        if (sweetenerCategory === 'processed' || sweetenerCategory === 'refined') {
+          healthierAlternatives.push(
+            { name: 'Stevia', glycemic_index: 0, benefits: 'Zero calories, natural' },
+            { name: 'Monk Fruit', glycemic_index: 0, benefits: 'Zero calories, natural' }
+          );
+        } else if (sweetenerCategory === 'artificial') {
+          healthierAlternatives.push(
+            { name: 'Stevia', glycemic_index: 0, benefits: 'Natural zero-calorie option' }
+          );
+        }
+        
+        // Build full edible product response with proper sugar analysis
         return new Response(
           JSON.stringify({
-            product_type: 'food',
+            product_type: productType,
             is_edible: true,
             barcode: inputBarcode,
             product: {
@@ -1074,20 +1175,71 @@ serve(async (req) => {
                 carbs_g: Math.round((dbResult.nutrition.carbs_g || 0) * 10) / 10,
                 fat_g: Math.round((dbResult.nutrition.fat_g || 0) * 10) / 10,
                 fiber_g: Math.round((dbResult.nutrition.fiber_g || 0) * 10) / 10,
-                sugars_g: Math.round((dbResult.nutrition.sugars_g || 0) * 10) / 10,
+                sugars_g: Math.round(sugarsG * 10) / 10,
                 sodium_mg: Math.round(dbResult.nutrition.sodium_mg || 0)
               }
             },
             health_grade: {
               letter: dbResult.nutriscore?.toUpperCase() || 'C',
               score: 70,
-              breakdown: {}
+              breakdown: {
+                nutritional_quality: 70,
+                ingredient_quality: ingredientsText ? 75 : 50,
+                safety_score: 80,
+                processing_level: dbResult.nova_group ? (5 - dbResult.nova_group) * 25 : 50
+              }
             },
-            detailed_processing: { nova_score: dbResult.nova_group || 3, classification: 'Processed', processing_methods: [], why_processed: '' },
-            chemical_analysis: { food_dyes: [], preservatives: [], flavor_enhancers: [], emulsifiers: [], artificial_ingredients: [], total_additives_count: 0 },
-            sugar_analysis: { primary_sweetener: 'Unknown', healthier_alternatives: [] },
-            analysis: { pros: [], cons: [], concerns: [], alternatives: [] },
-            safety: { forever_chemicals: false, concerning_additives: [], allergens: [], processing_level: 'Unknown' }
+            detailed_processing: { 
+              nova_score: dbResult.nova_group || 3, 
+              classification: dbResult.nova_group === 4 ? 'Ultra-Processed' : dbResult.nova_group === 3 ? 'Processed' : dbResult.nova_group === 2 ? 'Processed Ingredients' : 'Unprocessed',
+              processing_methods: [], 
+              why_processed: dbResult.nova_group === 4 ? 'Contains industrial ingredients' : ''
+            },
+            chemical_analysis: { 
+              food_dyes: foodDyes, 
+              preservatives: preservatives, 
+              flavor_enhancers: flavorEnhancers, 
+              emulsifiers: [], 
+              artificial_ingredients: additivesTags.map((a: string) => a.replace('en:', '')), 
+              total_additives_count: additivesTags.length 
+            },
+            sugar_analysis: { 
+              primary_sweetener: primarySweetener,
+              sweetener_breakdown: {
+                sweetener_category: sweetenerCategory,
+                detected_sweeteners: detectedSweeteners.length > 0 ? detectedSweeteners : undefined
+              },
+              metabolic_analysis: glycemicIndex > 0 ? {
+                glycemic_index: glycemicIndex,
+                blood_sugar_spike_score: glycemicIndex > 70 ? 8 : glycemicIndex > 50 ? 5 : 3
+              } : undefined,
+              healthier_alternatives: healthierAlternatives
+            },
+            ingredients_analysis: ingredientsText 
+              ? `This product contains: ${dbResult.ingredients}. ${detectedSweeteners.length > 0 ? `Sweeteners detected: ${detectedSweeteners.join(', ')}.` : sugarsG > 0 ? 'Contains natural sugars.' : 'No added sweeteners detected.'}`
+              : 'Ingredients not available from database. Scan the ingredients label for detailed analysis.',
+            analysis: { 
+              pros: sugarsG === 0 ? ['No sugar'] : [], 
+              cons: sugarsG > 15 ? ['High sugar content'] : [], 
+              concerns: sweetenerCategory === 'artificial' ? ['Contains artificial sweeteners'] : [], 
+              alternatives: [] 
+            },
+            safety: { 
+              forever_chemicals: false, 
+              concerning_additives: additivesTags.length > 5 ? ['High additive count'] : [], 
+              allergens: [], 
+              processing_level: dbResult.nova_group === 4 ? 'Ultra-Processed' : 'Processed'
+            },
+            sourcing_analysis: dbResult.sourcing ? {
+              organic_status: {
+                is_organic: dbResult.sourcing.is_organic || false,
+                pesticide_concern: dbResult.sourcing.is_organic ? 'none' : 'moderate'
+              },
+              country_of_origin: dbResult.sourcing.origin_country ? {
+                country: dbResult.sourcing.origin_country,
+                locally_sourced: false
+              } : undefined
+            } : undefined
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
