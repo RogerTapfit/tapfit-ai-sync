@@ -1,6 +1,78 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// Mercury levels database for fish products (FDA data in ppb - parts per billion)
+const MERCURY_DATA: Record<string, { level: string; ppb: number; omega3: string; notes: string }> = {
+  // Very Low (< 100 ppb)
+  'salmon': { level: 'very_low', ppb: 22, omega3: 'high', notes: 'Wild salmon has lower contaminants than farmed' },
+  'sockeye salmon': { level: 'very_low', ppb: 22, omega3: 'very_high', notes: 'Wild sockeye is one of the healthiest fish choices' },
+  'atlantic salmon': { level: 'very_low', ppb: 22, omega3: 'high', notes: 'Almost always farm-raised - higher contaminants' },
+  'pink salmon': { level: 'very_low', ppb: 22, omega3: 'high', notes: 'Usually wild-caught and affordable' },
+  'sardines': { level: 'very_low', ppb: 13, omega3: 'very_high', notes: 'One of the healthiest fish choices' },
+  'anchovies': { level: 'very_low', ppb: 17, omega3: 'very_high', notes: 'Very low on food chain, minimal mercury' },
+  'tilapia': { level: 'very_low', ppb: 13, omega3: 'low', notes: 'Low mercury but also low omega-3, often farm-raised' },
+  'cod': { level: 'very_low', ppb: 95, omega3: 'moderate', notes: 'Good lean protein source' },
+  'pollock': { level: 'very_low', ppb: 38, omega3: 'moderate', notes: 'Common in fish sticks and imitation crab' },
+  'shrimp': { level: 'very_low', ppb: 12, omega3: 'low', notes: 'Low mercury, low omega-3' },
+  'catfish': { level: 'very_low', ppb: 49, omega3: 'low', notes: 'Low mercury, mostly farm-raised in US' },
+  'crab': { level: 'very_low', ppb: 65, omega3: 'moderate', notes: 'Low mercury shellfish option' },
+  'scallops': { level: 'very_low', ppb: 22, omega3: 'low', notes: 'Very low mercury shellfish' },
+  'clams': { level: 'very_low', ppb: 9, omega3: 'moderate', notes: 'Very low mercury, good iron source' },
+  'oysters': { level: 'very_low', ppb: 13, omega3: 'moderate', notes: 'Very low mercury, high in zinc' },
+  'herring': { level: 'very_low', ppb: 44, omega3: 'very_high', notes: 'Excellent omega-3 source' },
+  'trout': { level: 'very_low', ppb: 71, omega3: 'high', notes: 'Rainbow trout is usually farm-raised' },
+  
+  // Low (100-200 ppb)
+  'canned light tuna': { level: 'low', ppb: 128, omega3: 'moderate', notes: 'Safer than albacore, usually skipjack' },
+  'skipjack tuna': { level: 'low', ppb: 128, omega3: 'moderate', notes: 'Smaller tuna species, lower mercury' },
+  'halibut': { level: 'low', ppb: 188, omega3: 'moderate', notes: 'Good choice, limit to 2-3 servings/week' },
+  'mahi mahi': { level: 'low', ppb: 178, omega3: 'low', notes: 'Moderate mercury, lean protein' },
+  'snapper': { level: 'low', ppb: 189, omega3: 'moderate', notes: 'Red snapper is moderate mercury' },
+  'lobster': { level: 'low', ppb: 166, omega3: 'low', notes: 'Low to moderate mercury' },
+  
+  // Moderate (200-500 ppb)
+  'albacore tuna': { level: 'moderate', ppb: 350, omega3: 'moderate', notes: 'Limit to 6oz/week for adults' },
+  'white tuna': { level: 'moderate', ppb: 350, omega3: 'moderate', notes: 'Same as albacore - higher mercury' },
+  'canned albacore tuna': { level: 'moderate', ppb: 350, omega3: 'moderate', notes: 'Limit to 1 can/week' },
+  'yellowfin tuna': { level: 'moderate', ppb: 354, omega3: 'moderate', notes: 'Ahi tuna - limit consumption' },
+  'ahi tuna': { level: 'moderate', ppb: 354, omega3: 'moderate', notes: 'Popular in sushi - moderate mercury' },
+  'grouper': { level: 'moderate', ppb: 448, omega3: 'low', notes: 'Higher mercury, limit consumption' },
+  'sea bass': { level: 'moderate', ppb: 354, omega3: 'moderate', notes: 'Chilean sea bass is higher' },
+  'chilean sea bass': { level: 'moderate', ppb: 354, omega3: 'moderate', notes: 'Also called Patagonian toothfish' },
+  'bluefish': { level: 'moderate', ppb: 368, omega3: 'high', notes: 'Good omega-3 but higher mercury' },
+  
+  // High (500-1000 ppb)
+  'bigeye tuna': { level: 'high', ppb: 689, omega3: 'moderate', notes: 'Common in sushi - avoid frequent consumption' },
+  'orange roughy': { level: 'high', ppb: 554, omega3: 'moderate', notes: 'High mercury, slow to reproduce' },
+  'marlin': { level: 'high', ppb: 485, omega3: 'moderate', notes: 'Large predatory fish - high mercury' },
+  
+  // Very High (> 1000 ppb) - FDA advises avoiding
+  'shark': { level: 'very_high', ppb: 988, omega3: 'moderate', notes: 'FDA advises against consumption' },
+  'swordfish': { level: 'very_high', ppb: 976, omega3: 'moderate', notes: 'FDA advises against consumption' },
+  'king mackerel': { level: 'very_high', ppb: 730, omega3: 'high', notes: 'Avoid despite high omega-3' },
+  'tilefish': { level: 'very_high', ppb: 1450, omega3: 'moderate', notes: 'Highest mercury - FDA warning' },
+  'tilefish gulf': { level: 'very_high', ppb: 1450, omega3: 'moderate', notes: 'Gulf of Mexico variety - highest mercury' },
+};
+
+// Helper function to find mercury data for a fish product
+function getMercuryData(productName: string): { level: string; ppb: number; omega3: string; notes: string } | null {
+  const lowerName = productName.toLowerCase();
+  
+  // Try exact match first
+  if (MERCURY_DATA[lowerName]) {
+    return MERCURY_DATA[lowerName];
+  }
+  
+  // Try partial match
+  for (const [fishName, data] of Object.entries(MERCURY_DATA)) {
+    if (lowerName.includes(fishName) || fishName.includes(lowerName.split(' ')[0])) {
+      return data;
+    }
+  }
+  
+  return null;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -115,6 +187,38 @@ async function lookupByUPC(barcode: string): Promise<any> {
       
       console.log('✅ UPC EXACT MATCH:', product.product_name, 'by', product.brands);
       
+      // Extract sourcing information from OpenFoodFacts
+      const labelsTags = product.labels_tags || [];
+      const originsTags = product.origins_tags || [];
+      const categoriesTags = product.categories_tags || [];
+      const manufacturingPlaces = product.manufacturing_places_tags || [];
+      
+      // Parse organic status from labels
+      const isOrganic = labelsTags.some((l: string) => 
+        l.includes('organic') || l.includes('bio') || l.includes('usda-organic')
+      );
+      
+      // Parse fish sourcing from labels
+      const isWildCaught = labelsTags.some((l: string) => 
+        l.includes('wild') || l.includes('msc') || l.includes('wild-caught')
+      );
+      const isFarmRaised = labelsTags.some((l: string) => 
+        l.includes('farm') || l.includes('asc') || l.includes('aquaculture') || l.includes('farm-raised')
+      );
+      const mscCertified = labelsTags.includes('en:msc') || labelsTags.some((l: string) => l.includes('msc'));
+      const ascCertified = labelsTags.includes('en:asc') || labelsTags.some((l: string) => l.includes('asc'));
+      
+      // Check if it's a fish product
+      const isFishProduct = categoriesTags.some((c: string) => 
+        c.includes('fish') || c.includes('seafood') || c.includes('salmon') || 
+        c.includes('tuna') || c.includes('shrimp') || c.includes('crab')
+      );
+      
+      // Parse country of origin
+      const originCountry = originsTags.length > 0 
+        ? originsTags[0].replace('en:', '').replace(/-/g, ' ')
+        : (product.origins || product.countries_tags?.[0]?.replace('en:', '') || null);
+      
       return {
         source: 'upc_lookup',
         exact_match: true,
@@ -137,7 +241,24 @@ async function lookupByUPC(barcode: string): Promise<any> {
         ingredients: product.ingredients_text,
         nova_group: product.nova_group,
         nutriscore: product.nutriscore_grade,
+        ecoscore_grade: product.ecoscore_grade,
         image_url: product.image_url,
+        // Sourcing data
+        sourcing: {
+          labels_tags: labelsTags,
+          origins_tags: originsTags,
+          manufacturing_places: manufacturingPlaces,
+          categories_tags: categoriesTags,
+          is_organic: isOrganic,
+          origin_country: originCountry,
+          is_fish_product: isFishProduct,
+          fish_sourcing: isFishProduct ? {
+            is_wild: isWildCaught,
+            is_farmed: isFarmRaised,
+            msc_certified: mscCertified,
+            asc_certified: ascCertified,
+          } : null,
+        }
       };
     }
     
@@ -753,6 +874,51 @@ Look for NET WT, Net Weight, or total weight on the FRONT of the package:
 3. Calculate servings_per_container: net_weight_grams / serving_size_grams
 4. This is DIFFERENT from serving size - NET WT is TOTAL package weight
 
+⚠️ SOURCING & ORIGIN DETECTION - CRITICAL FOR FOOD/BEVERAGE:
+Carefully scan the packaging for sourcing information:
+
+1. ORGANIC STATUS:
+   - Look for: "USDA Organic", "Certified Organic", "EU Organic", "Bio" logo, organic certification seals
+   - If not organic, assume conventional farming with potential pesticide use
+   - "Non-GMO" is NOT the same as organic - many non-GMO products still use pesticides
+   - For produce: conventional = pesticide concern is "moderate" to "high"
+
+2. COUNTRY OF ORIGIN:
+   - Look for: "Product of [Country]", "Made in [Country]", "Imported from [Country]", "Distributed by", origin statements
+   - Look for country flags or origin seals
+   - US products often show state: "California Almonds", "Wild Alaskan Salmon"
+   - Common imports to note: China, India, Thailand, Chile, Vietnam, Mexico
+
+3. FISH/SEAFOOD SOURCING (EXTREMELY IMPORTANT - affects health significantly):
+   - "Wild Caught" or "Wild" = wild_caught (better)
+   - "Farm Raised", "Aquaculture", "Farmed" = farm_raised (more contaminants)
+   - "Atlantic Salmon" on labels = almost ALWAYS farmed (even if not stated)
+   - "Sockeye", "Wild Alaskan", "Wild Pacific", "Alaskan" = usually wild
+   - MSC (Marine Stewardship Council) blue logo = sustainable wild-caught
+   - ASC (Aquaculture Stewardship Council) teal logo = responsible farming
+   - BAP (Best Aquaculture Practices) = farm-raised certification
+   
+4. MERCURY LEVELS FOR FISH (provide this info in fish_analysis):
+   - Very Low (<100 ppb): Salmon (all), Sardines, Tilapia, Cod, Pollock, Shrimp, Catfish
+   - Low (100-200 ppb): Canned light tuna, Halibut, Mahi mahi
+   - Moderate (200-500 ppb): Albacore tuna, Yellowfin tuna, Grouper, Sea bass
+   - High (500-1000 ppb): Bigeye tuna, Orange roughy
+   - Very High (>1000 ppb): Shark, Swordfish, King mackerel, Tilefish - FDA WARNS TO AVOID
+
+5. FARMING METHOD INDICATORS (for meat, eggs, dairy):
+   - "Grass-Fed", "100% Grass-Fed" = healthier fat profile
+   - "Pasture-Raised" = animals had outdoor access
+   - "Free-Range" = some outdoor access (less than pasture-raised)
+   - "Cage-Free" = not in cages but usually indoors
+   - No labels = assume factory farmed (conventionally raised)
+   - "Antibiotic-Free", "No Hormones" = partial improvement
+
+6. FARMED VS WILD SALMON EDUCATION (include in health_insights for salmon):
+   - Farm-raised salmon concerns: 5-10x higher PCB levels, higher dioxins, artificial colorants (astaxanthin) to make flesh pink, antibiotics used, lower omega-3/omega-6 ratio, higher saturated fat
+   - Wild salmon benefits: natural diet, lower contaminants, better omega ratios, no antibiotics, natural color
+   - "Atlantic Salmon" = almost 100% farm-raised regardless of packaging claims
+   - Best choices: Wild Alaskan, Sockeye, Pink salmon, Coho (wild)
+
 FOR ALL PRODUCTS - Return valid JSON with this structure:
 
 {
@@ -857,6 +1023,51 @@ FOR ALL PRODUCTS - Return valid JSON with this structure:
     "endocrine_disruption_risk": "low"
   },
   "ingredients_analysis": "",
+  
+  "sourcing_analysis": {
+    "organic_status": {
+      "is_organic": false,
+      "certification": "USDA Organic|EU Organic|None",
+      "pesticide_concern": "none|low|moderate|high",
+      "pesticide_details": "Description of pesticide concerns for conventional produce"
+    },
+    "country_of_origin": {
+      "country": "USA|China|India|Thailand|Chile|etc.",
+      "region": "California, USA|Alaska, etc.",
+      "text_found": "EXACT text from label like 'Product of India' or 'Imported from Chile'",
+      "locally_sourced": false
+    },
+    "farming_method": {
+      "method": "conventional|organic|wild_caught|farm_raised|pasture_raised|cage_free|free_range|grass_fed|grain_fed",
+      "is_factory_farmed": false,
+      "details": "Description of farming method detected from packaging",
+      "health_impact": "none|positive|negative",
+      "health_education": "Educational content explaining why this farming method matters for health"
+    },
+    "fish_analysis": {
+      "is_fish_product": false,
+      "fish_type": "salmon|tuna|tilapia|cod|shrimp|etc.",
+      "sourcing": "wild_caught|farm_raised|unknown",
+      "mercury_level": "very_low|low|moderate|high|very_high",
+      "mercury_ppb": 0,
+      "omega3_ratio": "high|moderate|low",
+      "sustainability_rating": "MSC Certified|ASC Certified|None",
+      "health_insights": {
+        "pros": ["List of health benefits"],
+        "cons": ["List of health concerns"],
+        "recommendation": "Specific actionable recommendation"
+      }
+    },
+    "certifications": [
+      {
+        "name": "USDA Organic|Non-GMO|MSC|ASC|Fair Trade|Rainforest Alliance|etc.",
+        "verified": true,
+        "what_it_means": "Description of what this certification guarantees"
+      }
+    ],
+    "sourcing_grade": "A|B|C|D|F",
+    "sourcing_score": 85
+  },
   
   "supplement_analysis": {
     "dosage_form": "softgel|tablet|capsule|gummy|liquid|powder|spray",
@@ -1353,6 +1564,73 @@ Return ONLY valid JSON, no markdown formatting.`;
             matching_sources: [],
             consensus_reached: false
           };
+        }
+      }
+    }
+
+    // ===== ENRICH SOURCING ANALYSIS WITH UPC DATA =====
+    if (upcResult?.sourcing && analysisResult.sourcing_analysis) {
+      console.log('Enriching sourcing analysis with UPC data...');
+      
+      // Merge UPC sourcing data into AI-detected sourcing
+      if (upcResult.sourcing.is_organic && !analysisResult.sourcing_analysis.organic_status?.is_organic) {
+        analysisResult.sourcing_analysis.organic_status = {
+          ...analysisResult.sourcing_analysis.organic_status,
+          is_organic: true,
+          certification: 'Database Verified'
+        };
+      }
+      
+      if (upcResult.sourcing.origin_country && !analysisResult.sourcing_analysis.country_of_origin?.country) {
+        analysisResult.sourcing_analysis.country_of_origin = {
+          country: upcResult.sourcing.origin_country,
+          locally_sourced: false
+        };
+      }
+      
+      // Enrich fish sourcing from UPC data
+      if (upcResult.sourcing.is_fish_product && analysisResult.sourcing_analysis.fish_analysis) {
+        if (upcResult.sourcing.fish_sourcing?.is_wild && !analysisResult.sourcing_analysis.fish_analysis.sourcing) {
+          analysisResult.sourcing_analysis.fish_analysis.sourcing = 'wild_caught';
+        }
+        if (upcResult.sourcing.fish_sourcing?.is_farmed && !analysisResult.sourcing_analysis.fish_analysis.sourcing) {
+          analysisResult.sourcing_analysis.fish_analysis.sourcing = 'farm_raised';
+        }
+        if (upcResult.sourcing.fish_sourcing?.msc_certified) {
+          analysisResult.sourcing_analysis.fish_analysis.sustainability_rating = 'MSC Certified';
+        }
+        if (upcResult.sourcing.fish_sourcing?.asc_certified) {
+          analysisResult.sourcing_analysis.fish_analysis.sustainability_rating = 'ASC Certified';
+        }
+      }
+    }
+
+    // ===== ENRICH FISH ANALYSIS WITH MERCURY DATA =====
+    if (analysisResult.sourcing_analysis?.fish_analysis?.is_fish_product) {
+      const fishType = analysisResult.sourcing_analysis.fish_analysis.fish_type || 
+                       analysisResult.product?.name || '';
+      const mercuryInfo = getMercuryData(fishType);
+      
+      if (mercuryInfo) {
+        console.log('Enriching fish analysis with mercury data for:', fishType);
+        analysisResult.sourcing_analysis.fish_analysis.mercury_level = mercuryInfo.level as any;
+        analysisResult.sourcing_analysis.fish_analysis.mercury_ppb = mercuryInfo.ppb;
+        analysisResult.sourcing_analysis.fish_analysis.omega3_ratio = mercuryInfo.omega3 as any;
+        
+        // Add mercury notes to health insights
+        if (!analysisResult.sourcing_analysis.fish_analysis.health_insights) {
+          analysisResult.sourcing_analysis.fish_analysis.health_insights = {
+            pros: [],
+            cons: [],
+            recommendation: ''
+          };
+        }
+        
+        // Add mercury-specific warnings for high mercury fish
+        if (mercuryInfo.level === 'high' || mercuryInfo.level === 'very_high') {
+          if (!analysisResult.sourcing_analysis.fish_analysis.health_insights.cons.includes(mercuryInfo.notes)) {
+            analysisResult.sourcing_analysis.fish_analysis.health_insights.cons.push(mercuryInfo.notes);
+          }
         }
       }
     }

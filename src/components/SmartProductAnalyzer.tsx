@@ -240,6 +240,50 @@ interface ProductAnalysis {
   };
   ingredients_analysis?: string;
   supplement_analysis?: SupplementAnalysis;
+  sourcing_analysis?: SourcingAnalysis;
+}
+
+interface SourcingAnalysis {
+  organic_status?: {
+    is_organic: boolean;
+    certification?: string;
+    pesticide_concern: 'none' | 'low' | 'moderate' | 'high';
+    pesticide_details?: string;
+  };
+  country_of_origin?: {
+    country: string;
+    region?: string;
+    text_found?: string;
+    locally_sourced: boolean;
+  };
+  farming_method?: {
+    method: string;
+    is_factory_farmed: boolean;
+    details?: string;
+    health_impact: 'none' | 'positive' | 'negative';
+    health_education?: string;
+  };
+  fish_analysis?: {
+    is_fish_product: boolean;
+    fish_type?: string;
+    sourcing: 'wild_caught' | 'farm_raised' | 'unknown';
+    mercury_level: 'very_low' | 'low' | 'moderate' | 'high' | 'very_high';
+    mercury_ppb?: number;
+    omega3_ratio: 'high' | 'moderate' | 'low';
+    sustainability_rating?: string;
+    health_insights?: {
+      pros: string[];
+      cons: string[];
+      recommendation: string;
+    };
+  };
+  certifications?: Array<{
+    name: string;
+    verified: boolean;
+    what_it_means: string;
+  }>;
+  sourcing_grade?: string;
+  sourcing_score?: number;
 }
 
 interface SafetyData {
@@ -2081,6 +2125,284 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       </motion.div>
                     )}
                   </>
+                )}
+
+                {/* Sourcing Intelligence Section - For all food/beverage */}
+                {analysisResult.sourcing_analysis && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                    className="bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border-2 border-emerald-500/40 rounded-xl p-6 shadow-xl"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-bold text-lg flex items-center gap-2 text-emerald-600">
+                        🌍 Food Sourcing Intelligence
+                      </h4>
+                      {analysisResult.sourcing_analysis.sourcing_grade && (
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className={`inline-flex items-center justify-center w-12 h-12 rounded-xl text-xl font-bold border-2 shadow-lg ${
+                            analysisResult.sourcing_analysis.sourcing_grade?.startsWith('A') ? 'bg-green-500/20 border-green-500 text-green-700' :
+                            analysisResult.sourcing_analysis.sourcing_grade?.startsWith('B') ? 'bg-blue-500/20 border-blue-500 text-blue-700' :
+                            analysisResult.sourcing_analysis.sourcing_grade?.startsWith('C') ? 'bg-yellow-500/20 border-yellow-500 text-yellow-700' :
+                            'bg-red-500/20 border-red-500 text-red-700'
+                          }`}
+                        >
+                          {analysisResult.sourcing_analysis.sourcing_grade}
+                        </motion.div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Country of Origin */}
+                      {analysisResult.sourcing_analysis.country_of_origin && (
+                        <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
+                          <span className="text-2xl">📍</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-foreground">
+                              Origin: {analysisResult.sourcing_analysis.country_of_origin.country}
+                              {analysisResult.sourcing_analysis.country_of_origin.region && (
+                                <span className="text-muted-foreground"> ({analysisResult.sourcing_analysis.country_of_origin.region})</span>
+                              )}
+                            </div>
+                            {analysisResult.sourcing_analysis.country_of_origin.text_found && (
+                              <div className="text-sm text-muted-foreground italic">
+                                "{analysisResult.sourcing_analysis.country_of_origin.text_found}"
+                              </div>
+                            )}
+                            {analysisResult.sourcing_analysis.country_of_origin.locally_sourced && (
+                              <Badge className="mt-1 bg-green-500/20 text-green-700 border-green-500/50">
+                                🏠 Locally Sourced
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Organic Status */}
+                      {analysisResult.sourcing_analysis.organic_status && (
+                        <div className={`p-4 rounded-lg border-2 ${
+                          analysisResult.sourcing_analysis.organic_status.is_organic 
+                            ? 'bg-green-500/15 border-green-500/40' 
+                            : analysisResult.sourcing_analysis.organic_status.pesticide_concern === 'high'
+                              ? 'bg-red-500/15 border-red-500/40'
+                              : 'bg-amber-500/15 border-amber-500/40'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xl">
+                              {analysisResult.sourcing_analysis.organic_status.is_organic ? '🌱' : '🧪'}
+                            </span>
+                            <span className="font-bold text-foreground">
+                              {analysisResult.sourcing_analysis.organic_status.is_organic 
+                                ? 'Certified Organic' 
+                                : 'Conventional (Non-Organic)'}
+                            </span>
+                            {analysisResult.sourcing_analysis.organic_status.certification && 
+                             analysisResult.sourcing_analysis.organic_status.certification !== 'None' && (
+                              <Badge className="bg-green-500/20 text-green-700 border-green-500/50">
+                                {analysisResult.sourcing_analysis.organic_status.certification}
+                              </Badge>
+                            )}
+                          </div>
+                          {!analysisResult.sourcing_analysis.organic_status.is_organic && 
+                           analysisResult.sourcing_analysis.organic_status.pesticide_details && (
+                            <p className={`text-sm ${
+                              analysisResult.sourcing_analysis.organic_status.pesticide_concern === 'high' 
+                                ? 'text-red-700' 
+                                : 'text-amber-700'
+                            }`}>
+                              ⚠️ {analysisResult.sourcing_analysis.organic_status.pesticide_details}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Farming Method */}
+                      {analysisResult.sourcing_analysis.farming_method && (
+                        <div className={`p-4 rounded-lg border-2 ${
+                          analysisResult.sourcing_analysis.farming_method.health_impact === 'positive'
+                            ? 'bg-green-500/15 border-green-500/40'
+                            : analysisResult.sourcing_analysis.farming_method.is_factory_farmed
+                              ? 'bg-red-500/15 border-red-500/40'
+                              : 'bg-background border-border'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xl">
+                              {analysisResult.sourcing_analysis.farming_method.is_factory_farmed ? '🏭' : '🌾'}
+                            </span>
+                            <span className="font-bold text-foreground capitalize">
+                              {analysisResult.sourcing_analysis.farming_method.method?.replace(/_/g, ' ')}
+                            </span>
+                            {analysisResult.sourcing_analysis.farming_method.is_factory_farmed && (
+                              <Badge className="bg-red-500/20 text-red-700 border-red-500/50">
+                                Factory Farmed
+                              </Badge>
+                            )}
+                          </div>
+                          {analysisResult.sourcing_analysis.farming_method.details && (
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {analysisResult.sourcing_analysis.farming_method.details}
+                            </p>
+                          )}
+                          {analysisResult.sourcing_analysis.farming_method.health_education && (
+                            <div className="p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                              <p className="text-xs text-blue-700">
+                                💡 {analysisResult.sourcing_analysis.farming_method.health_education}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Fish Analysis - Prominent Section */}
+                      {analysisResult.sourcing_analysis.fish_analysis?.is_fish_product && (
+                        <div className={`p-4 rounded-xl border-2 ${
+                          analysisResult.sourcing_analysis.fish_analysis.sourcing === 'farm_raised' 
+                            ? 'bg-red-500/20 border-red-500/50' 
+                            : analysisResult.sourcing_analysis.fish_analysis.sourcing === 'wild_caught'
+                              ? 'bg-green-500/20 border-green-500/50' 
+                              : 'bg-gray-500/20 border-gray-500/50'
+                        }`}>
+                          <div className="flex items-center gap-3 mb-4">
+                            <span className="text-3xl">🐟</span>
+                            <div>
+                              <div className="font-bold text-lg capitalize">
+                                {analysisResult.sourcing_analysis.fish_analysis.fish_type || 'Fish/Seafood'}
+                              </div>
+                              <Badge className={`text-sm ${
+                                analysisResult.sourcing_analysis.fish_analysis.sourcing === 'wild_caught' 
+                                  ? 'bg-green-600 text-white' 
+                                  : analysisResult.sourcing_analysis.fish_analysis.sourcing === 'farm_raised'
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-gray-600 text-white'
+                              }`}>
+                                {analysisResult.sourcing_analysis.fish_analysis.sourcing === 'wild_caught' 
+                                  ? '🌊 Wild Caught' 
+                                  : analysisResult.sourcing_analysis.fish_analysis.sourcing === 'farm_raised'
+                                    ? '🏭 Farm Raised'
+                                    : '❓ Unknown Source'}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Mercury Warning */}
+                          <div className={`p-3 rounded-lg mb-3 ${
+                            analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'high' || 
+                            analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'very_high'
+                              ? 'bg-red-500/30 border border-red-500/50'
+                              : analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'moderate'
+                                ? 'bg-amber-500/30 border border-amber-500/50'
+                                : 'bg-green-500/20 border border-green-500/40'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">Mercury Level:</span>
+                              <span className={`font-bold uppercase ${
+                                analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'high' || 
+                                analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'very_high'
+                                  ? 'text-red-700'
+                                  : analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'moderate'
+                                    ? 'text-amber-700'
+                                    : 'text-green-700'
+                              }`}>
+                                {analysisResult.sourcing_analysis.fish_analysis.mercury_level?.replace('_', ' ')}
+                                {analysisResult.sourcing_analysis.fish_analysis.mercury_ppb && (
+                                  <span className="text-sm font-normal ml-1">
+                                    ({analysisResult.sourcing_analysis.fish_analysis.mercury_ppb} ppb)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            {(analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'high' || 
+                              analysisResult.sourcing_analysis.fish_analysis.mercury_level === 'very_high') && (
+                              <p className="text-xs text-red-700 mt-2">
+                                ⚠️ FDA recommends limiting consumption. Pregnant women and children should avoid.
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Omega-3 & Sustainability */}
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <div className="p-2 bg-background/50 rounded-lg border border-border">
+                              <span className="text-xs text-muted-foreground">Omega-3 Content</span>
+                              <p className="font-medium capitalize">
+                                {analysisResult.sourcing_analysis.fish_analysis.omega3_ratio}
+                              </p>
+                            </div>
+                            {analysisResult.sourcing_analysis.fish_analysis.sustainability_rating && (
+                              <div className="p-2 bg-background/50 rounded-lg border border-border">
+                                <span className="text-xs text-muted-foreground">Sustainability</span>
+                                <p className="font-medium text-sm">
+                                  {analysisResult.sourcing_analysis.fish_analysis.sustainability_rating}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Health Insights */}
+                          {analysisResult.sourcing_analysis.fish_analysis.health_insights && (
+                            <div className="space-y-2">
+                              {analysisResult.sourcing_analysis.fish_analysis.health_insights.pros?.length > 0 && (
+                                <div className="p-2 bg-green-500/10 rounded-lg">
+                                  <span className="text-xs font-bold text-green-700">✅ Pros:</span>
+                                  <p className="text-sm text-green-700">
+                                    {analysisResult.sourcing_analysis.fish_analysis.health_insights.pros.join(', ')}
+                                  </p>
+                                </div>
+                              )}
+                              {analysisResult.sourcing_analysis.fish_analysis.health_insights.cons?.length > 0 && (
+                                <div className="p-2 bg-red-500/10 rounded-lg">
+                                  <span className="text-xs font-bold text-red-700">⚠️ Cons:</span>
+                                  <p className="text-sm text-red-700">
+                                    {analysisResult.sourcing_analysis.fish_analysis.health_insights.cons.join(', ')}
+                                  </p>
+                                </div>
+                              )}
+                              {analysisResult.sourcing_analysis.fish_analysis.health_insights.recommendation && (
+                                <div className="p-3 bg-blue-500/15 rounded-lg border border-blue-500/30">
+                                  <span className="text-xs font-bold text-blue-700">💡 Recommendation:</span>
+                                  <p className="text-sm text-blue-700 mt-1">
+                                    {analysisResult.sourcing_analysis.fish_analysis.health_insights.recommendation}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Certifications */}
+                      {analysisResult.sourcing_analysis.certifications && 
+                       analysisResult.sourcing_analysis.certifications.length > 0 && (
+                        <div>
+                          <h5 className="font-semibold text-emerald-600 mb-2">✓ Certifications</h5>
+                          <div className="grid grid-cols-2 gap-2">
+                            {analysisResult.sourcing_analysis.certifications.map((cert, index) => (
+                              <div 
+                                key={index} 
+                                className={`p-2 rounded-lg border ${
+                                  cert.verified 
+                                    ? 'bg-emerald-500/15 border-emerald-500/40' 
+                                    : 'bg-gray-500/10 border-gray-500/30'
+                                }`}
+                              >
+                                <div className="font-medium text-sm flex items-center gap-1">
+                                  {cert.verified && <CheckCircle className="h-3 w-3 text-emerald-600" />}
+                                  {cert.name}
+                                </div>
+                                {cert.what_it_means && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {cert.what_it_means}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
 
                 {/* Processing Deep Dive - Only show for food/beverage */}
