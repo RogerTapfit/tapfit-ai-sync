@@ -337,12 +337,85 @@ class RunTrackerService {
   }
 
   private startAutoSave(): void {
-    this.saveTimer = setInterval(() => {
+    // Add beforeunload listener to save on page close
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', this.handleBeforeUnload);
+    }
+    
+    this.saveTimer = setInterval(async () => {
       if (this.currentSession) {
-        // Only save to IndexedDB during active tracking (backup)
-        runStorageService.saveToIndexedDBOnly(this.currentSession);
+        // Save to IndexedDB first
+        await runStorageService.saveToIndexedDBOnly(this.currentSession);
+        
+        // Also sync to Supabase every 30 seconds as safety backup
+        await this.syncActiveSessionToCloud();
       }
-    }, 10000); // Save every 10 seconds
+    }, 30000); // Save every 30 seconds
+  }
+  
+  private handleBeforeUnload = (): void => {
+    // Emergency save when page is about to close
+    if (this.currentSession) {
+      console.log('⚠️ Page closing - emergency save triggered');
+      // Use sendBeacon for reliable save on page close
+      this.emergencySaveToCloud();
+    }
+  };
+  
+  private async syncActiveSessionToCloud(): Promise<void> {
+    if (!this.currentSession) return;
+    
+    try {
+      const { error } = await supabase.from('run_sessions').upsert({
+        id: this.currentSession.id,
+        user_id: this.currentSession.user_id,
+        started_at: this.currentSession.started_at,
+        status: 'active', // Keep as active until properly stopped
+        total_distance_m: Math.round(this.currentSession.total_distance_m),
+        moving_time_s: Math.round(this.currentSession.moving_time_s),
+        elapsed_time_s: Math.round(this.currentSession.elapsed_time_s),
+        avg_pace_sec_per_km: this.currentSession.avg_pace_sec_per_km,
+        calories: this.currentSession.calories,
+        unit: this.currentSession.unit,
+        elevation_gain_m: this.currentSession.elevation_gain_m,
+        elevation_loss_m: this.currentSession.elevation_loss_m,
+        route_points: this.currentSession.points as any,
+        splits: this.currentSession.splits as any,
+        training_mode: this.currentSession.training_mode,
+        target_hr_zone: this.currentSession.target_hr_zone as any,
+        avg_heart_rate: this.currentSession.avg_heart_rate,
+        max_heart_rate: this.currentSession.max_heart_rate,
+        time_in_zone_s: this.currentSession.time_in_zone_s,
+        hr_samples: this.currentSession.hr_samples as any,
+      });
+
+      if (!error) {
+        console.log('☁️ Active session synced to cloud');
+      }
+    } catch (error) {
+      console.log('Cloud sync skipped:', error);
+    }
+  }
+  
+  private emergencySaveToCloud(): void {
+    if (!this.currentSession) return;
+    
+    // Use navigator.sendBeacon for reliable save on page unload
+    const payload = JSON.stringify({
+      id: this.currentSession.id,
+      user_id: this.currentSession.user_id,
+      started_at: this.currentSession.started_at,
+      ended_at: new Date().toISOString(),
+      status: 'interrupted',
+      total_distance_m: Math.round(this.currentSession.total_distance_m),
+      moving_time_s: Math.round(this.currentSession.moving_time_s),
+      elapsed_time_s: Math.round(this.currentSession.elapsed_time_s),
+      route_points: this.currentSession.points,
+    });
+    
+    // Store in localStorage as fallback
+    localStorage.setItem('interrupted_run_session', payload);
+    console.log('💾 Session saved to localStorage for recovery');
   }
 
   async pauseTracking(): Promise<void> {
@@ -407,11 +480,17 @@ class RunTrackerService {
       this.webWatcherId = null;
     }
 
-    // Stop auto-save
+    // Stop auto-save and remove beforeunload listener
     if (this.saveTimer) {
       clearInterval(this.saveTimer);
       this.saveTimer = null;
     }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', this.handleBeforeUnload);
+    }
+    
+    // Clear any interrupted session from localStorage since we're completing properly
+    localStorage.removeItem('interrupted_run_session');
 
     // Stop HR monitoring
     if (this.hrListener) {
