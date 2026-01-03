@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Clock, Flame, Activity, Play, Layers, Share2 } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Flame, Activity, Play, Layers, Share2, Plus } from "lucide-react";
 import { useRunHistory } from "@/hooks/useRunHistory";
 import { formatDistance, formatTime, formatPace } from "@/utils/runFormatters";
 import { format } from "date-fns";
@@ -11,11 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { mergeConsecutiveSessions, MergedRunSession } from "@/utils/mergeRunSessions";
 import ShareRunModal from "@/components/run/ShareRunModal";
 import { RunSession } from "@/types/run";
+import { ManualCardioLogModal } from "@/components/ManualCardioLogModal";
+
 const RunHistory = () => {
   const navigate = useNavigate();
   const { data: runs, isLoading } = useRunHistory();
   const [selectedRun, setSelectedRun] = useState<RunSession | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [showLogModal, setShowLogModal] = useState(false);
   
   // Merge sessions with < 10 min gaps
   const mergedRuns = useMemo(() => 
@@ -46,8 +49,10 @@ const RunHistory = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold">Run History</h1>
-          <div className="w-20" /> {/* Spacer for centering */}
+          <h1 className="text-2xl font-bold">Activity History</h1>
+          <Button variant="outline" size="icon" onClick={() => setShowLogModal(true)}>
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Runs List */}
@@ -178,6 +183,12 @@ const RunHistory = () => {
             }}
           />
         )}
+
+        {/* Manual Log Modal */}
+        <ManualCardioLogModal 
+          open={showLogModal} 
+          onOpenChange={setShowLogModal} 
+        />
       </div>
     </div>
   );
