@@ -1380,6 +1380,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   />
                 )}
 
+                {/* Edible Products Section - Scan Nutrition Label Prompt & Nutrition Facts */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && (
+                  <>
                 {/* Scan Nutrition Label Prompt - shown when label not visible */}
                 {analysisResult.needs_nutrition_scan && (
                   <motion.div
@@ -2029,6 +2032,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     );
                   })()}
                 </div>
+                  </>
+                )}
 
                 {/* Supplement Analysis Section - Only shows for supplements/vitamins/medications */}
                 {analysisResult.supplement_analysis && (analysisResult.product_type === 'supplement' || analysisResult.product_type === 'medication' || analysisResult.product_type === 'vitamin') && (
@@ -2386,7 +2391,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                 )}
 
                 {/* Sourcing Intelligence Section - For all food/beverage */}
-                {analysisResult.sourcing_analysis && (
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.sourcing_analysis && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3039,7 +3044,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                 )}
 
                 {/* Processing Deep Dive - Only show for food/beverage */}
-                {analysisResult.detailed_processing && (
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.detailed_processing && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3106,8 +3111,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Sugar Analysis Deep Dive */}
-                {analysisResult.sugar_analysis && (
+                {/* Sugar Analysis Deep Dive - Only for food/beverage */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.sugar_analysis && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3356,8 +3361,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Chemical Analysis Deep Dive */}
-                {analysisResult.chemical_analysis && (
+                {/* Chemical Analysis Deep Dive - Only for food/beverage */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.chemical_analysis && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -3628,8 +3633,9 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   </motion.div>
                 )}
 
-                {/* Enhanced Safety Information */}
-                {(analysisResult.safety.concerning_additives.length > 0 || 
+                {/* Enhanced Safety Information - Only for food/beverage */}
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && 
+                 (analysisResult.safety.concerning_additives.length > 0 || 
                   analysisResult.safety.forever_chemicals || 
                   analysisResult.safety.chemical_load) && (
                   <motion.div
@@ -3878,6 +3884,14 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       </div>
                     </motion.div>
                   )}
+                {/* Pricing - Show for ALL product types */}
+                {pricing && (
+                  <ProductPriceCard 
+                    pricing={pricing}
+                    productName={analysisResult.product?.name || ''}
+                  />
+                )}
+
                 {/* Action Buttons */}
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
@@ -3885,14 +3899,17 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                   transition={{ delay: 0.8 }}
                   className="flex flex-col sm:flex-row gap-4 pt-6"
                 >
-                  <Button
-                    onClick={handleOpenFoodLogModal}
-                    className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-xl"
-                    size="lg"
-                  >
-                    <Settings className="mr-2 h-5 w-5" />
-                    📝 Add to Food Log
-                  </Button>
+                  {/* Only show Add to Food Log for edible products */}
+                  {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && (
+                    <Button
+                      onClick={handleOpenFoodLogModal}
+                      className="flex-1 h-14 text-lg glow-button bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-xl"
+                      size="lg"
+                    >
+                      <Settings className="mr-2 h-5 w-5" />
+                      📝 Add to Food Log
+                    </Button>
+                  )}
                   
                   <Button
                     onClick={resetAnalyzer}
@@ -3901,13 +3918,13 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     size="lg"
                   >
                     <Zap className="mr-2 h-5 w-5" />
-                    🔍 Analyze Another
+                    🔍 Scan Another Product
                   </Button>
                   
                   {isCheckingSafety && (
                     <div className="flex items-center justify-center gap-2 text-stats-duration bg-stats-duration/10 rounded-lg p-3 border border-stats-duration/30">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm font-medium">Checking FDA recalls...</span>
+                      <span className="text-sm font-medium">Checking safety data...</span>
                     </div>
                   )}
                 </motion.div>
