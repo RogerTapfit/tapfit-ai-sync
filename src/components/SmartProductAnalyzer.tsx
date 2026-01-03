@@ -480,7 +480,8 @@ export const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       }
     } catch (error) {
       console.error('Barcode lookup error:', error);
-      toast.error('Failed to lookup product. Try photo mode.');
+      toast.error('Barcode not found — try Photo mode.');
+      setScanMode('photo');
     } finally {
       setIsAnalyzing(false);
     }
@@ -1345,16 +1346,24 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                       </p>
                       <div className="mt-2 text-xs text-muted-foreground italic max-w-[180px]">
                         {(() => {
-                          const grade = analysisResult.health_grade.letter.toUpperCase();
-                          const nova = analysisResult.detailed_processing.nova_score;
+                          const grade = (analysisResult.health_grade?.letter || 'C').toUpperCase();
                           const productType = analysisResult.product_type || 'food';
+
+                          // Non-edible items don't have NOVA/ingredient processing.
+                          if (productType === 'household' || productType === 'personal_care') {
+                            return "Safety-focused analysis";
+                          }
+
+                          const nova = analysisResult.detailed_processing?.nova_score ?? 0;
+                          const artificialCount = analysisResult.chemical_analysis?.artificial_ingredients?.length ?? 0;
+
                           if (grade === 'D' || grade === 'F') {
                             if (nova >= 4) {
                               if (productType === 'beverage') return "⚠️ Ultra-processed beverage";
                               if (productType === 'supplement' || productType === 'medication') return "⚠️ Highly processed supplement";
                               return "⚠️ Ultra-processed food";
                             }
-                            if (analysisResult.chemical_analysis.artificial_ingredients.length > 0) return "⚠️ Contains artificial ingredients";
+                            if (artificialCount > 0) return "⚠️ Contains artificial ingredients";
                             return "⚠️ Highly processed food";
                           }
                           if (grade.startsWith('C')) return "Moderately processed";
@@ -1390,8 +1399,8 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                 )}
 
                 {/* Edible Products Section - Scan Nutrition Label Prompt & Nutrition Facts */}
-                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && (
-                  <>
+                {analysisResult.product_type !== 'household' && analysisResult.product_type !== 'personal_care' && analysisResult.nutrition && (
+                   <>
                 {/* Scan Nutrition Label Prompt - shown when label not visible */}
                 {analysisResult.needs_nutrition_scan && (
                   <motion.div
