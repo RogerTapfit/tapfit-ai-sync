@@ -308,6 +308,7 @@ interface ProductAnalysis {
     cons: string[];
     concerns: string[];
     alternatives: string[];
+    next_step?: string;
   };
   safety: {
     forever_chemicals: boolean;
@@ -2865,7 +2866,41 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                     transition={{ delay: 0.4 }}
                     className="space-y-4"
                   >
-                    {/* Safety Grade Header */}
+                    {/* Photo Needed Prompt for barcode-only scans */}
+                    {analysisResult.analysis?.next_step === 'photo_needed' && (
+                      <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/10 border-2 border-blue-500/50 rounded-xl p-6 shadow-xl">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <Camera className="h-8 w-8 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-blue-700">Product Identified! 🎉</h4>
+                            <p className="text-sm text-blue-600">{analysisResult.product?.name}</p>
+                            {analysisResult.product?.brand && (
+                              <p className="text-xs text-muted-foreground">by {analysisResult.product.brand}</p>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground mb-4">
+                          We found this product via barcode, but for a <strong>full safety and chemical analysis</strong>, 
+                          we need to see the ingredients panel.
+                        </p>
+                        <Button 
+                          onClick={() => {
+                            setScanMode('photo');
+                            setAnalysisResult(null);
+                            setSelectedImage(null);
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          Scan Ingredients Label for Full Analysis
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Safety Grade Header - only show if we have a real score */}
+                    {analysisResult.household_analysis.safety_score !== null && analysisResult.analysis?.next_step !== 'photo_needed' && (
                     <div className={`rounded-xl p-6 border-2 shadow-xl ${
                       analysisResult.household_analysis.safety_score >= 80 ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/50' :
                       analysisResult.household_analysis.safety_score >= 60 ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-yellow-500/50' :
@@ -2895,6 +2930,7 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                         <p className="text-xs text-muted-foreground mt-1">Safety Score: {analysisResult.household_analysis.safety_score}/100</p>
                       </div>
                     </div>
+                    )}
 
                     {/* Safety Warnings */}
                     {analysisResult.household_analysis.safety_warnings && (

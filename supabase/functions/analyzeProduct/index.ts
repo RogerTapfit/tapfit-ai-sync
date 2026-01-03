@@ -1047,6 +1047,97 @@ serve(async (req) => {
       // Try OpenFoodFacts first (food/beverage)
       let dbResult = await lookupUPCMultiple(inputBarcode);
       
+      // Check if UPCitemDB found a non-food product (no nutrition data, but identifiable category)
+      if (dbResult && dbResult.source === 'upcitemdb' && !dbResult.nutrition) {
+        const category = (dbResult.category || '').toLowerCase();
+        const productName = (dbResult.product_name || '').toLowerCase();
+        
+        // Non-food keywords in category or product name
+        const nonFoodKeywords = [
+          'cleaning', 'soap', 'detergent', 'household', 'laundry', 'dish', 
+          'personal care', 'beauty', 'skincare', 'haircare', 'cosmetic', 
+          'shampoo', 'conditioner', 'deodorant', 'toothpaste', 'mouthwash',
+          'cleaner', 'sanitizer', 'disinfectant', 'bleach', 'freshener',
+          'lotion', 'body wash', 'hand wash', 'fabric', 'paper'
+        ];
+        
+        const isNonFood = nonFoodKeywords.some(k => 
+          category.includes(k) || productName.includes(k)
+        );
+        
+        if (isNonFood) {
+          console.log('✅ UPCitemDB identified non-food product:', dbResult.product_name);
+          
+          // Determine product type from category/name
+          const isPersonalCare = ['beauty', 'skincare', 'haircare', 'cosmetic', 
+            'shampoo', 'conditioner', 'deodorant', 'toothpaste', 'mouthwash', 
+            'lotion', 'body wash'].some(k => category.includes(k) || productName.includes(k));
+          
+          return new Response(
+            JSON.stringify({
+              product_type: isPersonalCare ? 'personal_care' : 'household',
+              is_edible: false,
+              barcode: inputBarcode,
+              data_source: 'upcitemdb_barcode_lookup',
+              product: {
+                name: dbResult.product_name || 'Unknown Product',
+                brand: dbResult.brand || null,
+                category: dbResult.category || null,
+                image_url: dbResult.image_url || null,
+                confidence: 0.9
+              },
+              household_analysis: {
+                safety_grade: 'N/A',
+                safety_score: null,
+                product_category: dbResult.category || 'household',
+                chemical_concerns: null,
+                safety_warnings: {
+                  label_warnings: [],
+                  skin_contact: 'unknown',
+                  eye_contact: 'caution',
+                  inhalation: 'unknown',
+                  ingestion: 'dangerous',
+                  keep_away_children: true,
+                  pregnancy_warning: false
+                },
+                environmental_rating: {
+                  grade: 'N/A',
+                  score: null,
+                  biodegradable: false,
+                  aquatic_toxicity: 'unknown',
+                  cruelty_free: false,
+                  vegan: false,
+                  packaging_recyclable: false,
+                  concerns: []
+                },
+                certifications: { detected: [], missing_important: [] },
+                overall_assessment: {
+                  pros: ['Product identified via barcode'],
+                  cons: [],
+                  verdict: 'Take a photo of the ingredients panel for full safety analysis',
+                  recommendation: 'Scan the ingredient list for detailed chemical analysis',
+                  who_should_avoid: []
+                }
+              },
+              nutrition: null,
+              health_grade: null,
+              detailed_processing: null,
+              chemical_analysis: null,
+              sugar_analysis: null,
+              analysis: {
+                pros: [`Identified: ${dbResult.product_name}`],
+                cons: [],
+                concerns: [],
+                alternatives: [],
+                next_step: 'photo_needed'
+              },
+              safety: { forever_chemicals: false, concerning_additives: [], allergens: [], processing_level: 'N/A' }
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
       if (dbResult && dbResult.nutrition?.calories >= 0) {
         // It's a food/beverage product with nutrition data
         console.log('Found edible product in OpenFoodFacts');
