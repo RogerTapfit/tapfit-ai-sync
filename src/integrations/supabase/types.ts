@@ -1522,6 +1522,85 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_completions: {
+        Row: {
+          coins_awarded: number
+          completed_at: string
+          completed_date: string
+          habit_id: string
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          coins_awarded?: number
+          completed_at?: string
+          completed_date: string
+          habit_id: string
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          coins_awarded?: number
+          completed_at?: string
+          completed_date?: string
+          habit_id?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "user_habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habit_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          habit_id: string
+          id: string
+          last_completed_date: string | null
+          longest_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          habit_id: string
+          id?: string
+          last_completed_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          habit_id?: string
+          id?: string
+          last_completed_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_streaks_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "user_habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       heart_rate_data: {
         Row: {
           created_at: string
@@ -3953,6 +4032,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           xp_to_next_level?: number
+        }
+        Relationships: []
+      }
+      user_habits: {
+        Row: {
+          category: string
+          created_at: string
+          goal_per_day: number
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          goal_per_day?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          goal_per_day?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
