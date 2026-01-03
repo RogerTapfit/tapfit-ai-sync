@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
   Camera, Upload, Loader2, Check, Edit3, Save, X, Award, CheckCircle2, XCircle, 
-  Lightbulb, Target, MessageCircle, Package, Sparkles, RefreshCw, Clock, Plus, Minus 
+  Lightbulb, Target, MessageCircle, Package, Sparkles, RefreshCw, Clock, Plus, Minus,
+  Ruler, Eye, Scale
 } from 'lucide-react';
 import { useNutrition, FoodItem } from '@/hooks/useNutrition';
 import { toast } from 'sonner';
@@ -1054,6 +1055,113 @@ Health Grade: ${healthGrade}`;
                   </Card>
                 );
               })()}
+
+              {/* Scale Analysis Display */}
+              {analysisResult?.scale_analysis && (
+                <Card className="bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/20 border border-blue-200/50 dark:border-blue-800/50">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                        <Ruler className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="font-semibold text-blue-700 dark:text-blue-300">Portion Scale Analysis</span>
+                      {analysisResult.scale_analysis.confidence_level && (
+                        <Badge 
+                          variant="outline" 
+                          className={`ml-auto text-xs ${
+                            analysisResult.scale_analysis.confidence_level === 'high' 
+                              ? 'border-green-500 text-green-600 dark:text-green-400' 
+                              : analysisResult.scale_analysis.confidence_level === 'medium'
+                              ? 'border-yellow-500 text-yellow-600 dark:text-yellow-400'
+                              : 'border-red-500 text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {analysisResult.scale_analysis.confidence_level === 'high' && '⭐⭐⭐'}
+                          {analysisResult.scale_analysis.confidence_level === 'medium' && '⭐⭐'}
+                          {analysisResult.scale_analysis.confidence_level === 'low' && '⭐'}
+                          {' '}{analysisResult.scale_analysis.confidence_level} confidence
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Reference Objects Detected */}
+                    {analysisResult.scale_analysis.reference_objects_detected?.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Eye className="h-3 w-3" /> References:
+                        </span>
+                        {analysisResult.scale_analysis.reference_objects_detected.map((obj: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
+                            {obj}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Plate Size & Coverage */}
+                    {(analysisResult.scale_analysis.plate_size_estimate || analysisResult.scale_analysis.portion_coverage) && (
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {analysisResult.scale_analysis.plate_size_estimate && (
+                          <div className="bg-white/50 dark:bg-black/20 rounded-lg p-2">
+                            <span className="text-muted-foreground">Plate:</span>{' '}
+                            <span className="font-medium text-foreground">{analysisResult.scale_analysis.plate_size_estimate}</span>
+                          </div>
+                        )}
+                        {analysisResult.scale_analysis.portion_coverage && (
+                          <div className="bg-white/50 dark:bg-black/20 rounded-lg p-2">
+                            <span className="text-muted-foreground">Coverage:</span>{' '}
+                            <span className="font-medium text-foreground">{analysisResult.scale_analysis.portion_coverage}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Piece Counts */}
+                    {analysisResult.scale_analysis.piece_counts && Object.keys(analysisResult.scale_analysis.piece_counts).length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Scale className="h-3 w-3" /> Piece Counts:
+                        </span>
+                        <div className="grid gap-1">
+                          {Object.entries(analysisResult.scale_analysis.piece_counts).map(([item, data]: [string, any]) => (
+                            <div key={item} className="text-xs bg-white/50 dark:bg-black/20 rounded-lg p-2 flex justify-between items-center">
+                              <span className="font-medium capitalize">{item.replace(/_/g, ' ')}</span>
+                              <span className="text-muted-foreground">
+                                {data.count} × {data.weight_per_piece} = <span className="font-semibold text-foreground">{data.total_weight}</span>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dimensional Estimates */}
+                    {analysisResult.scale_analysis.dimensional_estimates && Object.keys(analysisResult.scale_analysis.dimensional_estimates).length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Ruler className="h-3 w-3" /> Dimensional Analysis:
+                        </span>
+                        <div className="grid gap-1">
+                          {Object.entries(analysisResult.scale_analysis.dimensional_estimates).map(([item, estimate]: [string, any]) => (
+                            <div key={item} className="text-xs bg-white/50 dark:bg-black/20 rounded-lg p-2">
+                              <span className="font-medium capitalize">{item.replace(/_/g, ' ')}:</span>{' '}
+                              <span className="text-muted-foreground">{estimate}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Confidence Factors */}
+                    {analysisResult.scale_analysis.confidence_factors?.length > 0 && (
+                      <div className="text-xs text-muted-foreground pt-1 border-t border-blue-200/50 dark:border-blue-800/50">
+                        <span className="font-medium">Estimation based on:</span>{' '}
+                        {analysisResult.scale_analysis.confidence_factors.join(', ')}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Food Items Editor with Animated Counters */}
               <div className="space-y-4">

@@ -248,14 +248,53 @@ CRITICAL CONSISTENCY RULES:
 4. Round protein/carbs/fat to nearest 5g for consistency
 5. If uncertain about exact portion, use the MIDDLE of the range every time
 
-Standard Portion Reference Table:
-- Small chicken breast: 100g
-- Medium chicken breast: 150g (DEFAULT)
-- Large chicken breast: 200g
-- Rice serving: 100g cooked (DEFAULT)
-- Vegetables: 100g (DEFAULT)
-
 IMPORTANT: Same visual portion size = Same nutritional values EVERY TIME
+
+🔍 VISUAL SCALE DETECTION (CRITICAL FOR ACCURATE PORTIONS):
+
+1. REFERENCE OBJECTS - Use these to estimate actual size:
+   - Standard dinner plate: ~10-11 inches diameter
+   - Salad/side plate: ~7-8 inches diameter
+   - Fork length: ~7 inches (tines ~1 inch)
+   - Knife length: ~9 inches
+   - Spoon bowl: ~1.5 inches wide
+   - Human hand palm: ~4 inches wide
+   - Standard mug: ~3.5 inches tall
+   - Napkin: ~17 inches square (unfolded)
+   - Phone (if visible): ~6 inches tall
+
+2. PIECE COUNTING - COUNT discrete items:
+   - Broccoli florets: COUNT each piece
+     * Tiny floret (1 inch): ~10g = 3.5 cal
+     * Small floret (1.5 inch): ~15g = 5 cal
+     * Medium floret (2 inch): ~20g = 7 cal
+     * Large floret (2.5+ inch): ~30g = 10.5 cal
+   - Cauliflower: Similar to broccoli sizing
+   - Brussels Sprouts: Small ~15g, Medium ~20g, Large ~30g each
+   - Baby Carrots: ~10g each = 4 cal
+   - Chicken nuggets: ~18g each
+   - Shrimp: ~15g each (large)
+   - Meatballs: Small ~30g, Medium ~50g, Large ~70g
+   - Cherry tomatoes: ~17g each
+   
+3. DIMENSIONAL ANALYSIS for continuous items:
+   - Rice: Estimate spread diameter AND depth
+     * Shallow spread on plate: ~75g (1/2 cup)
+     * Medium mound: ~150g (1 cup)
+     * Large portion: ~225g (1.5 cups)
+   - Pasta: Estimate by plate coverage percentage
+   - Meat (MEASURE DIMENSIONS):
+     * Chicken breast: Length × Width × Thickness
+       - 4" × 2.5" × 0.5" = ~85g (small)
+       - 6" × 3" × 0.75" = ~140g (medium)
+       - 7" × 3.5" × 1" = ~180g (large)
+       - 8" × 4" × 1.25" = ~230g (extra large)
+     * Steak: Similar dimensional analysis
+
+4. VOLUME ESTIMATION for liquids:
+   - Glass fullness percentage
+   - Glass size (short 8oz / tall 12oz / pint 16oz)
+   - Ice displacement (subtract ~20% for iced drinks)
 
 Photo Analysis Instructions:
 ${photoAnalysis}
@@ -269,17 +308,31 @@ Return a JSON object with this exact structure:
     "compliment": "Personalized fun observation here with emojis",
     "whats_good_message": "Short version for What's Good section (e.g., 'Looking great in that blue hat! 😊')"
   },
+  "scale_analysis": {
+    "reference_objects_detected": ["List reference objects found (plate, fork, hand, etc.)"],
+    "plate_size_estimate": "Estimated plate size if visible (e.g., '10 inch dinner plate')",
+    "portion_coverage": "Percentage of plate covered by food (e.g., '40% of plate')",
+    "piece_counts": {
+      "item_name": { "count": 6, "size_category": "medium", "weight_per_piece": "20g", "total_weight": "120g" }
+    },
+    "dimensional_estimates": {
+      "item_name": "length × width × thickness = estimated weight (e.g., '6\" × 3\" × 0.75\" = ~140g')"
+    },
+    "confidence_factors": ["List what helped estimation (clear plate reference, good lighting, etc.)"],
+    "confidence_level": "high" | "medium" | "low"
+  },
   "food_items": [
     {
       "name": "Food item name",
       "quantity": "Use standardized portions (e.g., '150g' not '~150g')",
-      "calories": 0,  // MUST be multiple of 10
-      "protein": 0,   // MUST be multiple of 5
-      "carbs": 0,     // MUST be multiple of 5
-      "fat": 0,       // MUST be multiple of 5
+      "calories": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0,
       "confidence": 0.95,
       "brand": "Brand name if visible",
-      "preparation_method": "How it was prepared"
+      "preparation_method": "How it was prepared",
+      "scale_method": "How portion was estimated (e.g., 'counted 6 florets', 'measured against plate', 'dimensional estimate')"
     }
   ],
   "total_calories": 0,
