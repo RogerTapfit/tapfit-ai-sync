@@ -81,28 +81,17 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     };
   }, [open, mode, isScanning, startScanning, stopScanning]);
 
-  // Process when we have a detected barcode (water lookup can work from barcode alone)
+  // Process barcode when detected
   useEffect(() => {
     if (!lastBarcode) return;
-
-    let cancelled = false;
-
-    const run = async () => {
-      const productForBarcode =
-        productData && productData.id === lastBarcode
-          ? productData
-          : await fetchProductData(lastBarcode);
-
-      if (cancelled) return;
-      processProduct(lastBarcode, productForBarcode?.name || '', productForBarcode);
+    
+    const process = async () => {
+      const product = await fetchProductData(lastBarcode);
+      processProduct(lastBarcode, product?.name || '', product);
     };
-
-    run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [lastBarcode, productData, fetchProductData]);
+    
+    process();
+  }, [lastBarcode]);
 
   const processProduct = async (barcode: string, productName: string, product?: typeof productData | null) => {
     const resolvedProduct = product ?? productData;
@@ -378,6 +367,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
+                  style={{ transform: 'scaleX(1)' }}
                   autoPlay
                   playsInline
                   muted
