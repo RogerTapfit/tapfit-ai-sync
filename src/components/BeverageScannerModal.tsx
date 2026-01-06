@@ -53,57 +53,76 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { isScanning, loading, startScanning, stopScanning, productData, lastBarcode } = useBarcodeScanner();
+  const { isScanning, loading, startScanning, stopScanning, productData, lastBarcode, fetchProductData } = useBarcodeScanner();
 
   // Start camera when modal opens in camera mode
   useEffect(() => {
     let mounted = true;
-    
+
     const initCamera = async () => {
       // Small delay to ensure video element is mounted
-      await new Promise(r => setTimeout(r, 100));
-      
+      await new Promise((r) => setTimeout(r, 100));
+
       if (mounted && open && mode === 'camera' && videoRef.current && !isScanning) {
         console.log('📷 BeverageScannerModal: Initializing camera...');
         startScanning(videoRef.current);
       }
     };
-    
+
     if (open && mode === 'camera') {
       initCamera();
     }
-    
+
     return () => {
       mounted = false;
       if (isScanning && videoRef.current) {
         stopScanning(videoRef.current);
       }
     };
-  }, [open, mode]);
+  }, [open, mode, isScanning, startScanning, stopScanning]);
 
-  // Process barcode when product data is received
+  // Process when we have a detected barcode (water lookup can work from barcode alone)
   useEffect(() => {
-    if (productData) {
-      processProduct(lastBarcode || '', productData.name || '');
-    }
-  }, [productData, lastBarcode]);
+    if (!lastBarcode) return;
 
-  const processProduct = async (barcode: string, productName: string) => {
+    let cancelled = false;
+
+    const run = async () => {
+      const productForBarcode =
+        productData && productData.id === lastBarcode
+          ? productData
+          : await fetchProductData(lastBarcode);
+
+      if (cancelled) return;
+      processProduct(lastBarcode, productForBarcode?.name || '', productForBarcode);
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lastBarcode, productData, fetchProductData]);
+
+  const processProduct = async (barcode: string, productName: string, product?: typeof productData | null) => {
+    const resolvedProduct = product ?? productData;
+
     setIsAnalyzing(true);
     setPricing(null);
     stopScanning(videoRef.current || undefined);
-    
+
     try {
       // First check our water database by barcode
       let waterProduct = findWaterByBarcode(barcode);
-      
+
       // If not found by barcode, try by name
       if (!waterProduct && productName) {
         waterProduct = findWaterByName(productName);
       }
 
       // Check if product name indicates water
-      const isWaterProduct = waterProduct || 
+      const isWaterProduct =
+        waterProduct ||
         productName.toLowerCase().includes('water') ||
         productName.toLowerCase().includes('spring') ||
         productName.toLowerCase().includes('mineral');
@@ -119,7 +138,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           isWater: true,
           waterProduct,
           servingOz: waterProduct.serving_size_oz || 16.9,
-          barcode
+          barcode,
         });
       } else if (isWaterProduct) {
         // Generic water product not in database
@@ -127,13 +146,13 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           isWater: true,
           productName,
           servingOz: 16.9,
-          barcode
+          barcode,
         });
       } else {
         // Check if it's a known beverage type
         const matchedBeverage = findMatchingBeverage(productName);
-        const nutrition = productData?.nutrition;
-        
+        const nutrition = resolvedProduct?.nutrition;
+
         // Helper to parse container size from product name
         const parseContainerMlFromName = (name: string): number | null => {
           const literMatch = name.match(/([\d.]+)\s*l(?:iter)?s?\b/i);
@@ -144,29 +163,29 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           if (ozMatch) return parseFloat(ozMatch[1]) * 29.57;
           return null;
         };
-        
+
         // Get container size from product data OR parse from name
-        let containerMl = productData?.product_quantity_ml || 0;
+        let containerMl = resolvedProduct?.product_quantity_ml || 0;
         if (!containerMl && productName) {
           containerMl = parseContainerMlFromName(productName) || 0;
         }
-        
+
         // If matched beverage found, use its known nutrition values
         if (matchedBeverage) {
           const knownServingOz = matchedBeverage.servingOz;
           const knownServingMl = knownServingOz * 29.57;
-          
+
           // Calculate max servings from container size
           let maxServings = 1;
           if (containerMl > 0) {
             maxServings = Math.round(containerMl / knownServingMl);
-          } else if (productData?.servings_per_container) {
-            maxServings = productData.servings_per_container;
+          } else if (resolvedProduct?.servings_per_container) {
+            maxServings = resolvedProduct.servings_per_container;
           }
           maxServings = Math.max(1, maxServings);
-          
+
           const servingSizeLabel = `${knownServingOz}oz glass`;
-          
+
           const perServingNutrition = {
             calories: matchedBeverage.calories,
             protein: matchedBeverage.protein,
@@ -175,14 +194,14 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             sugar: matchedBeverage.sugar,
             alcoholContent: matchedBeverage.alcoholContent,
           };
-          
+
           const servingData: ServingData = {
             servingSizeLabel,
             servingOz: knownServingOz,
             maxServings,
-            perServingNutrition
+            perServingNutrition,
           };
-          
+
           setScanResult({
             isWater: false,
             beverageType: matchedBeverage.key,
@@ -190,27 +209,37 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             productName,
             servingOz: knownServingOz,
             barcode,
-            servingData
+            servingData,
           });
         } else {
           // Unknown beverage - use API data or defaults
-          const servingMl = productData?.serving_quantity_ml;
-          const servingOz = servingMl ? Math.round(servingMl / 29.57 * 10) / 10 : 12;
-          const maxServings = productData?.servings_per_container || 1;
-          const servingSizeLabel = productData?.serving_size || `${servingOz}oz`;
-          
+          const servingMl = resolvedProduct?.serving_quantity_ml;
+          const servingOz = servingMl ? Math.round((servingMl / 29.57) * 10) / 10 : 12;
+          const maxServings = resolvedProduct?.servings_per_container || 1;
+          const servingSizeLabel = resolvedProduct?.serving_size || `${servingOz}oz`;
+
           // Prioritize per-serving values, then scale from 100g
           const scaleFactor = servingMl ? servingMl / 100 : (servingOz * 29.57) / 100;
-          
+
           const perServingNutrition = {
-            calories: nutrition?.calories_serving ?? (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100),
-            protein: nutrition?.proteins_serving ?? (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2),
-            carbs: nutrition?.carbohydrates_serving ?? (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
-            fat: nutrition?.fat_serving ?? (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
-            sugar: nutrition?.sugars_serving ?? (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
+            calories:
+              nutrition?.calories_serving ??
+              (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100),
+            protein:
+              nutrition?.proteins_serving ??
+              (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2),
+            carbs:
+              nutrition?.carbohydrates_serving ??
+              (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
+            fat:
+              nutrition?.fat_serving ??
+              (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
+            sugar:
+              nutrition?.sugars_serving ??
+              (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
             alcoholContent: nutrition?.alcohol_serving ?? nutrition?.alcohol_100g,
           };
-          
+
           const beverageInfo: BeverageType = {
             name: productName || 'Beverage',
             icon: Droplet,
@@ -222,16 +251,16 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             protein: perServingNutrition.protein,
             fat: perServingNutrition.fat,
             sugar: perServingNutrition.sugar,
-            servingOz
+            servingOz,
           };
-          
+
           const servingData: ServingData = {
             servingSizeLabel,
             servingOz,
             maxServings,
-            perServingNutrition
+            perServingNutrition,
           };
-          
+
           setScanResult({
             isWater: false,
             beverageType: 'other',
@@ -239,11 +268,11 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             productName,
             servingOz: beverageInfo.servingOz,
             barcode,
-            servingData
+            servingData,
           });
         }
       }
-      
+
       setMode('result');
     } catch (error) {
       console.error('Error processing product:', error);
