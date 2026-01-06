@@ -63,7 +63,12 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       // Small delay to ensure video element is mounted
       await new Promise((r) => setTimeout(r, 100));
 
-      if (mounted && open && mode === 'camera' && videoRef.current && !isScanning) {
+      if (!mounted) return;
+
+      // Only start scanning when the modal opens (or when user switches back to camera mode).
+      // Do NOT depend on isScanning here, otherwise the scanner can auto-restart right after a detection
+      // and clear lastBarcode before the processing effect runs.
+      if (open && mode === 'camera' && videoRef.current) {
         console.log('📷 BeverageScannerModal: Initializing camera...');
         startScanning(videoRef.current);
       }
@@ -75,11 +80,9 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
 
     return () => {
       mounted = false;
-      if (isScanning && videoRef.current) {
-        stopScanning(videoRef.current);
-      }
+      stopScanning(videoRef.current || undefined);
     };
-  }, [open, mode, isScanning, startScanning, stopScanning]);
+  }, [open, mode]);
 
   // Process barcode when detected
   useEffect(() => {
