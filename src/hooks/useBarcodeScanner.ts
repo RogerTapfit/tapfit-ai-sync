@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { BrowserMultiFormatReader, Result } from '@zxing/library';
+import { BarcodeFormat, BrowserMultiFormatReader, DecodeHintType, Result } from '@zxing/library';
 import { toast } from 'sonner';
 import { EnhancedBarcodeService } from '../services/enhancedBarcodeService';
 
@@ -45,7 +45,23 @@ export const useBarcodeScanner = () => {
   const [loading, setLoading] = useState(false);
   const [lastBarcode, setLastBarcode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [codeReader] = useState(() => new BrowserMultiFormatReader());
+  const [codeReader] = useState(() => {
+    // Prefer common retail barcode formats for speed + reliability.
+    const hints = new Map();
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.ITF,
+    ]);
+
+    // Slightly faster scan loop helps on mobile.
+    return new BrowserMultiFormatReader(hints, 250);
+  });
   const activeStreamRef = useRef<MediaStream | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
@@ -66,6 +82,59 @@ export const useBarcodeScanner = () => {
     stopScanning();
     setLoading(false);
   };
+
+  const getPreferredCameraStream = useCallback(async (): Promise<MediaStream> => {
+    // 1) Ask for the environment camera (some browsers ignore this and give front camera).
+    const baseConstraints: MediaStreamConstraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    };
+
+    const initialStream = await navigator.mediaDevices.getUserMedia(baseConstraints);
+
+    try {
+      const track = initialStream.getVideoTracks()[0];
+      const settings = track?.getSettings?.() ?? {};
+
+      // If we actually got the rear camera, great.
+      if (settings.facingMode === 'environment') {
+        return initialStream;
+      }
+
+      // 2) Fallback: explicitly pick a likely "rear" camera device.
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((d) => d.kind === 'videoinput');
+
+      const preferred =
+        videoDevices.find((d) => /back|rear|environment/i.test(d.label)) ??
+        videoDevices[videoDevices.length - 1];
+
+      if (!preferred?.deviceId) {
+        return initialStream;
+      }
+
+      // If the chosen device is the same as we already have, keep it.
+      if (preferred.deviceId && settings.deviceId && preferred.deviceId === settings.deviceId) {
+        return initialStream;
+      }
+
+      // Switch streams.
+      initialStream.getTracks().forEach((t) => t.stop());
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: preferred.deviceId },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+    } catch (e) {
+      // If anything goes wrong with the fallback, keep the original stream.
+      return initialStream;
+    }
+  }, []);
 
   // Start scanning - sets isScanning true first, then gets camera
   const startScanning = useCallback(async (videoElement?: HTMLVideoElement) => {
@@ -95,14 +164,7 @@ export const useBarcodeScanner = () => {
       codeReader.reset();
 
       console.log('📷 Requesting camera access...');
-      // Request camera permission and get stream
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
+      const stream = await getPreferredCameraStream();
 
       console.log('📷 Camera access granted');
       activeStreamRef.current = stream;
@@ -138,7 +200,7 @@ export const useBarcodeScanner = () => {
       setIsScanning(false);
       setLoading(false);
     }
-  }, [codeReader]);
+  }, [codeReader, getPreferredCameraStream]);
 
   // Attach stream to a video element (called when video element becomes available)
   const attachToVideoElement = useCallback(async (videoElement: HTMLVideoElement) => {
