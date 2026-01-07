@@ -68,53 +68,29 @@ export const useBarcodeScanner = () => {
   };
 
   const getPreferredCameraStream = useCallback(async (): Promise<MediaStream> => {
-    // Ask for environment camera first (some browsers ignore it and return the selfie cam).
-    const initialStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-    });
+    // Keep this simple for reliability on mobile (iOS can expose multiple “rear” cameras where
+    // picking a specific deviceId may land on an ultra‑wide lens that won’t focus on barcodes).
+    const baseConstraints = {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    } as const;
 
     try {
-      const track = initialStream.getVideoTracks()[0];
-      const settings = track?.getSettings?.() ?? {};
-
-      console.log('📷 Camera settings:', {
-        label: track?.label,
-        facingMode: (settings as any).facingMode,
-        deviceId: (settings as any).deviceId,
-      });
-
-      // If we likely got a rear camera already, keep it.
-      if ((settings as any).facingMode === 'environment' || /back|rear|environment/i.test(track?.label || '')) {
-        return initialStream;
-      }
-
-      // Otherwise: explicitly choose a likely rear camera device.
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter((d) => d.kind === 'videoinput');
-      const preferred =
-        videoDevices.find((d) => /back|rear|environment/i.test(d.label)) ??
-        videoDevices[videoDevices.length - 1];
-
-      if (!preferred?.deviceId) {
-        return initialStream;
-      }
-
-      console.log('📷 Switching to camera device:', preferred.label || preferred.deviceId);
-      initialStream.getTracks().forEach((t) => t.stop());
-
+      // Prefer a rear camera explicitly when supported.
       return await navigator.mediaDevices.getUserMedia({
         video: {
-          deviceId: { exact: preferred.deviceId },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          ...baseConstraints,
+          facingMode: { exact: 'environment' },
         },
       });
     } catch {
-      return initialStream;
+      // Fallback for browsers that don't support exact facingMode.
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          ...baseConstraints,
+          facingMode: { ideal: 'environment' },
+        },
+      });
     }
   }, []);
 
