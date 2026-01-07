@@ -173,70 +173,87 @@ export const useBarcodeScanner = () => {
   // Internal function to attach stream and start decoding
   const attachStreamToVideo = async (videoElement: HTMLVideoElement, stream: MediaStream) => {
     console.log('📷 Setting up video element...');
-    
-    videoElement.srcObject = stream;
-    videoElement.setAttribute('playsinline', 'true');
-    videoElement.setAttribute('autoplay', 'true');
-    videoElement.muted = true;
-    
-    // Wait for video to be ready
-    await new Promise<void>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Video load timeout'));
-      }, 10000);
-      
-      videoElement.onloadedmetadata = () => {
-        console.log('📷 Video metadata loaded');
-        clearTimeout(timeoutId);
 
-        const playPromise = videoElement.paused ? videoElement.play() : Promise.resolve();
-        playPromise
-          .then(() => {
+    // Attach event listeners BEFORE setting srcObject to avoid missing events on iOS.
+    const waitForVideoReady = () =>
+      new Promise<void>((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+          cleanup();
+          reject(new Error('Video load timeout'));
+        }, 10000);
+
+        const onLoadedMetadata = async () => {
+          try {
+            console.log('📷 Video metadata loaded');
+            // Some browsers require an explicit play() even with autoplay.
+            if (videoElement.paused) {
+              await videoElement.play();
+            }
             console.log('📷 Video playing');
+            cleanup();
             resolve();
-          })
-          .catch((err) => {
+          } catch (err) {
             console.error('📷 Video play error:', err);
+            cleanup();
             reject(err);
-          });
-      };
-      
-      videoElement.onerror = (e) => {
-        console.error('📷 Video element error:', e);
-        clearTimeout(timeoutId);
-        reject(new Error('Video element error'));
-      };
-    });
-    
+          }
+        };
+
+        const onError = (e: Event) => {
+          console.error('📷 Video element error:', e);
+          cleanup();
+          reject(new Error('Video element error'));
+        };
+
+        const cleanup = () => {
+          window.clearTimeout(timeoutId);
+          videoElement.removeEventListener('loadedmetadata', onLoadedMetadata);
+          videoElement.removeEventListener('error', onError);
+        };
+
+        videoElement.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
+        videoElement.addEventListener('error', onError, { once: true });
+
+        // If metadata is already available (common on fast attaches / rescans), resolve immediately.
+        if (videoElement.readyState >= 1) {
+          // queueMicrotask ensures listeners are attached consistently before firing.
+          queueMicrotask(() => onLoadedMetadata());
+        }
+      });
+
+    videoElement.srcObject = stream;
+    videoElement.playsInline = true;
+    videoElement.autoplay = true;
+    videoElement.muted = true;
+
+    await waitForVideoReady();
+
     setLoading(false);
     console.log('📷 Starting barcode detection...');
-    
+
     // Debounce the barcode detection
     let lastScanTime = 0;
     const scanCooldown = 2000;
-    
-    // Use decodeFromStream for continuous scanning
-    codeReader.decodeFromStream(
-      stream,
-      videoElement,
-      (result: Result | null, error?: Error) => {
-        if (result) {
-          const now = Date.now();
-          if (now - lastScanTime > scanCooldown) {
-            lastScanTime = now;
-            console.log('📷 Barcode detected:', result.getText());
-            handleBarcodeDetected(result.getText());
-          }
-        }
-      }
-    ).catch((err) => {
-      console.error('📷 Decode stream error:', err);
-      const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
-      setError(msg);
-      toast.error(msg);
-      setIsScanning(false);
-      setLoading(false);
-    });
+
+    codeReader
+      .decodeFromStream(stream, videoElement, (result: Result | null) => {
+        if (!result) return;
+
+        const now = Date.now();
+        if (now - lastScanTime <= scanCooldown) return;
+
+        lastScanTime = now;
+        console.log('📷 Barcode detected:', result.getText());
+        handleBarcodeDetected(result.getText());
+      })
+      .catch((err) => {
+        console.error('📷 Decode stream error:', err);
+        const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
+        setError(msg);
+        toast.error(msg);
+        setIsScanning(false);
+        setLoading(false);
+      });
   };
 
   const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
