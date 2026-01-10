@@ -202,12 +202,18 @@ export const useSobrietyTracking = () => {
   };
 
   const dailyCheckin = async (feeling?: string) => {
-    if (!user || isGuest || !activeJourney) {
+    if (!user || isGuest) {
+      toast.error('Please sign in to check in');
+      return null;
+    }
+
+    if (!activeJourney) {
+      toast.error('Start a sobriety journey first');
       return null;
     }
 
     const currentDay = getCurrentDay();
-    
+
     // Check if already checked in today (local timezone)
     const today = getLocalDateString(new Date());
     const alreadyCheckedIn = checkins.some(
@@ -222,7 +228,7 @@ export const useSobrietyTracking = () => {
     try {
       // Verify session before database operation
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !session) {
         toast.error('Session expired. Please refresh and try again.');
         return null;
@@ -238,9 +244,9 @@ export const useSobrietyTracking = () => {
       if (error) throw error;
 
       const isMilestone = MILESTONES.includes(currentDay);
-      
+
       toast.success(
-        isMilestone 
+        isMilestone
           ? `🎉 Day ${currentDay} milestone! +${coins} Tap Coins!`
           : `Day ${currentDay} complete! +${coins} Tap Coins 🌱`
       );
@@ -251,7 +257,8 @@ export const useSobrietyTracking = () => {
       return coins;
     } catch (error: any) {
       console.error('Error checking in:', error);
-      toast.error('Failed to check in');
+      const message = error?.message || 'Failed to check in';
+      toast.error(message);
       return null;
     }
   };
