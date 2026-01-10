@@ -74,7 +74,7 @@ export const usePublicSobrietyJourney = (userId?: string) => {
         const { count } = await (supabase
           .from('sobriety_daily_checkins') as any)
           .select('id', { count: 'exact', head: true })
-          .eq('journey_id', journeyData.id);
+          .eq('sobriety_id', journeyData.id);
         checkinsCount = count || 0;
       } catch {
         checkinsCount = 0;
