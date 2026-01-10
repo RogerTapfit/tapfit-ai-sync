@@ -226,7 +226,14 @@ export const useFriendChallenges = (userId?: string) => {
       'run_time': '🏃 Run Time',
       'walk_time': '🚶 Walk Time',
       'swim_time': '🏊 Swim Time',
-      'total_workouts': '💪 Total Workouts'
+      'total_workouts': '💪 Total Workouts',
+      'sober_alcohol': '🍺 Alcohol-Free Challenge',
+      'sober_sugar': '🍬 Sugar-Free Challenge',
+      'sober_caffeine': '☕ Caffeine-Free Challenge',
+      'sober_smoking': '🚬 Smoke-Free Challenge',
+      'sober_cannabis': '🌿 Cannabis-Free Challenge',
+      'sober_social_media': '📱 Social Media Detox',
+      'sober_general': '🌱 Sobriety Challenge'
     };
     return labels[type] || type;
   };
