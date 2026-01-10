@@ -964,6 +964,45 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_images: {
+        Row: {
+          category: string
+          created_at: string
+          exercise_id: string
+          exercise_name: string
+          generation_error: string | null
+          generation_status: string
+          id: string
+          image_url: string | null
+          mini_image_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          exercise_id: string
+          exercise_name: string
+          generation_error?: string | null
+          generation_status?: string
+          id?: string
+          image_url?: string | null
+          mini_image_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          exercise_id?: string
+          exercise_name?: string
+          generation_error?: string | null
+          generation_status?: string
+          id?: string
+          image_url?: string | null
+          mini_image_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_logs: {
         Row: {
           actual_rest_seconds: number | null
