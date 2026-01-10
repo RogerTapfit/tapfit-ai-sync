@@ -70,14 +70,15 @@ export const AtHomeWorkoutSession: React.FC = () => {
     if (holdTimeLeft <= 0) {
       setIsHolding(false);
       
-      if (!workout || !currentExercise) return;
+      const exercise = workout?.exercises[currentExerciseIndex];
+      if (!workout || !exercise) return;
       
-      if (currentSet < currentExercise.sets) {
+      if (currentSet < exercise.sets) {
         setCurrentSet(prev => prev + 1);
         setRestTimeLeft(30);
         setIsResting(true);
       } else {
-        setCompletedExercises(prev => [...prev, currentExercise.id]);
+        setCompletedExercises(prev => [...prev, exercise.id]);
         
         if (currentExerciseIndex < workout.exercises.length - 1) {
           setCurrentExerciseIndex(prev => prev + 1);
@@ -92,7 +93,7 @@ export const AtHomeWorkoutSession: React.FC = () => {
       setHoldTimeLeft(prev => prev - 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [isHolding, holdTimeLeft, isPaused, workout, currentExercise, currentSet, currentExerciseIndex]);
+  }, [isHolding, holdTimeLeft, isPaused, workout, currentSet, currentExerciseIndex]);
 
   const startHold = useCallback(() => {
     if (!currentExercise?.holdSeconds) return;
