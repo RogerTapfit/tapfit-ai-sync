@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Check, SkipForward, Pause, Play, ChevronRight, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
+import { ExerciseFormImage } from '@/components/workout/ExerciseFormImage';
 interface WorkoutExercise {
   id: string;
   name: string;
@@ -260,7 +260,15 @@ export const AtHomeWorkoutSession: React.FC = () => {
         {!isResting && (
           <>
             <Card className="p-6 text-center">
-              <span className="text-6xl mb-4 block">{currentExercise.emoji}</span>
+              <div className="flex justify-center mb-4">
+                <ExerciseFormImage
+                  exerciseId={currentExercise.id}
+                  exerciseName={currentExercise.name}
+                  emoji={currentExercise.emoji}
+                  size="lg"
+                  showModal={true}
+                />
+              </div>
               <h2 className="text-3xl font-bold mb-2">{currentExercise.name}</h2>
               <p className="text-xl text-muted-foreground mb-4">
                 Set {currentSet} of {currentExercise.sets}
@@ -335,7 +343,13 @@ export const AtHomeWorkoutSession: React.FC = () => {
                 key={ex.id} 
                 className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
               >
-                <span className="text-lg">{ex.emoji}</span>
+                <ExerciseFormImage
+                  exerciseId={ex.id}
+                  exerciseName={ex.name}
+                  emoji={ex.emoji}
+                  size="sm"
+                  showModal={false}
+                />
                 <div className="flex-1">
                   <p className="font-medium text-sm">{ex.name}</p>
                   <p className="text-xs text-muted-foreground">
