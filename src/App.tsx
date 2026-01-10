@@ -145,6 +145,16 @@ const App = () => {
                   <WorkoutModeSelect />
                 </AuthGuard>
               } />
+              <Route path="/at-home-workout-builder" element={
+                <AuthGuard fallback={<Auth />}>
+                  <AtHomeWorkoutBuilder />
+                </AuthGuard>
+              } />
+              <Route path="/at-home-workout-session" element={
+                <AuthGuard fallback={<Auth />}>
+                  <AtHomeWorkoutSession />
+                </AuthGuard>
+              } />
               <Route path="/workout-list" element={
                 <AuthGuard fallback={<Auth />}>
                   <WorkoutList />
