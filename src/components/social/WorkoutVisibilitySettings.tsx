@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
-import { Eye, EyeOff, Users, Globe, Lock, Info } from 'lucide-react';
+import { Eye, EyeOff, Users, Globe, Lock, Info, Sprout } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -13,6 +13,7 @@ type WorkoutVisibility = 'private' | 'followers' | 'public';
 export function WorkoutVisibilitySettings() {
   const [shareWorkoutStats, setShareWorkoutStats] = useState(true);
   const [workoutVisibility, setWorkoutVisibility] = useState<WorkoutVisibility>('followers');
+  const [shareSobrietyJourney, setShareSobrietyJourney] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
@@ -27,13 +28,14 @@ export function WorkoutVisibilitySettings() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('share_workout_stats, workout_visibility')
+        .select('share_workout_stats, workout_visibility, share_sobriety_journey')
         .eq('id', user.id)
         .single();
 
       if (profile) {
         setShareWorkoutStats(profile.share_workout_stats ?? true);
         setWorkoutVisibility((profile.workout_visibility as WorkoutVisibility) || 'followers');
+        setShareSobrietyJourney(profile.share_sobriety_journey ?? false);
       }
     } catch (error) {
       console.error('Error loading visibility settings:', error);
@@ -82,6 +84,29 @@ export function WorkoutVisibilitySettings() {
       toast.success(enabled ? 'Workout sharing enabled' : 'Workout sharing disabled');
     } catch (error) {
       console.error('Error toggling workout sharing:', error);
+      toast.error('Failed to update setting');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const toggleSobrietySharing = async (enabled: boolean) => {
+    setUpdating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ share_sobriety_journey: enabled })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setShareSobrietyJourney(enabled);
+      toast.success(enabled ? 'Sobriety journey now visible on profile' : 'Sobriety journey hidden from profile');
+    } catch (error) {
+      console.error('Error toggling sobriety sharing:', error);
       toast.error('Failed to update setting');
     } finally {
       setUpdating(false);
@@ -205,6 +230,37 @@ export function WorkoutVisibilitySettings() {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Sobriety Journey Sharing */}
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+            <div className="space-y-0.5">
+              <Label htmlFor="share-sobriety" className="text-base font-medium flex items-center gap-2">
+                <Sprout className="h-4 w-4 text-emerald-500" />
+                Share Sobriety Journey
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {shareSobrietyJourney 
+                  ? 'Your sobriety progress is visible on your profile' 
+                  : 'Your sobriety journey is private'}
+              </p>
+            </div>
+            <Switch
+              id="share-sobriety"
+              checked={shareSobrietyJourney}
+              onCheckedChange={toggleSobrietySharing}
+              disabled={updating}
+            />
+          </div>
+          {shareSobrietyJourney && (
+            <Alert className="mt-3 border-emerald-500/30 bg-emerald-500/5">
+              <Sprout className="h-4 w-4 text-emerald-500" />
+              <AlertDescription className="text-sm">
+                Friends can see your sobriety streak, substance type, and milestones. They can also challenge you to sobriety goals!
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
