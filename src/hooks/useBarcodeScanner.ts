@@ -48,15 +48,21 @@ export const useBarcodeScanner = () => {
   const [codeReader] = useState(() => new BrowserMultiFormatReader());
   const activeStreamRef = useRef<MediaStream | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const decodePromiseRef = useRef<Promise<void> | null>(null);
+  const isStoppingRef = useRef(false);
+  const isAttachingRef = useRef(false);
 
-  const fetchProductData = async (barcode: string): Promise<ProductData | null> => {
+  const fetchProductData = useCallback(async (barcode: string): Promise<ProductData | null> => {
     try {
-      return await EnhancedBarcodeService.scanBarcode(barcode);
+      const product = await EnhancedBarcodeService.scanBarcode(barcode);
+      setProductData(product);
+      return product;
     } catch (error) {
       console.error('Error fetching product data:', error);
+      setProductData(null);
       return null;
     }
-  };
+  }, []);
 
   // When barcode is detected, just set it and stop scanning - let consumer handle the lookup
   const handleBarcodeDetected = (barcode: string) => {
@@ -97,6 +103,7 @@ export const useBarcodeScanner = () => {
   // Start scanning - sets isScanning true first, then gets camera
   const startScanning = useCallback(async (videoElement?: HTMLVideoElement) => {
     console.log('📷 Starting barcode scanner...');
+    isStoppingRef.current = false;
 
     // Clear previous scan so scanning the same code again still triggers
     setLastBarcode(null);
@@ -172,97 +179,131 @@ export const useBarcodeScanner = () => {
 
   // Internal function to attach stream and start decoding
   const attachStreamToVideo = async (videoElement: HTMLVideoElement, stream: MediaStream) => {
-    console.log('📷 Setting up video element...');
-
-    // Set attributes BEFORE srcObject
-    videoElement.playsInline = true;
-    videoElement.autoplay = true;
-    videoElement.muted = true;
-
-    // Create promise BEFORE setting srcObject so we don't miss the event
-    const videoReadyPromise = new Promise<void>((resolve, reject) => {
-      const timeoutId = window.setTimeout(() => {
-        cleanup();
-        reject(new Error('Video load timeout'));
-      }, 10000);
-
-      const onReady = async () => {
-        try {
-          console.log('📷 Video metadata loaded, readyState:', videoElement.readyState);
-          if (videoElement.paused) {
-            await videoElement.play();
-          }
-          console.log('📷 Video playing');
-          cleanup();
-          resolve();
-        } catch (err) {
-          console.error('📷 Video play error:', err);
-          cleanup();
-          reject(err);
-        }
-      };
-
-      const onError = (e: Event) => {
-        console.error('📷 Video element error:', e);
-        cleanup();
-        reject(new Error('Video element error'));
-      };
-
-      const cleanup = () => {
-        window.clearTimeout(timeoutId);
-        videoElement.removeEventListener('loadedmetadata', onReady);
-        videoElement.removeEventListener('canplay', onReady);
-        videoElement.removeEventListener('error', onError);
-      };
-
-      // Listen to both loadedmetadata and canplay for maximum compatibility
-      videoElement.addEventListener('loadedmetadata', onReady, { once: true });
-      videoElement.addEventListener('canplay', onReady, { once: true });
-      videoElement.addEventListener('error', onError, { once: true });
-
-      // If already ready, resolve immediately (handles rescans / fast attaches)
-      if (videoElement.readyState >= 2) {
-        console.log('📷 Video already ready, readyState:', videoElement.readyState);
-        queueMicrotask(() => onReady());
-      }
-    });
-
-    // NOW set srcObject - after listeners are attached
-    videoElement.srcObject = stream;
-    console.log('📷 srcObject set, waiting for video ready...');
-
-    await videoReadyPromise;
-
-    setLoading(false);
-    console.log('📷 Starting barcode detection with decodeFromStream...');
-
-    // Debounce the barcode detection
-    let lastScanTime = 0;
-    const scanCooldown = 2000;
+    if (isAttachingRef.current) return;
+    isAttachingRef.current = true;
 
     try {
-      await codeReader.decodeFromStream(stream, videoElement, (result: Result | null) => {
-        if (!result) return;
+      console.log('📷 Setting up video element...');
 
-        const now = Date.now();
-        if (now - lastScanTime <= scanCooldown) return;
+      // Set attributes BEFORE srcObject
+      videoElement.playsInline = true;
+      videoElement.autoplay = true;
+      videoElement.muted = true;
 
-        lastScanTime = now;
-        console.log('📷 Barcode detected:', result.getText());
-        handleBarcodeDetected(result.getText());
+      // Create promise BEFORE setting srcObject so we don't miss the event
+      const videoReadyPromise = new Promise<void>((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => {
+          cleanup();
+          reject(new Error('Video load timeout'));
+        }, 10000);
+
+        const onReady = async () => {
+          try {
+            console.log('📷 Video metadata loaded, readyState:', videoElement.readyState);
+            if (videoElement.paused) {
+              await videoElement.play();
+            }
+            console.log('📷 Video playing');
+            cleanup();
+            resolve();
+          } catch (err) {
+            console.error('📷 Video play error:', err);
+            cleanup();
+            reject(err);
+          }
+        };
+
+        const onError = (e: Event) => {
+          console.error('📷 Video element error:', e);
+          cleanup();
+          reject(new Error('Video element error'));
+        };
+
+        const cleanup = () => {
+          window.clearTimeout(timeoutId);
+          videoElement.removeEventListener('loadedmetadata', onReady);
+          videoElement.removeEventListener('canplay', onReady);
+          videoElement.removeEventListener('error', onError);
+        };
+
+        // Listen to both loadedmetadata and canplay for maximum compatibility
+        videoElement.addEventListener('loadedmetadata', onReady, { once: true });
+        videoElement.addEventListener('canplay', onReady, { once: true });
+        videoElement.addEventListener('error', onError, { once: true });
+
+        // If already ready, resolve immediately (handles rescans / fast attaches)
+        if (videoElement.readyState >= 2) {
+          console.log('📷 Video already ready, readyState:', videoElement.readyState);
+          queueMicrotask(() => onReady());
+        }
       });
-    } catch (err) {
-      console.error('📷 Decode stream error:', err);
-      const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
-      setError(msg);
-      toast.error(msg);
-      setIsScanning(false);
+
+      // NOW set srcObject - after listeners are attached
+      videoElement.srcObject = stream;
+      console.log('📷 srcObject set, waiting for video ready...');
+
+      try {
+        await videoReadyPromise;
+      } catch (err) {
+        // If we were stopped while waiting for metadata/canplay, don't treat it as an error.
+        if (isStoppingRef.current) return;
+        throw err;
+      }
+
       setLoading(false);
+      console.log('📷 Starting barcode detection with decodeFromStream...');
+
+      // If we're already attached and decoding for this stream, don't start a second decoder.
+      if (videoElement.srcObject === stream && decodePromiseRef.current) {
+        return;
+      }
+
+      // Debounce the barcode detection
+      let lastScanTime = 0;
+      const scanCooldown = 2000;
+
+      const decodePromise = codeReader
+        .decodeFromStream(stream, videoElement, (result: Result | null) => {
+          if (!result) return;
+
+          const now = Date.now();
+          if (now - lastScanTime <= scanCooldown) return;
+
+          lastScanTime = now;
+          console.log('📷 Barcode detected:', result.getText());
+          handleBarcodeDetected(result.getText());
+        })
+        .catch((err) => {
+          // decodeFromStream commonly rejects when we intentionally stop/reset the reader.
+          if (isStoppingRef.current) return;
+
+          console.error('📷 Decode stream error:', err);
+          const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
+          setError(msg);
+          toast.error(msg);
+          setIsScanning(false);
+          setLoading(false);
+        })
+        .finally(() => {
+          decodePromiseRef.current = null;
+        });
+
+      decodePromiseRef.current = decodePromise as unknown as Promise<void>;
+    } finally {
+      isAttachingRef.current = false;
     }
   };
 
   const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
-    codeReader.reset();
+    isStoppingRef.current = true;
+
+    try {
+      codeReader.reset();
+    } catch {
+      // no-op
+    }
+
+    decodePromiseRef.current = null;
     setIsScanning(false);
     setLoading(false);
 
@@ -284,21 +325,20 @@ export const useBarcodeScanner = () => {
 
   const scanBarcodeFromImage = async (imageFile: File): Promise<ProductData | null> => {
     setLoading(true);
-    
+
     try {
-      const result = await codeReader.decodeFromInputVideoDevice();
-      
-      if (result) {
+      const url = URL.createObjectURL(imageFile);
+      try {
+        const result = await codeReader.decodeFromImageUrl(url);
         const product = await fetchProductData(result.getText());
-        setProductData(product);
         return product;
-      } else {
-        toast.error('No barcode detected in image');
-        return null;
+      } finally {
+        URL.revokeObjectURL(url);
       }
     } catch (error) {
       console.error('Error scanning barcode from image:', error);
-      toast.error('Failed to scan barcode from image');
+      toast.error('No barcode detected in image');
+      setProductData(null);
       return null;
     } finally {
       setLoading(false);
