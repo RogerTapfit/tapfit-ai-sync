@@ -8,6 +8,7 @@ import { ArrowLeft, Plus, Minus, Play, Trash2, ChevronDown, ChevronUp, Clock, Du
 import { atHomeExercises, exerciseCategories, AtHomeExercise, getExercisesByCategory } from '@/data/atHomeExercises';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ExerciseFormImage } from '@/components/workout/ExerciseFormImage';
 
 interface SelectedExercise extends AtHomeExercise {
   sets: number;
@@ -132,8 +133,14 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
               {selectedExercises.map((ex, index) => (
                 <div key={ex.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <span className="text-lg font-medium w-6">{index + 1}</span>
+                  <ExerciseFormImage 
+                    exerciseId={ex.id} 
+                    exerciseName={ex.name} 
+                    emoji={ex.emoji}
+                    size="md"
+                  />
                   <div className="flex-1">
-                    <p className="font-medium">{ex.emoji} {ex.name}</p>
+                    <p className="font-medium">{ex.name}</p>
                     <div className="flex items-center gap-4 mt-2">
                       {/* Sets */}
                       <div className="flex items-center gap-1">
@@ -257,13 +264,20 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
                             key={exercise.id}
                             onClick={() => addExercise(exercise)}
                             disabled={isAdded}
-                            className={`w-full p-3 rounded-lg flex items-center justify-between transition-colors ${
+                            className={`w-full p-3 rounded-lg flex items-center gap-3 transition-colors ${
                               isAdded 
                                 ? 'bg-primary/10 opacity-60 cursor-not-allowed' 
                                 : 'hover:bg-muted/50'
                             }`}
                           >
-                            <div className="text-left">
+                            <ExerciseFormImage 
+                              exerciseId={exercise.id} 
+                              exerciseName={exercise.name} 
+                              emoji={exercise.emoji}
+                              size="sm"
+                              showModal={false}
+                            />
+                            <div className="text-left flex-1">
                               <p className="font-medium">{exercise.name}</p>
                               <p className="text-sm text-muted-foreground">
                                 {exercise.defaultSets} sets × {exercise.isHold ? `${exercise.defaultHoldSeconds}s hold` : `${exercise.defaultReps} reps`}

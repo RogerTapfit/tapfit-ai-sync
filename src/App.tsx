@@ -29,6 +29,7 @@ import BodyScan from "./pages/BodyScan";
 import BodyScanLibrary from "./pages/BodyScanLibrary";
 import BodyScanDetail from "./pages/BodyScanDetail";
 import AdminReplaceAvatarImage from "./pages/AdminReplaceAvatarImage";
+import AdminExerciseImages from "./pages/AdminExerciseImages";
 import AvatarSelection from "./pages/AvatarSelection";
 import FoodScanner from "./pages/FoodScanner";
 import MealPlanner from "./pages/MealPlanner";
@@ -283,6 +284,11 @@ const App = () => {
               <Route path="/admin/replace-avatar-image" element={
                 <AuthGuard fallback={<Auth />}>
                   <AdminReplaceAvatarImage />
+                </AuthGuard>
+              } />
+              <Route path="/admin/exercise-images" element={
+                <AuthGuard fallback={<Auth />}>
+                  <AdminExerciseImages />
                 </AuthGuard>
               } />
               <Route path="*" element={<NotFound />} />

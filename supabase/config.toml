@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.remove-avatar-background]
 verify_jwt = false
+
+[functions.generate-exercise-image]
+verify_jwt = false
