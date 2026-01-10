@@ -121,6 +121,25 @@ export const useBarcodeScanner = () => {
       return;
     }
 
+    // In Lovable's embedded preview (iframe), camera permissions are commonly blocked.
+    // Avoid a confusing black screen/hang and tell the user what to do.
+    const isInIframe = (() => {
+      try {
+        return window.self !== window.top;
+      } catch {
+        return true;
+      }
+    })();
+
+    if (isInIframe) {
+      const msg = 'Camera is blocked in the embedded preview. Open the app in a new tab to scan.';
+      toast.error(msg);
+      setError(msg);
+      setIsScanning(false);
+      setLoading(false);
+      return;
+    }
+
     setIsScanning(true);
     setLoading(true);
 
@@ -189,6 +208,11 @@ export const useBarcodeScanner = () => {
       videoElement.playsInline = true;
       videoElement.autoplay = true;
       videoElement.muted = true;
+      // iOS Safari is picky: set as attributes as well.
+      videoElement.setAttribute('playsinline', 'true');
+      videoElement.setAttribute('webkit-playsinline', 'true');
+      videoElement.setAttribute('autoplay', 'true');
+      videoElement.setAttribute('muted', 'true');
 
       // Create promise BEFORE setting srcObject so we don't miss the event
       const videoReadyPromise = new Promise<void>((resolve, reject) => {
