@@ -46,6 +46,11 @@ export const AtHomeWorkoutSession: React.FC = () => {
     setWorkout(JSON.parse(stored));
   }, [navigate]);
 
+  const currentExercise = workout?.exercises[currentExerciseIndex];
+  const totalExercises = workout?.exercises.length || 0;
+  const overallProgress = ((currentExerciseIndex / totalExercises) * 100) + 
+    ((currentSet / (currentExercise?.sets || 1)) * (100 / totalExercises));
+
   // Rest timer
   useEffect(() => {
     if (!isResting || isPaused) return;
@@ -63,19 +68,31 @@ export const AtHomeWorkoutSession: React.FC = () => {
   useEffect(() => {
     if (!isHolding || isPaused) return;
     if (holdTimeLeft <= 0) {
-      completeSet();
+      setIsHolding(false);
+      
+      if (!workout || !currentExercise) return;
+      
+      if (currentSet < currentExercise.sets) {
+        setCurrentSet(prev => prev + 1);
+        setRestTimeLeft(30);
+        setIsResting(true);
+      } else {
+        setCompletedExercises(prev => [...prev, currentExercise.id]);
+        
+        if (currentExerciseIndex < workout.exercises.length - 1) {
+          setCurrentExerciseIndex(prev => prev + 1);
+          setCurrentSet(1);
+          setRestTimeLeft(45);
+          setIsResting(true);
+        }
+      }
       return;
     }
     const timer = setInterval(() => {
       setHoldTimeLeft(prev => prev - 1);
     }, 1000);
     return () => clearInterval(timer);
-  }, [isHolding, holdTimeLeft, isPaused]);
-
-  const currentExercise = workout?.exercises[currentExerciseIndex];
-  const totalExercises = workout?.exercises.length || 0;
-  const overallProgress = ((currentExerciseIndex / totalExercises) * 100) + 
-    ((currentSet / (currentExercise?.sets || 1)) * (100 / totalExercises));
+  }, [isHolding, holdTimeLeft, isPaused, workout, currentExercise, currentSet, currentExerciseIndex]);
 
   const startHold = useCallback(() => {
     if (!currentExercise?.holdSeconds) return;
