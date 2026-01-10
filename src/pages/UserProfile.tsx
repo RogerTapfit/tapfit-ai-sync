@@ -9,9 +9,10 @@ import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { usePublicGamerStats } from '@/hooks/usePublicGamerStats';
 import { useWeeklyWorkoutStats } from '@/hooks/useWeeklyWorkoutStats';
 import { useFriendChallenges } from '@/hooks/useFriendChallenges';
+import { usePublicSobrietyJourney } from '@/hooks/usePublicSobrietyJourney';
 import { socialService } from '@/services/socialService';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Dumbbell, Trophy, Home, Settings, Calendar, Footprints, Swords } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Trophy, Home, Settings, Calendar, Footprints, Swords, Sprout } from 'lucide-react';
 import { usePageContext } from '@/hooks/usePageContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import UserWorkoutHistory from '@/components/social/UserWorkoutHistory';
@@ -23,7 +24,9 @@ import { ProfileGamerStats } from '@/components/social/ProfileGamerStats';
 import { WeeklyActivitySummary } from '@/components/social/WeeklyActivitySummary';
 import { UserCardioHistory } from '@/components/social/UserCardioHistory';
 import { ChallengeUserModal } from '@/components/social/ChallengeUserModal';
+import { SobrietyChallengeModal } from '@/components/social/SobrietyChallengeModal';
 import { FriendChallengeCard } from '@/components/social/FriendChallengeCard';
+import { ProfileSobrietyCard } from '@/components/social/ProfileSobrietyCard';
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -32,6 +35,7 @@ export default function UserProfile() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [showSobrietyChallengeModal, setShowSobrietyChallengeModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
@@ -40,6 +44,7 @@ export default function UserProfile() {
   const { stats: gamerStats, loading: gamerLoading, getProgressPercentage } = usePublicGamerStats(userId || null);
   const { stats: weeklyStats, loading: weeklyLoading } = useWeeklyWorkoutStats(userId || null);
   const { challenges, activeChallenges, pendingChallenges, refetch: refetchChallenges } = useFriendChallenges(currentUserId || undefined);
+  const { journey: sobrietyJourney, loading: sobrietyLoading, sharingEnabled: sobrietySharingEnabled } = usePublicSobrietyJourney(userId);
 
   // Register page context for chatbot
   usePageContext({
@@ -128,15 +133,25 @@ export default function UserProfile() {
           </Button>
         )}
         {!isOwnProfile && isFollowing && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowChallengeModal(true)}
-            className="ml-auto"
-          >
-            <Swords className="h-4 w-4 mr-2" />
-            Challenge
-          </Button>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowChallengeModal(true)}
+            >
+              <Swords className="h-4 w-4 mr-1" />
+              Challenge
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSobrietyChallengeModal(true)}
+              className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+            >
+              <Sprout className="h-4 w-4 mr-1" />
+              Sobriety
+            </Button>
+          </div>
         )}
       </div>
 
@@ -207,6 +222,18 @@ export default function UserProfile() {
             </TabsList>
 
             <TabsContent value="overview">
+              {/* Sobriety Journey Card - Show if user is sharing */}
+              {sobrietySharingEnabled && sobrietyJourney && (
+                <div className="mb-4">
+                  <ProfileSobrietyCard 
+                    journey={sobrietyJourney}
+                    isOwnProfile={isOwnProfile}
+                    onChallenge={() => setShowSobrietyChallengeModal(true)}
+                    showChallengeButton={!isOwnProfile && isFollowing}
+                  />
+                </div>
+              )}
+
               {/* Activity Heatmap */}
               <Card className="mb-4">
                 <CardHeader>
@@ -380,12 +407,20 @@ export default function UserProfile() {
 
       {/* Challenge Modal */}
       {userId && profile?.username && (
-        <ChallengeUserModal
-          isOpen={showChallengeModal}
-          onClose={() => setShowChallengeModal(false)}
-          targetUserId={userId}
-          targetUsername={profile.username}
-        />
+        <>
+          <ChallengeUserModal
+            isOpen={showChallengeModal}
+            onClose={() => setShowChallengeModal(false)}
+            targetUserId={userId}
+            targetUsername={profile.username}
+          />
+          <SobrietyChallengeModal
+            isOpen={showSobrietyChallengeModal}
+            onClose={() => setShowSobrietyChallengeModal(false)}
+            targetUserId={userId}
+            targetUsername={profile.username}
+          />
+        </>
       )}
     </div>
   );

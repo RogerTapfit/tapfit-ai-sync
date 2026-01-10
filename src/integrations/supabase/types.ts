@@ -2658,6 +2658,7 @@ export type Database = {
           preferred_equipment_type: string | null
           previous_injuries: string[] | null
           primary_goal: string | null
+          share_sobriety_journey: boolean | null
           share_workout_stats: boolean | null
           tap_coins_balance: number
           tap_tokens_balance: number
@@ -2699,6 +2700,7 @@ export type Database = {
           preferred_equipment_type?: string | null
           previous_injuries?: string[] | null
           primary_goal?: string | null
+          share_sobriety_journey?: boolean | null
           share_workout_stats?: boolean | null
           tap_coins_balance?: number
           tap_tokens_balance?: number
@@ -2740,6 +2742,7 @@ export type Database = {
           preferred_equipment_type?: string | null
           previous_injuries?: string[] | null
           primary_goal?: string | null
+          share_sobriety_journey?: boolean | null
           share_workout_stats?: boolean | null
           tap_coins_balance?: number
           tap_tokens_balance?: number

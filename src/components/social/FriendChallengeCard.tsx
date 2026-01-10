@@ -112,13 +112,26 @@ export const FriendChallengeCard = ({ challenge, currentUserId, onAction }: Frie
               <div className="space-y-2 mb-3">
                 <div className="flex items-center justify-between text-xs">
                   <span>Your progress</span>
-                  <span>{myProgress} / {challenge.target_value} {challenge.target_unit}</span>
+                  <span>
+                    {challenge.challenge_type.startsWith('sober_') 
+                      ? `Day ${myProgress} of ${challenge.target_value}`
+                      : `${myProgress} / ${challenge.target_value} ${challenge.target_unit}`
+                    }
+                  </span>
                 </div>
-                <Progress value={progressPercent} className="h-2" />
+                <Progress 
+                  value={progressPercent} 
+                  className={`h-2 ${challenge.challenge_type.startsWith('sober_') ? '[&>div]:bg-emerald-500' : ''}`} 
+                />
                 
                 <div className="flex items-center justify-between text-xs mt-2">
                   <span>@{opponent?.username}'s progress</span>
-                  <span>{opponentProgress} / {challenge.target_value} {challenge.target_unit}</span>
+                  <span>
+                    {challenge.challenge_type.startsWith('sober_') 
+                      ? `Day ${opponentProgress} of ${challenge.target_value}`
+                      : `${opponentProgress} / ${challenge.target_value} ${challenge.target_unit}`
+                    }
+                  </span>
                 </div>
                 <Progress value={opponentProgressPercent} className="h-2 bg-muted [&>div]:bg-orange-500" />
               </div>
