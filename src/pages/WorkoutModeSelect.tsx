@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Zap, ArrowLeft, Camera, List } from 'lucide-react';
+import { Calendar, Zap, ArrowLeft, Camera, List, Home } from 'lucide-react';
 
 export const WorkoutModeSelect: React.FC = () => {
   const navigate = useNavigate();
@@ -89,6 +89,39 @@ export const WorkoutModeSelect: React.FC = () => {
                     </span>
                     <span className="px-3 py-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full text-sm font-medium">
                       ✓ Explore freely
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* At Home Workout Card */}
+          <Card 
+            className="glow-card cursor-pointer hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50"
+            onClick={() => navigate('/at-home-workout-builder')}
+          >
+            <div className="p-8">
+              <div className="flex items-start gap-6">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 shadow-glow">
+                  <Home className="h-12 w-12 text-green-500" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    At Home Workout
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    Build a bodyweight workout from 70+ exercises. Perfect for home, travel, or no equipment days.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-sm font-medium">
+                      ✓ No equipment
+                    </span>
+                    <span className="px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-sm font-medium">
+                      ✓ 70+ exercises
+                    </span>
+                    <span className="px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-sm font-medium">
+                      ✓ Custom routine
                     </span>
                   </div>
                 </div>
