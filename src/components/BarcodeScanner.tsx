@@ -68,25 +68,53 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     fetchPricing();
   }, [productData, lastBarcode]);
 
+  // When a camera scan detects a barcode, immediately lookup the product
   useEffect(() => {
-    if (isOpen && scanMode === 'camera' && videoRef.current && !isScanning) {
-      startScanning(videoRef.current);
-    }
-    
-    return () => {
-      if (isScanning) {
-        stopScanning();
+    if (!lastBarcode) return;
+
+    const barcode = lastBarcode.trim();
+    if (!barcode) return;
+
+    fetchProductData(barcode).then((product) => {
+      if (!product) {
+        setLastScannedBarcode(barcode);
+        setShowProductNotFound(true);
+      }
+    });
+  }, [lastBarcode, fetchProductData]);
+
+  // Start/stop the camera scanner when the modal opens/closes or the user changes modes
+  useEffect(() => {
+    let mounted = true;
+
+    const initCamera = async () => {
+      // Small delay to ensure the video element is mounted
+      await new Promise((r) => setTimeout(r, 100));
+      if (!mounted) return;
+
+      if (isOpen && scanMode === 'camera' && videoRef.current) {
+        startScanning(videoRef.current);
       }
     };
-  }, [isOpen, scanMode, startScanning, stopScanning, isScanning]);
+
+    if (isOpen && scanMode === 'camera') {
+      initCamera();
+    }
+
+    return () => {
+      mounted = false;
+      stopScanning(videoRef.current || undefined);
+    };
+  }, [isOpen, scanMode, startScanning, stopScanning]);
 
   const handleManualBarcodeSubmit = async () => {
-    if (!manualBarcode.trim()) return;
-    
+    const barcode = manualBarcode.trim();
+    if (!barcode) return;
+
     try {
-      const product = await fetchProductData(manualBarcode.trim());
+      const product = await fetchProductData(barcode);
       if (!product) {
-        setLastScannedBarcode(manualBarcode.trim());
+        setLastScannedBarcode(barcode);
         setShowProductNotFound(true);
       }
     } catch (error) {
@@ -217,7 +245,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                     </div>
                   </div>
 
-                  {loading && (
+                  {(loading) && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <div className="text-white text-center">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
