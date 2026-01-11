@@ -49,9 +49,9 @@ serve(async (req) => {
     const movementType = isHold ? 'HOLD position' : 'movement with START and END positions';
     const prompt = `Create a clean, professional fitness instruction illustration for the exercise "${exerciseName}".
 
-STYLE: Modern 3D rendered fitness app illustration style, similar to a high-quality fitness game or premium workout app. The character should be a stylized, friendly fitness coach figure with athletic proportions - NOT cartoonish or Funko Pop style, but more like a realistic fitness avatar with smooth, clean rendering.
+STYLE: Modern 3D rendered fitness app illustration style with a sleek, futuristic aesthetic. Premium quality like a high-end fitness game or luxury workout app.
 
-CHARACTER: A fit athletic figure in modern workout attire (coral/red accent colors matching TapFit brand), gender-neutral design, clean anatomical accuracy showing proper muscle engagement.
+CHARACTER: A sleek CHROME METALLIC MANNEQUIN figure with highly reflective polished silver/chrome skin. The mannequin has a COMPLETELY SMOOTH, FEATURELESS FACE - absolutely NO eyes, NO nose, NO mouth, NO facial features whatsoever - just a smooth oval head like a retail display mannequin or crash test dummy. Athletic, fit body proportions with defined muscles visible through the reflective chrome surface. Wearing modern dark athletic wear (black/charcoal tank top or sports bra and fitted workout pants/shorts) with coral/red accent stripes matching TapFit brand colors.
 
 COMPOSITION: ${isHold ? 
   'Single panel showing the correct HOLD position with clear body alignment markers' : 
@@ -61,11 +61,11 @@ ARROWS: Include bold, coral-red directional arrows showing the exact ${movementT
 
 INSTRUCTIONS CONTEXT: ${instructions || 'Standard form for this exercise'}
 
-BACKGROUND: Clean, minimal gradient background (light gray to white) that doesn't distract from the form instruction.
+BACKGROUND: Clean, minimal gradient background (light gray to white) that doesn't distract from the form instruction. Subtle reflections on the floor to enhance the chrome mannequin's metallic appearance.
 
 LABELS: Small "START" and "END" text labels in each panel for clarity (if two panels).
 
-QUALITY: Ultra high resolution, professional fitness app quality, anatomically accurate for teaching proper form, clear and educational.`;
+QUALITY: Ultra high resolution, professional fitness app quality, anatomically accurate chrome mannequin for teaching proper form, clear and educational. The chrome skin should have realistic metallic reflections and highlights.`;
 
     console.log(`📝 Generating with prompt length: ${prompt.length}`);
 
