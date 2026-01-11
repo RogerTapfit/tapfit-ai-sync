@@ -147,6 +147,12 @@ START POSITION: Deep squat - knees bent to 90 degrees, hips back, thighs paralle
 END POSITION: Explosive jump in the air - body fully extended, legs straight, feet off the ground, arms reaching up or back for momentum.
 MOVEMENT ARROWS: Downward arrow near START panel showing lowering into squat, upward arrow near END panel showing explosive upward jump.
 CRITICAL: START is the LOW squat position (not standing). END is the HIGH jumping position with feet clearly off the ground. This is a PLYOMETRIC exercise.`,
+
+  'pistol-squats': `
+START POSITION: Standing UPRIGHT on ONE LEG (right leg), left leg extended straight FORWARD and parallel to floor, arms extended straight forward at shoulder height for balance, body TALL and VERTICAL, standing leg completely straight.
+END POSITION: DEEP single-leg squat on the standing leg - knee bent fully (past 90 degrees), sitting back with hips near ankle level, NON-WORKING LEG still extended STRAIGHT FORWARD (parallel to ground, hovering above floor), arms still extended forward for counterbalance, torso leaning slightly forward to maintain balance.
+MOVEMENT ARROWS: Downward curved arrow from START to END showing the descent into the single-leg squat.
+CRITICAL: This is a SINGLE-LEG exercise. One leg stays extended STRAIGHT FORWARD the entire time, hovering parallel to ground. The working leg goes from STANDING STRAIGHT to DEEP SQUAT. START shows tall standing on one leg, END shows deep squat on one leg with other leg forward.`,
 };
 
 serve(async (req) => {
