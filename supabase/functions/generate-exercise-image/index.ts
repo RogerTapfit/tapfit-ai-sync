@@ -17,34 +17,42 @@ interface ExerciseRequest {
 // Detailed anatomically correct exercise form descriptions
 const exerciseFormDescriptions: Record<string, string> = {
   'glute-bridges': `
-VIEW ANGLE (MUST FOLLOW): STRICT SIDE PROFILE VIEW, like a real side-on photo of a person on the floor.
-- Camera is positioned to the SIDE of the body (not overhead, not top-down, not front view).
-- You MUST see the side silhouette of the head/torso/hips/knees/feet.
-- Floor is a clear horizontal line; mat is seen from the SIDE (thin edge), NOT as a big rectangle from above.
-- Person is oriented LEFT→RIGHT: head on the LEFT, feet on the RIGHT.
-- Show FULL BODY (head to feet) in BOTH panels (no cropped legs).
+SCENE RULE (NON-NEGOTIABLE): There is ONLY ONE (1) chrome mannequin in the entire image.
+- NO second mannequin.
+- NO standing mannequin.
+- NO duplicate legs/extra body parts.
+
+CAMERA / VIEW (NON-NEGOTIABLE): STRICT SIDE PROFILE VIEW of the mannequin lying on a mat (like a real side-on photo).
+- Not overhead / not top-down / not front view.
+- Floor line is horizontal; mat is seen from the SIDE.
+- Orientation: HEAD on the LEFT, FEET on the RIGHT.
+- FULL BODY visible in BOTH panels.
+
+LAYOUT (NON-NEGOTIABLE): Two-panel START/END.
+- BOTH panels show the SAME mannequin in the SAME place and SAME scale.
+- The ONLY change between panels is hip height (down vs up).
 
 START POSITION (LEFT PANEL):
-- Person lying FLAT on back on the mat
-- Knees bent about ~90 degrees, shins roughly vertical
-- Feet flat on the floor, hip-width apart
-- Arms resting long at sides, palms down
-- Hips/buttocks on the floor, spine mostly flat
+- Lying on back on the mat
+- Knees bent ~90°, shins roughly vertical
+- Feet flat on the floor, hip-width
+- Arms long at sides, palms down
+- Hips/buttocks resting on the floor
 
 END POSITION (RIGHT PANEL):
-- SAME person, SAME side view, SAME knee bend (~90°)
-- Drive through heels and LIFT HIPS upward into a GLUTE BRIDGE (hip raise)
-- Shoulder blades + upper back + head stay on the mat
-- Hips are lifted so that SHOULDERS → HIPS → KNEES form ONE STRAIGHT DIAGONAL LINE
-- Lower back/pelvis clearly elevated off the floor (visible gap) compared to START
+- SAME position and knee bend (~90°), SAME foot placement (feet stay flat)
+- Lift hips upward into a glute bridge
+- Shoulder blades / upper back / head stay on the mat
+- Create ONE straight diagonal line: SHOULDERS → HIPS → KNEES
+- Clear visible gap under the hips/lower back compared to START
 
-DO NOT (CRITICAL):
-- Do NOT lift the legs straight up
-- Do NOT straighten the knees
-- Do NOT show a shoulder-stand/inverted pose
-- Do NOT use a top-down view
+FORBIDDEN (IF YOU DO THIS, IT IS WRONG):
+- Any standing person
+- Legs pointing straight up
+- Shoulder-stand / inverted pose
+- Any extra mannequin or extra legs
 
-MOVEMENT ARROWS: One upward curved arrow showing hips lifting from START to END.`,
+MOVEMENT ARROWS: One upward curved arrow near the hips showing the hip lift from START to END.`,
 
   'single-leg-glute-bridges': `
 START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
