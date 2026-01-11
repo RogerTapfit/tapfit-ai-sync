@@ -17,9 +17,11 @@ interface ExerciseRequest {
 // Detailed anatomically correct exercise form descriptions
 const exerciseFormDescriptions: Record<string, string> = {
   'glute-bridges': `
-START POSITION: Person lying FLAT ON THEIR BACK on the ground, knees bent at 90 degrees, feet flat on floor hip-width apart, arms resting at sides with palms down, head on ground looking up.
-END POSITION: SAME LYING POSITION but hips lifted/raised toward ceiling creating a straight line from shoulders through hips to knees. Feet remain flat on floor. Shoulders, upper back, and head STAY ON THE GROUND. Only the hips and lower back lift up.
-CRITICAL: The person NEVER stands up. BOTH panels show person lying on back. The ONLY difference is hips are lifted in END position.`,
+VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person, showing full body from head to feet in profile).
+START POSITION: Person lying FLAT ON THEIR BACK on the ground, knees bent at approximately 90 degrees, feet flat on floor hip-width apart, arms resting flat at sides with palms down, head resting on ground, HIPS/LOWER BACK touching the ground - body is flat against floor.
+END POSITION: SAME LYING POSITION viewed from side - hips and pelvis LIFTED/RAISED toward ceiling creating a straight diagonal line from shoulders through hips to knees. Feet remain flat on floor, knees still bent. Shoulders, upper back, arms, and head STAY ON THE GROUND. Only the hips, pelvis, and lower back lift up off the ground.
+MOVEMENT ARROWS: Upward curved arrow near the hips showing the lifting motion from START to END.
+CRITICAL: MUST be SIDE VIEW. The person NEVER stands up. BOTH panels show person lying on their back viewed from the side. START shows hips DOWN on ground, END shows hips LIFTED UP. The difference between panels is ONLY the hip position - down vs raised.`,
 
   'single-leg-glute-bridges': `
 START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
