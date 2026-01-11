@@ -201,31 +201,31 @@ CAMERA: STRICT SIDE PROFILE VIEW - lying on mat seen from side.
 ORIENTATION: HEAD on LEFT side of image, FEET on RIGHT side. Full body visible.
 
 START POSITION (LEFT PANEL):
-- Lying FLAT on back on mat - HIPS TOUCHING THE FLOOR
-- Knees bent approximately 90 degrees
+- Lying FLAT on back on mat - HIPS and BUTTOCKS TOUCHING THE MAT
+- Knees bent approximately 90 degrees, knees pointing up to ceiling
 - Feet flat on floor, hip-width apart
 - Arms relaxed at sides, palms down
-- BUTTOCKS and LOWER BACK are FLAT ON THE MAT
+- Entire back flat on ground - NO lift yet
 
-END POSITION (RIGHT PANEL) - CRITICAL DIFFERENCE:
-- HIPS LIFTED VERY HIGH off the ground - this is the "bridge"
-- Body forms STRAIGHT DIAGONAL LINE from SHOULDERS through HIPS to KNEES
-- LARGE VISIBLE GAP between lower back and floor
-- Glutes squeezed at top, pelvis tilted slightly posterior
-- Only HEAD, SHOULDERS, UPPER BACK, and FEET remain on mat
-- Hips should be at SAME HEIGHT as the knees - NOT barely off ground
+END POSITION (RIGHT PANEL) - THE "BRIDGE" ARCH:
+- HIPS THRUST VERY HIGH toward the ceiling creating a VISIBLE ARCH/BRIDGE shape
+- The torso and thighs form ONE CONTINUOUS UPWARD SLOPE from shoulders to knees
+- PELVIS is at the HIGHEST POINT - level with or higher than the knees
+- HUGE visible gap under the lower back - you can see the floor beneath
+- Only the HEAD, SHOULDERS, UPPER BACK, ARMS, and FEET touch the mat
+- The body creates a "table top" or "ramp" shape - NOT flat
+- Think of it as pushing the belly button toward the ceiling
 
-THE TWO PANELS MUST LOOK DRAMATICALLY DIFFERENT:
-- START: hips DOWN touching mat, body flat
-- END: hips UP HIGH in the air, clear bridge arch visible
+THE KEY DIFFERENCE (CRITICAL):
+- START: Body is FLAT like lying in bed, hips on floor
+- END: Body is ARCHED like a bridge/ramp, hips HIGH in the air at knee-level
 
-ARROW: ONE bold coral-red upward arrow near the hips showing the lift direction.
+ARROW: ONE bold coral-red upward arrow near the hips/pelvis showing the thrust direction.
 
 FORBIDDEN:
-- Do NOT make START and END look similar
-- Do NOT show only a tiny hip lift - the lift must be DRAMATIC
-- No standing poses
-- No shoulder-stand with legs vertical`,
+- Do NOT show END position with hips barely lifted
+- The END must show a DRAMATIC arch - pelvis as high as possible
+- No similar-looking panels - they must be obviously different`,
   'single-leg-glute-bridges': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
 START POSITION (LEFT PANEL):
