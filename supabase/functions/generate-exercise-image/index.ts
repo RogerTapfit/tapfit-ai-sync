@@ -255,27 +255,35 @@ MOVEMENT ARROW: Upward arrow at hips.
 CRITICAL: MUST show bench supporting upper back.`,
 
   'calf-raises': `
-CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
-CRITICAL: Show BOTH FEET visible in BOTH panels. Feet never leave ground.
+SCENE RULE: ONE chrome mannequin only. No duplicates.
+CAMERA: SIDE PROFILE VIEW (true side-on view of the body).
+CRITICAL: BOTH FEET stay on the ground in BOTH panels. This is NOT a single-leg exercise.
 
 START POSITION (LEFT PANEL):
-- Standing upright, side view
-- TWO feet visible, both FLAT on floor
-- Heels touching ground
-- Legs straight
+- Standing UPRIGHT facing right (side profile)
+- BOTH feet flat on the floor, heels DOWN touching the ground
+- Feet hip-width apart, toes pointing forward
+- Legs straight, body vertical
+- Arms at sides or on hips
 
 END POSITION (RIGHT PANEL):
-- SAME standing position
-- UP ON TIPTOES - heels RAISED off ground
-- Balls of BOTH feet still on floor
-- Body slightly taller from standing on toes
+- SAME body posture, facing right
+- Heels lifted HIGH off the ground (on tip-toes / balls of feet)
+- BOTH feet still planted, just heels raised
+- Body is now a few inches TALLER because standing on toes
+- Legs straight, knees not bent
+- NO knee raise, NO leg lift — feet never leave the floor
+
+THE KEY DIFFERENCE:
+- START: heels DOWN on floor
+- END: heels UP (tip-toes), body slightly taller
+
+ARROW: ONE small coral-red upward arrow near the ankles/heels showing the lift direction.
 
 FORBIDDEN:
-- NO lifting one leg off ground
-- NO stepping or marching motion
-- BOTH feet visible and on floor in BOTH panels
-
-MOVEMENT ARROW: Small upward arrow at ankles.`,
+- Do NOT show one leg lifted or bent at knee
+- Do NOT show a marching/stepping motion
+- BOTH heels must lift together — this is a BILATERAL exercise`,
 
   'single-leg-calf-raises': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
