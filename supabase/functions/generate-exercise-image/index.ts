@@ -192,12 +192,14 @@ ${detailedFormDescription || instructions || 'Standard proper form for this exer
 
 STYLE: Modern 3D rendered fitness app illustration. Premium quality like a high-end fitness game.
 
-CHARACTER REQUIREMENTS:
-- Chrome metallic mannequin with highly reflective POLISHED SILVER skin
-- COMPLETELY SMOOTH, FEATURELESS FACE - NO eyes, NO nose, NO mouth - just smooth oval head like a store mannequin
+CRITICAL CHARACTER REQUIREMENTS - MUST FOLLOW EXACTLY:
+- CHROME METALLIC ROBOT/MANNEQUIN with SHINY REFLECTIVE SILVER/CHROME SKIN - like liquid metal or polished chrome - NOT human skin tone
+- The ENTIRE BODY must be METALLIC SILVER/CHROME color - arms, legs, torso, head - all chrome/silver metal
+- COMPLETELY SMOOTH, FEATURELESS FACE - NO eyes, NO nose, NO mouth - just smooth chrome oval head like a robot or store mannequin
 - COMPLETE FULL BODY with FULL ARMS (biceps, forearms, hands with fingers) and FULL LEGS (thighs, calves, feet)
-- Athletic proportions with visible muscle definition through chrome surface
-- Wearing dark athletic wear (black/charcoal) with coral/red accent stripes
+- Athletic proportions with visible muscle definition visible through the chrome metallic surface
+- Wearing dark athletic wear (black/charcoal compression shorts and tank top) with coral/red accent stripes and "TapFit" logo
+- DO NOT use human skin color - the mannequin MUST be SILVER CHROME METALLIC like a robot or C-3PO
 
 COMPOSITION: ${isHold ? 
   'Single panel showing the EXACT hold position described above with body alignment markers' : 
@@ -205,11 +207,11 @@ COMPOSITION: ${isHold ?
 
 ARROWS: Bold coral-red directional arrows showing the ${movementType}.
 
-BACKGROUND: Clean light gray to white gradient with subtle floor reflections.
+BACKGROUND: Clean light gray to white gradient with subtle floor reflections showing chrome reflections.
 
 LABELS: Clear "START" and "END" text labels.
 
-QUALITY: Ultra high resolution, anatomically perfect form demonstration. The mannequin must have COMPLETE arms with hands and COMPLETE legs with feet - no missing limbs.`;
+QUALITY: Ultra high resolution, anatomically perfect form demonstration. The mannequin must have COMPLETE arms with hands and COMPLETE legs with feet - no missing limbs. SILVER CHROME METALLIC SKIN - NOT human skin tone.`;
 
     console.log(`📝 Generating with prompt length: ${prompt.length}`);
 
