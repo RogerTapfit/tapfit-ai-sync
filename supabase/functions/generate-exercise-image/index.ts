@@ -141,6 +141,12 @@ CRITICAL: Stepping BACKWARD.`,
 START POSITION: Standing flat-footed.
 END POSITION: Raised up on balls of feet, heels high off ground.
 CRITICAL: Simple toe raise while standing.`,
+
+  'jump-squats': `
+START POSITION: Deep squat - knees bent to 90 degrees, hips back, thighs parallel to ground, arms in front of body for balance, back straight, torso slightly leaned forward.
+END POSITION: Explosive jump in the air - body fully extended, legs straight, feet off the ground, arms reaching up or back for momentum.
+MOVEMENT ARROWS: Downward arrow near START panel showing lowering into squat, upward arrow near END panel showing explosive upward jump.
+CRITICAL: START is the LOW squat position (not standing). END is the HIGH jumping position with feet clearly off the ground. This is a PLYOMETRIC exercise.`,
 };
 
 serve(async (req) => {
