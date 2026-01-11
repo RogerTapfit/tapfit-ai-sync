@@ -26,9 +26,11 @@ export function ExerciseFormImage({
     sm: 'w-10 h-10',
     md: 'w-14 h-14',
     lg: 'w-20 h-20',
-    xl: 'w-full max-w-xs h-auto aspect-square',
-    hero: 'w-full max-w-sm h-auto aspect-[4/3]'
+    xl: 'w-full max-w-xs',
+    hero: 'w-full'
   };
+
+  const isLargeSize = size === 'xl' || size === 'hero';
 
   const hasImage = image?.image_url && image.generation_status === 'complete';
 
@@ -40,12 +42,12 @@ export function ExerciseFormImage({
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       ) : hasImage ? (
         <img 
-          src={image.mini_image_url || image.image_url} 
+          src={isLargeSize ? image.image_url : (image.mini_image_url || image.image_url)} 
           alt={exerciseName}
-          className="w-full h-full object-cover"
+          className={`w-full h-full ${isLargeSize ? 'object-contain' : 'object-cover'}`}
         />
       ) : (
-        <span className={size === 'sm' ? 'text-lg' : 'text-2xl'}>{emoji}</span>
+        <span className={size === 'sm' ? 'text-lg' : size === 'hero' || size === 'xl' ? 'text-6xl' : 'text-2xl'}>{emoji}</span>
       )}
     </div>
   );
