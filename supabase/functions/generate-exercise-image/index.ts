@@ -16,204 +16,1063 @@ interface ExerciseRequest {
 
 // Detailed anatomically correct exercise form descriptions
 const exerciseFormDescriptions: Record<string, string> = {
-  'glute-bridges': `
-SCENE RULE (NON-NEGOTIABLE): There is ONLY ONE (1) chrome mannequin in the entire image.
-- NO second mannequin.
-- NO standing mannequin.
-- NO duplicate legs/extra body parts.
-
-CAMERA / VIEW (NON-NEGOTIABLE): STRICT SIDE PROFILE VIEW of the mannequin lying on a mat (like a real side-on photo).
-- Not overhead / not top-down / not front view.
-- Floor line is horizontal; mat is seen from the SIDE.
-- Orientation: HEAD on the LEFT, FEET on the RIGHT.
-- FULL BODY visible in BOTH panels.
-
-LAYOUT (NON-NEGOTIABLE): Two-panel START/END.
-- BOTH panels show the SAME mannequin in the SAME place and SAME scale.
-- The ONLY change between panels is hip height (down vs up).
-
-START POSITION (LEFT PANEL):
-- Lying on back on the mat
-- Knees bent ~90°, shins roughly vertical
-- Feet flat on the floor, hip-width
-- Arms long at sides, palms down
-- Hips/buttocks resting on the floor
-
-END POSITION (RIGHT PANEL):
-- SAME position and knee bend (~90°), SAME foot placement (feet stay flat)
-- Lift hips upward into a glute bridge
-- Shoulder blades / upper back / head stay on the mat
-- Create ONE straight diagonal line: SHOULDERS → HIPS → KNEES
-- Clear visible gap under the hips/lower back compared to START
-
-FORBIDDEN (IF YOU DO THIS, IT IS WRONG):
-- Any standing person
-- Legs pointing straight up
-- Shoulder-stand / inverted pose
-- Any extra mannequin or extra legs
-
-MOVEMENT ARROWS: One upward curved arrow near the hips showing the hip lift from START to END.`,
-
-  'single-leg-glute-bridges': `
-START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
-END POSITION: Hips raised while balancing on one foot, extended leg still pointing straight up toward ceiling.
-CRITICAL: Person stays lying on back throughout. One leg points up the whole time.`,
-
-  'hip-thrusts': `
-START POSITION: Upper back and shoulders resting against a bench or elevated surface (shown clearly), hips dropped toward ground, knees bent, feet flat on floor.
-END POSITION: Hips thrust upward creating straight line from shoulders to knees, upper back still leaning on the bench.
-CRITICAL: Must show a bench/surface supporting upper back.`,
-
+  // ==================== LOWER BODY ====================
   'squats': `
-START POSITION: Standing upright, feet shoulder-width apart, arms extended forward for balance, back straight.
-END POSITION: Knees bent to 90 degrees, hips back as if sitting in chair, thighs parallel to ground, arms forward.
-CRITICAL: Both positions are STANDING. Movement is up and down.`,
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright, feet shoulder-width apart
+- Arms extended forward at shoulder height for balance
+- Back straight, chest up, looking forward
+END POSITION (RIGHT PANEL):
+- Knees bent to 90 degrees, hips pushed back
+- Thighs parallel to the ground (like sitting in invisible chair)
+- Arms still extended forward, back straight
+- Knees tracking over toes
+MOVEMENT ARROW: Downward curved arrow showing the descent.
+CRITICAL: Both panels show STANDING positions (not lying down). Movement is vertical up/down.`,
 
-  'push-ups': `
-START POSITION: High plank - arms straight, hands under shoulders, body straight from head to heels.
-END POSITION: Arms bent, chest 2 inches from floor, elbows at 45 degrees, body still straight.
-CRITICAL: Body stays rigid as a plank throughout.`,
-
-  'plank': `
-HOLD POSITION: Body straight supported on FOREARMS (not hands) and toes. Elbows directly under shoulders. Back flat, not sagging or piked. Looking at ground.
-CRITICAL: On forearms, not hands. Body perfectly straight.`,
-
-  'dead-bug': `
-START POSITION: Lying on BACK, arms extended straight up toward ceiling, legs raised with knees bent 90 degrees.
-END POSITION: Opposite arm and leg extending away (arm toward floor overhead, leg extending straight out).
-CRITICAL: Lying on BACK, not face down.`,
-
-  'bird-dog': `
-START POSITION: On hands and knees (all fours), back flat like a tabletop.
-END POSITION: Opposite arm extended forward and opposite leg extended back, both parallel to ground.
-CRITICAL: On hands and KNEES, not standing.`,
-
-  'donkey-kicks': `
-START POSITION: On all fours (hands and knees), back flat.
-END POSITION: One bent leg kicked BACK and UP toward ceiling, sole of foot facing up.
-CRITICAL: Must be on hands and knees. Leg kicks BACKWARD, not sideways.`,
-
-  'fire-hydrants': `
-VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person, NOT from the front).
-START POSITION: On all fours in tabletop position - hands directly under shoulders, knees under hips, back flat and parallel to ground, head neutral looking at floor. BOTH knees on the ground.
-END POSITION: SAME tabletop position but ONE leg (keeping knee bent at 90 degrees) is lifted OUT TO THE SIDE laterally - thigh raises to be parallel with the ground/hip height while knee stays bent. The foot of the lifted leg points behind. Other knee stays on ground.
-MOVEMENT ARROWS: Curved arrow showing the bent leg lifting laterally outward from the hip.
-CRITICAL: This MUST be shown from a SIDE VIEW angle so you can clearly see the leg lifting sideways. The knee stays BENT 90 degrees throughout - the leg does NOT straighten. Person stays on hands and knees. Like a dog lifting its leg at a fire hydrant.`,
-
-  'burpees': `
-START POSITION: Standing upright.
-END POSITION: In plank/push-up position OR jumping with arms overhead.
-CRITICAL: Show the explosive movement between standing and plank.`,
-
-  'mountain-climbers': `
-START POSITION: High plank position, body straight.
-END POSITION: One knee driven forward toward chest while staying in plank.
-CRITICAL: Rapid alternating knee drives while maintaining plank.`,
-
-  'superman-pulls': `
-START POSITION: Lying FACE DOWN (prone), arms extended forward overhead.
-END POSITION: Arms, chest, and legs all lifted off ground, back arched.
-CRITICAL: Face DOWN, not on back. Everything lifts up off the floor.`,
-
-  'crunches': `
-START POSITION: Lying on back, knees bent, feet flat, hands behind head.
-END POSITION: Only shoulders/upper back curled up, lower back stays on ground.
-CRITICAL: Small movement - NOT a full sit-up.`,
-
-  'leg-raises': `
-START POSITION: Lying on back, legs straight on ground.
-END POSITION: Legs raised straight up toward ceiling (perpendicular to ground).
-CRITICAL: Legs stay STRAIGHT. Back stays on ground.`,
-
-  'hollow-body-hold': `
-HOLD POSITION: Lying on back, lower back pressed into ground, arms overhead, legs and shoulders lifted creating banana shape.
-CRITICAL: On BACK, curved like a banana.`,
-
-  'side-plank': `
-HOLD POSITION: Body supported on one forearm and side of stacked feet, facing sideways, hips lifted, other arm on hip or up.
-CRITICAL: SIDE-facing position, hips lifted.`,
-
-  'russian-twists': `
-START POSITION: Seated on ground, knees bent, torso leaned back 45 degrees, hands together.
-END POSITION: Rotating torso to touch hands to floor on alternating sides.
-CRITICAL: Seated, not lying down. Twisting side to side.`,
-
-  'v-ups': `
-START POSITION: Lying flat on back, arms overhead, legs straight.
-END POSITION: Arms and legs raised to meet in middle, body forms V shape.
-CRITICAL: Both arms and legs lift simultaneously.`,
-
-  'bicycle-crunches': `
-START POSITION: Lying on back, hands behind head, legs raised.
-END POSITION: Elbow rotating toward opposite bent knee while other leg extends.
-CRITICAL: Twisting crunch with pedaling leg motion.`,
-
-  'jumping-jacks': `
-START POSITION: Standing, feet together, arms at sides.
-END POSITION: Feet spread wide, arms raised overhead in V.
-CRITICAL: Classic jumping jack spread.`,
-
-  'high-knees': `
-START POSITION: Standing upright.
-END POSITION: Running in place with knees driving HIGH (hip level).
-CRITICAL: Exaggerated knee lift.`,
+  'half-squats': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright, feet shoulder-width apart
+- Arms at sides or on hips
+END POSITION (RIGHT PANEL):
+- Knees bent to approximately 45-60 degrees (HALF depth)
+- Thighs NOT parallel to ground - only partial squat
+- Back straight, slight forward lean
+MOVEMENT ARROW: Short downward arrow showing partial descent.
+CRITICAL: This is a PARTIAL squat - only halfway down, NOT full depth.`,
 
   'wall-sit': `
-HOLD POSITION: Back flat against wall, thighs parallel to ground (90-degree knees), feet flat on floor.
-CRITICAL: MUST show wall behind person.`,
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: A wall behind the mannequin.
+HOLD POSITION (SINGLE PANEL):
+- Back flat against a wall (wall clearly visible)
+- Thighs parallel to the ground (90-degree knee bend)
+- Shins vertical, feet flat on floor
+- Arms at sides or crossed on chest
+CRITICAL: MUST show the wall. Back pressed flat against wall. This is an ISOMETRIC HOLD - single panel, no movement.`,
 
   'forward-lunges': `
-START POSITION: Standing upright, feet together.
-END POSITION: One leg stepped FORWARD, front knee 90 degrees, back knee near ground.
-CRITICAL: Stepping FORWARD.`,
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright, feet together
+- Arms at sides or on hips
+END POSITION (RIGHT PANEL):
+- One leg stepped FORWARD
+- Front knee bent to 90 degrees, front thigh parallel to ground
+- Back knee hovering just above the floor
+- Torso upright, not leaning
+MOVEMENT ARROW: Forward arrow showing the step forward.
+CRITICAL: Stepping FORWARD (front foot moves ahead of body).`,
 
   'reverse-lunges': `
-START POSITION: Standing upright, feet together.
-END POSITION: One leg stepped BACKWARD, back knee near ground.
-CRITICAL: Stepping BACKWARD.`,
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright, feet together
+- Arms at sides or on hips
+END POSITION (RIGHT PANEL):
+- One leg stepped BACKWARD
+- Front knee at 90 degrees over the ankle
+- Back knee hovering just above the floor
+- Torso upright
+MOVEMENT ARROW: Backward arrow showing the step back.
+CRITICAL: Stepping BACKWARD (one foot moves behind the body).`,
+
+  'walking-lunges': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright, one foot slightly ahead
+END POSITION (RIGHT PANEL):
+- Deep lunge with front knee at 90 degrees
+- Back knee hovering near ground
+- Torso upright, looking forward
+MOVEMENT ARROW: Forward arrow showing walking motion.
+CRITICAL: Continuous forward walking motion with lunges.`,
+
+  'split-squats': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Staggered stance - one foot forward, one foot back
+- Standing upright on balls of back foot
+- Feet stay in fixed positions throughout
+END POSITION (RIGHT PANEL):
+- VERTICAL descent - both knees bent to 90 degrees
+- Back knee hovering just above floor
+- Torso stays completely upright
+MOVEMENT ARROW: Straight down arrow showing vertical descent.
+CRITICAL: Feet stay FIXED in place. Movement is only UP and DOWN, not forward/backward.`,
+
+  'bulgarian-split-squats': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: A bench or elevated surface behind.
+START POSITION (LEFT PANEL):
+- Rear foot elevated on bench behind (top of foot on bench)
+- Front foot forward, standing tall
+- Torso upright
+END POSITION (RIGHT PANEL):
+- Deep lunge - front thigh parallel to floor
+- Back knee dropped toward ground
+- Torso stays upright, core engaged
+MOVEMENT ARROW: Downward arrow showing the descent.
+CRITICAL: Rear foot MUST be elevated on a visible bench/box.`,
+
+  'step-backs': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright, feet together
+END POSITION (RIGHT PANEL):
+- One leg stepped straight back
+- Slight bend in both knees
+- Torso upright
+MOVEMENT ARROW: Backward arrow showing step back.
+CRITICAL: Simple step backward movement.`,
+
+  'jump-squats': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Deep squat - thighs parallel to ground
+- Arms pulled back for momentum
+- Torso slightly forward
+END POSITION (RIGHT PANEL):
+- Explosive jump - FEET OFF THE GROUND
+- Body fully extended in air
+- Arms reaching up or back
+MOVEMENT ARROW: Strong upward arrow showing explosive jump.
+CRITICAL: START is the LOW squat. END shows body IN THE AIR with feet clearly off ground.`,
+
+  'pulse-squats': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Bottom of squat position - thighs parallel to ground
+- Arms forward for balance
+END POSITION (RIGHT PANEL):
+- Slightly raised from bottom (2-3 inches higher)
+- Still in squat, NOT standing up fully
+- Small pulsing movement
+MOVEMENT ARROW: Small up-down arrow showing pulse motion.
+CRITICAL: Never fully standing - staying in bottom squat range with small pulses.`,
+
+  'sumo-squats': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- VERY WIDE stance - feet wider than shoulder width
+- Toes pointed outward at 45 degrees
+- Standing tall, hands clasped at chest
+END POSITION (RIGHT PANEL):
+- Deep squat with wide stance maintained
+- Thighs parallel to ground
+- Knees tracking over toes (pointing outward)
+- Torso upright
+MOVEMENT ARROW: Downward arrow showing descent.
+CRITICAL: WIDE stance with toes pointed OUT. Knees push outward, not forward.`,
+
+  'cossack-squats': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- VERY WIDE stance - feet much wider than shoulders
+- Standing tall, arms forward for balance
+END POSITION (RIGHT PANEL):
+- Weight shifted entirely to ONE side
+- One leg in deep squat (thigh against calf)
+- OTHER leg stays STRAIGHT with toes pointed UP toward ceiling
+- Arms forward for balance
+MOVEMENT ARROW: Lateral arrow showing weight shift to one side.
+CRITICAL: One leg deep squat, other leg STRAIGHT with toes UP. Side-to-side movement.`,
+
+  'pistol-squats': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing on ONE LEG only
+- Other leg extended STRAIGHT FORWARD, parallel to floor
+- Arms extended forward for balance
+- Standing leg completely straight
+END POSITION (RIGHT PANEL):
+- DEEP single-leg squat on standing leg
+- Sitting back with hips near ankle level
+- Non-working leg STILL extended straight forward (hovering)
+- Arms still forward for counterbalance
+MOVEMENT ARROW: Downward arrow showing single-leg descent.
+CRITICAL: ONE LEG exercise. Non-working leg stays extended FORWARD the entire time.`,
+
+  'glute-bridges': `
+SCENE RULE: ONE chrome mannequin only. No duplicates.
+CAMERA: STRICT SIDE PROFILE VIEW - lying on mat seen from side.
+HEAD on LEFT, FEET on RIGHT. Full body visible.
+
+START POSITION (LEFT PANEL):
+- Lying on back on mat
+- Knees bent ~90 degrees, feet flat on floor
+- Arms at sides, palms down
+- Hips/buttocks resting on floor
+
+END POSITION (RIGHT PANEL):
+- SAME knee bend and foot placement
+- Hips LIFTED upward (glute bridge)
+- Straight line from SHOULDERS to KNEES
+- Upper back/head stay on mat
+- Clear gap under lower back
+
+FORBIDDEN:
+- No standing person
+- No legs pointing straight up
+- No shoulder-stand
+
+MOVEMENT ARROW: Upward curved arrow near hips showing lift.`,
+
+  'single-leg-glute-bridges': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on back on mat
+- ONE knee bent, foot flat on floor
+- OTHER leg extended straight UP toward ceiling
+- Arms at sides
+END POSITION (RIGHT PANEL):
+- Hips raised into bridge (balancing on one foot)
+- Extended leg STILL pointing straight up
+- Upper back stays on mat
+MOVEMENT ARROW: Upward arrow at hips.
+CRITICAL: One leg points UP toward ceiling the entire time.`,
+
+  'hip-thrusts': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: A bench or elevated surface.
+START POSITION (LEFT PANEL):
+- Upper back/shoulders resting against bench
+- Hips dropped toward ground (below bench level)
+- Knees bent, feet flat on floor
+END POSITION (RIGHT PANEL):
+- Hips thrust UPWARD
+- Straight horizontal line from shoulders to knees
+- Upper back still on bench
+MOVEMENT ARROW: Upward arrow at hips.
+CRITICAL: MUST show bench supporting upper back.`,
 
   'calf-raises': `
-CAMERA: SIDE PROFILE VIEW. ONE mannequin only.
-
-CRITICAL FOOT RULE: You must show TWO (2) FEET visible in BOTH panels. Both feet stay planted on the floor. Neither foot ever leaves the ground.
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+CRITICAL: Show BOTH FEET visible in BOTH panels. Feet never leave ground.
 
 START POSITION (LEFT PANEL):
 - Standing upright, side view
-- TWO FEET visible, side by side, both FLAT on the floor
-- Heels touching the ground
+- TWO feet visible, both FLAT on floor
+- Heels touching ground
 - Legs straight
 
 END POSITION (RIGHT PANEL):
 - SAME standing position
-- TWO FEET still visible, still side by side, still on the floor
-- NOW ON TIPTOES: heels are RAISED off the ground
-- Balls of BOTH feet still touching the floor
+- UP ON TIPTOES - heels RAISED off ground
+- Balls of BOTH feet still on floor
 - Body slightly taller from standing on toes
 
-WHAT A CALF RAISE IS:
-- Stand on both feet
-- Lift your heels off the ground (go on tiptoes)
-- That's it - no leg movement at all
+FORBIDDEN:
+- NO lifting one leg off ground
+- NO stepping or marching motion
+- BOTH feet visible and on floor in BOTH panels
 
-FORBIDDEN - THE AI KEEPS DOING THIS WRONG:
-- DO NOT lift one leg off the ground
-- DO NOT show one foot in the air
-- DO NOT show a stepping or marching motion
-- BOTH FEET must be visible on the ground in BOTH panels
+MOVEMENT ARROW: Small upward arrow at ankles.`,
 
-MOVEMENT ARROW: Small upward arrow at ankles showing heel lift only.`,
+  'single-leg-calf-raises': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing on ONE leg only
+- Other foot lifted slightly off ground (bent at knee)
+- Standing foot flat on floor
+END POSITION (RIGHT PANEL):
+- Rising onto tiptoes on ONE foot
+- Heel of standing foot lifted high
+- Other foot still off ground
+MOVEMENT ARROW: Upward arrow at ankle.
+CRITICAL: Single leg balance throughout.`,
 
-  'jump-squats': `
-START POSITION: Deep squat - knees bent to 90 degrees, hips back, thighs parallel to ground, arms in front of body for balance, back straight, torso slightly leaned forward.
-END POSITION: Explosive jump in the air - body fully extended, legs straight, feet off the ground, arms reaching up or back for momentum.
-MOVEMENT ARROWS: Downward arrow near START panel showing lowering into squat, upward arrow near END panel showing explosive upward jump.
-CRITICAL: START is the LOW squat position (not standing). END is the HIGH jumping position with feet clearly off the ground. This is a PLYOMETRIC exercise.`,
+  'donkey-kicks': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- On all fours (hands and knees)
+- Back flat like tabletop
+- Both knees on ground
+END POSITION (RIGHT PANEL):
+- One leg kicked BACK and UP toward ceiling
+- Knee stays bent at 90 degrees
+- Sole of foot faces ceiling
+- Other knee stays on ground
+MOVEMENT ARROW: Curved arrow showing leg kicking back/up.
+CRITICAL: Leg kicks BACKWARD and UP, not sideways.`,
 
-  'pistol-squats': `
-START POSITION: Standing UPRIGHT on ONE LEG (right leg), left leg extended straight FORWARD and parallel to floor, arms extended straight forward at shoulder height for balance, body TALL and VERTICAL, standing leg completely straight.
-END POSITION: DEEP single-leg squat on the standing leg - knee bent fully (past 90 degrees), sitting back with hips near ankle level, NON-WORKING LEG still extended STRAIGHT FORWARD (parallel to ground, hovering above floor), arms still extended forward for counterbalance, torso leaning slightly forward to maintain balance.
-MOVEMENT ARROWS: Downward curved arrow from START to END showing the descent into the single-leg squat.
-CRITICAL: This is a SINGLE-LEG exercise. One leg stays extended STRAIGHT FORWARD the entire time, hovering parallel to ground. The working leg goes from STANDING STRAIGHT to DEEP SQUAT. START shows tall standing on one leg, END shows deep squat on one leg with other leg forward.`,
+  'fire-hydrants': `
+CAMERA: SIDE PROFILE VIEW showing body from side. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- On all fours (tabletop position)
+- Hands under shoulders, knees under hips
+- Back flat, both knees on ground
+END POSITION (RIGHT PANEL):
+- SAME tabletop position
+- One leg (keeping 90-degree knee bend) lifted OUT TO THE SIDE
+- Thigh parallel to ground, foot pointing behind
+- Other knee stays on ground
+MOVEMENT ARROW: Curved arrow showing leg lifting laterally outward.
+CRITICAL: Knee stays BENT 90 degrees. Leg lifts SIDEWAYS like dog at fire hydrant.`,
+
+  // ==================== UPPER BODY PUSH ====================
+  'push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- High plank position
+- Arms straight, hands under shoulders
+- Body forms straight line from head to heels
+END POSITION (RIGHT PANEL):
+- Arms bent, chest 2 inches from floor
+- Elbows at 45-degree angle to body
+- Body STILL straight (no sagging hips)
+MOVEMENT ARROW: Downward curved arrow showing descent.
+CRITICAL: Body stays rigid as plank throughout.`,
+
+  'knee-push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Modified plank with KNEES on ground
+- Arms straight, hands under shoulders
+- Straight line from head to KNEES (not feet)
+END POSITION (RIGHT PANEL):
+- Arms bent, chest near floor
+- Elbows at 45 degrees
+- Knees still on ground
+MOVEMENT ARROW: Downward arrow showing descent.
+CRITICAL: KNEES on ground, not toes. Straight line head to knees.`,
+
+  'wide-push-ups': `
+CAMERA: FRONT VIEW slightly angled. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Plank position with hands WIDE (2.5-3 feet apart)
+- Hands placed well outside shoulders
+- Body straight
+END POSITION (RIGHT PANEL):
+- Chest lowered toward floor
+- Arms bent wide
+MOVEMENT ARROW: Downward arrow.
+CRITICAL: Hands placed MUCH wider than shoulder width.`,
+
+  'diamond-push-ups': `
+CAMERA: FRONT VIEW slightly angled. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Plank position
+- Hands together under chest forming DIAMOND shape
+- Index fingers and thumbs touching to make triangle/diamond
+END POSITION (RIGHT PANEL):
+- Chest lowered toward hands
+- Elbows tucked close to ribs
+MOVEMENT ARROW: Downward arrow.
+CRITICAL: Hands form DIAMOND/TRIANGLE shape under chest.`,
+
+  'incline-push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: Elevated surface (bench/step).
+START POSITION (LEFT PANEL):
+- Hands on ELEVATED surface (bench, step)
+- Feet on floor
+- Body at angle (easier than regular push-up)
+END POSITION (RIGHT PANEL):
+- Arms bent, chest toward elevated surface
+MOVEMENT ARROW: Downward arrow.
+CRITICAL: Hands HIGHER than feet. Elevated surface clearly visible.`,
+
+  'decline-push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: Elevated surface behind.
+START POSITION (LEFT PANEL):
+- Hands on floor
+- FEET elevated on bench/step behind
+- Body at downward angle
+END POSITION (RIGHT PANEL):
+- Arms bent, chest toward floor
+MOVEMENT ARROW: Downward arrow.
+CRITICAL: FEET higher than hands. More challenging than regular push-up.`,
+
+  'archer-push-ups': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Wide push-up position
+- Hands placed very wide
+END POSITION (RIGHT PANEL):
+- Lowered toward ONE side
+- One arm bent (working arm)
+- Other arm stays STRAIGHT extended to side
+MOVEMENT ARROW: Diagonal arrow toward bent arm side.
+CRITICAL: One arm bends, other arm stays COMPLETELY STRAIGHT.`,
+
+  'hindu-push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Downward dog position
+- Hips HIGH (inverted V shape)
+- Arms and legs straight
+END POSITION (RIGHT PANEL):
+- Upward dog/cobra position
+- Hips NEAR floor
+- Chest lifted, back arched
+- Arms straight
+MOVEMENT ARROW: Swooping curved arrow showing dive motion.
+CRITICAL: Flowing movement from downward dog through low swoop to upward dog.`,
+
+  'pike-push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Downward dog/pike position
+- Hips HIGH (inverted V shape)
+- Arms straight, legs straight
+END POSITION (RIGHT PANEL):
+- Head lowered toward floor between hands
+- Elbows bent
+- Hips STAY HIGH (V-shape maintained)
+MOVEMENT ARROW: Downward arrow at head.
+CRITICAL: Hips stay HIGH throughout. Movement targets shoulders.`,
+
+  'handstand-push-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: Wall behind for support.
+START POSITION (LEFT PANEL):
+- VERTICAL handstand against wall
+- Arms fully extended
+- Body completely upside down and straight
+END POSITION (RIGHT PANEL):
+- Head lowered toward floor
+- Arms bent
+- Body still vertical against wall
+MOVEMENT ARROW: Downward arrow at head.
+CRITICAL: Fully inverted handstand position. Wall clearly visible.`,
+
+  'shoulder-taps': `
+CAMERA: FRONT VIEW slightly angled. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- High plank position
+- Both hands on floor
+- Body straight
+END POSITION (RIGHT PANEL):
+- One hand lifted to tap OPPOSITE shoulder
+- Hips stay SQUARE (no rotation)
+- Three points of contact (one hand, two feet)
+MOVEMENT ARROW: Arrow from hand to shoulder.
+CRITICAL: Hips stay LEVEL and SQUARE - no rotating or swaying.`,
+
+  // ==================== UPPER BODY PULL ====================
+  'superman-pulls': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying FACE DOWN (prone) on mat
+- Arms extended forward overhead
+- Legs straight
+END POSITION (RIGHT PANEL):
+- Arms, chest, and legs ALL lifted off ground
+- Back arched
+- Only hips/lower belly on mat
+MOVEMENT ARROW: Upward arrows at arms and legs.
+CRITICAL: Lying FACE DOWN. Everything lifts UP off floor.`,
+
+  'reverse-snow-angels': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying FACE DOWN (prone) on mat
+- Arms at sides, palms down
+- Head slightly lifted
+END POSITION (RIGHT PANEL):
+- Arms sweep out and UP toward overhead
+- Arms hovering off floor throughout
+- Squeeze shoulder blades
+MOVEMENT ARROW: Curved arrows showing arm sweep motion.
+CRITICAL: Face DOWN. Arms sweep like making snow angel but elevated.`,
+
+  'ytw-raises': `
+CAMERA: FRONT VIEW (or slightly angled). ONE chrome mannequin only.
+Lying FACE DOWN or standing bent over at hips.
+SHOW THREE POSITIONS:
+Y - Arms raised overhead forming Y shape with body
+T - Arms raised straight out to sides (T shape)
+W - Elbows bent, squeezed back (W shape)
+CRITICAL: Face DOWN or bent over. Arms form Y, T, W letter shapes.`,
+
+  'floor-pull-backs': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying FACE DOWN on mat
+- Arms extended forward overhead
+END POSITION (RIGHT PANEL):
+- Arms pull back toward hips (elbows bend)
+- Chest slightly lifted
+- Squeezing shoulder blades together
+MOVEMENT ARROW: Arrows showing arms pulling back.
+CRITICAL: Face DOWN. Arms pull back like rowing motion.`,
+
+  'towel-rows': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: Towel wrapped around something stable.
+START POSITION (LEFT PANEL):
+- Standing or seated, gripping towel with both hands
+- Arms extended forward
+END POSITION (RIGHT PANEL):
+- Pulling towel toward chest
+- Elbows bent and pulled back
+- Shoulder blades squeezed
+MOVEMENT ARROW: Arrow showing pulling motion toward body.`,
+
+  'isometric-towel-pulls': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+MUST SHOW: Towel gripped in both hands.
+HOLD POSITION (SINGLE PANEL):
+- Standing with towel gripped in both hands
+- Arms bent, pulling towel apart
+- Visible tension in arms/back
+- Isometric hold (no movement)
+CRITICAL: Static hold - pulling towel with constant tension.`,
+
+  // ==================== CORE AND ABS ====================
+  'plank': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Body supported on FOREARMS (not hands) and toes
+- Elbows directly under shoulders
+- Body forms perfectly STRAIGHT line from head to heels
+- Back flat - not sagging or piked up
+- Looking at ground
+CRITICAL: On FOREARMS, not hands. Perfectly straight body.`,
+
+  'side-plank': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Body supported on ONE forearm and side of stacked feet
+- Body facing sideways to camera
+- Hips lifted (straight line from head to feet)
+- Top arm on hip or extended toward ceiling
+CRITICAL: SIDE-facing position. Hips lifted, not sagging.`,
+
+  'plank-shoulder-taps': `
+CAMERA: FRONT VIEW slightly angled. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- High plank on hands
+- Both hands on floor
+END POSITION (RIGHT PANEL):
+- One hand tapping opposite shoulder
+- Body steady, hips square
+MOVEMENT ARROW: Arrow from hand to shoulder.
+CRITICAL: High plank position. Hips stay level.`,
+
+  'hollow-body-hold': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Lying on BACK
+- Lower back pressed firmly into ground
+- Arms extended overhead
+- Legs extended and lifted off ground
+- Shoulders lifted off ground
+- Body forms banana/curved shape
+CRITICAL: On BACK. Curved like a banana. Lower back pressed down.`,
+
+  'dead-bug': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on BACK
+- Arms extended straight up toward ceiling
+- Legs raised with knees bent at 90 degrees (tabletop)
+END POSITION (RIGHT PANEL):
+- OPPOSITE arm and leg extending away
+- One arm toward floor overhead
+- Opposite leg extending straight out (hovering above floor)
+- Lower back stays pressed to ground
+MOVEMENT ARROW: Arrows showing opposite limbs extending.
+CRITICAL: Lying on BACK (not face down).`,
+
+  'bird-dog': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- On hands and KNEES (all fours)
+- Back flat like tabletop
+- Looking at ground
+END POSITION (RIGHT PANEL):
+- OPPOSITE arm extended forward (parallel to ground)
+- OPPOSITE leg extended back (parallel to ground)
+- Back stays flat
+MOVEMENT ARROW: Arrows showing arm forward and leg back.
+CRITICAL: On hands and KNEES. Opposite arm and leg extend.`,
+
+  'crunches': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on back
+- Knees bent, feet flat on floor
+- Hands behind head or crossed on chest
+END POSITION (RIGHT PANEL):
+- Only shoulders and upper back curled up
+- Lower back stays on ground
+- Small movement - chin toward ceiling
+MOVEMENT ARROW: Small upward curve at shoulders.
+CRITICAL: Small movement - NOT a full sit-up. Lower back stays down.`,
+
+  'bicycle-crunches': `
+CAMERA: SIDE PROFILE VIEW slightly angled. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on back
+- Hands behind head
+- Legs raised in tabletop (knees bent)
+END POSITION (RIGHT PANEL):
+- Elbow rotating toward OPPOSITE bent knee
+- Other leg extending straight out
+- Twisting crunch motion
+MOVEMENT ARROW: Rotating arrow showing twist.
+CRITICAL: Twisting motion - elbow to OPPOSITE knee while other leg extends.`,
+
+  'reverse-crunches': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on back
+- Knees bent, feet lifted off floor
+- Arms at sides or holding something stable
+END POSITION (RIGHT PANEL):
+- Knees pulled toward chest
+- Hips curl UP off the floor
+- Lower back lifts off ground
+MOVEMENT ARROW: Upward curving arrow at hips.
+CRITICAL: HIPS lift off ground - not just knees moving.`,
+
+  'leg-raises': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on back
+- Legs straight, on or just above ground
+- Arms at sides
+END POSITION (RIGHT PANEL):
+- Legs raised straight up toward ceiling
+- Legs perpendicular to ground (90 degrees)
+- Back stays on ground
+MOVEMENT ARROW: Upward arrow showing legs rising.
+CRITICAL: Legs stay STRAIGHT throughout. Back stays on ground.`,
+
+  'flutter-kicks': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+CONTINUOUS MOTION (TWO PANELS showing alternating):
+- Lying on back
+- Legs straight, hovering 6 inches off floor
+- Small alternating up/down movements
+- Lower back pressed to ground
+MOVEMENT ARROWS: Small alternating up/down arrows at legs.
+CRITICAL: Legs stay STRAIGHT. Small rapid alternating movements.`,
+
+  'scissor-kicks': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+CONTINUOUS MOTION (TWO PANELS showing alternating):
+- Lying on back
+- Legs straight, hovering off floor
+- Legs cross over each other alternating (scissors motion)
+- Lower back pressed to ground
+MOVEMENT ARROWS: Crossing arrows showing scissor motion.
+CRITICAL: Legs STRAIGHT. Crossing side-to-side like scissors.`,
+
+  'v-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying flat on back
+- Arms extended overhead on floor
+- Legs straight on floor
+END POSITION (RIGHT PANEL):
+- Arms AND legs raised simultaneously
+- Meet in middle, body forms V shape
+- Balancing on tailbone
+MOVEMENT ARROW: Two arrows converging to show V formation.
+CRITICAL: Both arms AND legs lift at same time to form V.`,
+
+  'sit-ups': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying flat on back
+- Knees bent, feet flat on floor
+- Arms crossed on chest or behind head
+END POSITION (RIGHT PANEL):
+- FULL sit up - torso upright
+- Chest toward knees
+- Full range of motion (unlike crunch)
+MOVEMENT ARROW: Large curved arrow showing full sit-up motion.
+CRITICAL: FULL sit-up to upright position (not just a crunch).`,
+
+  'russian-twists': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- SEATED on ground (not lying)
+- Knees bent, feet slightly off floor
+- Torso leaned back 45 degrees
+- Hands together at chest
+END POSITION (RIGHT PANEL):
+- Torso rotated to one side
+- Hands touch floor beside hip
+- Feet stay lifted
+MOVEMENT ARROW: Rotating arrows showing side-to-side twist.
+CRITICAL: SEATED position, not lying. Twisting side to side.`,
+
+  'mountain-climbers': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- High plank position
+- Arms straight, body straight
+END POSITION (RIGHT PANEL):
+- One knee driven forward toward chest
+- Other leg extended back
+- Plank position maintained
+MOVEMENT ARROW: Arrow showing knee driving forward.
+CRITICAL: Rapid alternating knee drives while in plank.`,
+
+  'heel-taps': `
+CAMERA: SIDE PROFILE VIEW slightly angled. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Lying on back
+- Knees bent, feet flat on floor
+- Arms at sides
+END POSITION (RIGHT PANEL):
+- Crunching up slightly
+- Reaching one hand to touch same-side heel
+- Small side-to-side reaching motion
+MOVEMENT ARROW: Side arrow showing reach to heel.`,
+
+  // ==================== CARDIO/FULL BODY ====================
+  'jumping-jacks': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright
+- Feet together
+- Arms at sides
+END POSITION (RIGHT PANEL):
+- Feet jumped out WIDE apart
+- Arms raised overhead in V shape
+MOVEMENT ARROW: Outward arrows at arms and legs.
+CRITICAL: Classic jumping jack - arms up AND feet out simultaneously.`,
+
+  'high-knees': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright
+- Running stance
+END POSITION (RIGHT PANEL):
+- Running in place
+- One knee driven HIGH (to hip level)
+- Opposite arm forward
+MOVEMENT ARROW: Upward arrow at knee.
+CRITICAL: Exaggerated high knee lift to HIP LEVEL.`,
+
+  'butt-kicks': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing/light jogging position
+END POSITION (RIGHT PANEL):
+- Running in place
+- One heel kicked back to touch GLUTE (buttock)
+- Thigh stays vertical
+MOVEMENT ARROW: Backward curved arrow at foot.
+CRITICAL: Heel kicks back to touch buttock - thigh stays DOWN.`,
+
+  'skaters': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing on one leg, slightly crouched
+- Weight on one side
+END POSITION (RIGHT PANEL):
+- Lateral hop/jump to other leg
+- Landing leg bent
+- Trailing leg crosses behind (curtsy-style)
+- Arms swinging for balance
+MOVEMENT ARROW: Large lateral arrow showing side-to-side jump.
+CRITICAL: Lateral (side-to-side) jumping motion.`,
+
+  'burpees': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+Show SEQUENCE or START/END:
+START POSITION (LEFT PANEL):
+- Standing upright
+END POSITION (RIGHT PANEL):
+- High plank position OR jumping with arms overhead
+MOVEMENT ARROW: Arrow showing squat down, jump back to plank.
+CRITICAL: Full movement: stand → squat → plank → push-up → squat → jump.`,
+
+  'half-burpees': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright
+END POSITION (RIGHT PANEL):
+- Squat position with hands on floor
+- (No push-up, no jump)
+MOVEMENT ARROW: Downward arrow.
+CRITICAL: NO push-up and NO jump - just squat down to hands on floor.`,
+
+  'squat-thrusts': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- High plank position
+END POSITION (RIGHT PANEL):
+- Feet jumped forward to squat position
+- Hands still on floor
+MOVEMENT ARROW: Arrow showing feet jumping forward.
+CRITICAL: Plank to squat position (no standing up, no jump).`,
+
+  'bear-crawl': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- On all fours
+- Knees HOVERING 2 inches off ground
+- Back flat
+END POSITION (RIGHT PANEL):
+- Opposite hand and foot moving forward
+- Knees still hovering
+- Low crawling position maintained
+MOVEMENT ARROW: Forward arrows showing crawl motion.
+CRITICAL: Knees HOVER off ground - not touching.`,
+
+  'crab-walk': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Sitting position, knees bent, feet flat
+- Hands behind hips, fingers forward
+- Hips lifted into reverse tabletop
+END POSITION (RIGHT PANEL):
+- Moving forward/backward
+- Alternating hand/foot steps
+- Hips stay lifted
+MOVEMENT ARROW: Arrows showing walking motion.
+CRITICAL: Reverse tabletop - face UP, belly UP.`,
+
+  'inchworms': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+Show SEQUENCE or START/END:
+START POSITION (LEFT PANEL):
+- Standing, hinged forward, hands touching floor
+- Legs straight
+END POSITION (RIGHT PANEL):
+- High plank position (hands walked out)
+- OR hands walking back toward feet
+MOVEMENT ARROW: Forward arrows showing hands walking out.
+CRITICAL: Walking hands out to plank, then walking feet to hands.`,
+
+  'shadow-boxing': `
+CAMERA: FRONT VIEW at angle. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Boxing stance - one foot forward
+- Hands up guarding face
+- Knees slightly bent
+END POSITION (RIGHT PANEL):
+- Arm extended in punch (jab or cross)
+- Torso rotated slightly
+- Other hand still at guard position
+MOVEMENT ARROW: Forward arrow showing punch direction.
+CRITICAL: Athletic boxing stance with punching motion.`,
+
+  'fast-feet': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+CONTINUOUS MOTION:
+- Athletic stance, knees bent
+- Rapid alternating foot movements
+- Staying in place (pitter-patter motion)
+- On balls of feet
+MOVEMENT ARROWS: Small rapid up/down arrows at feet.
+CRITICAL: Rapid small steps in place - like running but stationary.`,
+
+  'stair-running': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+MUST SHOW: Stairs/steps.
+START POSITION (LEFT PANEL):
+- At bottom of stairs
+- Running position
+END POSITION (RIGHT PANEL):
+- Mid-stride on stairs
+- High knee drive upward
+MOVEMENT ARROW: Upward diagonal arrow.
+CRITICAL: Running UP stairs with high knees.`,
+
+  // ==================== MOBILITY AND FLEXIBILITY ====================
+  'arm-circles': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+POSITION:
+- Standing tall
+- Arms extended straight out to sides at shoulder height
+MOVEMENT:
+- Circular motion with both arms (forward or backward)
+MOVEMENT ARROWS: Circular arrows around arms showing rotation.
+CRITICAL: Arms stay STRAIGHT at shoulder height. Circular motion.`,
+
+  'leg-swings': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START/END POSITIONS:
+- Standing on one leg (can use wall for balance)
+- Other leg swinging in arc front to back
+- Torso stays upright
+MOVEMENT ARROW: Curved arc arrow showing swing motion.
+CRITICAL: Smooth swinging motion, torso STAYS UPRIGHT.`,
+
+  'hip-circles': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+POSITION:
+- Standing with feet shoulder-width apart
+- Hands on hips
+MOVEMENT:
+- Large circular motion with hips
+- Like hula hooping
+MOVEMENT ARROWS: Circular arrow around hips.
+CRITICAL: Large circular hip rotation while standing.`,
+
+  'cat-cow-stretch': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+TWO POSITIONS:
+COW (LEFT PANEL):
+- On all fours (tabletop)
+- Belly dropped DOWN toward floor
+- Head and tailbone lifted UP
+- Back curved downward (concave)
+CAT (RIGHT PANEL):
+- On all fours (tabletop)
+- Back arched UP toward ceiling (rounded)
+- Head and tailbone tucked DOWN
+- Back curved upward (convex)
+MOVEMENT ARROW: Up/down arrows showing spine movement.
+CRITICAL: On hands and knees. Alternating spine curves.`,
+
+  'childs-pose': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Kneeling on mat
+- Sitting back on heels
+- Torso folded forward over thighs
+- Forehead on floor
+- Arms extended forward on floor OR at sides
+CRITICAL: Kneeling position, folded over. Restful stretch pose.`,
+
+  'downward-dog': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Inverted V shape
+- Hands and feet on floor
+- Hips pushed HIGH toward ceiling
+- Arms and legs straight
+- Heels reaching toward ground
+- Head between arms, looking at feet
+CRITICAL: Inverted V - hips are highest point.`,
+
+  'cobra-stretch': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Lying FACE DOWN
+- Hands under shoulders
+- Chest LIFTED by straightening arms
+- Hips and legs remain on floor
+- Back arched, looking slightly up
+CRITICAL: Hips stay ON THE FLOOR. Only upper body lifts.`,
+
+  'hip-flexor-stretch': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Low lunge position
+- BACK knee on the floor
+- FRONT knee bent at 90 degrees, foot flat
+- Hips pushed gently forward
+- Torso upright
+- Stretch felt in front of back hip
+CRITICAL: Back knee DOWN on ground. Front knee at 90 degrees.`,
+
+  'hamstring-stretch': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Standing with one foot forward
+- Front leg STRAIGHT
+- Hinging forward at hips
+- Reaching toward front toes
+- Back leg slightly bent for balance
+CRITICAL: Front leg stays STRAIGHT. Hinge at hips.`,
+
+  'calf-stretch': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Standing with one foot forward, one back
+- Back leg STRAIGHT with heel pressed to floor
+- Front knee slightly bent
+- Leaning into wall or forward
+- Stretch felt in back calf
+CRITICAL: Back heel stays on ground. Back leg straight.`,
+
+  'shoulder-stretch': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Standing upright
+- One arm across chest (horizontal)
+- Other arm pulling it closer to body
+- Stretch felt in shoulder
+CRITICAL: Arm held across chest, pulled with other arm.`,
+
+  'thoracic-rotation': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- On all fours OR seated
+- One hand behind head
+END POSITION (RIGHT PANEL):
+- Upper back/elbow rotated toward ceiling
+- Hips stay square to floor
+- Opening up the chest
+MOVEMENT ARROW: Rotating arrow showing spine twist.
+CRITICAL: Only UPPER back rotates. Hips stay square.`,
+
+  // ==================== BALANCE AND STABILITY ====================
+  'single-leg-balance': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Standing on ONE leg only
+- Other foot lifted slightly off ground
+- Arms out to sides for balance OR hands on hips
+- Standing tall
+CRITICAL: Balancing on ONE leg. Simple stance.`,
+
+  'single-leg-reach': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing on one leg
+END POSITION (RIGHT PANEL):
+- Reaching one hand toward ground
+- Other leg may extend back for balance
+- Single-leg balance maintained
+MOVEMENT ARROW: Downward arrow showing reach.`,
+
+  'airplane-pose': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Standing on ONE leg
+- Torso hinged forward, parallel to floor
+- One leg extended straight BACK (also parallel to floor)
+- Arms extended out to sides like airplane wings
+- T-shape from head to extended foot
+CRITICAL: Torso and back leg PARALLEL to ground. Arms out like wings.`,
+
+  'single-leg-rdl': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing on one leg
+- Other foot slightly off ground
+END POSITION (RIGHT PANEL):
+- Hinging forward at hips
+- Back leg extending behind (counterbalance)
+- Reaching toward ground
+- Straight line from head to back foot
+MOVEMENT ARROW: Forward/down curved arrow.
+CRITICAL: Hip hinge movement on ONE leg. Back leg extends behind.`,
+
+  'standing-knee-raises': `
+CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
+START POSITION (LEFT PANEL):
+- Standing upright on both feet
+END POSITION (RIGHT PANEL):
+- One knee lifted toward chest
+- Hip and knee at 90 degrees
+- Standing tall on other leg
+MOVEMENT ARROW: Upward arrow at knee.
+CRITICAL: Knee lifts UP toward chest.`,
+
+  'tree-pose': `
+CAMERA: FRONT VIEW. ONE chrome mannequin only.
+HOLD POSITION (SINGLE PANEL):
+- Standing on ONE leg
+- Other foot placed on inner CALF or inner THIGH
+- (NEVER on the knee)
+- Hands in prayer at chest OR overhead
+- Standing tall and balanced
+CRITICAL: Foot on inner leg, NEVER on knee joint. Classic yoga pose.`,
 };
 
 serve(async (req) => {
