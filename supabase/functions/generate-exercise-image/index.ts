@@ -1045,14 +1045,26 @@ END POSITION (RIGHT PANEL):
 MOVEMENT ARROW: Downward arrow showing reach.`,
 
   'airplane-pose': `
-CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
-HOLD POSITION (SINGLE PANEL):
-- Standing on ONE leg
-- Torso hinged forward, parallel to floor
-- One leg extended straight BACK (also parallel to floor)
-- Arms extended out to sides like airplane wings
-- T-shape from head to extended foot
-CRITICAL: Torso and back leg PARALLEL to ground. Arms out like wings.`,
+SCENE RULE: ONE chrome metallic mannequin only (ABSOLUTELY NO human features). No duplicates.
+OUTFIT: Dark athletic wear (black/charcoal) with coral/red accents.
+CAMERA: SIDE PROFILE VIEW. Full body visible.
+BACKGROUND: Clean white studio.
+
+HOLD POSITION (SINGLE PANEL - this is an isometric hold):
+- Standing on ONE leg only (the planted/support leg is straight)
+- Torso hinged FORWARD at hips, torso PARALLEL to the floor (horizontal)
+- One leg extended straight BACK behind, also PARALLEL to the floor
+- Arms extended straight OUT to the sides at shoulder height like airplane wings
+- Creates a perfect T-shape when viewed from above: head → torso → extended back leg forms one line, arms form perpendicular line
+- The planted leg is the only thing vertical; everything else is horizontal
+
+CRITICAL MANNEQUIN REQUIREMENTS:
+- CHROME METALLIC SILVER body - like polished liquid metal or C-3PO's silver cousin
+- Completely SMOOTH FEATURELESS OVAL HEAD - NO eyes, NO nose, NO mouth, NO hair, NO facial features whatsoever
+- Just a smooth chrome reflective egg-shaped head
+- Athletic proportions visible through the chrome surface
+
+CRITICAL POSE: Torso and back leg must be PARALLEL to ground. Arms out like airplane wings. Single leg balance.`,
 
   'single-leg-rdl': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
@@ -1132,14 +1144,33 @@ ${detailedFormDescription || instructions || 'Standard proper form for this exer
 
 STYLE: Modern 3D rendered fitness app illustration. Premium quality like a high-end fitness game.
 
-CRITICAL CHARACTER REQUIREMENTS - MUST FOLLOW EXACTLY:
-- CHROME METALLIC ROBOT/MANNEQUIN with SHINY REFLECTIVE SILVER/CHROME SKIN - like liquid metal or polished chrome - NOT human skin tone
-- The ENTIRE BODY must be METALLIC SILVER/CHROME color - arms, legs, torso, head - all chrome/silver metal
-- COMPLETELY SMOOTH, FEATURELESS FACE - NO eyes, NO nose, NO mouth - just smooth chrome oval head like a robot or store mannequin
-- COMPLETE FULL BODY with FULL ARMS (biceps, forearms, hands with fingers) and FULL LEGS (thighs, calves, feet)
-- Athletic proportions with visible muscle definition visible through the chrome metallic surface
-- Wearing dark athletic wear (black/charcoal compression shorts and tank top) with coral/red accent stripes and "TapFit" logo
-- DO NOT use human skin color - the mannequin MUST be SILVER CHROME METALLIC like a robot or C-3PO
+=== ABSOLUTE REQUIREMENTS FOR THE CHARACTER (NON-NEGOTIABLE) ===
+
+1. CHROME METALLIC ROBOT/MANNEQUIN SKIN:
+   - The ENTIRE BODY must be SHINY REFLECTIVE SILVER/CHROME color
+   - Like LIQUID METAL, polished chrome, or a silver robot (think C-3PO but silver)
+   - Arms, legs, torso, head - ALL must be metallic silver/chrome
+   - NOT human skin tone - NEVER flesh colored
+   - Must have visible metallic reflections and highlights
+
+2. COMPLETELY FEATURELESS HEAD (THIS IS CRITICAL):
+   - Smooth OVAL/EGG-SHAPED head with NO facial features
+   - NO eyes, NO nose, NO mouth, NO ears, NO eyebrows
+   - NO hair, NO hairstyle, NO bun, NO ponytail
+   - Just a SMOOTH CHROME OVAL like a store mannequin or robot
+   - Think of a chrome Easter egg for a head
+
+3. ATHLETIC BODY:
+   - Complete full body with full arms (biceps, forearms, hands with fingers)
+   - Complete full legs (thighs, calves, feet)
+   - Athletic proportions with visible muscle definition through the chrome surface
+   - Wearing dark athletic wear (black/charcoal) with coral/red accent stripes
+
+=== WHAT TO NEVER INCLUDE ===
+- Human skin color (peach, tan, brown, etc.)
+- Any facial features (eyes, nose, mouth)
+- Hair of any kind
+- Human-like face structure
 
 COMPOSITION: ${isHold ? 
   'Single panel showing the EXACT hold position described above with body alignment markers' : 
@@ -1147,11 +1178,11 @@ COMPOSITION: ${isHold ?
 
 ARROWS: Bold coral-red directional arrows showing the ${movementType}.
 
-BACKGROUND: Clean light gray to white gradient with subtle floor reflections showing chrome reflections.
+BACKGROUND: Clean light gray to white gradient with subtle floor reflections.
 
-LABELS: Clear "START" and "END" text labels.
+LABELS: Clear "START" and "END" text labels (if two panels).
 
-QUALITY: Ultra high resolution, anatomically perfect form demonstration. The mannequin must have COMPLETE arms with hands and COMPLETE legs with feet - no missing limbs. SILVER CHROME METALLIC SKIN - NOT human skin tone.`;
+QUALITY: Ultra high resolution, anatomically perfect form demonstration. SILVER CHROME METALLIC MANNEQUIN WITH NO FACE.`;
 
     console.log(`📝 Generating with prompt length: ${prompt.length}`);
 
