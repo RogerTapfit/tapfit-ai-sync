@@ -198,28 +198,34 @@ CRITICAL: ONE LEG exercise. Non-working leg stays extended FORWARD the entire ti
   'glute-bridges': `
 SCENE RULE: ONE chrome mannequin only. No duplicates.
 CAMERA: STRICT SIDE PROFILE VIEW - lying on mat seen from side.
-HEAD on LEFT, FEET on RIGHT. Full body visible.
+ORIENTATION: HEAD on LEFT, FEET on RIGHT. Full body visible.
 
 START POSITION (LEFT PANEL):
-- Lying on back on mat
-- Knees bent ~90 degrees, feet flat on floor
+- Lying flat on back (supine) on mat
+- Knees bent ~90 degrees with KNEES STACKED OVER ANKLES
+- Feet HIP-WIDTH apart, toes pointing forward, BOTH heels flat
 - Arms at sides, palms down
-- Hips/buttocks resting on floor
+- Neutral neck, ribs down, pelvis neutral, hips resting on floor
 
 END POSITION (RIGHT PANEL):
-- SAME knee bend and foot placement
-- Hips LIFTED upward (glute bridge)
-- Straight line from SHOULDERS to KNEES
-- Upper back/head stay on mat
-- Clear gap under lower back
+- Drive through HEELS and squeeze glutes to lift hips
+- Hips lifted until there is a straight diagonal line from SHOULDERS → HIPS → KNEES
+- Upper back, shoulders, and head stay on mat
+- Core engaged, ribs stay down
+- NO low-back hyperextension (do NOT arch past the straight line)
+
+ARROWS:
+- ONE bold coral-red arrow AT THE HIPS pointing UP (vertical)
+- NO arrows near feet, knees, head, or arms
 
 FORBIDDEN:
 - No standing person
-- No legs pointing straight up
-- No shoulder-stand
+- No shoulder-stand / legs vertical
+- No feet sliding forward/back
+- No lifting heels or pushing from toes
+- No excessive arch in lower back
 
-MOVEMENT ARROW: Upward curved arrow near hips showing lift.`,
-
+CRITICAL: Both panels must show the same foot placement; only the hips move up/down.`,
   'single-leg-glute-bridges': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
 START POSITION (LEFT PANEL):
