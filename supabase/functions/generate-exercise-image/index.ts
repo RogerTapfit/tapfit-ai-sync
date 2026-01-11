@@ -173,29 +173,31 @@ END POSITION: One leg stepped BACKWARD, back knee near ground.
 CRITICAL: Stepping BACKWARD.`,
 
   'calf-raises': `
-VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person).
-BOTH PANELS show the SAME person standing on BOTH feet. ONE mannequin only.
+SCENE: ONE chrome mannequin only. SIDE PROFILE VIEW.
 
 START POSITION (LEFT PANEL):
-- Standing upright on BOTH FEET, feet flat on the floor, heels touching the ground
-- Arms relaxed at sides or hands on hips
-- Legs straight, body tall and vertical
-- BOTH feet are flat on the ground
+- Standing upright, viewed from the SIDE
+- BOTH feet flat on the floor - heels on ground
+- Arms at sides or hands on hips
+- Legs straight, body vertical
 
 END POSITION (RIGHT PANEL):
-- SAME standing position, SAME person
-- Raised UP ON TOES / balls of both feet (heels lifted HIGH off the ground)
-- Legs still straight, body still vertical
-- Calf muscles visibly contracted
+- EXACT SAME STANDING POSITION - nothing moves except heels
+- UP ON TIPTOES - heels lifted HIGH off the ground
+- Standing on balls of BOTH feet
+- BOTH feet still in same spot on floor - just heels raised
+- Body is slightly taller because standing on toes
+- Calf muscles contracted
 
-FORBIDDEN:
-- NO lifting one leg off the ground
-- NO stepping or walking motion
-- NO bending knees
-- BOTH feet stay on the ground at all times
+ABSOLUTELY FORBIDDEN - DO NOT DO ANY OF THESE:
+- NO lifting a leg off the ground
+- NO marching or stepping motion  
+- NO knee bending
+- NO moving the legs at all
+- The ONLY change is heels lift off ground
 
-MOVEMENT ARROWS: Upward arrow near the heels showing the heel lift from floor to raised position.
-CRITICAL: This is a simple heel raise on BOTH feet. Feet NEVER leave the ground. BOTH heels lift together.`,
+MOVEMENT ARROW: Small upward arrow at the ankles showing heel lift.
+THIS IS JUST GOING UP ON TIPTOES. NOTHING ELSE MOVES.`,
 
   'jump-squats': `
 START POSITION: Deep squat - knees bent to 90 degrees, hips back, thighs parallel to ground, arms in front of body for balance, back straight, torso slightly leaned forward.
