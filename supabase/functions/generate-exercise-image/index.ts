@@ -198,34 +198,34 @@ CRITICAL: ONE LEG exercise. Non-working leg stays extended FORWARD the entire ti
   'glute-bridges': `
 SCENE RULE: ONE chrome mannequin only. No duplicates.
 CAMERA: STRICT SIDE PROFILE VIEW - lying on mat seen from side.
-ORIENTATION: HEAD on LEFT, FEET on RIGHT. Full body visible.
+ORIENTATION: HEAD on LEFT side of image, FEET on RIGHT side. Full body visible.
 
 START POSITION (LEFT PANEL):
-- Lying flat on back (supine) on mat
-- Knees bent ~90 degrees with KNEES STACKED OVER ANKLES
-- Feet HIP-WIDTH apart, toes pointing forward, BOTH heels flat
-- Arms at sides, palms down
-- Neutral neck, ribs down, pelvis neutral, hips resting on floor
+- Lying FLAT on back on mat - HIPS TOUCHING THE FLOOR
+- Knees bent approximately 90 degrees
+- Feet flat on floor, hip-width apart
+- Arms relaxed at sides, palms down
+- BUTTOCKS and LOWER BACK are FLAT ON THE MAT
 
-END POSITION (RIGHT PANEL):
-- Drive through HEELS and squeeze glutes to lift hips
-- Hips lifted until there is a straight diagonal line from SHOULDERS → HIPS → KNEES
-- Upper back, shoulders, and head stay on mat
-- Core engaged, ribs stay down
-- NO low-back hyperextension (do NOT arch past the straight line)
+END POSITION (RIGHT PANEL) - CRITICAL DIFFERENCE:
+- HIPS LIFTED VERY HIGH off the ground - this is the "bridge"
+- Body forms STRAIGHT DIAGONAL LINE from SHOULDERS through HIPS to KNEES
+- LARGE VISIBLE GAP between lower back and floor
+- Glutes squeezed at top, pelvis tilted slightly posterior
+- Only HEAD, SHOULDERS, UPPER BACK, and FEET remain on mat
+- Hips should be at SAME HEIGHT as the knees - NOT barely off ground
 
-ARROWS:
-- ONE bold coral-red arrow AT THE HIPS pointing UP (vertical)
-- NO arrows near feet, knees, head, or arms
+THE TWO PANELS MUST LOOK DRAMATICALLY DIFFERENT:
+- START: hips DOWN touching mat, body flat
+- END: hips UP HIGH in the air, clear bridge arch visible
+
+ARROW: ONE bold coral-red upward arrow near the hips showing the lift direction.
 
 FORBIDDEN:
-- No standing person
-- No shoulder-stand / legs vertical
-- No feet sliding forward/back
-- No lifting heels or pushing from toes
-- No excessive arch in lower back
-
-CRITICAL: Both panels must show the same foot placement; only the hips move up/down.`,
+- Do NOT make START and END look similar
+- Do NOT show only a tiny hip lift - the lift must be DRAMATIC
+- No standing poses
+- No shoulder-stand with legs vertical`,
   'single-leg-glute-bridges': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
 START POSITION (LEFT PANEL):
