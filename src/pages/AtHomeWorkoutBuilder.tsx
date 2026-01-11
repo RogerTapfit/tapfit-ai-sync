@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Plus, Minus, Play, Trash2, ChevronDown, ChevronUp, Clock, Dumbbell } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Play, Trash2, ChevronDown, ChevronUp, Clock, Dumbbell, Search } from 'lucide-react';
 import { atHomeExercises, exerciseCategories, AtHomeExercise, getExercisesByCategory } from '@/data/atHomeExercises';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -23,6 +23,7 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['lower-body']);
   const [workoutName, setWorkoutName] = useState('My Home Workout');
   const [previewExercise, setPreviewExercise] = useState<AtHomeExercise | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 
@@ -31,6 +32,17 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
         : [...prev, categoryId]
     );
   };
+
+  // Memoize sorted + filtered exercises per category
+  const getFilteredExercises = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return (categoryId: string) => {
+      const exercises = getExercisesByCategory(categoryId)
+        .sort((a, b) => a.name.localeCompare(b.name)); // Alphabetical
+      if (!query) return exercises;
+      return exercises.filter(e => e.name.toLowerCase().includes(query));
+    };
+  }, [searchQuery]);
 
   const addExercise = (exercise: AtHomeExercise) => {
     if (selectedExercises.find(e => e.id === exercise.id)) {
@@ -226,9 +238,20 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
         {/* Exercise Library */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Exercise Library</h3>
+
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search exercises..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
           
           {exerciseCategories.map(category => {
-            const exercises = getExercisesByCategory(category.id);
+            const exercises = getFilteredExercises(category.id);
             const isExpanded = expandedCategories.includes(category.id);
             const addedCount = selectedExercises.filter(e => e.category === category.id).length;
             
