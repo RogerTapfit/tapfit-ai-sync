@@ -173,31 +173,35 @@ END POSITION: One leg stepped BACKWARD, back knee near ground.
 CRITICAL: Stepping BACKWARD.`,
 
   'calf-raises': `
-SCENE: ONE chrome mannequin only. SIDE PROFILE VIEW.
+CAMERA: SIDE PROFILE VIEW. ONE mannequin only.
+
+CRITICAL FOOT RULE: You must show TWO (2) FEET visible in BOTH panels. Both feet stay planted on the floor. Neither foot ever leaves the ground.
 
 START POSITION (LEFT PANEL):
-- Standing upright, viewed from the SIDE
-- BOTH feet flat on the floor - heels on ground
-- Arms at sides or hands on hips
-- Legs straight, body vertical
+- Standing upright, side view
+- TWO FEET visible, side by side, both FLAT on the floor
+- Heels touching the ground
+- Legs straight
 
 END POSITION (RIGHT PANEL):
-- EXACT SAME STANDING POSITION - nothing moves except heels
-- UP ON TIPTOES - heels lifted HIGH off the ground
-- Standing on balls of BOTH feet
-- BOTH feet still in same spot on floor - just heels raised
-- Body is slightly taller because standing on toes
-- Calf muscles contracted
+- SAME standing position
+- TWO FEET still visible, still side by side, still on the floor
+- NOW ON TIPTOES: heels are RAISED off the ground
+- Balls of BOTH feet still touching the floor
+- Body slightly taller from standing on toes
 
-ABSOLUTELY FORBIDDEN - DO NOT DO ANY OF THESE:
-- NO lifting a leg off the ground
-- NO marching or stepping motion  
-- NO knee bending
-- NO moving the legs at all
-- The ONLY change is heels lift off ground
+WHAT A CALF RAISE IS:
+- Stand on both feet
+- Lift your heels off the ground (go on tiptoes)
+- That's it - no leg movement at all
 
-MOVEMENT ARROW: Small upward arrow at the ankles showing heel lift.
-THIS IS JUST GOING UP ON TIPTOES. NOTHING ELSE MOVES.`,
+FORBIDDEN - THE AI KEEPS DOING THIS WRONG:
+- DO NOT lift one leg off the ground
+- DO NOT show one foot in the air
+- DO NOT show a stepping or marching motion
+- BOTH FEET must be visible on the ground in BOTH panels
+
+MOVEMENT ARROW: Small upward arrow at ankles showing heel lift only.`,
 
   'jump-squats': `
 START POSITION: Deep squat - knees bent to 90 degrees, hips back, thighs parallel to ground, arms in front of body for balance, back straight, torso slightly leaned forward.
