@@ -173,9 +173,29 @@ END POSITION: One leg stepped BACKWARD, back knee near ground.
 CRITICAL: Stepping BACKWARD.`,
 
   'calf-raises': `
-START POSITION: Standing flat-footed.
-END POSITION: Raised up on balls of feet, heels high off ground.
-CRITICAL: Simple toe raise while standing.`,
+VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person).
+BOTH PANELS show the SAME person standing on BOTH feet. ONE mannequin only.
+
+START POSITION (LEFT PANEL):
+- Standing upright on BOTH FEET, feet flat on the floor, heels touching the ground
+- Arms relaxed at sides or hands on hips
+- Legs straight, body tall and vertical
+- BOTH feet are flat on the ground
+
+END POSITION (RIGHT PANEL):
+- SAME standing position, SAME person
+- Raised UP ON TOES / balls of both feet (heels lifted HIGH off the ground)
+- Legs still straight, body still vertical
+- Calf muscles visibly contracted
+
+FORBIDDEN:
+- NO lifting one leg off the ground
+- NO stepping or walking motion
+- NO bending knees
+- BOTH feet stay on the ground at all times
+
+MOVEMENT ARROWS: Upward arrow near the heels showing the heel lift from floor to raised position.
+CRITICAL: This is a simple heel raise on BOTH feet. Feet NEVER leave the ground. BOTH heels lift together.`,
 
   'jump-squats': `
 START POSITION: Deep squat - knees bent to 90 degrees, hips back, thighs parallel to ground, arms in front of body for balance, back straight, torso slightly leaned forward.
