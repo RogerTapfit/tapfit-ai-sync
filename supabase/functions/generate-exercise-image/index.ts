@@ -61,9 +61,11 @@ END POSITION: One bent leg kicked BACK and UP toward ceiling, sole of foot facin
 CRITICAL: Must be on hands and knees. Leg kicks BACKWARD, not sideways.`,
 
   'fire-hydrants': `
-START POSITION: On all fours (hands and knees), back flat.
-END POSITION: One bent leg lifted OUT TO THE SIDE (laterally), keeping knee bent 90 degrees.
-CRITICAL: Leg moves SIDEWAYS, not backward. Like a dog at a fire hydrant.`,
+VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person, NOT from the front).
+START POSITION: On all fours in tabletop position - hands directly under shoulders, knees under hips, back flat and parallel to ground, head neutral looking at floor. BOTH knees on the ground.
+END POSITION: SAME tabletop position but ONE leg (keeping knee bent at 90 degrees) is lifted OUT TO THE SIDE laterally - thigh raises to be parallel with the ground/hip height while knee stays bent. The foot of the lifted leg points behind. Other knee stays on ground.
+MOVEMENT ARROWS: Curved arrow showing the bent leg lifting laterally outward from the hip.
+CRITICAL: This MUST be shown from a SIDE VIEW angle so you can clearly see the leg lifting sideways. The knee stays BENT 90 degrees throughout - the leg does NOT straighten. Person stays on hands and knees. Like a dog lifting its leg at a fire hydrant.`,
 
   'burpees': `
 START POSITION: Standing upright.
