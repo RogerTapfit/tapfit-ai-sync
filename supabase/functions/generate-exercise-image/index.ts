@@ -1149,55 +1149,158 @@ QUALITY: Ultra high resolution, anatomically perfect form demonstration. The man
 
     console.log(`📝 Generating with prompt length: ${prompt.length}`);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        modalities: ["image", "text"]
-      })
-    });
+    const generateImageDataUrl = async (promptText: string): Promise<string> => {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image-preview",
+          messages: [
+            {
+              role: "user",
+              content: promptText,
+            },
+          ],
+          modalities: ["image", "text"],
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
-      
-      // Update status to failed
-      await supabase
-        .from('exercise_images')
-        .update({
-          generation_status: 'failed',
-          generation_error: `AI Gateway error: ${response.status}`,
-          updated_at: new Date().toISOString()
-        })
-        .eq('exercise_id', exerciseId);
-      
-      throw new Error(`AI Gateway error: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI Gateway error:', response.status, errorText);
+
+        await supabase
+          .from('exercise_images')
+          .update({
+            generation_status: 'failed',
+            generation_error: `AI Gateway error: ${response.status}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('exercise_id', exerciseId);
+
+        throw new Error(`AI Gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Image generated successfully');
+
+      const generated = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (!generated) {
+        await supabase
+          .from('exercise_images')
+          .update({
+            generation_status: 'failed',
+            generation_error: 'No image data received from AI',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('exercise_id', exerciseId);
+
+        throw new Error('No image data received from AI');
+      }
+
+      return generated;
+    };
+
+    const validateGluteBridgesImage = async (
+      dataUrl: string,
+    ): Promise<{ pass: boolean; reasons: string[] }> => {
+      try {
+        const validationPrompt = `You are a STRICT fitness illustration validator.
+Return ONLY valid JSON: {"pass": boolean, "reasons": string[]}.
+
+PASS ONLY IF ALL are true:
+1) The illustration shows a glute bridge (lying on back) in SIDE PROFILE view.
+2) Two panels labeled START (left) and END (right).
+3) END shows hips lifted HIGH with a straight line from shoulders to hips to knees (table-top/ramp), with a clear visible gap under the hips.
+4) NO standing figure and NO front view.
+5) Only ONE coral/red UP arrow at the hips (no extra arrows).`;
+
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: validationPrompt },
+                  { type: "image_url", image_url: { url: dataUrl } },
+                ],
+              },
+            ],
+            modalities: ["text"],
+          }),
+        });
+
+        if (!resp.ok) {
+          return { pass: false, reasons: [`validator_http_${resp.status}`] };
+        }
+
+        const json = await resp.json();
+        const raw = json.choices?.[0]?.message?.content;
+        const text = typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
+
+        const firstBrace = text.indexOf('{');
+        const lastBrace = text.lastIndexOf('}');
+        const jsonStr = firstBrace !== -1 && lastBrace !== -1 ? text.slice(firstBrace, lastBrace + 1) : text;
+
+        const parsed = JSON.parse(jsonStr);
+        return {
+          pass: Boolean(parsed?.pass),
+          reasons: Array.isArray(parsed?.reasons) ? parsed.reasons.map((r: unknown) => String(r)) : ['validator_unparseable_reasons'],
+        };
+      } catch (e) {
+        console.error('Validator error:', e);
+        return { pass: false, reasons: ['validator_exception'] };
+      }
+    };
+
+    // Generate (with validation+retry for glute-bridges specifically)
+    let imageData: string | null = null;
+    const maxAttempts = exerciseId === 'glute-bridges' ? 3 : 1;
+    let lastReasons: string[] = [];
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const attemptPrompt =
+        attempt === 1
+          ? prompt
+          : `${prompt}\n\nCRITICAL FIX (attempt ${attempt}/${maxAttempts}): The previous image was WRONG. Fix these issues: ${lastReasons.join('; ') || 'incorrect pose/view'}.\n\nDO NOT output a standing/front-view figure. Must be lying on back, side profile, with hips clearly lifted high in END.`;
+
+      imageData = await generateImageDataUrl(attemptPrompt);
+
+      if (exerciseId !== 'glute-bridges') break;
+
+      const verdict = await validateGluteBridgesImage(imageData);
+      if (verdict.pass) {
+        console.log('✅ Validator PASS (glute-bridges)');
+        break;
+      }
+
+      console.log('❌ Validator FAIL (glute-bridges):', verdict.reasons);
+      lastReasons = verdict.reasons;
+
+      if (attempt === maxAttempts) {
+        await supabase
+          .from('exercise_images')
+          .update({
+            generation_status: 'failed',
+            generation_error: `Failed validation: ${lastReasons.slice(0, 5).join(' | ')}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('exercise_id', exerciseId);
+
+        throw new Error('Generated image failed form validation; please retry.');
+      }
     }
 
-    const data = await response.json();
-    console.log('✅ Image generated successfully');
-
-    const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!imageData) {
-      await supabase
-        .from('exercise_images')
-        .update({
-          generation_status: 'failed',
-          generation_error: 'No image data received from AI',
-          updated_at: new Date().toISOString()
-        })
-        .eq('exercise_id', exerciseId);
-      
       throw new Error('No image data received from AI');
     }
 
