@@ -156,14 +156,24 @@ export function ExerciseImageGenerator() {
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
             {!batchProgress.isRunning ? (
-              <Button 
-                onClick={generateAllMissing}
-                className="gap-2"
-                disabled={stats.notStarted + stats.failed === 0}
-              >
-                <Zap className="w-4 h-4" />
-                Generate All Missing ({stats.notStarted + stats.failed})
-              </Button>
+              <>
+                <Button 
+                  onClick={generateAllMissing}
+                  className="gap-2"
+                  disabled={stats.notStarted + stats.failed === 0}
+                >
+                  <Zap className="w-4 h-4" />
+                  Generate Missing ({stats.notStarted + stats.failed})
+                </Button>
+                <Button 
+                  onClick={regenerateAll}
+                  variant="secondary"
+                  className="gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Regenerate ALL ({stats.total})
+                </Button>
+              </>
             ) : (
               <Button 
                 onClick={stopBatchGeneration}
