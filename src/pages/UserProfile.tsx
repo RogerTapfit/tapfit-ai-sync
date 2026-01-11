@@ -276,55 +276,40 @@ export default function UserProfile() {
               </Card>
 
               {/* Quick Stats Grid */}
-              <div className="grid gap-4 grid-cols-3">
+              <div className="grid gap-3 grid-cols-3">
                 <Card 
-                  className="hover:border-primary/20 transition-colors cursor-pointer"
+                  className="hover:border-primary/20 transition-colors cursor-pointer overflow-hidden"
                   onClick={() => setActiveTab("workouts")}
                 >
-                  <CardHeader className="pb-2 space-y-0">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
-                        <Dumbbell className="h-3.5 w-3.5 text-primary" />
-                      </div>
-                      <CardTitle className="text-xs font-medium text-muted-foreground">Total Workouts</CardTitle>
+                  <CardContent className="p-3 text-center">
+                    <div className="p-2 rounded-lg bg-primary/10 w-fit mx-auto mb-2">
+                      <Dumbbell className="h-4 w-4 text-primary" />
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-2xl font-bold">{stats?.workout_count || 0}</div>
-                    <p className="text-xs text-muted-foreground mt-1">All time</p>
+                    <p className="text-[10px] text-muted-foreground truncate">Workouts</p>
+                    <div className="text-xl font-bold mt-1">{stats?.workout_count || 0}</div>
                   </CardContent>
                 </Card>
 
                 <Card 
-                  className="hover:border-yellow-500/20 transition-colors cursor-pointer"
+                  className="hover:border-yellow-500/20 transition-colors cursor-pointer overflow-hidden"
                   onClick={() => setActiveTab("achievements")}
                 >
-                  <CardHeader className="pb-2 space-y-0">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-md bg-yellow-500/10 shrink-0">
-                        <Trophy className="h-3.5 w-3.5 text-yellow-500" />
-                      </div>
-                      <CardTitle className="text-xs font-medium text-muted-foreground">Achievements</CardTitle>
+                  <CardContent className="p-3 text-center">
+                    <div className="p-2 rounded-lg bg-yellow-500/10 w-fit mx-auto mb-2">
+                      <Trophy className="h-4 w-4 text-yellow-500" />
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-2xl font-bold">{achievements.length}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Badges earned</p>
+                    <p className="text-[10px] text-muted-foreground truncate">Badges</p>
+                    <div className="text-xl font-bold mt-1">{achievements.length}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="pb-2 space-y-0">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-md bg-green-500/10 shrink-0">
-                        <Dumbbell className="h-3.5 w-3.5 text-green-500" />
-                      </div>
-                      <CardTitle className="text-xs font-medium text-muted-foreground">Exercises</CardTitle>
+                <Card className="overflow-hidden">
+                  <CardContent className="p-3 text-center">
+                    <div className="p-2 rounded-lg bg-green-500/10 w-fit mx-auto mb-2">
+                      <Dumbbell className="h-4 w-4 text-green-500" />
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-2xl font-bold">{stats?.total_exercises || 0}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Completed</p>
+                    <p className="text-[10px] text-muted-foreground truncate">Exercises</p>
+                    <div className="text-xl font-bold mt-1">{stats?.total_exercises || 0}</div>
                   </CardContent>
                 </Card>
               </div>
