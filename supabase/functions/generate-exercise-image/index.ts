@@ -18,10 +18,10 @@ interface ExerciseRequest {
 const exerciseFormDescriptions: Record<string, string> = {
   'glute-bridges': `
 VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person, showing full body from head to feet in profile).
-START POSITION: Person lying FLAT ON THEIR BACK on the ground, knees bent at approximately 90 degrees, feet flat on floor hip-width apart, arms resting flat at sides with palms down, head resting on ground, HIPS/LOWER BACK touching the ground - body is flat against floor.
-END POSITION: SAME LYING POSITION viewed from side - hips and pelvis LIFTED/RAISED toward ceiling creating a straight diagonal line from shoulders through hips to knees. Feet remain flat on floor, knees still bent. Shoulders, upper back, arms, and head STAY ON THE GROUND. Only the hips, pelvis, and lower back lift up off the ground.
-MOVEMENT ARROWS: Upward curved arrow near the hips showing the lifting motion from START to END.
-CRITICAL: MUST be SIDE VIEW. The person NEVER stands up. BOTH panels show person lying on their back viewed from the side. START shows hips DOWN on ground, END shows hips LIFTED UP. The difference between panels is ONLY the hip position - down vs raised.`,
+START POSITION: Person lying FLAT ON THEIR BACK on the ground, knees bent at approximately 90 degrees, feet flat on floor hip-width apart, arms resting flat at sides with palms down, head resting on ground, HIPS/LOWER BACK and BUTTOCKS touching the ground - entire back is flat against floor.
+END POSITION: HIPS THRUST HIGH toward ceiling creating a dramatic ARCHED BRIDGE shape - pelvis raised as high as possible, body forms a steep diagonal slope from shoulders to knees. Thighs and torso form a straight line at the top. Glutes are squeezed and elevated. Shoulders, upper back, arms, head, and feet remain on ground. The hip lift should be VERY HIGH - not subtle.
+MOVEMENT ARROWS: Upward arrow showing the dramatic hip thrust from flat to arched bridge position.
+CRITICAL: END position must show a DRAMATIC difference from START - hips lifted VERY HIGH creating a clear arched bridge. START is FLAT on ground, END is ARCHED HIGH like a bridge. The difference should be obvious and dramatic.`,
 
   'single-leg-glute-bridges': `
 START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
