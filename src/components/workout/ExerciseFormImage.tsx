@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useExerciseImage } from '@/hooks/useExerciseImages';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Eye, Loader2 } from 'lucide-react';
 
 interface ExerciseFormImageProps {
@@ -12,42 +11,49 @@ interface ExerciseFormImageProps {
   showModal?: boolean;
 }
 
-export function ExerciseFormImage({ 
-  exerciseId, 
-  exerciseName, 
-  emoji, 
+export function ExerciseFormImage({
+  exerciseId,
+  exerciseName,
+  emoji,
   size = 'md',
-  showModal = true 
+  showModal = true,
 }: ExerciseFormImageProps) {
   const { image, loading } = useExerciseImage(exerciseId);
   const [isOpen, setIsOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [exerciseId, image?.image_url, image?.mini_image_url]);
 
   const sizeClasses = {
     sm: 'w-10 h-10',
     md: 'w-14 h-14',
     lg: 'w-20 h-20',
     xl: 'w-full max-w-xs',
-    hero: 'w-full'
+    hero: 'w-full',
   };
 
   const isLargeSize = size === 'xl' || size === 'hero';
-
-  const hasImage = image?.image_url && image.generation_status === 'complete';
+  const hasImage = !imgError && !!image?.image_url && image.generation_status === 'complete';
 
   const ImageContent = () => (
-    <div 
-      className={`${sizeClasses[size]} rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0`}
-    >
+    <div className={`${sizeClasses[size]} rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0`}>
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       ) : hasImage ? (
-        <img 
-          src={isLargeSize ? image.image_url : (image.mini_image_url || image.image_url)} 
+        <img
+          src={isLargeSize ? image.image_url! : image.mini_image_url || image.image_url!}
           alt={exerciseName}
+          loading="lazy"
+          decoding="async"
+          onError={() => setImgError(true)}
           className={`w-full h-full ${isLargeSize ? 'object-contain' : 'object-cover'}`}
         />
       ) : (
-        <span className={size === 'sm' ? 'text-lg' : size === 'hero' || size === 'xl' ? 'text-6xl' : 'text-2xl'}>{emoji}</span>
+        <span className={size === 'sm' ? 'text-lg' : size === 'hero' || size === 'xl' ? 'text-6xl' : 'text-2xl'}>
+          {emoji}
+        </span>
       )}
     </div>
   );
@@ -74,9 +80,12 @@ export function ExerciseFormImage({
           </DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          <img 
-            src={image.image_url} 
+          <img
+            src={image.image_url!}
             alt={`${exerciseName} form guide`}
+            loading="lazy"
+            decoding="async"
+            onError={() => setImgError(true)}
             className="w-full rounded-lg"
           />
         </div>

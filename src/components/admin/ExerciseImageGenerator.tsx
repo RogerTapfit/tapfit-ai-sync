@@ -29,9 +29,11 @@ export function ExerciseImageGenerator() {
     batchProgress,
     generateImage,
     generateAllMissing,
+    regenerateAll,
     stopBatchGeneration,
     refreshImages
   } = useExerciseImageGenerator();
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
