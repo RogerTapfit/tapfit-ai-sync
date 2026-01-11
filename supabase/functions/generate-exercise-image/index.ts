@@ -17,26 +17,34 @@ interface ExerciseRequest {
 // Detailed anatomically correct exercise form descriptions
 const exerciseFormDescriptions: Record<string, string> = {
   'glute-bridges': `
-VIEW ANGLE: SIDE PROFILE VIEW - camera at floor level looking horizontally at the person.
-BOTH PANELS: Person lying on back on a mat. Head on LEFT, feet on RIGHT of frame.
+VIEW ANGLE (MUST FOLLOW): STRICT SIDE PROFILE VIEW, like a real side-on photo of a person on the floor.
+- Camera is positioned to the SIDE of the body (not overhead, not top-down, not front view).
+- You MUST see the side silhouette of the head/torso/hips/knees/feet.
+- Floor is a clear horizontal line; mat is seen from the SIDE (thin edge), NOT as a big rectangle from above.
+- Person is oriented LEFT→RIGHT: head on the LEFT, feet on the RIGHT.
+- Show FULL BODY (head to feet) in BOTH panels (no cropped legs).
 
-START POSITION (LEFT PANEL): 
-- Person lying COMPLETELY FLAT on back
-- Knees bent, feet flat on floor
-- ENTIRE SPINE touching the mat - lower back, mid back, upper back all flat
-- Buttocks/hips resting ON the floor
-- Arms at sides, palms down
+START POSITION (LEFT PANEL):
+- Person lying FLAT on back on the mat
+- Knees bent about ~90 degrees, shins roughly vertical
+- Feet flat on the floor, hip-width apart
+- Arms resting long at sides, palms down
+- Hips/buttocks on the floor, spine mostly flat
 
 END POSITION (RIGHT PANEL):
-- SAME person, SAME lying orientation
-- Hips and pelvis THRUST HIGH toward ceiling
-- Lower back and mid-back are now LIFTED OFF THE FLOOR (visible gap between spine and mat)
-- Only shoulders/upper back and head remain on mat
-- Thighs and torso form a STRAIGHT LINE from knees to shoulders
-- Clear visible ARCH/BRIDGE shape - like a bridge over a river
-- Buttocks squeezed tight at the top
+- SAME person, SAME side view, SAME knee bend (~90°)
+- Drive through heels and LIFT HIPS upward into a GLUTE BRIDGE (hip raise)
+- Shoulder blades + upper back + head stay on the mat
+- Hips are lifted so that SHOULDERS → HIPS → KNEES form ONE STRAIGHT DIAGONAL LINE
+- Lower back/pelvis clearly elevated off the floor (visible gap) compared to START
 
-KEY VISUAL DIFFERENCE: START shows flat back on floor. END shows dramatic hip lift with visible space under the lower spine. The lift should be VERY OBVIOUS - not subtle.`,
+DO NOT (CRITICAL):
+- Do NOT lift the legs straight up
+- Do NOT straighten the knees
+- Do NOT show a shoulder-stand/inverted pose
+- Do NOT use a top-down view
+
+MOVEMENT ARROWS: One upward curved arrow showing hips lifting from START to END.`,
 
   'single-leg-glute-bridges': `
 START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
