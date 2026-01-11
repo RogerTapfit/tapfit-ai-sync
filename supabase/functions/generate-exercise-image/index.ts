@@ -17,16 +17,26 @@ interface ExerciseRequest {
 // Detailed anatomically correct exercise form descriptions
 const exerciseFormDescriptions: Record<string, string> = {
   'glute-bridges': `
-VIEW ANGLE: SIDE PROFILE VIEW showing full body horizontally from head to feet.
-BOTH PANELS MUST SHOW: Person LYING ON THEIR BACK on a mat/floor. HEAD on LEFT side of frame, FEET on RIGHT side.
-START POSITION (LEFT PANEL): Person lying FLAT on back. Knees bent with feet flat on floor. Arms flat at sides. Entire back, buttocks, and hips are resting ON THE GROUND. Body is completely horizontal/flat.
-END POSITION (RIGHT PANEL): SAME person STILL LYING ON BACK but now hips are THRUST UPWARD creating a BRIDGE ARCH. Upper back, shoulders, arms, and head REMAIN on ground. Hips and pelvis are RAISED HIGH toward ceiling. Body forms a slope from shoulders up to knees. Feet still flat on floor.
-CRITICAL REQUIREMENTS:
-- BOTH panels show person LYING ON BACK - NOT standing, NOT kneeling, NOT sitting
-- START is FLAT on ground, END has HIPS ELEVATED HIGH
-- Side profile view - see the body horizontally
-- The ONLY difference between panels is the hip position (down vs up)
-- Person NEVER leaves lying position in either panel`,
+VIEW ANGLE: SIDE PROFILE VIEW - camera at floor level looking horizontally at the person.
+BOTH PANELS: Person lying on back on a mat. Head on LEFT, feet on RIGHT of frame.
+
+START POSITION (LEFT PANEL): 
+- Person lying COMPLETELY FLAT on back
+- Knees bent, feet flat on floor
+- ENTIRE SPINE touching the mat - lower back, mid back, upper back all flat
+- Buttocks/hips resting ON the floor
+- Arms at sides, palms down
+
+END POSITION (RIGHT PANEL):
+- SAME person, SAME lying orientation
+- Hips and pelvis THRUST HIGH toward ceiling
+- Lower back and mid-back are now LIFTED OFF THE FLOOR (visible gap between spine and mat)
+- Only shoulders/upper back and head remain on mat
+- Thighs and torso form a STRAIGHT LINE from knees to shoulders
+- Clear visible ARCH/BRIDGE shape - like a bridge over a river
+- Buttocks squeezed tight at the top
+
+KEY VISUAL DIFFERENCE: START shows flat back on floor. END shows dramatic hip lift with visible space under the lower spine. The lift should be VERY OBVIOUS - not subtle.`,
 
   'single-leg-glute-bridges': `
 START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
