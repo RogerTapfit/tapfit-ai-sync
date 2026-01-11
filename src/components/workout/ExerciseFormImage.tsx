@@ -8,7 +8,7 @@ interface ExerciseFormImageProps {
   exerciseId: string;
   exerciseName: string;
   emoji: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
   showModal?: boolean;
 }
 
@@ -25,7 +25,9 @@ export function ExerciseFormImage({
   const sizeClasses = {
     sm: 'w-10 h-10',
     md: 'w-14 h-14',
-    lg: 'w-20 h-20'
+    lg: 'w-20 h-20',
+    xl: 'w-full max-w-xs h-auto aspect-square',
+    hero: 'w-full max-w-sm h-auto aspect-[4/3]'
   };
 
   const hasImage = image?.image_url && image.generation_status === 'complete';

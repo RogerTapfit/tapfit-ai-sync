@@ -260,12 +260,12 @@ export const AtHomeWorkoutSession: React.FC = () => {
         {!isResting && (
           <>
             <Card className="p-6 text-center">
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-6">
                 <ExerciseFormImage
                   exerciseId={currentExercise.id}
                   exerciseName={currentExercise.name}
                   emoji={currentExercise.emoji}
-                  size="lg"
+                  size="hero"
                   showModal={true}
                 />
               </div>
