@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, UserMinus, Share2, Eye, EyeOff } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { UserPlus, UserMinus, Share2, Eye, EyeOff, Palette } from 'lucide-react';
 import { RobotAvatarDisplay } from '@/components/RobotAvatarDisplay';
 
 interface ProfileHeroProps {
@@ -27,6 +29,8 @@ interface ProfileHeroProps {
   followsBack?: boolean;
   onFollowToggle: () => void;
   rankColor?: string;
+  customBannerColor?: string;
+  onBannerColorChange?: (color: string) => void;
 }
 
 const getDisplayName = (profile: { full_name?: string; username?: string }) => {
@@ -37,6 +41,21 @@ const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 };
 
+const FUN_COLORS = [
+  { name: 'Purple', value: '#8B5CF6' },
+  { name: 'Blue', value: '#3B82F6' },
+  { name: 'Cyan', value: '#06B6D4' },
+  { name: 'Emerald', value: '#10B981' },
+  { name: 'Yellow', value: '#EAB308' },
+  { name: 'Orange', value: '#F97316' },
+  { name: 'Red', value: '#EF4444' },
+  { name: 'Pink', value: '#EC4899' },
+  { name: 'Rose', value: '#F43F5E' },
+  { name: 'Indigo', value: '#6366F1' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Lime', value: '#84CC16' },
+];
+
 export const ProfileHero = ({
   profile,
   socialStats,
@@ -44,8 +63,14 @@ export const ProfileHero = ({
   isFollowing,
   followsBack,
   onFollowToggle,
-  rankColor = '#6366f1'
+  rankColor = '#6366f1',
+  customBannerColor,
+  onBannerColorChange
 }: ProfileHeroProps) => {
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  
+  const bannerColor = customBannerColor || rankColor;
+
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({
@@ -57,113 +82,157 @@ export const ProfileHero = ({
 
   return (
     <div className="relative">
-      {/* Cover Banner with Rank Gradient */}
+      {/* Cover Banner with Custom/Rank Gradient */}
       <div 
-        className="h-32 sm:h-40 rounded-t-xl"
+        className="h-32 sm:h-40 rounded-t-xl relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${rankColor}40, ${rankColor}20, hsl(var(--background)))`
+          background: `linear-gradient(135deg, ${bannerColor}50, ${bannerColor}25, hsl(var(--background)))`
         }}
-      />
+      >
+        {/* Color Picker Button - Only on own profile */}
+        {isOwnProfile && onBannerColorChange && (
+          <Popover open={showColorPicker} onOpenChange={setShowColorPicker}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-3 right-3 bg-background/50 hover:bg-background/80 backdrop-blur-sm"
+              >
+                <Palette className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="end">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Banner Color</p>
+                <div className="grid grid-cols-6 gap-2">
+                  {FUN_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => {
+                        onBannerColorChange(color.value);
+                        setShowColorPicker(false);
+                      }}
+                      className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                      style={{ 
+                        backgroundColor: color.value,
+                        borderColor: customBannerColor === color.value ? 'white' : 'transparent'
+                      }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    onBannerColorChange('');
+                    setShowColorPicker(false);
+                  }}
+                >
+                  Reset to Rank Color
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
 
       {/* Profile Content */}
-      <div className="px-4 sm:px-6 pb-4 -mt-16 sm:-mt-20">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          {/* Dual Avatars */}
-          <div className="flex items-end gap-2">
-            <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-background shadow-xl">
-              <AvatarImage src={profile.avatar_url || ''} alt={getDisplayName(profile)} />
-              <AvatarFallback className="text-2xl bg-primary/20 text-primary">
-                {getInitials(profile.full_name || profile.username || '')}
-              </AvatarFallback>
-            </Avatar>
-            
-            {(profile.avatar_data || profile.avatar_id) && (
-              <div className="w-12 h-12 sm:w-16 sm:h-16 -ml-4 mb-2 z-10">
-                <RobotAvatarDisplay 
-                  avatarData={{ ...profile.avatar_data, avatar_id: profile.avatar_id }}
-                  size="small"
-                  className="border-2 border-background rounded-full shadow-lg"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Name & Actions */}
-          <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                {getDisplayName(profile)}
-              </h1>
-              <p className="text-muted-foreground">@{profile.username || 'user'}</p>
-              
-              {/* Privacy Badges */}
-              <div className="flex items-center gap-2 mt-2">
-                {profile.is_profile_public ? (
-                  <Badge variant="outline" className="text-xs gap-1">
-                    <Eye className="w-3 h-3" /> Public
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    <EyeOff className="w-3 h-3" /> Private
-                  </Badge>
-                )}
-                {followsBack && !isOwnProfile && (
-                  <Badge variant="secondary" className="text-xs">
-                    Follows you
-                  </Badge>
-                )}
-              </div>
+      <div className="px-4 sm:px-6 pb-4 -mt-14 sm:-mt-16">
+        {/* Avatar Row */}
+        <div className="flex items-end gap-3 mb-4">
+          <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-4 border-background shadow-xl shrink-0">
+            <AvatarImage src={profile.avatar_url || ''} alt={getDisplayName(profile)} />
+            <AvatarFallback className="text-2xl bg-primary/20 text-primary">
+              {getInitials(profile.full_name || profile.username || '')}
+            </AvatarFallback>
+          </Avatar>
+          
+          {(profile.avatar_data || profile.avatar_id) && (
+            <div className="w-14 h-14 sm:w-16 sm:h-16 -ml-6 mb-1 shrink-0">
+              <RobotAvatarDisplay 
+                avatarData={{ ...profile.avatar_data, avatar_id: profile.avatar_id }}
+                size="small"
+                className="border-2 border-background rounded-full shadow-lg"
+              />
             </div>
+          )}
+        </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {!isOwnProfile && (
-                <Button
-                  onClick={onFollowToggle}
-                  variant={isFollowing ? 'outline' : 'default'}
-                  size="sm"
-                  className="gap-2"
-                >
-                  {isFollowing ? (
-                    <>
-                      <UserMinus className="w-4 h-4" />
-                      Following
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4" />
-                      Follow
-                    </>
-                  )}
-                </Button>
+        {/* Name & Username */}
+        <div className="space-y-1 mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
+            {getDisplayName(profile)}
+          </h1>
+          <p className="text-muted-foreground text-sm">@{profile.username || 'user'}</p>
+        </div>
+
+        {/* Privacy Badges & Actions */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {profile.is_profile_public ? (
+            <Badge variant="outline" className="text-xs gap-1 shrink-0">
+              <Eye className="w-3 h-3" /> Public
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="text-xs gap-1 shrink-0">
+              <EyeOff className="w-3 h-3" /> Private
+            </Badge>
+          )}
+          {followsBack && !isOwnProfile && (
+            <Badge variant="secondary" className="text-xs shrink-0">
+              Follows you
+            </Badge>
+          )}
+          
+          <div className="flex-1" />
+          
+          {/* Action Buttons */}
+          {!isOwnProfile && (
+            <Button
+              onClick={onFollowToggle}
+              variant={isFollowing ? 'outline' : 'default'}
+              size="sm"
+              className="gap-1.5 shrink-0"
+            >
+              {isFollowing ? (
+                <>
+                  <UserMinus className="w-3.5 h-3.5" />
+                  Following
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Follow
+                </>
               )}
-              <Button variant="outline" size="icon" onClick={handleShare}>
-                <Share2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+            </Button>
+          )}
+          <Button variant="outline" size="icon" onClick={handleShare} className="shrink-0 h-8 w-8">
+            <Share2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
 
         {/* Bio */}
         {profile.bio && (
-          <p className="mt-4 text-foreground/80 max-w-2xl">{profile.bio}</p>
+          <p className="text-foreground/80 text-sm mb-4 max-w-2xl">{profile.bio}</p>
         )}
 
         {/* Stats Row */}
-        <div className="flex items-center gap-6 mt-4 text-sm">
-          <div className="text-center">
+        <div className="flex items-center gap-4 sm:gap-6 text-sm">
+          <div>
             <span className="font-bold text-lg text-foreground">{socialStats.workout_count}</span>
-            <span className="text-muted-foreground ml-1">Workouts</span>
+            <span className="text-muted-foreground ml-1.5 text-xs sm:text-sm">Workouts</span>
           </div>
           <div className="h-4 w-px bg-border" />
-          <div className="text-center">
+          <div>
             <span className="font-bold text-lg text-foreground">{socialStats.follower_count}</span>
-            <span className="text-muted-foreground ml-1">Followers</span>
+            <span className="text-muted-foreground ml-1.5 text-xs sm:text-sm">Followers</span>
           </div>
           <div className="h-4 w-px bg-border" />
-          <div className="text-center">
+          <div>
             <span className="font-bold text-lg text-foreground">{socialStats.following_count}</span>
-            <span className="text-muted-foreground ml-1">Following</span>
+            <span className="text-muted-foreground ml-1.5 text-xs sm:text-sm">Following</span>
           </div>
         </div>
       </div>

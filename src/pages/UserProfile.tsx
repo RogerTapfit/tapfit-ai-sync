@@ -37,6 +37,26 @@ export default function UserProfile() {
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [showSobrietyChallengeModal, setShowSobrietyChallengeModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [customBannerColor, setCustomBannerColor] = useState<string>('');
+
+  // Load saved banner color from localStorage
+  useEffect(() => {
+    if (isOwnProfile && userId) {
+      const savedColor = localStorage.getItem(`profile_banner_color_${userId}`);
+      if (savedColor) setCustomBannerColor(savedColor);
+    }
+  }, [isOwnProfile, userId]);
+
+  const handleBannerColorChange = (color: string) => {
+    setCustomBannerColor(color);
+    if (userId) {
+      if (color) {
+        localStorage.setItem(`profile_banner_color_${userId}`, color);
+      } else {
+        localStorage.removeItem(`profile_banner_color_${userId}`);
+      }
+    }
+  };
   
   const { profile, stats, loading: profileLoading } = useSocialProfile(userId);
   const { isFollowing, isFollower, actionLoading, toggleFollow } = useUserFollow(userId);
@@ -180,6 +200,8 @@ export default function UserProfile() {
           followsBack={isFollower}
           onFollowToggle={toggleFollow}
           rankColor={rankColor}
+          customBannerColor={customBannerColor}
+          onBannerColorChange={isOwnProfile ? handleBannerColorChange : undefined}
         />
       </Card>
 
