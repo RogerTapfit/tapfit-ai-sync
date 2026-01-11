@@ -10,11 +10,15 @@ import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ExerciseFormImage } from '@/components/workout/ExerciseFormImage';
 import { ExercisePreviewModal } from '@/components/workout/ExercisePreviewModal';
+import { WorkoutRecommendationsPanel } from '@/components/workout/WorkoutRecommendationsPanel';
+import { DifficultyFeedbackModal } from '@/components/workout/DifficultyFeedbackModal';
+import { useWorkoutRecommendations } from '@/hooks/useWorkoutRecommendations';
 
 interface SelectedExercise extends AtHomeExercise {
   sets: number;
   reps: number;
   holdSeconds?: number;
+  difficultyRating?: number;
 }
 
 export const AtHomeWorkoutBuilder: React.FC = () => {
@@ -24,6 +28,15 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
   const [workoutName, setWorkoutName] = useState('My Home Workout');
   const [previewExercise, setPreviewExercise] = useState<AtHomeExercise | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [feedbackExercise, setFeedbackExercise] = useState<SelectedExercise | null>(null);
+
+  // Smart recommendations hook
+  const { 
+    muscleGroupBalance, 
+    recommendations, 
+    getComplementaryExercises,
+    getProgressionSuggestion 
+  } = useWorkoutRecommendations(selectedExercises);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 
@@ -49,13 +62,36 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
       toast.info(`${exercise.name} already added`);
       return;
     }
-    setSelectedExercises(prev => [...prev, {
+    const newExercise: SelectedExercise = {
       ...exercise,
       sets: exercise.defaultSets,
       reps: exercise.defaultReps,
       holdSeconds: exercise.defaultHoldSeconds,
-    }]);
+    };
+    setSelectedExercises(prev => [...prev, newExercise]);
     toast.success(`Added ${exercise.name}`);
+    
+    // Ask for difficulty feedback after a short delay
+    setTimeout(() => {
+      setFeedbackExercise(newExercise);
+    }, 500);
+  };
+
+  const handleDifficultyFeedback = (exerciseId: string, rating: number) => {
+    setSelectedExercises(prev => prev.map(ex => {
+      if (ex.id !== exerciseId) return ex;
+      
+      const updated = { ...ex, difficultyRating: rating };
+      const suggestion = getProgressionSuggestion(ex, rating);
+      
+      // Auto-apply suggested changes
+      if (suggestion.reps) updated.reps = suggestion.reps;
+      if (suggestion.sets) updated.sets = suggestion.sets;
+      if (suggestion.holdSeconds) updated.holdSeconds = suggestion.holdSeconds;
+      
+      toast.success(suggestion.message);
+      return updated;
+    }));
   };
 
   const removeExercise = (exerciseId: string) => {
@@ -235,6 +271,15 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
           </Card>
         )}
 
+        {/* Smart Recommendations Panel */}
+        <WorkoutRecommendationsPanel
+          recommendations={recommendations}
+          complementaryExercises={getComplementaryExercises}
+          muscleGroupBalance={muscleGroupBalance}
+          onAddExercise={addExercise}
+          selectedCount={selectedExercises.length}
+        />
+
         {/* Exercise Library */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Exercise Library</h3>
@@ -353,6 +398,18 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
         onClose={() => setPreviewExercise(null)}
         onAdd={addExercise}
         isAdded={previewExercise ? selectedExercises.some(e => e.id === previewExercise.id) : false}
+      />
+
+      {/* Difficulty Feedback Modal */}
+      <DifficultyFeedbackModal
+        open={!!feedbackExercise}
+        onClose={() => setFeedbackExercise(null)}
+        exerciseName={feedbackExercise?.name || ''}
+        onSubmit={(rating) => {
+          if (feedbackExercise) {
+            handleDifficultyFeedback(feedbackExercise.id, rating);
+          }
+        }}
       />
     </div>
   );
