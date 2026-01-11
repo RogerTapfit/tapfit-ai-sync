@@ -9,6 +9,7 @@ import { atHomeExercises, exerciseCategories, AtHomeExercise, getExercisesByCate
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ExerciseFormImage } from '@/components/workout/ExerciseFormImage';
+import { ExercisePreviewModal } from '@/components/workout/ExercisePreviewModal';
 
 interface SelectedExercise extends AtHomeExercise {
   sets: number;
@@ -21,6 +22,7 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
   const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['lower-body']);
   const [workoutName, setWorkoutName] = useState('My Home Workout');
+  const [previewExercise, setPreviewExercise] = useState<AtHomeExercise | null>(null);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => 
@@ -260,40 +262,56 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
                       {exercises.map(exercise => {
                         const isAdded = selectedExercises.some(e => e.id === exercise.id);
                         return (
-                          <button
+                          <div
                             key={exercise.id}
-                            onClick={() => addExercise(exercise)}
-                            disabled={isAdded}
                             className={`w-full p-3 rounded-lg flex items-center gap-3 transition-colors ${
                               isAdded 
-                                ? 'bg-primary/10 opacity-60 cursor-not-allowed' 
+                                ? 'bg-primary/10 opacity-60' 
                                 : 'hover:bg-muted/50'
                             }`}
                           >
-                            <ExerciseFormImage 
-                              exerciseId={exercise.id} 
-                              exerciseName={exercise.name} 
-                              emoji={exercise.emoji}
-                              size="sm"
-                              showModal={false}
-                            />
-                            <div className="text-left flex-1">
-                              <p className="font-medium">{exercise.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {exercise.defaultSets} sets × {exercise.isHold ? `${exercise.defaultHoldSeconds}s hold` : `${exercise.defaultReps} reps`}
-                                <span className="ml-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {exercise.difficulty}
-                                  </Badge>
-                                </span>
-                              </p>
-                            </div>
+                            {/* Clickable area for preview - image and name */}
+                            <button
+                              onClick={() => setPreviewExercise(exercise)}
+                              className="flex items-center gap-3 flex-1 text-left"
+                            >
+                              <ExerciseFormImage 
+                                exerciseId={exercise.id} 
+                                exerciseName={exercise.name} 
+                                emoji={exercise.emoji}
+                                size="sm"
+                                showModal={false}
+                              />
+                              <div className="flex-1">
+                                <p className="font-medium">{exercise.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {exercise.defaultSets} sets × {exercise.isHold ? `${exercise.defaultHoldSeconds}s hold` : `${exercise.defaultReps} reps`}
+                                  <span className="ml-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {exercise.difficulty}
+                                    </Badge>
+                                  </span>
+                                </p>
+                              </div>
+                            </button>
+                            
+                            {/* Add button - separate clickable area */}
                             {isAdded ? (
                               <Badge className="bg-primary/20 text-primary">Added</Badge>
                             ) : (
-                              <Plus className="h-5 w-5 text-primary" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addExercise(exercise);
+                                }}
+                                className="h-10 w-10 text-primary hover:text-primary hover:bg-primary/10"
+                              >
+                                <Plus className="h-6 w-6" />
+                              </Button>
                             )}
-                          </button>
+                          </div>
                         );
                       })}
                     </div>
@@ -304,6 +322,15 @@ export const AtHomeWorkoutBuilder: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Exercise Preview Modal */}
+      <ExercisePreviewModal
+        exercise={previewExercise}
+        open={!!previewExercise}
+        onClose={() => setPreviewExercise(null)}
+        onAdd={addExercise}
+        isAdded={previewExercise ? selectedExercises.some(e => e.id === previewExercise.id) : false}
+      />
     </div>
   );
 };
