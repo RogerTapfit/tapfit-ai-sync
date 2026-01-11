@@ -17,11 +17,16 @@ interface ExerciseRequest {
 // Detailed anatomically correct exercise form descriptions
 const exerciseFormDescriptions: Record<string, string> = {
   'glute-bridges': `
-VIEW ANGLE: SIDE PROFILE VIEW (camera positioned to the side of the person, showing full body from head to feet in profile).
-START POSITION: Person lying FLAT ON THEIR BACK on the ground, knees bent at approximately 90 degrees, feet flat on floor hip-width apart, arms resting flat at sides with palms down, head resting on ground, HIPS/LOWER BACK and BUTTOCKS touching the ground - entire back is flat against floor.
-END POSITION: HIPS THRUST HIGH toward ceiling creating a dramatic ARCHED BRIDGE shape - pelvis raised as high as possible, body forms a steep diagonal slope from shoulders to knees. Thighs and torso form a straight line at the top. Glutes are squeezed and elevated. Shoulders, upper back, arms, head, and feet remain on ground. The hip lift should be VERY HIGH - not subtle.
-MOVEMENT ARROWS: Upward arrow showing the dramatic hip thrust from flat to arched bridge position.
-CRITICAL: END position must show a DRAMATIC difference from START - hips lifted VERY HIGH creating a clear arched bridge. START is FLAT on ground, END is ARCHED HIGH like a bridge. The difference should be obvious and dramatic.`,
+VIEW ANGLE: SIDE PROFILE VIEW showing full body horizontally from head to feet.
+BOTH PANELS MUST SHOW: Person LYING ON THEIR BACK on a mat/floor. HEAD on LEFT side of frame, FEET on RIGHT side.
+START POSITION (LEFT PANEL): Person lying FLAT on back. Knees bent with feet flat on floor. Arms flat at sides. Entire back, buttocks, and hips are resting ON THE GROUND. Body is completely horizontal/flat.
+END POSITION (RIGHT PANEL): SAME person STILL LYING ON BACK but now hips are THRUST UPWARD creating a BRIDGE ARCH. Upper back, shoulders, arms, and head REMAIN on ground. Hips and pelvis are RAISED HIGH toward ceiling. Body forms a slope from shoulders up to knees. Feet still flat on floor.
+CRITICAL REQUIREMENTS:
+- BOTH panels show person LYING ON BACK - NOT standing, NOT kneeling, NOT sitting
+- START is FLAT on ground, END has HIPS ELEVATED HIGH
+- Side profile view - see the body horizontally
+- The ONLY difference between panels is the hip position (down vs up)
+- Person NEVER leaves lying position in either panel`,
 
   'single-leg-glute-bridges': `
 START POSITION: Lying flat on back, one knee bent with foot on floor, OTHER leg extended straight up toward ceiling, arms at sides.
