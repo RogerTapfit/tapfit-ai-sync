@@ -259,40 +259,48 @@ export default function UserProfile() {
                   className="hover:border-primary/20 transition-colors cursor-pointer"
                   onClick={() => setActiveTab("workouts")}
                 >
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Workouts</CardTitle>
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Dumbbell className="h-4 w-4 text-primary" />
+                  <CardHeader className="pb-2 space-y-0">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
+                        <Dumbbell className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <CardTitle className="text-xs font-medium text-muted-foreground">Total Workouts</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <div className="text-2xl font-bold">{stats?.workout_count || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1">All time</p>
                   </CardContent>
                 </Card>
 
-                <Card className="hover:border-yellow-500/20 transition-colors cursor-pointer"
-                  onClick={() => setActiveTab("achievements")}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Achievements</CardTitle>
-                    <div className="p-2 rounded-lg bg-yellow-500/10">
-                      <Trophy className="h-4 w-4 text-yellow-500" />
+                <Card 
+                  className="hover:border-yellow-500/20 transition-colors cursor-pointer"
+                  onClick={() => setActiveTab("achievements")}
+                >
+                  <CardHeader className="pb-2 space-y-0">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-yellow-500/10 shrink-0">
+                        <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                      </div>
+                      <CardTitle className="text-xs font-medium text-muted-foreground">Achievements</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <div className="text-2xl font-bold">{achievements.length}</div>
                     <p className="text-xs text-muted-foreground mt-1">Badges earned</p>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Exercises</CardTitle>
-                    <div className="p-2 rounded-lg bg-green-500/10">
-                      <Dumbbell className="h-4 w-4 text-green-500" />
+                  <CardHeader className="pb-2 space-y-0">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-green-500/10 shrink-0">
+                        <Dumbbell className="h-3.5 w-3.5 text-green-500" />
+                      </div>
+                      <CardTitle className="text-xs font-medium text-muted-foreground">Exercises</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     <div className="text-2xl font-bold">{stats?.total_exercises || 0}</div>
                     <p className="text-xs text-muted-foreground mt-1">Completed</p>
                   </CardContent>
