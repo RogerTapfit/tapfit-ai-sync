@@ -197,35 +197,35 @@ CRITICAL: ONE LEG exercise. Non-working leg stays extended FORWARD the entire ti
 
   'glute-bridges': `
 SCENE RULE: ONE chrome mannequin only. No duplicates.
-CAMERA: STRICT SIDE PROFILE VIEW - lying on mat seen from side.
+CAMERA: STRICT SIDE PROFILE / PROFILE VIEW ONLY (like a true side-on photo).
 ORIENTATION: HEAD on LEFT side of image, FEET on RIGHT side. Full body visible.
+MUST BE LYING DOWN: The mannequin is lying on its back on a HORIZONTAL mat. Head is resting on the mat. NOT standing.
 
 START POSITION (LEFT PANEL):
-- Lying FLAT on back on mat - HIPS and BUTTOCKS TOUCHING THE MAT
-- Knees bent approximately 90 degrees, knees pointing up to ceiling
-- Feet flat on floor, hip-width apart
-- Arms relaxed at sides, palms down
-- Entire back flat on ground - NO lift yet
+- Lying flat on back on the mat
+- Shoulders and spine on the mat, hips DOWN on the mat
+- Knees bent ~90 degrees
+- Feet flat, hip-width apart, heels under knees
+- Arms long at sides, palms down
 
-END POSITION (RIGHT PANEL) - THE "BRIDGE" ARCH:
-- HIPS THRUST VERY HIGH toward the ceiling creating a VISIBLE ARCH/BRIDGE shape
-- The torso and thighs form ONE CONTINUOUS UPWARD SLOPE from shoulders to knees
-- PELVIS is at the HIGHEST POINT - level with or higher than the knees
-- HUGE visible gap under the lower back - you can see the floor beneath
-- Only the HEAD, SHOULDERS, UPPER BACK, ARMS, and FEET touch the mat
-- The body creates a "table top" or "ramp" shape - NOT flat
-- Think of it as pushing the belly button toward the ceiling
+END POSITION (RIGHT PANEL) - HIGH BRIDGE SHAPE:
+- Push through HEELS and squeeze glutes to lift hips
+- Hips lift until SHOULDERS → HIPS → KNEES form a STRAIGHT LINE (like a ramp/tabletop)
+- Pelvis/hips are clearly HIGH OFF THE MAT creating a BIG VISIBLE GAP under the mid/lower back
+- Upper back/shoulders and head stay on the mat (do NOT roll onto neck)
+- NO low-back hyperextension (no "banana" spine) — the line is straight from shoulders to knees
 
 THE KEY DIFFERENCE (CRITICAL):
-- START: Body is FLAT like lying in bed, hips on floor
-- END: Body is ARCHED like a bridge/ramp, hips HIGH in the air at knee-level
+- START: hips DOWN touching mat
+- END: hips UP HIGH (bridge) with clear gap under hips
 
-ARROW: ONE bold coral-red upward arrow near the hips/pelvis showing the thrust direction.
+ARROW: EXACTLY ONE bold coral-red UP arrow at the hips/pelvis.
 
 FORBIDDEN:
-- Do NOT show END position with hips barely lifted
-- The END must show a DRAMATIC arch - pelvis as high as possible
-- No similar-looking panels - they must be obviously different`,
+- DO NOT show a standing figure
+- DO NOT show a front view
+- DO NOT show hips barely lifted
+- Panels must NOT look similar`,
   'single-leg-glute-bridges': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
 START POSITION (LEFT PANEL):
