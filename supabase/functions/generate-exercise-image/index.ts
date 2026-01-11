@@ -255,35 +255,35 @@ MOVEMENT ARROW: Upward arrow at hips.
 CRITICAL: MUST show bench supporting upper back.`,
 
   'calf-raises': `
-SCENE RULE: ONE chrome mannequin only. No duplicates.
-CAMERA: SIDE PROFILE VIEW (true side-on view of the body).
-CRITICAL: BOTH FEET stay on the ground in BOTH panels. This is NOT a single-leg exercise.
+SCENE RULE: ONE chrome metallic mannequin only (featureless oval head). No duplicates.
+OUTFIT: Dark athletic wear with coral/red accents.
+CAMERA: TRUE SIDE PROFILE VIEW (not front, not 3/4). Full body visible, feet clearly visible.
+BACKGROUND: Clean white studio.
 
 START POSITION (LEFT PANEL):
-- Standing UPRIGHT facing right (side profile)
-- BOTH feet flat on the floor, heels DOWN touching the ground
+- Standing tall, neutral spine, looking forward
 - Feet hip-width apart, toes pointing forward
-- Legs straight, body vertical
-- Arms at sides or on hips
+- BOTH feet fully FLAT on the floor: heels DOWN + balls of feet DOWN + toes DOWN
+- Weight evenly distributed across both feet
+- Knees straight but not locked
 
-END POSITION (RIGHT PANEL):
-- SAME body posture, facing right
-- Heels lifted HIGH off the ground (on tip-toes / balls of feet)
-- BOTH feet still planted, just heels raised
-- Body is now a few inches TALLER because standing on toes
-- Legs straight, knees not bent
-- NO knee raise, NO leg lift — feet never leave the floor
+END POSITION (RIGHT PANEL) — BILATERAL TIP-TOE:
+- Rise straight UP by pushing through the BALLS OF BOTH FEET
+- BOTH heels lift HIGH at the SAME TIME (clear visible AIR GAP under BOTH heels)
+- Ankles fully plantarflexed (standing on tip-toes); toes remain on floor
+- Knees stay straight (no knee bend), hips stacked over ankles (no leaning)
 
 THE KEY DIFFERENCE:
-- START: heels DOWN on floor
-- END: heels UP (tip-toes), body slightly taller
+- START: feet flat, heels down
+- END: both heels high up (tip-toes)
 
-ARROW: ONE small coral-red upward arrow near the ankles/heels showing the lift direction.
+ARROW: EXACTLY ONE bold coral-red UP arrow near the heels/ankles.
 
 FORBIDDEN:
-- Do NOT show one leg lifted or bent at knee
-- Do NOT show a marching/stepping motion
-- BOTH heels must lift together — this is a BILATERAL exercise`,
+- Single-leg / one heel up only
+- Knee lift, marching, stepping, jumping
+- Bent knees or leaning forward/back
+- Feet leaving the floor (ONLY heels lift; toes stay down)`,
 
   'single-leg-calf-raises': `
 CAMERA: SIDE PROFILE VIEW. ONE chrome mannequin only.
@@ -1262,7 +1262,9 @@ PASS ONLY IF ALL are true:
         const parsed = JSON.parse(jsonStr);
         return {
           pass: Boolean(parsed?.pass),
-          reasons: Array.isArray(parsed?.reasons) ? parsed.reasons.map((r: unknown) => String(r)) : ['validator_unparseable_reasons'],
+          reasons: Array.isArray(parsed?.reasons)
+            ? parsed.reasons.map((r: unknown) => String(r))
+            : ['validator_unparseable_reasons'],
         };
       } catch (e) {
         console.error('Validator error:', e);
@@ -1270,28 +1272,101 @@ PASS ONLY IF ALL are true:
       }
     };
 
-    // Generate (with validation+retry for glute-bridges specifically)
+    const validateCalfRaisesImage = async (
+      dataUrl: string,
+    ): Promise<{ pass: boolean; reasons: string[] }> => {
+      try {
+        const validationPrompt = `You are a STRICT fitness illustration validator.
+Return ONLY valid JSON: {"pass": boolean, "reasons": string[]}.
+
+PASS ONLY IF ALL are true:
+1) The illustration shows a STANDING BILATERAL CALF RAISE (both feet) in SIDE PROFILE view.
+2) Two panels labeled START (left) and END (right).
+3) START shows BOTH feet flat with BOTH heels DOWN on the floor.
+4) END shows BOTH heels lifted HIGH at the same time (tip-toes), with a clear visible air gap under BOTH heels.
+5) NO single-leg raise, NO knee drive/march/step, NO jumping.`;
+
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: validationPrompt },
+                  { type: "image_url", image_url: { url: dataUrl } },
+                ],
+              },
+            ],
+            modalities: ["text"],
+          }),
+        });
+
+        if (!resp.ok) {
+          return { pass: false, reasons: [`validator_http_${resp.status}`] };
+        }
+
+        const json = await resp.json();
+        const raw = json.choices?.[0]?.message?.content;
+        const text = typeof raw === 'string' ? raw : JSON.stringify(raw ?? '');
+
+        const firstBrace = text.indexOf('{');
+        const lastBrace = text.lastIndexOf('}');
+        const jsonStr = firstBrace !== -1 && lastBrace !== -1 ? text.slice(firstBrace, lastBrace + 1) : text;
+
+        const parsed = JSON.parse(jsonStr);
+        return {
+          pass: Boolean(parsed?.pass),
+          reasons: Array.isArray(parsed?.reasons)
+            ? parsed.reasons.map((r: unknown) => String(r))
+            : ['validator_unparseable_reasons'],
+        };
+      } catch (e) {
+        console.error('Validator error:', e);
+        return { pass: false, reasons: ['validator_exception'] };
+      }
+    };
+
+    // Generate (with validation+retry for specific exercises)
     let imageData: string | null = null;
-    const maxAttempts = exerciseId === 'glute-bridges' ? 3 : 1;
+    const maxAttempts =
+      exerciseId === 'glute-bridges' || exerciseId === 'calf-raises' ? 3 : 1;
     let lastReasons: string[] = [];
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const exerciseSpecificFix =
+        exerciseId === 'glute-bridges'
+          ? 'DO NOT output a standing/front-view figure. Must be lying on back, side profile, with hips clearly lifted high in END.'
+          : exerciseId === 'calf-raises'
+            ? 'BILATERAL TIP-TOE REQUIRED: BOTH heels must be clearly lifted HIGH at the same time. No single-leg. No knee drive/march/step. End must show a clear air gap under BOTH heels.'
+            : '';
+
       const attemptPrompt =
         attempt === 1
           ? prompt
-          : `${prompt}\n\nCRITICAL FIX (attempt ${attempt}/${maxAttempts}): The previous image was WRONG. Fix these issues: ${lastReasons.join('; ') || 'incorrect pose/view'}.\n\nDO NOT output a standing/front-view figure. Must be lying on back, side profile, with hips clearly lifted high in END.`;
+          : `${prompt}\n\nCRITICAL FIX (attempt ${attempt}/${maxAttempts}): The previous image was WRONG. Fix these issues: ${lastReasons.join('; ') || 'incorrect pose/view'}.\n\n${exerciseSpecificFix}`;
 
       imageData = await generateImageDataUrl(attemptPrompt);
 
-      if (exerciseId !== 'glute-bridges') break;
+      const needsValidation = exerciseId === 'glute-bridges' || exerciseId === 'calf-raises';
+      if (!needsValidation) break;
 
-      const verdict = await validateGluteBridgesImage(imageData);
+      const verdict =
+        exerciseId === 'glute-bridges'
+          ? await validateGluteBridgesImage(imageData)
+          : await validateCalfRaisesImage(imageData);
+
       if (verdict.pass) {
-        console.log('✅ Validator PASS (glute-bridges)');
+        console.log(`✅ Validator PASS (${exerciseId})`);
         break;
       }
 
-      console.log('❌ Validator FAIL (glute-bridges):', verdict.reasons);
+      console.log(`❌ Validator FAIL (${exerciseId}):`, verdict.reasons);
       lastReasons = verdict.reasons;
 
       if (attempt === maxAttempts) {
