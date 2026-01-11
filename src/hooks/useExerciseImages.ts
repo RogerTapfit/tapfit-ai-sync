@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { atHomeExercises } from '@/data/atHomeExercises';
 import { toast } from 'sonner';
@@ -21,6 +21,8 @@ export function useExerciseImage(exerciseId: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchImage = async () => {
       try {
         const { data, error } = await supabase
@@ -30,17 +32,44 @@ export function useExerciseImage(exerciseId: string) {
           .maybeSingle();
 
         if (error) throw error;
-        setImage(data as ExerciseImage | null);
+        if (mounted) setImage(data as ExerciseImage | null);
       } catch (error) {
         console.error('Error fetching exercise image:', error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    if (exerciseId) {
-      fetchImage();
+    if (!exerciseId) {
+      setImage(null);
+      setLoading(false);
+      return;
     }
+
+    setLoading(true);
+    fetchImage();
+
+    // Keep thumbnails in-sync while images regenerate
+    const channel = supabase
+      .channel(`exercise_image_${exerciseId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'exercise_images',
+          filter: `exercise_id=eq.${exerciseId}`,
+        },
+        () => {
+          fetchImage();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
   }, [exerciseId]);
 
   return { image, loading };
@@ -51,6 +80,9 @@ export function useExerciseImageGenerator() {
   const [allImages, setAllImages] = useState<ExerciseImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, isRunning: false });
+
+  // Used to cancel long-running batch jobs
+  const stopRequestedRef = useRef(false);
 
   // Fetch all exercise images
   const fetchAllImages = useCallback(async () => {
@@ -90,97 +122,125 @@ export function useExerciseImageGenerator() {
   }, [fetchAllImages]);
 
   // Generate a single exercise image
-  const generateImage = useCallback(async (exerciseId: string) => {
-    const exercise = atHomeExercises.find(e => e.id === exerciseId);
-    if (!exercise) {
-      toast.error('Exercise not found');
-      return false;
-    }
-
-    setGeneratingIds(prev => new Set(prev).add(exerciseId));
-
-    try {
-      const response = await supabase.functions.invoke('generate-exercise-image', {
-        body: {
-          exerciseId: exercise.id,
-          exerciseName: exercise.name,
-          category: exercise.category,
-          instructions: exercise.instructions,
-          isHold: exercise.isHold
-        }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
+  const generateImage = useCallback(
+    async (exerciseId: string) => {
+      const exercise = atHomeExercises.find((e) => e.id === exerciseId);
+      if (!exercise) {
+        toast.error('Exercise not found');
+        return false;
       }
 
-      toast.success(`Generated image for ${exercise.name}`);
-      await fetchAllImages();
-      return true;
-    } catch (error) {
-      console.error('Error generating exercise image:', error);
-      toast.error(`Failed to generate image for ${exercise.name}`);
-      return false;
-    } finally {
-      setGeneratingIds(prev => {
-        const next = new Set(prev);
-        next.delete(exerciseId);
-        return next;
-      });
-    }
-  }, [fetchAllImages]);
+      setGeneratingIds((prev) => new Set(prev).add(exerciseId));
 
-  // Generate all missing images with rate limiting
+      try {
+        const response = await supabase.functions.invoke('generate-exercise-image', {
+          body: {
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            category: exercise.category,
+            instructions: exercise.instructions,
+            isHold: exercise.isHold,
+          },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        toast.success(`Generated image for ${exercise.name}`);
+        await fetchAllImages();
+        return true;
+      } catch (error) {
+        console.error('Error generating exercise image:', error);
+        toast.error(`Failed to generate image for ${exercise.name}`);
+        return false;
+      } finally {
+        setGeneratingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(exerciseId);
+          return next;
+        });
+      }
+    },
+    [fetchAllImages]
+  );
+
+  const runBatch = useCallback(
+    async (exerciseIds: string[], label: string) => {
+      if (exerciseIds.length === 0) {
+        toast.info('Nothing to generate.');
+        return;
+      }
+
+      stopRequestedRef.current = false;
+      setBatchProgress({ current: 0, total: exerciseIds.length, isRunning: true });
+      toast.info(`${label}: ${exerciseIds.length} exercises...`);
+
+      for (let i = 0; i < exerciseIds.length; i++) {
+        if (stopRequestedRef.current) break;
+
+        const id = exerciseIds[i];
+        setBatchProgress((prev) => ({ ...prev, current: i + 1 }));
+
+        await generateImage(id);
+
+        // Rate limit: wait 3 seconds between generations
+        if (i < exerciseIds.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+      }
+
+      const stopped = stopRequestedRef.current;
+      stopRequestedRef.current = false;
+      setBatchProgress({ current: 0, total: 0, isRunning: false });
+
+      if (stopped) toast.info('Batch generation stopped.');
+      else toast.success('Batch generation complete!');
+    },
+    [generateImage]
+  );
+
+  // Generate all missing images (and failed) with rate limiting
   const generateAllMissing = useCallback(async () => {
-    const existingIds = new Set(allImages.map(img => img.exercise_id));
+    const existingIds = new Set(allImages.map((img) => img.exercise_id));
     const failedIds = new Set(
-      allImages
-        .filter(img => img.generation_status === 'failed')
-        .map(img => img.exercise_id)
+      allImages.filter((img) => img.generation_status === 'failed').map((img) => img.exercise_id)
     );
-    
-    const missingExercises = atHomeExercises.filter(
-      e => !existingIds.has(e.id) || failedIds.has(e.id)
-    );
+
+    const missingExercises = atHomeExercises
+      .filter((e) => !existingIds.has(e.id) || failedIds.has(e.id))
+      .map((e) => e.id);
 
     if (missingExercises.length === 0) {
       toast.info('All exercise images are already generated!');
       return;
     }
 
-    setBatchProgress({ current: 0, total: missingExercises.length, isRunning: true });
-    toast.info(`Starting generation for ${missingExercises.length} exercises...`);
+    await runBatch(missingExercises, 'Generating missing images');
+  }, [allImages, runBatch]);
 
-    for (let i = 0; i < missingExercises.length; i++) {
-      const exercise = missingExercises[i];
-      setBatchProgress(prev => ({ ...prev, current: i + 1 }));
-      
-      await generateImage(exercise.id);
-      
-      // Rate limit: wait 3 seconds between generations
-      if (i < missingExercises.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
-      }
-    }
-
-    setBatchProgress({ current: 0, total: 0, isRunning: false });
-    toast.success('Batch generation complete!');
-  }, [allImages, generateImage]);
+  // Regenerate ALL images (even those already complete)
+  const regenerateAll = useCallback(async () => {
+    await runBatch(
+      atHomeExercises.map((e) => e.id),
+      'Regenerating ALL images'
+    );
+  }, [runBatch]);
 
   // Stop batch generation
   const stopBatchGeneration = useCallback(() => {
+    stopRequestedRef.current = true;
     setBatchProgress({ current: 0, total: 0, isRunning: false });
-    toast.info('Batch generation stopped');
   }, []);
 
   // Get stats
   const stats = {
     total: atHomeExercises.length,
-    generated: allImages.filter(img => img.generation_status === 'complete').length,
-    pending: allImages.filter(img => img.generation_status === 'pending').length,
-    generating: allImages.filter(img => img.generation_status === 'generating').length,
-    failed: allImages.filter(img => img.generation_status === 'failed').length,
-    notStarted: atHomeExercises.length - allImages.length
+    generated: allImages.filter((img) => img.generation_status === 'complete').length,
+    pending: allImages.filter((img) => img.generation_status === 'pending').length,
+    generating: allImages.filter((img) => img.generation_status === 'generating').length,
+    failed: allImages.filter((img) => img.generation_status === 'failed').length,
+    notStarted: atHomeExercises.length - allImages.length,
   };
 
   return {
@@ -191,7 +251,9 @@ export function useExerciseImageGenerator() {
     batchProgress,
     generateImage,
     generateAllMissing,
+    regenerateAll,
     stopBatchGeneration,
-    refreshImages: fetchAllImages
+    refreshImages: fetchAllImages,
   };
 }
+
