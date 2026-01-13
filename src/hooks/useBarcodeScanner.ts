@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { BrowserMultiFormatReader, Result } from '@zxing/library';
+import { BrowserMultiFormatReader, Result, DecodeHintType, BarcodeFormat, NotFoundException, ChecksumException, FormatException } from '@zxing/library';
 import { toast } from 'sonner';
 import { EnhancedBarcodeService } from '../services/enhancedBarcodeService';
 
@@ -39,18 +39,65 @@ interface ProductData {
   confidence?: number;
 }
 
+// Check if native BarcodeDetector API is available
+const isBarcodeDetectorSupported = (): boolean => {
+  return typeof window !== 'undefined' && 'BarcodeDetector' in window;
+};
+
+// Debug mode - enable with ?debugScanner=1 or localStorage
+const isDebugMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('debugScanner') === '1' || localStorage.getItem('debugScanner') === '1';
+};
+
+const debugLog = (...args: any[]) => {
+  if (isDebugMode()) {
+    console.log('🔍 [Scanner Debug]', ...args);
+  }
+};
+
 export const useBarcodeScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastBarcode, setLastBarcode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [codeReader] = useState(() => new BrowserMultiFormatReader());
+  
+  // Camera capabilities
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [zoomSupported, setZoomSupported] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(1);
+  const [maxZoom, setMaxZoom] = useState(1);
+  
+  // Scanner state
+  const [scannerStatus, setScannerStatus] = useState<string>('idle');
+  
+  const [codeReader] = useState(() => {
+    // Configure ZXing with optimized hints for product barcodes
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.ITF,
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    return new BrowserMultiFormatReader(hints);
+  });
+  
   const activeStreamRef = useRef<MediaStream | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
   const decodePromiseRef = useRef<Promise<void> | null>(null);
   const isStoppingRef = useRef(false);
   const isAttachingRef = useRef(false);
+  const nativeDetectorRef = useRef<any>(null);
+  const nativeDetectorLoopRef = useRef<number | null>(null);
+  const errorCountRef = useRef({ notFound: 0, checksum: 0, format: 0 });
 
   const fetchProductData = useCallback(async (barcode: string): Promise<ProductData | null> => {
     try {
@@ -65,17 +112,163 @@ export const useBarcodeScanner = () => {
   }, []);
 
   // When barcode is detected, just set it and stop scanning - let consumer handle the lookup
-  const handleBarcodeDetected = (barcode: string) => {
+  const handleBarcodeDetected = useCallback((barcode: string) => {
     console.log('📷 Barcode detected in hook:', barcode);
+    debugLog('Barcode detected:', barcode);
     setError(null);
     setLastBarcode(barcode);
     stopScanning();
     setLoading(false);
-  };
+    setScannerStatus('detected');
+  }, []);
+
+  // Stop native BarcodeDetector loop
+  const stopNativeDetector = useCallback(() => {
+    if (nativeDetectorLoopRef.current) {
+      cancelAnimationFrame(nativeDetectorLoopRef.current);
+      nativeDetectorLoopRef.current = null;
+    }
+    nativeDetectorRef.current = null;
+  }, []);
+
+  // Start native BarcodeDetector (preferred on supported browsers)
+  const startNativeDetector = useCallback(async (videoElement: HTMLVideoElement) => {
+    if (!isBarcodeDetectorSupported()) {
+      debugLog('Native BarcodeDetector not supported');
+      return false;
+    }
+
+    try {
+      // @ts-ignore - BarcodeDetector is not in TypeScript types yet
+      const detector = new window.BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf']
+      });
+      nativeDetectorRef.current = detector;
+
+      debugLog('Native BarcodeDetector initialized');
+      setScannerStatus('native-active');
+
+      let lastScanTime = 0;
+      const scanInterval = 150; // Scan every 150ms
+      let frameCount = 0;
+
+      const detectLoop = async () => {
+        if (isStoppingRef.current || !nativeDetectorRef.current) {
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastScanTime >= scanInterval) {
+          lastScanTime = now;
+          frameCount++;
+
+          try {
+            if (videoElement.readyState >= 2 && videoElement.videoWidth > 0) {
+              const barcodes = await detector.detect(videoElement);
+              
+              if (barcodes.length > 0) {
+                const barcode = barcodes[0];
+                debugLog('Native detector found barcode:', barcode.rawValue);
+                handleBarcodeDetected(barcode.rawValue);
+                return; // Stop loop after detection
+              }
+            }
+
+            // Log heartbeat every 20 frames (~3 seconds)
+            if (frameCount % 20 === 0) {
+              debugLog(`Native detector heartbeat: ${frameCount} frames processed, video ready: ${videoElement.readyState >= 2}`);
+            }
+          } catch (err) {
+            // Detection errors are expected when no barcode is visible
+            debugLog('Native detector frame error (expected):', err);
+          }
+        }
+
+        nativeDetectorLoopRef.current = requestAnimationFrame(detectLoop);
+      };
+
+      nativeDetectorLoopRef.current = requestAnimationFrame(detectLoop);
+      return true;
+    } catch (err) {
+      console.error('Failed to initialize native BarcodeDetector:', err);
+      debugLog('Native BarcodeDetector init failed:', err);
+      return false;
+    }
+  }, [handleBarcodeDetected]);
+
+  // Start ZXing fallback decoder with improved error handling
+  const startZXingDecoder = useCallback(async (videoElement: HTMLVideoElement, stream: MediaStream) => {
+    debugLog('Starting ZXing fallback decoder');
+    setScannerStatus('zxing-active');
+    
+    let lastScanTime = 0;
+    const scanCooldown = 2000;
+    errorCountRef.current = { notFound: 0, checksum: 0, format: 0 };
+    let lastHintTime = 0;
+
+    const decodePromise = codeReader
+      .decodeFromStream(stream, videoElement, (result: Result | null, err?: any) => {
+        if (isStoppingRef.current) return;
+
+        if (result) {
+          const now = Date.now();
+          if (now - lastScanTime <= scanCooldown) return;
+
+          lastScanTime = now;
+          debugLog('ZXing detected barcode:', result.getText());
+          handleBarcodeDetected(result.getText());
+          return;
+        }
+
+        // Track errors for user feedback
+        if (err) {
+          const now = Date.now();
+          
+          if (err instanceof NotFoundException) {
+            errorCountRef.current.notFound++;
+          } else if (err instanceof ChecksumException) {
+            errorCountRef.current.checksum++;
+            // Show hint if we're getting many checksum errors (barcode visible but can't read)
+            if (errorCountRef.current.checksum > 10 && now - lastHintTime > 5000) {
+              lastHintTime = now;
+              debugLog('Many checksum errors - focus/lighting issue likely');
+              toast.info('📸 Try moving closer or improving lighting', { duration: 3000 });
+            }
+          } else if (err instanceof FormatException) {
+            errorCountRef.current.format++;
+            if (errorCountRef.current.format > 10 && now - lastHintTime > 5000) {
+              lastHintTime = now;
+              debugLog('Many format errors - barcode partially visible');
+              toast.info('📸 Hold steady and center the barcode', { duration: 3000 });
+            }
+          }
+
+          // Log error counts periodically in debug mode
+          const totalErrors = errorCountRef.current.notFound + errorCountRef.current.checksum + errorCountRef.current.format;
+          if (totalErrors % 50 === 0 && totalErrors > 0) {
+            debugLog('Error counts:', errorCountRef.current);
+          }
+        }
+      })
+      .catch((err) => {
+        if (isStoppingRef.current) return;
+
+        console.error('📷 Decode stream error:', err);
+        const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
+        setError(msg);
+        toast.error(msg);
+        setIsScanning(false);
+        setLoading(false);
+        setScannerStatus('error');
+      })
+      .finally(() => {
+        decodePromiseRef.current = null;
+      });
+
+    decodePromiseRef.current = decodePromise as unknown as Promise<void>;
+  }, [codeReader, handleBarcodeDetected]);
 
   const getPreferredCameraStream = useCallback(async (): Promise<MediaStream> => {
-    // Keep this simple for reliability on mobile (iOS can expose multiple “rear” cameras where
-    // picking a specific deviceId may land on an ultra‑wide lens that won’t focus on barcodes).
     const baseConstraints = {
       width: { ideal: 1280 },
       height: { ideal: 720 },
@@ -100,15 +293,120 @@ export const useBarcodeScanner = () => {
     }
   }, []);
 
-  // Start scanning - sets isScanning true first, then gets camera
+  // Apply camera track settings (zoom, torch, focus)
+  const applyCameraSettings = useCallback(async (stream: MediaStream) => {
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    try {
+      const capabilities = videoTrack.getCapabilities?.() as any;
+      const settings = videoTrack.getSettings?.() as any;
+      
+      debugLog('Camera capabilities:', capabilities);
+      debugLog('Camera settings:', settings);
+
+      // Check torch support
+      if (capabilities?.torch) {
+        setTorchSupported(true);
+        debugLog('Torch is supported');
+      }
+
+      // Check zoom support and apply default zoom for better focus
+      if (capabilities?.zoom) {
+        const minZoom = capabilities.zoom.min || 1;
+        const maxZoomVal = capabilities.zoom.max || 1;
+        setZoomSupported(true);
+        setMaxZoom(maxZoomVal);
+        
+        // Apply a mild default zoom (1.5x-2x) to help with focus on iOS
+        const targetZoom = Math.min(2, maxZoomVal);
+        if (targetZoom > minZoom) {
+          try {
+            await videoTrack.applyConstraints({ advanced: [{ zoom: targetZoom }] } as any);
+            setCurrentZoom(targetZoom);
+            debugLog(`Applied default zoom: ${targetZoom}x`);
+          } catch (zoomErr) {
+            debugLog('Failed to apply zoom:', zoomErr);
+          }
+        }
+      }
+
+      // Try to enable continuous focus mode
+      if (capabilities?.focusMode?.includes('continuous')) {
+        try {
+          await videoTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] } as any);
+          debugLog('Enabled continuous focus');
+        } catch (focusErr) {
+          debugLog('Failed to set focus mode:', focusErr);
+        }
+      }
+
+      // Try to enable continuous exposure
+      if (capabilities?.exposureMode?.includes('continuous')) {
+        try {
+          await videoTrack.applyConstraints({ advanced: [{ exposureMode: 'continuous' }] } as any);
+          debugLog('Enabled continuous exposure');
+        } catch (expErr) {
+          debugLog('Failed to set exposure mode:', expErr);
+        }
+      }
+    } catch (err) {
+      debugLog('Error getting camera capabilities:', err);
+    }
+  }, []);
+
+  // Toggle torch
+  const toggleTorch = useCallback(async () => {
+    const stream = activeStreamRef.current;
+    if (!stream) return;
+
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    try {
+      const newTorchState = !torchOn;
+      await videoTrack.applyConstraints({ advanced: [{ torch: newTorchState }] } as any);
+      setTorchOn(newTorchState);
+      debugLog(`Torch ${newTorchState ? 'ON' : 'OFF'}`);
+    } catch (err) {
+      console.error('Failed to toggle torch:', err);
+      toast.error('Could not toggle flashlight');
+    }
+  }, [torchOn]);
+
+  // Set zoom level
+  const setZoom = useCallback(async (zoom: number) => {
+    const stream = activeStreamRef.current;
+    if (!stream) return;
+
+    const videoTrack = stream.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    try {
+      await videoTrack.applyConstraints({ advanced: [{ zoom }] } as any);
+      setCurrentZoom(zoom);
+      debugLog(`Zoom set to: ${zoom}x`);
+    } catch (err) {
+      console.error('Failed to set zoom:', err);
+    }
+  }, []);
+
+  // Start scanning
   const startScanning = useCallback(async (videoElement?: HTMLVideoElement) => {
     console.log('📷 Starting barcode scanner...');
+    debugLog('startScanning called');
     isStoppingRef.current = false;
+    errorCountRef.current = { notFound: 0, checksum: 0, format: 0 };
 
-    // Clear previous scan so scanning the same code again still triggers
+    // Reset state
     setLastBarcode(null);
     setProductData(null);
     setError(null);
+    setTorchOn(false);
+    setTorchSupported(false);
+    setZoomSupported(false);
+    setCurrentZoom(1);
+    setScannerStatus('initializing');
 
     // Surface unsupported environments early
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -118,11 +416,11 @@ export const useBarcodeScanner = () => {
       setError(msg);
       setIsScanning(false);
       setLoading(false);
+      setScannerStatus('error');
       return;
     }
 
-    // In Lovable's embedded preview (iframe), camera permissions are commonly blocked.
-    // Avoid a confusing black screen/hang and tell the user what to do.
+    // Detect iframe (Lovable preview) where camera is blocked
     const isInIframe = (() => {
       try {
         return window.self !== window.top;
@@ -137,6 +435,7 @@ export const useBarcodeScanner = () => {
       setError(msg);
       setIsScanning(false);
       setLoading(false);
+      setScannerStatus('blocked');
       return;
     }
 
@@ -144,8 +443,9 @@ export const useBarcodeScanner = () => {
     setLoading(true);
 
     try {
-      // First, stop any existing scanning
+      // Reset ZXing reader
       codeReader.reset();
+      stopNativeDetector();
 
       console.log('📷 Requesting camera access...');
       const stream = await getPreferredCameraStream();
@@ -153,8 +453,10 @@ export const useBarcodeScanner = () => {
       console.log('📷 Camera access granted');
       activeStreamRef.current = stream;
 
-      // Attach immediately if we already have a mounted video element (prevents race where
-      // component calls attachToVideoElement before the stream is ready).
+      // Apply camera settings (zoom, focus, torch detection)
+      await applyCameraSettings(stream);
+
+      // Attach to video element
       const targetVideo = videoElement ?? videoElementRef.current;
       if (targetVideo) {
         videoElementRef.current = targetVideo;
@@ -183,10 +485,11 @@ export const useBarcodeScanner = () => {
       toast.error(msg);
       setIsScanning(false);
       setLoading(false);
+      setScannerStatus('error');
     }
-  }, [codeReader, getPreferredCameraStream]);
+  }, [codeReader, getPreferredCameraStream, applyCameraSettings, stopNativeDetector]);
 
-  // Attach stream to a video element (called when video element becomes available)
+  // Attach to video element (called when video element becomes available)
   const attachToVideoElement = useCallback(async (videoElement: HTMLVideoElement) => {
     console.log('📷 Attaching to video element...');
     videoElementRef.current = videoElement;
@@ -203,6 +506,7 @@ export const useBarcodeScanner = () => {
 
     try {
       console.log('📷 Setting up video element...');
+      debugLog('Attaching stream to video');
 
       // Set attributes BEFORE srcObject
       videoElement.playsInline = true;
@@ -224,6 +528,7 @@ export const useBarcodeScanner = () => {
         const onReady = async () => {
           try {
             console.log('📷 Video metadata loaded, readyState:', videoElement.readyState);
+            debugLog('Video ready, readyState:', videoElement.readyState, 'dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
             if (videoElement.paused) {
               await videoElement.play();
             }
@@ -250,12 +555,10 @@ export const useBarcodeScanner = () => {
           videoElement.removeEventListener('error', onError);
         };
 
-        // Listen to both loadedmetadata and canplay for maximum compatibility
         videoElement.addEventListener('loadedmetadata', onReady, { once: true });
         videoElement.addEventListener('canplay', onReady, { once: true });
         videoElement.addEventListener('error', onError, { once: true });
 
-        // If already ready, resolve immediately (handles rescans / fast attaches)
         if (videoElement.readyState >= 2) {
           console.log('📷 Video already ready, readyState:', videoElement.readyState);
           queueMicrotask(() => onReady());
@@ -269,58 +572,40 @@ export const useBarcodeScanner = () => {
       try {
         await videoReadyPromise;
       } catch (err) {
-        // If we were stopped while waiting for metadata/canplay, don't treat it as an error.
         if (isStoppingRef.current) return;
         throw err;
       }
 
       setLoading(false);
-      console.log('📷 Starting barcode detection with decodeFromStream...');
 
-      // If we're already attached and decoding for this stream, don't start a second decoder.
-      if (videoElement.srcObject === stream && decodePromiseRef.current) {
+      // If we're already decoding, don't start again
+      if (videoElement.srcObject === stream && (decodePromiseRef.current || nativeDetectorLoopRef.current)) {
         return;
       }
 
-      // Debounce the barcode detection
-      let lastScanTime = 0;
-      const scanCooldown = 2000;
-
-      const decodePromise = codeReader
-        .decodeFromStream(stream, videoElement, (result: Result | null) => {
-          if (!result) return;
-
-          const now = Date.now();
-          if (now - lastScanTime <= scanCooldown) return;
-
-          lastScanTime = now;
-          console.log('📷 Barcode detected:', result.getText());
-          handleBarcodeDetected(result.getText());
-        })
-        .catch((err) => {
-          // decodeFromStream commonly rejects when we intentionally stop/reset the reader.
-          if (isStoppingRef.current) return;
-
-          console.error('📷 Decode stream error:', err);
-          const msg = 'Barcode scanner failed to start. Try again or use manual entry.';
-          setError(msg);
-          toast.error(msg);
-          setIsScanning(false);
-          setLoading(false);
-        })
-        .finally(() => {
-          decodePromiseRef.current = null;
-        });
-
-      decodePromiseRef.current = decodePromise as unknown as Promise<void>;
+      // Try native BarcodeDetector first, fall back to ZXing
+      const nativeStarted = await startNativeDetector(videoElement);
+      
+      if (!nativeStarted) {
+        console.log('📷 Using ZXing decoder (native not available)');
+        await startZXingDecoder(videoElement, stream);
+      } else {
+        console.log('📷 Using native BarcodeDetector');
+      }
     } finally {
       isAttachingRef.current = false;
     }
   };
 
   const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
+    debugLog('stopScanning called');
     isStoppingRef.current = true;
+    setScannerStatus('stopped');
 
+    // Stop native detector
+    stopNativeDetector();
+
+    // Stop ZXing
     try {
       codeReader.reset();
     } catch {
@@ -345,7 +630,10 @@ export const useBarcodeScanner = () => {
       videoEl.srcObject = null;
     }
     videoElementRef.current = null;
-  }, [codeReader]);
+    
+    // Reset camera controls
+    setTorchOn(false);
+  }, [codeReader, stopNativeDetector]);
 
   const scanBarcodeFromImage = async (imageFile: File): Promise<ProductData | null> => {
     setLoading(true);
@@ -392,7 +680,9 @@ export const useBarcodeScanner = () => {
     setIsScanning(false);
     setLoading(false);
     setLastBarcode(null);
+    setScannerStatus('idle');
     codeReader.reset();
+    stopNativeDetector();
   };
 
   return {
@@ -407,6 +697,16 @@ export const useBarcodeScanner = () => {
     scanBarcodeFromImage,
     convertToFoodItem,
     resetScanner,
-    fetchProductData
+    fetchProductData,
+    // Camera controls
+    torchSupported,
+    torchOn,
+    toggleTorch,
+    zoomSupported,
+    currentZoom,
+    maxZoom,
+    setZoom,
+    // Debug info
+    scannerStatus,
   };
 };

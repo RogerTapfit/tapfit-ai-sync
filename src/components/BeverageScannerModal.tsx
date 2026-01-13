@@ -10,6 +10,7 @@ import { findWaterByBarcode, findWaterByName, WaterProduct } from '@/services/wa
 import { BEVERAGE_HYDRATION, BeverageType } from '@/lib/beverageHydration';
 import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
 import { ProductPriceCard } from './ProductPriceCard';
+import { ScannerControls } from './ScannerControls';
 import { toast } from 'sonner';
 
 interface BeverageScannerModalProps {
@@ -53,7 +54,22 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { isScanning, loading, startScanning, stopScanning, productData, lastBarcode, fetchProductData } = useBarcodeScanner();
+  const { 
+    isScanning, 
+    loading, 
+    startScanning, 
+    stopScanning, 
+    productData, 
+    lastBarcode, 
+    fetchProductData,
+    torchSupported,
+    torchOn,
+    toggleTorch,
+    zoomSupported,
+    currentZoom,
+    maxZoom,
+    setZoom,
+  } = useBarcodeScanner();
 
   // Start camera when modal opens in camera mode
   useEffect(() => {
@@ -386,6 +402,19 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                     <div className="absolute inset-x-2 h-0.5 bg-cyan-500 animate-pulse top-1/2" />
                   </div>
                 </div>
+                {/* Camera Controls */}
+                <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
+                  <ScannerControls
+                    torchSupported={torchSupported}
+                    torchOn={torchOn}
+                    onToggleTorch={toggleTorch}
+                    zoomSupported={zoomSupported}
+                    currentZoom={currentZoom}
+                    maxZoom={maxZoom}
+                    onSetZoom={setZoom}
+                  />
+                </div>
+
                 {(loading || isAnalyzing) && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="text-center space-y-2">
