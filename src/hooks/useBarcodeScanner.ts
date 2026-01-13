@@ -631,6 +631,7 @@ export const useBarcodeScanner = () => {
     } catch (e) {
       const err = e as any;
       const name = String(err?.name || 'Error');
+      const messageText = String(err?.message || '');
 
       let msg = 'Failed to access camera. Please check permissions.';
       if (name === 'NotAllowedError') {
@@ -643,12 +644,16 @@ export const useBarcodeScanner = () => {
         msg = 'Camera blocked. Open app in new tab to scan.';
       }
 
+      const isBlocked =
+        name === 'SecurityError' ||
+        (name === 'NotAllowedError' && messageText.toLowerCase().includes('permissions policy'));
+
       console.error('📷 Error starting camera:', name);
       setError(msg);
       toast.error(msg);
       setIsScanning(false);
       setLoading(false);
-      setScannerStatus('error');
+      setScannerStatus(isBlocked ? 'blocked' : 'error');
     }
   }, [getPreferredCameraStream, applyCameraSettings, stopNativeDetector, attachStreamToVideo]);
 
@@ -662,6 +667,94 @@ export const useBarcodeScanner = () => {
     }
   }, [attachStreamToVideo]);
 
+  // Manual, one-shot scan attempt (helps on laptops when autofocus is finicky)
+  const scanNow = useCallback(async (videoElement?: HTMLVideoElement) => {
+    const videoEl = videoElement ?? videoElementRef.current;
+    if (!videoEl) {
+      toast.error('Camera not ready yet');
+      return;
+    }
+
+    if (!isScanning || !activeStreamRef.current) {
+      toast.error('Start the camera first');
+      return;
+    }
+
+    if (barcodeDetectedRef.current) return;
+
+    setError(null);
+    setScannerStatus('manual-scan');
+    setLoading(true);
+
+    try {
+      if (videoEl.readyState < 2 || !videoEl.videoWidth) {
+        throw new Error('Video not ready');
+      }
+
+      // 1) Try native BarcodeDetector once (fast when available)
+      if (isBarcodeDetectorSupported()) {
+        try {
+          // @ts-ignore - BarcodeDetector is not in TypeScript types yet
+          const detector = nativeDetectorRef.current || new window.BarcodeDetector({
+            formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf'],
+          });
+          const barcodes = await detector.detect(videoEl);
+          if (barcodes?.length) {
+            handleBarcodeDetected(barcodes[0].rawValue);
+            return;
+          }
+        } catch (err) {
+          debugLog('Manual native detect failed:', err);
+        }
+      }
+
+      // 2) Fallback: capture a single frame and decode it with ZXing
+      const canvas = document.createElement('canvas');
+      canvas.width = videoEl.videoWidth;
+      canvas.height = videoEl.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not available');
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Frame capture failed'))), 'image/png');
+      });
+
+      const url = URL.createObjectURL(blob);
+      try {
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.ITF,
+        ]);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+
+        const oneShotReader = new BrowserMultiFormatReader(hints);
+        const result = await oneShotReader.decodeFromImageUrl(url);
+        handleBarcodeDetected(result.getText());
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      if (err instanceof NotFoundException) {
+        toast.info('No barcode detected — try moving closer / better lighting', { duration: 2500 });
+        setScannerStatus('scanning');
+        return;
+      }
+
+      console.error('📷 Scan now failed:', err);
+      toast.error('Scan failed. Try again.');
+      setScannerStatus('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [isScanning, handleBarcodeDetected]);
   const scanBarcodeFromImage = async (imageFile: File): Promise<ProductData | null> => {
     setLoading(true);
 
@@ -740,6 +833,7 @@ export const useBarcodeScanner = () => {
     startScanning,
     stopScanning,
     attachToVideoElement,
+    scanNow,
     scanBarcodeFromImage,
     convertToFoodItem,
     resetScanner,

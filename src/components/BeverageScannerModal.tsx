@@ -61,6 +61,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     scannerStatus,
     startScanning,
     stopScanning,
+    scanNow,
     productData,
     lastBarcode,
     fetchProductData,
@@ -427,27 +428,39 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                     </div>
                   </div>
                 )}
-              </div>
+               </div>
 
-              {error && (
-                <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground">
-                  <p>{error}</p>
-                  {scannerStatus === 'blocked' && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
-                    >
-                      Open scanner in new tab
-                    </Button>
-                  )}
-                </div>
-              )}
-              
-              <p className="text-sm text-muted-foreground text-center">
-                Point camera at barcode on bottle or can
-              </p>
+               <div className="flex justify-center">
+                 <Button
+                   variant="secondary"
+                   onClick={() => scanNow(videoRef.current || undefined)}
+                   disabled={!isScanning || loading || isAnalyzing || scannerStatus === 'blocked'}
+                   className="gap-2"
+                 >
+                   <Plus className="h-4 w-4" />
+                   Scan now
+                 </Button>
+               </div>
+
+               {error && (
+                 <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground">
+                   <p>{error}</p>
+                   {scannerStatus === 'blocked' && (
+                     <Button
+                       variant="secondary"
+                       size="sm"
+                       className="mt-2"
+                       onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
+                     >
+                       Open scanner in new tab
+                     </Button>
+                   )}
+                 </div>
+               )}
+               
+               <p className="text-sm text-muted-foreground text-center">
+                 Point camera at barcode on bottle or can
+               </p>
 
               {/* Manual entry option */}
               <div className="space-y-2">

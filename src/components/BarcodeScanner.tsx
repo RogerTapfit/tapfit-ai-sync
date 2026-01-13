@@ -46,6 +46,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     lastBarcode,
     startScanning,
     stopScanning,
+    scanNow,
     convertToFoodItem,
     resetScanner,
     fetchProductData,
@@ -277,6 +278,34 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                       </div>
                     </div>
                   )}
+                </div>
+
+                {error && (
+                  <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground">
+                    <p>{error}</p>
+                    {scannerStatus === 'blocked' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
+                      >
+                        Open scanner in new tab
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex justify-center">
+                  <Button
+                    variant="secondary"
+                    onClick={() => scanNow(videoRef.current || undefined)}
+                    disabled={!isScanning || loading || scannerStatus === 'blocked'}
+                    className="gap-2"
+                  >
+                    <Target className="h-4 w-4" />
+                    Scan now
+                  </Button>
                 </div>
 
                 <div className="text-center text-sm text-muted-foreground flex items-center gap-2 justify-center">
