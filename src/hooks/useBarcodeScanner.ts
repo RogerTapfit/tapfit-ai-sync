@@ -101,6 +101,7 @@ export const useBarcodeScanner = () => {
   const isAttachingRef = useRef(false);
   const nativeDetectorRef = useRef<any>(null);
   const nativeDetectorLoopRef = useRef<number | null>(null);
+  const nativeFallbackTimerRef = useRef<number | null>(null);
   const zxingActiveRef = useRef(false);
   const errorCountRef = useRef({ notFound: 0, checksum: 0, format: 0 });
   const barcodeDetectedRef = useRef(false);
@@ -130,6 +131,12 @@ export const useBarcodeScanner = () => {
   const stopScanning = useCallback((videoElement?: HTMLVideoElement) => {
     debugLog('stopScanning called');
     isStoppingRef.current = true;
+
+    if (nativeFallbackTimerRef.current) {
+      window.clearTimeout(nativeFallbackTimerRef.current);
+      nativeFallbackTimerRef.current = null;
+    }
+
     barcodeDetectedRef.current = false;
     zxingActiveRef.current = false;
     setScannerStatus('stopped');
@@ -149,7 +156,7 @@ export const useBarcodeScanner = () => {
 
     // Stop active stream
     if (activeStreamRef.current) {
-      activeStreamRef.current.getTracks().forEach(track => track.stop());
+      activeStreamRef.current.getTracks().forEach((track) => track.stop());
       activeStreamRef.current = null;
     }
 
@@ -157,11 +164,11 @@ export const useBarcodeScanner = () => {
     const videoEl = videoElement || videoElementRef.current;
     if (videoEl?.srcObject) {
       const stream = videoEl.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       videoEl.srcObject = null;
     }
     videoElementRef.current = null;
-    
+
     // Reset camera controls
     setTorchOn(false);
   }, [stopNativeDetector]);
@@ -506,14 +513,27 @@ export const useBarcodeScanner = () => {
       // Don't start if already detected
       if (barcodeDetectedRef.current) return;
 
-      // Try native BarcodeDetector first, fall back to ZXing
+      // Try native BarcodeDetector first, but ALWAYS fall back to ZXing after a short timeout
+      // because iOS Safari can expose BarcodeDetector while silently failing to detect.
       const nativeStarted = startNativeDetector(videoElement);
-      
+
+      // Clear any previous native fallback timer
+      if (nativeFallbackTimerRef.current) {
+        window.clearTimeout(nativeFallbackTimerRef.current);
+        nativeFallbackTimerRef.current = null;
+      }
+
       if (!nativeStarted) {
         console.log('📷 Using ZXing decoder');
         startZXingDecoder(videoElement, stream);
       } else {
         console.log('📷 Using native BarcodeDetector');
+
+        nativeFallbackTimerRef.current = window.setTimeout(() => {
+          if (isStoppingRef.current || barcodeDetectedRef.current || zxingActiveRef.current) return;
+          debugLog('Native detector fallback timeout hit; starting ZXing');
+          startZXingDecoder(videoElement, stream);
+        }, 2500);
       }
     } finally {
       isAttachingRef.current = false;
