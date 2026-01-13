@@ -15,6 +15,7 @@ import { ApiKeyManager } from './ApiKeyManager';
 import { ProductNotFoundDialog } from './ProductNotFoundDialog';
 import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
 import { ProductPriceCard } from './ProductPriceCard';
+import { ScannerControls } from './ScannerControls';
 
 interface BarcodeScannerProps {
   onProductFound?: (foodItem: FoodItem) => void;
@@ -45,7 +46,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     stopScanning,
     convertToFoodItem,
     resetScanner,
-    fetchProductData
+    fetchProductData,
+    torchSupported,
+    torchOn,
+    toggleTorch,
+    zoomSupported,
+    currentZoom,
+    maxZoom,
+    setZoom,
   } = useBarcodeScanner();
 
   // Fetch pricing when product data is found
@@ -244,6 +252,19 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
                       </motion.div>
                     </div>
+                  </div>
+
+                  {/* Camera Controls */}
+                  <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
+                    <ScannerControls
+                      torchSupported={torchSupported}
+                      torchOn={torchOn}
+                      onToggleTorch={toggleTorch}
+                      zoomSupported={zoomSupported}
+                      currentZoom={currentZoom}
+                      maxZoom={maxZoom}
+                      onSetZoom={setZoom}
+                    />
                   </div>
 
                   {(loading) && (
