@@ -54,13 +54,15 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { 
-    isScanning, 
-    loading, 
-    startScanning, 
-    stopScanning, 
-    productData, 
-    lastBarcode, 
+  const {
+    isScanning,
+    loading,
+    error,
+    scannerStatus,
+    startScanning,
+    stopScanning,
+    productData,
+    lastBarcode,
     fetchProductData,
     torchSupported,
     torchOn,
@@ -426,6 +428,22 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   </div>
                 )}
               </div>
+
+              {error && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground">
+                  <p>{error}</p>
+                  {scannerStatus === 'blocked' && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => window.open(window.location.href, '_blank', 'noopener,noreferrer')}
+                    >
+                      Open scanner in new tab
+                    </Button>
+                  )}
+                </div>
+              )}
               
               <p className="text-sm text-muted-foreground text-center">
                 Point camera at barcode on bottle or can

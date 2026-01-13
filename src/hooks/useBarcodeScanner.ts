@@ -332,26 +332,38 @@ export const useBarcodeScanner = () => {
   }, [getCodeReader, handleBarcodeDetected]);
 
   const getPreferredCameraStream = useCallback(async (): Promise<MediaStream> => {
-    const baseConstraints = {
-      width: { ideal: 1280, min: 640 },
-      height: { ideal: 720, min: 480 },
+    // On laptops/desktops there may be only a single "user" webcam.
+    // Use "ideal" constraints and progressively fall back to "any camera".
+    const ideal = {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
     } as const;
 
-    try {
-      return await navigator.mediaDevices.getUserMedia({
-        video: {
-          ...baseConstraints,
-          facingMode: { exact: 'environment' },
-        },
-      });
-    } catch {
-      return await navigator.mediaDevices.getUserMedia({
-        video: {
-          ...baseConstraints,
-          facingMode: { ideal: 'environment' },
-        },
-      });
+    const attempts: MediaStreamConstraints[] = [
+      { audio: false, video: { ...ideal, facingMode: { ideal: 'environment' } } },
+      { audio: false, video: { ...ideal, facingMode: { ideal: 'user' } } },
+      { audio: false, video: { ...ideal } },
+      { audio: false, video: true },
+    ];
+
+    let lastErr: unknown = null;
+    for (const constraints of attempts) {
+      try {
+        debugLog('getUserMedia attempt:', constraints);
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (e) {
+        lastErr = e;
+        const name = String((e as any)?.name || 'Error');
+        debugLog('getUserMedia failed:', name, e);
+
+        // If the user explicitly denied permissions (or the browser blocks), don't spam more prompts.
+        if (name === 'NotAllowedError' || name === 'SecurityError') {
+          throw e;
+        }
+      }
     }
+
+    throw lastErr ?? new Error('No camera available');
   }, []);
 
   // Apply camera track settings

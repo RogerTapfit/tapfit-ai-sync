@@ -41,6 +41,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
     isScanning,
     productData,
     loading,
+    error,
+    scannerStatus,
     lastBarcode,
     startScanning,
     stopScanning,
