@@ -7,7 +7,7 @@ import {
   getScoreColor,
   BeverageGradeResult 
 } from '@/utils/beverageHealthGrading';
-import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles } from 'lucide-react';
+import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles, Coffee, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Slider } from './ui/slider';
 import { Button } from './ui/button';
@@ -25,6 +25,27 @@ interface ServingData {
     fat: number;
     sugar: number;
     alcoholContent?: number;
+    // Micronutrients
+    sodium_mg?: number;
+    caffeine_mg?: number;
+    calcium_mg?: number;
+    potassium_mg?: number;
+    iron_mg?: number;
+    // Vitamins
+    vitamin_a_mcg?: number;
+    vitamin_c_mg?: number;
+    vitamin_d_mcg?: number;
+    vitamin_b6_mg?: number;
+    vitamin_b12_mcg?: number;
+    niacin_mg?: number;
+    riboflavin_mg?: number;
+    thiamin_mg?: number;
+    biotin_mcg?: number;
+    pantothenic_acid_mg?: number;
+    // Minerals
+    magnesium_mg?: number;
+    zinc_mg?: number;
+    chromium_mcg?: number;
   };
 }
 
@@ -43,6 +64,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
   const [isAnimated, setIsAnimated] = useState(false);
   const [selectedServings, setSelectedServings] = useState(1);
   const [showDeepSeek, setShowDeepSeek] = useState(false);
+  const [showVitamins, setShowVitamins] = useState(false);
 
   const maxServings = servingData?.maxServings || 1;
   const hasMultipleServings = maxServings > 1;
@@ -78,10 +100,61 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
     carbs: Math.round(baseNutrition.carbs * selectedServings),
     fat: Math.round(baseNutrition.fat * selectedServings * 10) / 10,
     sugar: Math.round(baseNutrition.sugar * selectedServings),
-    alcoholContent: baseNutrition.alcoholContent || 0
+    alcoholContent: baseNutrition.alcoholContent || 0,
+    // Micronutrients scaled by servings
+    sodium_mg: baseNutrition.sodium_mg ? Math.round(baseNutrition.sodium_mg * selectedServings) : undefined,
+    caffeine_mg: baseNutrition.caffeine_mg ? Math.round(baseNutrition.caffeine_mg * selectedServings) : undefined,
+    calcium_mg: baseNutrition.calcium_mg ? Math.round(baseNutrition.calcium_mg * selectedServings) : undefined,
+    potassium_mg: baseNutrition.potassium_mg ? Math.round(baseNutrition.potassium_mg * selectedServings) : undefined,
+    iron_mg: baseNutrition.iron_mg ? Math.round(baseNutrition.iron_mg * selectedServings * 10) / 10 : undefined,
+    // Vitamins
+    vitamin_a_mcg: baseNutrition.vitamin_a_mcg ? Math.round(baseNutrition.vitamin_a_mcg * selectedServings) : undefined,
+    vitamin_c_mg: baseNutrition.vitamin_c_mg ? Math.round(baseNutrition.vitamin_c_mg * selectedServings) : undefined,
+    vitamin_d_mcg: baseNutrition.vitamin_d_mcg ? Math.round(baseNutrition.vitamin_d_mcg * selectedServings * 10) / 10 : undefined,
+    vitamin_b6_mg: baseNutrition.vitamin_b6_mg ? Math.round(baseNutrition.vitamin_b6_mg * selectedServings * 10) / 10 : undefined,
+    vitamin_b12_mcg: baseNutrition.vitamin_b12_mcg ? Math.round(baseNutrition.vitamin_b12_mcg * selectedServings * 10) / 10 : undefined,
+    niacin_mg: baseNutrition.niacin_mg ? Math.round(baseNutrition.niacin_mg * selectedServings) : undefined,
+    riboflavin_mg: baseNutrition.riboflavin_mg ? Math.round(baseNutrition.riboflavin_mg * selectedServings * 10) / 10 : undefined,
+    thiamin_mg: baseNutrition.thiamin_mg ? Math.round(baseNutrition.thiamin_mg * selectedServings * 10) / 10 : undefined,
+    biotin_mcg: baseNutrition.biotin_mcg ? Math.round(baseNutrition.biotin_mcg * selectedServings) : undefined,
+    pantothenic_acid_mg: baseNutrition.pantothenic_acid_mg ? Math.round(baseNutrition.pantothenic_acid_mg * selectedServings) : undefined,
+    // Minerals
+    magnesium_mg: baseNutrition.magnesium_mg ? Math.round(baseNutrition.magnesium_mg * selectedServings) : undefined,
+    zinc_mg: baseNutrition.zinc_mg ? Math.round(baseNutrition.zinc_mg * selectedServings * 10) / 10 : undefined,
+    chromium_mcg: baseNutrition.chromium_mcg ? Math.round(baseNutrition.chromium_mcg * selectedServings) : undefined,
   };
   
   const displayServingOz = Math.round((servingData?.servingOz || servingOz || beverageInfo.servingOz) * selectedServings * 10) / 10;
+
+  // Daily Value percentages for vitamins and minerals
+  const getDailyValuePercent = (value: number | undefined, dv: number): number | null => {
+    if (value === undefined || value === 0) return null;
+    return Math.round((value / dv) * 100);
+  };
+
+  // Build vitamins and minerals array for display
+  const vitaminsAndMinerals = [
+    { name: 'Calcium', value: displayNutrition.calcium_mg, unit: 'mg', dv: 1300, dvPercent: getDailyValuePercent(displayNutrition.calcium_mg, 1300) },
+    { name: 'Vitamin C', value: displayNutrition.vitamin_c_mg, unit: 'mg', dv: 90, dvPercent: getDailyValuePercent(displayNutrition.vitamin_c_mg, 90) },
+    { name: 'Vitamin A', value: displayNutrition.vitamin_a_mcg, unit: 'mcg', dv: 900, dvPercent: getDailyValuePercent(displayNutrition.vitamin_a_mcg, 900) },
+    { name: 'Vitamin D', value: displayNutrition.vitamin_d_mcg, unit: 'mcg', dv: 20, dvPercent: getDailyValuePercent(displayNutrition.vitamin_d_mcg, 20) },
+    { name: 'Thiamin (B1)', value: displayNutrition.thiamin_mg, unit: 'mg', dv: 1.2, dvPercent: getDailyValuePercent(displayNutrition.thiamin_mg, 1.2) },
+    { name: 'Riboflavin (B2)', value: displayNutrition.riboflavin_mg, unit: 'mg', dv: 1.3, dvPercent: getDailyValuePercent(displayNutrition.riboflavin_mg, 1.3) },
+    { name: 'Niacin (B3)', value: displayNutrition.niacin_mg, unit: 'mg', dv: 16, dvPercent: getDailyValuePercent(displayNutrition.niacin_mg, 16) },
+    { name: 'Vitamin B6', value: displayNutrition.vitamin_b6_mg, unit: 'mg', dv: 1.7, dvPercent: getDailyValuePercent(displayNutrition.vitamin_b6_mg, 1.7) },
+    { name: 'Vitamin B12', value: displayNutrition.vitamin_b12_mcg, unit: 'mcg', dv: 2.4, dvPercent: getDailyValuePercent(displayNutrition.vitamin_b12_mcg, 2.4) },
+    { name: 'Biotin', value: displayNutrition.biotin_mcg, unit: 'mcg', dv: 30, dvPercent: getDailyValuePercent(displayNutrition.biotin_mcg, 30) },
+    { name: 'Pantothenic Acid', value: displayNutrition.pantothenic_acid_mg, unit: 'mg', dv: 5, dvPercent: getDailyValuePercent(displayNutrition.pantothenic_acid_mg, 5) },
+    { name: 'Potassium', value: displayNutrition.potassium_mg, unit: 'mg', dv: 4700, dvPercent: getDailyValuePercent(displayNutrition.potassium_mg, 4700) },
+    { name: 'Iron', value: displayNutrition.iron_mg, unit: 'mg', dv: 18, dvPercent: getDailyValuePercent(displayNutrition.iron_mg, 18) },
+    { name: 'Magnesium', value: displayNutrition.magnesium_mg, unit: 'mg', dv: 420, dvPercent: getDailyValuePercent(displayNutrition.magnesium_mg, 420) },
+    { name: 'Zinc', value: displayNutrition.zinc_mg, unit: 'mg', dv: 11, dvPercent: getDailyValuePercent(displayNutrition.zinc_mg, 11) },
+    { name: 'Chromium', value: displayNutrition.chromium_mcg, unit: 'mcg', dv: 35, dvPercent: getDailyValuePercent(displayNutrition.chromium_mcg, 35) },
+  ].filter(item => item.value !== undefined && item.value > 0);
+
+  const hasVitaminsOrMinerals = vitaminsAndMinerals.length > 0;
+  const hasCaffeine = displayNutrition.caffeine_mg !== undefined && displayNutrition.caffeine_mg > 0;
+  const hasSodium = displayNutrition.sodium_mg !== undefined && displayNutrition.sodium_mg > 0;
 
   return (
     <div className="space-y-4 w-full overflow-hidden">
@@ -243,6 +316,71 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
             </div>
             <span className="font-medium text-foreground">{displayNutrition.fat}g</span>
           </div>
+
+          {/* Caffeine - if present */}
+          {hasCaffeine && (
+            <div className="flex justify-between items-center py-2 border-t border-border bg-amber-500/10 -mx-3 px-3">
+              <div className="flex items-center gap-2">
+                <Coffee className="h-4 w-4 text-amber-600" />
+                <span className="font-semibold text-foreground">Caffeine</span>
+              </div>
+              <span className="text-lg font-bold text-amber-500">{displayNutrition.caffeine_mg}mg</span>
+            </div>
+          )}
+
+          {/* Sodium - if present */}
+          {hasSodium && (
+            <div className="flex justify-between items-center py-1.5 border-t border-border">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-blue-400" />
+                <span className="text-foreground">Sodium</span>
+              </div>
+              <span className="font-medium text-foreground">{displayNutrition.sodium_mg}mg</span>
+            </div>
+          )}
+
+          {/* Vitamins & Minerals - collapsible */}
+          {hasVitaminsOrMinerals && (
+            <div className="border-t border-border pt-2 mt-2">
+              <button
+                onClick={() => setShowVitamins(!showVitamins)}
+                className="w-full flex justify-between items-center py-1.5 text-left hover:bg-muted/50 rounded -mx-1 px-1 transition-colors"
+              >
+                <span className="text-sm font-medium text-foreground">Vitamins & Minerals</span>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <span className="text-xs">{vitaminsAndMinerals.length} nutrients</span>
+                  {showVitamins ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
+              </button>
+              
+              {showVitamins && (
+                <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-primary/30">
+                  {vitaminsAndMinerals.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-sm py-0.5">
+                      <span className="text-muted-foreground">{item.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-foreground">{item.value}{item.unit}</span>
+                        {item.dvPercent !== null && (
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            item.dvPercent >= 100 ? 'bg-green-500/20 text-green-400' :
+                            item.dvPercent >= 50 ? 'bg-cyan-500/20 text-cyan-400' :
+                            item.dvPercent >= 20 ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-muted text-muted-foreground'
+                          }`}>
+                            {item.dvPercent}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

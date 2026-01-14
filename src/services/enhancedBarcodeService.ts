@@ -22,6 +22,27 @@ interface ProductData {
     fat_serving?: number;
     sugars_serving?: number;
     alcohol_serving?: number;
+    // Micronutrients
+    sodium_mg?: number;
+    caffeine_mg?: number;
+    calcium_mg?: number;
+    potassium_mg?: number;
+    iron_mg?: number;
+    // Vitamins
+    vitamin_a_mcg?: number;
+    vitamin_c_mg?: number;
+    vitamin_d_mcg?: number;
+    vitamin_b6_mg?: number;
+    vitamin_b12_mcg?: number;
+    niacin_mg?: number;
+    riboflavin_mg?: number;
+    thiamin_mg?: number;
+    biotin_mcg?: number;
+    pantothenic_acid_mg?: number;
+    // Minerals
+    magnesium_mg?: number;
+    zinc_mg?: number;
+    chromium_mcg?: number;
   };
   ingredients?: string;
   serving_size?: string;
@@ -340,6 +361,48 @@ export class EnhancedBarcodeService {
             fat_serving: nutriments.fat_serving,
             sugars_serving: nutriments.sugars_serving,
             alcohol_serving: nutriments.alcohol_serving,
+            // Micronutrients - extract from OpenFoodFacts nutriments
+            sodium_mg: nutriments.sodium_serving ? nutriments.sodium_serving * 1000 : 
+                       (nutriments.sodium_100g ? nutriments.sodium_100g * 1000 * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            caffeine_mg: nutriments.caffeine_serving || 
+                        (nutriments.caffeine_100g ? nutriments.caffeine_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            calcium_mg: nutriments.calcium_serving || 
+                       (nutriments.calcium_100g ? nutriments.calcium_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            potassium_mg: nutriments.potassium_serving || 
+                         (nutriments.potassium_100g ? nutriments.potassium_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            iron_mg: nutriments.iron_serving || 
+                    (nutriments.iron_100g ? nutriments.iron_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            // Vitamins
+            vitamin_a_mcg: nutriments['vitamin-a_serving'] || 
+                          (nutriments['vitamin-a_100g'] ? nutriments['vitamin-a_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            vitamin_c_mg: nutriments['vitamin-c_serving'] || 
+                         (nutriments['vitamin-c_100g'] ? nutriments['vitamin-c_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            vitamin_d_mcg: nutriments['vitamin-d_serving'] || 
+                          (nutriments['vitamin-d_100g'] ? nutriments['vitamin-d_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            vitamin_b6_mg: nutriments['vitamin-b6_serving'] || 
+                          (nutriments['vitamin-b6_100g'] ? nutriments['vitamin-b6_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            vitamin_b12_mcg: nutriments['vitamin-b12_serving'] || 
+                            (nutriments['vitamin-b12_100g'] ? nutriments['vitamin-b12_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            niacin_mg: nutriments['niacin_serving'] || nutriments['vitamin-pp_serving'] ||
+                      (nutriments['niacin_100g'] || nutriments['vitamin-pp_100g'] ? 
+                       (nutriments['niacin_100g'] || nutriments['vitamin-pp_100g']) * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            riboflavin_mg: nutriments['riboflavin_serving'] || nutriments['vitamin-b2_serving'] ||
+                          (nutriments['riboflavin_100g'] || nutriments['vitamin-b2_100g'] ? 
+                           (nutriments['riboflavin_100g'] || nutriments['vitamin-b2_100g']) * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            thiamin_mg: nutriments['thiamin_serving'] || nutriments['vitamin-b1_serving'] ||
+                       (nutriments['thiamin_100g'] || nutriments['vitamin-b1_100g'] ? 
+                        (nutriments['thiamin_100g'] || nutriments['vitamin-b1_100g']) * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            biotin_mcg: nutriments['biotin_serving'] ||
+                       (nutriments['biotin_100g'] ? nutriments['biotin_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            pantothenic_acid_mg: nutriments['pantothenic-acid_serving'] ||
+                                (nutriments['pantothenic-acid_100g'] ? nutriments['pantothenic-acid_100g'] * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            // Minerals
+            magnesium_mg: nutriments.magnesium_serving || 
+                         (nutriments.magnesium_100g ? nutriments.magnesium_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            zinc_mg: nutriments.zinc_serving || 
+                    (nutriments.zinc_100g ? nutriments.zinc_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            chromium_mcg: nutriments.chromium_serving || 
+                         (nutriments.chromium_100g ? nutriments.chromium_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
           },
           ingredients: product.ingredients_text,
           serving_size: product.serving_size,

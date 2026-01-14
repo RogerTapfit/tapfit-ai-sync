@@ -33,6 +33,27 @@ interface ServingData {
     fat: number;
     sugar: number;
     alcoholContent?: number;
+    // Micronutrients
+    sodium_mg?: number;
+    caffeine_mg?: number;
+    calcium_mg?: number;
+    potassium_mg?: number;
+    iron_mg?: number;
+    // Vitamins
+    vitamin_a_mcg?: number;
+    vitamin_c_mg?: number;
+    vitamin_d_mcg?: number;
+    vitamin_b6_mg?: number;
+    vitamin_b12_mcg?: number;
+    niacin_mg?: number;
+    riboflavin_mg?: number;
+    thiamin_mg?: number;
+    biotin_mcg?: number;
+    pantothenic_acid_mg?: number;
+    // Minerals
+    magnesium_mg?: number;
+    zinc_mg?: number;
+    chromium_mcg?: number;
   };
 }
 
@@ -266,20 +287,41 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           const perServingNutrition = {
             calories:
               nutrition?.calories_serving ??
-              (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 100),
+              (nutrition?.calories_100g ? Math.round(nutrition.calories_100g * scaleFactor) : 0),
             protein:
               nutrition?.proteins_serving ??
-              (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 2),
+              (nutrition?.proteins_100g ? Math.round(nutrition.proteins_100g * scaleFactor * 10) / 10 : 0),
             carbs:
               nutrition?.carbohydrates_serving ??
-              (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 15),
+              (nutrition?.carbohydrates_100g ? Math.round(nutrition.carbohydrates_100g * scaleFactor) : 0),
             fat:
               nutrition?.fat_serving ??
-              (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 2),
+              (nutrition?.fat_100g ? Math.round(nutrition.fat_100g * scaleFactor * 10) / 10 : 0),
             sugar:
               nutrition?.sugars_serving ??
-              (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 10),
+              (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 0),
             alcoholContent: nutrition?.alcohol_serving ?? nutrition?.alcohol_100g,
+            // Micronutrients - pass through from API data
+            sodium_mg: nutrition?.sodium_mg,
+            caffeine_mg: nutrition?.caffeine_mg,
+            calcium_mg: nutrition?.calcium_mg,
+            potassium_mg: nutrition?.potassium_mg,
+            iron_mg: nutrition?.iron_mg,
+            // Vitamins
+            vitamin_a_mcg: nutrition?.vitamin_a_mcg,
+            vitamin_c_mg: nutrition?.vitamin_c_mg,
+            vitamin_d_mcg: nutrition?.vitamin_d_mcg,
+            vitamin_b6_mg: nutrition?.vitamin_b6_mg,
+            vitamin_b12_mcg: nutrition?.vitamin_b12_mcg,
+            niacin_mg: nutrition?.niacin_mg,
+            riboflavin_mg: nutrition?.riboflavin_mg,
+            thiamin_mg: nutrition?.thiamin_mg,
+            biotin_mcg: nutrition?.biotin_mcg,
+            pantothenic_acid_mg: nutrition?.pantothenic_acid_mg,
+            // Minerals
+            magnesium_mg: nutrition?.magnesium_mg,
+            zinc_mg: nutrition?.zinc_mg,
+            chromium_mcg: nutrition?.chromium_mcg,
           };
 
           const beverageInfo: BeverageType = {

@@ -24,6 +24,27 @@ interface ProductData {
     fat_serving?: number;
     sugars_serving?: number;
     alcohol_serving?: number;
+    // Micronutrients
+    sodium_mg?: number;
+    caffeine_mg?: number;
+    calcium_mg?: number;
+    potassium_mg?: number;
+    iron_mg?: number;
+    // Vitamins
+    vitamin_a_mcg?: number;
+    vitamin_c_mg?: number;
+    vitamin_d_mcg?: number;
+    vitamin_b6_mg?: number;
+    vitamin_b12_mcg?: number;
+    niacin_mg?: number;
+    riboflavin_mg?: number;
+    thiamin_mg?: number;
+    biotin_mcg?: number;
+    pantothenic_acid_mg?: number;
+    // Minerals
+    magnesium_mg?: number;
+    zinc_mg?: number;
+    chromium_mcg?: number;
   };
   ingredients?: string;
   serving_size?: string;
