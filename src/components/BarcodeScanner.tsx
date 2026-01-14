@@ -36,6 +36,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   const [showProductNotFound, setShowProductNotFound] = useState(false);
   const [lastScannedBarcode, setLastScannedBarcode] = useState<string>('');
   const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
+  const [isManualScanning, setIsManualScanning] = useState(false);
+
+  const handleScanNow = async () => {
+    setIsManualScanning(true);
+    await scanNow(videoRef.current || undefined);
+    // Keep animation for at least 1 second for visual feedback
+    setTimeout(() => setIsManualScanning(false), 1000);
+  };
   
   const {
     isScanning,
@@ -239,13 +247,16 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                       <motion.div
-                        animate={{ 
-                          scale: [1, 1.1, 1],
+                        animate={isManualScanning ? {
+                          scale: [1, 1.15, 1],
+                          borderColor: ['hsl(var(--primary))', 'hsl(142, 76%, 50%)', 'hsl(var(--primary))'],
+                        } : { 
+                          scale: [1, 1.05, 1],
                           opacity: [0.7, 1, 0.7]
                         }}
                         transition={{ 
-                          repeat: Infinity, 
-                          duration: 2 
+                          repeat: isManualScanning ? 3 : Infinity, 
+                          duration: isManualScanning ? 0.3 : 2 
                         }}
                         className="w-48 h-32 border-2 border-primary rounded-lg bg-primary/10"
                       >
@@ -253,6 +264,16 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                         <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-lg" />
                         <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-lg" />
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-lg" />
+                        
+                        {/* Scanning laser line */}
+                        {isManualScanning && (
+                          <motion.div
+                            initial={{ top: '10%' }}
+                            animate={{ top: ['10%', '90%', '10%'] }}
+                            transition={{ repeat: Infinity, duration: 0.6, ease: 'easeInOut' }}
+                            className="absolute left-2 right-2 h-0.5 bg-green-500 shadow-[0_0_8px_2px_rgba(34,197,94,0.6)]"
+                          />
+                        )}
                       </motion.div>
                     </div>
                   </div>
@@ -299,12 +320,16 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                 <div className="flex justify-center">
                   <Button
                     variant="secondary"
-                    onClick={() => scanNow(videoRef.current || undefined)}
-                    disabled={!isScanning || loading || scannerStatus === 'blocked'}
+                    onClick={handleScanNow}
+                    disabled={!isScanning || loading || isManualScanning || scannerStatus === 'blocked'}
                     className="gap-2"
                   >
-                    <Target className="h-4 w-4" />
-                    Scan now
+                    {isManualScanning ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Target className="h-4 w-4" />
+                    )}
+                    {isManualScanning ? 'Scanning...' : 'Scan now'}
                   </Button>
                 </div>
 
