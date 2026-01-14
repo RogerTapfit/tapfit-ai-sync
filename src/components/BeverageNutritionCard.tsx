@@ -12,6 +12,7 @@ import { AnimatedNumber } from './AnimatedNumber';
 import { Slider } from './ui/slider';
 import { Button } from './ui/button';
 import { BeverageDeepSeekModal } from './BeverageDeepSeekModal';
+import DrinkInsights from './DrinkInsights';
 
 interface ServingData {
   servingSizeLabel: string;
@@ -244,6 +245,14 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
           </div>
         </div>
       </div>
+
+      {/* Drink Insights - Vitamins, Standouts, Pitfalls */}
+      <DrinkInsights
+        vitaminBenefits={gradeResult.vitaminBenefits}
+        standouts={gradeResult.standouts}
+        pitfalls={gradeResult.pitfalls}
+        insightSummary={gradeResult.insightSummary}
+      />
 
       {/* Hydration Info */}
       <div className={`p-3 rounded-lg ${
