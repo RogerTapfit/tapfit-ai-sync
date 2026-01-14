@@ -72,6 +72,7 @@ interface BeverageDeepSeekModalProps {
   barcode?: string;
   productName?: string;
   productData?: any;
+  productImage?: string;
 }
 
 export const BeverageDeepSeekModal = ({ 
@@ -79,7 +80,8 @@ export const BeverageDeepSeekModal = ({
   onOpenChange, 
   barcode, 
   productName,
-  productData
+  productData,
+  productImage
 }: BeverageDeepSeekModalProps) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DeepSeekData | null>(null);
@@ -94,13 +96,23 @@ export const BeverageDeepSeekModal = ({
   const fetchDeepAnalysis = async () => {
     setLoading(true);
     try {
-      // Call the analyzeProduct edge function with barcode for deep chemical analysis
+      // Call the analyzeProduct edge function with deepSeek flag and image if available
+      const requestBody: any = {
+        barcode: barcode,
+        productName: productName,
+        deepSeek: true // Flag to request full chemical breakdown
+      };
+      
+      // Include image for AI-powered chemical analysis
+      if (productImage) {
+        requestBody.imageBase64 = productImage;
+        console.log('📸 Deep Seek: Sending product image for AI chemical analysis');
+      } else {
+        console.log('⚠️ Deep Seek: No image available, using database lookup only');
+      }
+      
       const { data: analysisData, error } = await supabase.functions.invoke('analyzeProduct', {
-        body: {
-          barcode: barcode,
-          productName: productName,
-          deepSeek: true // Flag to request full chemical breakdown
-        }
+        body: requestBody
       });
 
       if (error) throw error;
@@ -119,36 +131,69 @@ export const BeverageDeepSeekModal = ({
   };
 
   const transformAnalysisData = (response: any, name: string): DeepSeekData => {
+    // Handle both Deep Seek direct response format and legacy chemical_analysis format
+    const isDeepSeekDirect = response?.deep_seek === true;
     const chemicalAnalysis = response?.chemical_analysis || {};
     const sugarAnalysis = response?.sugar_analysis || {};
+    
+    // Get sweetener data from appropriate source
+    const sweetenerData = isDeepSeekDirect 
+      ? response?.sweetener_analysis 
+      : sugarAnalysis;
+    
+    // Get dyes from appropriate source
+    const dyesData = isDeepSeekDirect 
+      ? (response?.chemical_dyes || [])
+      : (chemicalAnalysis.food_dyes || []);
+    
+    // Get preservatives from appropriate source
+    const preservativesData = isDeepSeekDirect
+      ? (response?.preservatives || [])
+      : (chemicalAnalysis.preservatives || []);
+    
+    // Get vitamins from appropriate source
+    const vitaminsData = isDeepSeekDirect
+      ? (response?.vitamins_minerals || [])
+      : (chemicalAnalysis.vitamins || response?.vitamins || []);
+    
+    // Get additives from appropriate source  
+    const additivesData = isDeepSeekDirect
+      ? (response?.additives || [])
+      : (chemicalAnalysis.flavor_enhancers || []);
+    
+    // Get NOVA classification
+    const novaData = isDeepSeekDirect
+      ? response?.nova_classification
+      : { level: chemicalAnalysis.nova_classification || 4 };
+    const novaLevel = typeof novaData === 'object' ? novaData.level : (novaData || 4);
     
     return {
       product_name: response?.product_name || name,
       sweetener_analysis: {
-        primary_sweetener: sugarAnalysis.primary_sweetener || 'Unknown',
-        sweetener_category: sugarAnalysis.sweetener_category || 'unknown',
-        glycemic_index: sugarAnalysis.glycemic_index || 0,
-        all_sweeteners: sugarAnalysis.all_sweeteners || [],
-        metabolic_impact: sugarAnalysis.metabolic_impact || 'Unknown metabolic impact'
+        primary_sweetener: sweetenerData?.primary_sweetener || 'Unknown',
+        sweetener_category: sweetenerData?.sweetener_category || 'unknown',
+        glycemic_index: sweetenerData?.glycemic_index || 0,
+        all_sweeteners: sweetenerData?.all_sweeteners || [],
+        metabolic_impact: sweetenerData?.metabolic_impact || 'Scan ingredients label for detailed analysis'
       },
-      chemical_dyes: (chemicalAnalysis.food_dyes || []).map((dye: any) => ({
+      chemical_dyes: dyesData.map((dye: any) => ({
         name: dye.name || dye.chemical_name || 'Unknown Dye',
         e_code: dye.e_code,
-        chemical_formula: dye.formula,
+        chemical_formula: dye.chemical_formula || dye.formula,
         color: dye.color || '#FF0000',
         safety_rating: dye.safety_rating || 'caution',
         health_concerns: dye.health_concerns || [],
         regulatory_status: dye.regulatory_status,
         natural_alternative: dye.natural_alternative
       })),
-      vitamins_minerals: (chemicalAnalysis.vitamins || response?.vitamins || []).map((v: any) => ({
+      vitamins_minerals: vitaminsData.map((v: any) => ({
         name: v.name,
         amount: v.amount || 'N/A',
         daily_value_percent: v.daily_value_percent,
         bioavailability: v.bioavailability,
         purpose: v.purpose
       })),
-      preservatives: (chemicalAnalysis.preservatives || []).map((p: any) => ({
+      preservatives: preservativesData.map((p: any) => ({
         name: p.name || 'Unknown',
         e_code: p.e_code,
         purpose: p.purpose || 'Preservation',
@@ -156,21 +201,25 @@ export const BeverageDeepSeekModal = ({
         health_concerns: p.health_concerns || [],
         alternatives: p.alternatives
       })),
-      additives: (chemicalAnalysis.flavor_enhancers || []).map((a: any) => ({
+      additives: additivesData.map((a: any) => ({
         name: a.name || 'Unknown',
         category: a.category || 'Flavor',
         purpose: a.details || a.purpose || 'Flavor enhancement',
-        concern_level: a.concern ? 'medium' : 'low',
-        notes: a.concern
+        concern_level: a.concern_level || (a.concern ? 'medium' : 'low'),
+        notes: a.notes || a.concern
       })),
       nova_classification: {
-        level: chemicalAnalysis.nova_classification || response?.nova_classification || 4,
-        description: getNovaDescription(chemicalAnalysis.nova_classification || 4),
-        explanation: getNovaExplanation(chemicalAnalysis.nova_classification || 4)
+        level: novaLevel as 1 | 2 | 3 | 4,
+        description: typeof novaData === 'object' && novaData.description 
+          ? novaData.description 
+          : getNovaDescription(novaLevel),
+        explanation: typeof novaData === 'object' && novaData.explanation
+          ? novaData.explanation
+          : getNovaExplanation(novaLevel)
       },
-      ingredients_raw: response?.ingredients_text || response?.ingredients || 'Ingredients not available',
+      ingredients_raw: response?.ingredients_raw || response?.ingredients_text || response?.ingredients || 'Ingredients not available',
       ai_insights: response?.ai_insights || chemicalAnalysis.ai_insights || [],
-      overall_safety_score: chemicalAnalysis.overall_safety_score || 50
+      overall_safety_score: response?.overall_safety_score || chemicalAnalysis.overall_safety_score || 50
     };
   };
 
