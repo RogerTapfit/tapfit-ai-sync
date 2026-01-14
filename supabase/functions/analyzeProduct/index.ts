@@ -642,27 +642,45 @@ function validateNutritionResponse(result: any): { isValid: boolean; issues: str
   };
 }
 
-// Second-pass focused nutrition extraction
+// Second-pass focused nutrition extraction (enhanced for beverages with vitamins/caffeine)
 async function extractNutritionOnly(imageBase64: string, apiKey: string, productName?: string): Promise<any> {
   console.log('🔄 Running focused nutrition extraction pass...');
+  
+  const isEnergyDrink = /energy|celsius|monster|redbull|rockstar|bang|reign|c4|ghost|alani|prime/i.test(productName || '');
   
   const nutritionPrompt = `You are a nutrition label reader. ONLY extract exact numbers from the Nutrition Facts label in this image.
 
 Product name for context: ${productName || 'Unknown'}
+${isEnergyDrink ? 'This appears to be an ENERGY DRINK - be sure to find caffeine (often listed separately below the main nutrition table) and all B vitamins.' : ''}
 
 Look for the Nutrition Facts panel and extract EXACT values. Read carefully - do not estimate or guess.
 
 Return ONLY this JSON (no markdown):
 {
-  "serving_size": "exact text from label (e.g., '1 package (28g)')",
-  "serving_size_grams": number,
+  "serving_size": "exact text from label (e.g., '1 can (12 fl oz)')",
+  "serving_size_grams": number or null,
+  "serving_size_ml": number or null,
   "calories": number,
   "protein_g": number,
   "carbs_g": number,
   "fat_g": number,
-  "fiber_g": number,
+  "fiber_g": number or null,
   "sugars_g": number,
   "sodium_mg": number,
+  "caffeine_mg": number or null,
+  "vitamins": [
+    { "name": "Vitamin C", "amount": 60, "unit": "mg", "dv_percent": 70 },
+    { "name": "Riboflavin", "amount": 1.7, "unit": "mg", "dv_percent": 130 },
+    { "name": "Niacin", "amount": 20, "unit": "mg", "dv_percent": 130 },
+    { "name": "Vitamin B6", "amount": 2, "unit": "mg", "dv_percent": 120 },
+    { "name": "Vitamin B12", "amount": 6, "unit": "mcg", "dv_percent": 250 },
+    { "name": "Biotin", "amount": 300, "unit": "mcg", "dv_percent": 1000 },
+    { "name": "Pantothenic Acid", "amount": 10, "unit": "mg", "dv_percent": 200 }
+  ],
+  "minerals": [
+    { "name": "Calcium", "amount": 50, "unit": "mg", "dv_percent": 4 },
+    { "name": "Chromium", "amount": 50, "unit": "mcg", "dv_percent": 140 }
+  ],
   "confidence": 0.0-1.0,
   "label_visible": true/false,
   "notes": "any issues reading the label"
@@ -671,6 +689,9 @@ Return ONLY this JSON (no markdown):
 CRITICAL:
 - Return EXACT numbers from the label, not estimates
 - If you can't see a value clearly, use null instead of guessing
+- For beverages/energy drinks, CAFFEINE is often listed BELOW the main nutrition table - FIND IT
+- Include ALL vitamins and minerals shown on the label with their amounts AND % Daily Values
+- Read the EXACT amount shown (e.g., if it says "200mg" for caffeine, return 200)
 - confidence should reflect how clearly you can read the label
 - label_visible should be false if no nutrition facts panel is visible`;
 
@@ -696,12 +717,12 @@ CRITICAL:
               },
               {
                 type: "text",
-                text: "Extract the exact nutrition values from this label. Return ONLY valid JSON."
+                text: "Extract the COMPLETE nutrition values from this label including all vitamins, minerals, and caffeine. Return ONLY valid JSON."
               }
             ]
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 2000,
       }),
     });
 

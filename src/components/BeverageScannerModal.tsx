@@ -410,6 +410,49 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     return null;
   };
 
+  // Check if nutrition data seems incomplete or suspicious
+  const checkNeedsLabelScan = (nutrition: any, productName: string): boolean => {
+    if (!nutrition) return true;
+    
+    const nameLower = productName.toLowerCase();
+    const isEnergyDrink = /energy|celsius|monster|redbull|rockstar|bang|reign|c4|3d|ghost|alani|prime/i.test(nameLower);
+    
+    // Energy drinks should have caffeine and B vitamins
+    if (isEnergyDrink) {
+      if (!nutrition?.caffeine_mg || nutrition.caffeine_mg === 0) {
+        return true;
+      }
+      if (!nutrition?.vitamin_b12_mcg && !nutrition?.niacin_mg && !nutrition?.vitamin_b6_mg) {
+        return true;
+      }
+    }
+    
+    // Suspicious sodium values (>2000mg for a single serving beverage is very unusual)
+    if (nutrition?.sodium_mg && nutrition.sodium_mg > 2000) {
+      return true;
+    }
+    
+    // Count how many vitamin/mineral fields have values
+    const vitaminFields = ['vitamin_c_mg', 'vitamin_b6_mg', 'vitamin_b12_mcg', 'niacin_mg', 
+                           'riboflavin_mg', 'biotin_mcg', 'calcium_mg', 'chromium_mcg'];
+    const populatedCount = vitaminFields.filter(f => nutrition?.[f] && nutrition[f] > 0).length;
+    
+    // If product appears to be vitamin-enhanced but has fewer than 2 vitamins detected
+    const looksVitaminEnhanced = /vitamin|fortified|energy|electrolyte|sport|enhanced/i.test(nameLower);
+    if (looksVitaminEnhanced && populatedCount < 2) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  const handleScanNutritionLabel = () => {
+    // TODO: Implement nutrition label scanning flow
+    // For now, show a toast explaining the feature
+    toast.info('Nutrition label scanning coming soon! Use Deep Seek for now to analyze the label.');
+    // Future: This would open camera in a special mode focused on nutrition facts panel
+  };
+
   const handleManualSubmit = () => {
     if (manualBarcode.trim()) {
       processProduct(manualBarcode.trim(), '');
@@ -607,6 +650,8 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   servingData={scanResult.servingData}
                   barcode={scanResult.barcode}
                   productImage={scanResult.productImage}
+                  needsLabelScan={checkNeedsLabelScan(scanResult.servingData?.perServingNutrition, scanResult.productName || '')}
+                  onScanNutritionLabel={handleScanNutritionLabel}
                 />
               )}
 
@@ -630,6 +675,8 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   servingOz={scanResult.servingOz}
                   barcode={scanResult.barcode}
                   productImage={scanResult.productImage}
+                  needsLabelScan={true}
+                  onScanNutritionLabel={handleScanNutritionLabel}
                 />
               )}
 

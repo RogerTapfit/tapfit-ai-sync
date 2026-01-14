@@ -362,8 +362,27 @@ export class EnhancedBarcodeService {
             sugars_serving: nutriments.sugars_serving,
             alcohol_serving: nutriments.alcohol_serving,
             // Micronutrients - extract from OpenFoodFacts nutriments
-            sodium_mg: nutriments.sodium_serving ? nutriments.sodium_serving * 1000 : 
-                       (nutriments.sodium_100g ? nutriments.sodium_100g * 1000 * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
+            // OpenFoodFacts stores sodium in GRAMS, convert to mg
+            // sodium_serving is already per-serving in grams (e.g., 0.005g = 5mg)
+            // sodium_100g is per 100g in grams
+            sodium_mg: (() => {
+              const servingValue = nutriments.sodium_serving;
+              const per100gValue = nutriments.sodium_100g;
+              
+              if (servingValue !== undefined) {
+                // Convert grams to mg (multiply by 1000)
+                const mgValue = servingValue * 1000;
+                // Sanity check: if result > 2000mg for a single serving, it's suspicious
+                // Most beverages have <500mg sodium per serving
+                return mgValue > 2000 ? Math.round(mgValue / 1000) : Math.round(mgValue);
+              }
+              if (per100gValue !== undefined) {
+                const scaleFactor = servingQuantityMl ? servingQuantityMl / 100 : 1;
+                const mgValue = per100gValue * 1000 * scaleFactor;
+                return mgValue > 2000 ? Math.round(mgValue / 1000) : Math.round(mgValue);
+              }
+              return undefined;
+            })(),
             caffeine_mg: nutriments.caffeine_serving || 
                         (nutriments.caffeine_100g ? nutriments.caffeine_100g * (servingQuantityMl ? servingQuantityMl / 100 : 1) : undefined),
             calcium_mg: nutriments.calcium_serving || 
