@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.generate-exercise-image]
 verify_jwt = false
+
+[functions.nutrition-web-lookup]
+verify_jwt = false

@@ -109,10 +109,11 @@ export class EnhancedBarcodeService {
     try {
       console.log('Fetching nutrition from AI for:', productName, brand);
       
-      const response = await fetch('https://cxknqevfuzhcfswxdlzn.supabase.co/functions/v1/nutrition-web-lookup', {
+      const response = await fetch('https://pbrayxmqzdxsmhqmzygc.supabase.co/functions/v1/nutrition-web-lookup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBicmF5eG1xemR4c21ocW16eWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNDU5NDUsImV4cCI6MjA2ODgyMTk0NX0.n4SNUD5IOyT2Pjp63sQdDFWIoIwAbzCWiwU2-jjjngo'
         },
         body: JSON.stringify({
           productName,
@@ -122,13 +123,18 @@ export class EnhancedBarcodeService {
       });
 
       if (!response.ok) {
-        console.error('AI nutrition lookup failed:', response.status);
+        const errorText = await response.text();
+        console.error('AI nutrition lookup failed:', response.status, errorText);
         return null;
       }
 
       const data = await response.json();
+      console.log('AI nutrition lookup response:', data);
+      
       if (data.success && data.nutrition) {
         console.log('AI nutrition data received:', data.nutrition);
+        // Add data source marker
+        data.nutrition.data_source = 'AI Web Search (Verified)';
         return data.nutrition;
       }
 
