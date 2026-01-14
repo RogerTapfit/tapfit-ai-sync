@@ -260,6 +260,67 @@ class AudioManager {
     setTimeout(() => this.createTone(2093, 0.15, 'sine'), 500); // High C
   }
 
+  async playWaterPour(): Promise<void> {
+    await this.initializeAudio();
+    if (!this.audioContext || !this.isEnabled) return;
+    
+    const ctx = this.audioContext;
+    const now = ctx.currentTime;
+    
+    // Create filtered noise for water texture
+    const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.4), ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) {
+      noiseData[i] = Math.random() * 2 - 1;
+    }
+    
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    
+    const lowPass = ctx.createBiquadFilter();
+    lowPass.type = 'lowpass';
+    lowPass.frequency.setValueAtTime(800, now);
+    lowPass.frequency.linearRampToValueAtTime(400, now + 0.4);
+    
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0, now);
+    noiseGain.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.05);
+    noiseGain.gain.linearRampToValueAtTime(this.volume * 0.08, now + 0.3);
+    noiseGain.gain.linearRampToValueAtTime(0, now + 0.4);
+    
+    noiseSource.connect(lowPass);
+    lowPass.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSource.start(now);
+    noiseSource.stop(now + 0.4);
+    
+    // Add bubbling "glug" tones
+    const bubbles = [
+      { freq: 180, time: 0.05 },
+      { freq: 160, time: 0.15 },
+      { freq: 200, time: 0.25 },
+      { freq: 140, time: 0.35 }
+    ];
+    
+    bubbles.forEach(({ freq, time }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + time);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.7, now + time + 0.08);
+      
+      gain.gain.setValueAtTime(0, now + time);
+      gain.gain.linearRampToValueAtTime(this.volume * 0.12, now + time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + time + 0.1);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + time);
+      osc.stop(now + time + 0.1);
+    });
+  }
+
   // Settings
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
