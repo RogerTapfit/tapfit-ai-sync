@@ -12,9 +12,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { GuestSessionManager } from '@/lib/guestSecurity';
 import { sanitizeInput, isValidEmail, logFailedAuthAttempt } from '@/lib/utils';
 
-// Special email for direct password reset
-const SPECIAL_RESET_EMAIL = "anna.lei.sidorchuk@gmail.com";
-
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,9 +19,6 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
-  const [specialResetMode, setSpecialResetMode] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,11 +27,6 @@ const Auth = () => {
   const searchParams = new URLSearchParams(location.search);
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
   const [activeTab, setActiveTab] = useState(initialMode);
-
-  // Check if email qualifies for special direct reset
-  const isSpecialEmail = (emailToCheck: string) => {
-    return emailToCheck.toLowerCase().trim() === SPECIAL_RESET_EMAIL.toLowerCase();
-  };
 
   const handleBack = () => {
     // Check if there's a referrer in location state, otherwise go to dashboard
@@ -256,13 +245,6 @@ const Auth = () => {
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check if this is the special email that gets direct reset
-    if (isSpecialEmail(email)) {
-      setSpecialResetMode(true);
-      return;
-    }
-    
     setLoading(true);
 
     try {
@@ -288,122 +270,6 @@ const Auth = () => {
     }
   };
 
-  const handleSpecialPasswordReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newPassword.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (newPassword !== confirmNewPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setLoading(true);
-
-    try {
-      const response = await supabase.functions.invoke('admin-password-reset', {
-        body: { email, newPassword }
-      });
-
-      if (response.error) throw response.error;
-      if (response.data?.error) throw new Error(response.data.error);
-
-      toast({
-        title: "Password updated! 🎉",
-        description: "You can now sign in with your new password.",
-      });
-      
-      // Reset states and go to login
-      setSpecialResetMode(false);
-      setResetMode(false);
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setActiveTab('signin');
-    } catch (error: any) {
-      toast({
-        title: "Reset failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Special direct password reset UI
-  if (specialResetMode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => {
-                  setSpecialResetMode(false);
-                  setNewPassword('');
-                  setConfirmNewPassword('');
-                }}
-                className="h-8 w-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <CardTitle>Set New Password</CardTitle>
-                <CardDescription>
-                  Create a new password for {email}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSpecialPasswordReset} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  minLength={8}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmNewPassword">Confirm Password</Label>
-                <Input
-                  id="confirmNewPassword"
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  minLength={8}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Update Password
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (resetMode) {
     return (
