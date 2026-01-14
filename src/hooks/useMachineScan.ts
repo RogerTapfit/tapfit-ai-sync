@@ -17,74 +17,26 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
   const [errorSource, setErrorSource] = useState<'camera' | 'upload' | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
-  
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const processingRef = useRef<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const hasProcessedFirstFrameRef = useRef<boolean>(false);
 
   const { autoStop = true, confidenceThreshold = 0.85 } = options;
 
-  const startCamera = useCallback(async () => {
-    try {
-      setError(null);
-      
-      // Check if getUserMedia is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera not supported on this device');
-      }
+  // Keep streamRef in sync with state for use in callbacks
+  useEffect(() => {
+    streamRef.current = stream;
+  }, [stream]);
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', // Use back camera on mobile
-          width: { ideal: 1280, min: 640 }, // Reduced for better mobile compatibility
-          height: { ideal: 720, min: 480 }
-        }
-      });
-
-      if (videoRef.current) {
-        // Mobile Safari specific setup
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.playsInline = true;
-        videoRef.current.muted = true;
-        videoRef.current.autoplay = true;
-        
-        // Wait for video to be ready before starting
-        await new Promise((resolve, reject) => {
-          const video = videoRef.current!;
-          video.onloadedmetadata = () => resolve(void 0);
-          video.onerror = reject;
-          
-          // Fallback timeout
-          setTimeout(() => resolve(void 0), 3000);
-        });
-        
-        await videoRef.current.play();
-      }
-
-      setStream(mediaStream);
-      setIsScanning(true);
-
-      // Start frame processing with better timing
-      intervalRef.current = setInterval(processFrame, 1500);
-    } catch (err: any) {
-      const errorMessage = err.name === 'NotAllowedError' 
-        ? 'Camera permission denied. Please allow camera access and try again.'
-        : err.name === 'NotFoundError'
-        ? 'No camera found on this device.'
-        : err.name === 'NotReadableError'
-        ? 'Camera is being used by another application.'
-        : 'Camera access failed. Please try again.';
-      
-      setError(errorMessage);
-      setErrorSource('camera');
-      console.error('Camera error:', err);
-    }
-  }, []);
-
+  // stopCamera uses ref to avoid stale closure issues
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    const currentStream = streamRef.current;
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
       setStream(null);
     }
 
@@ -96,16 +48,24 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
     setIsScanning(false);
     setIsProcessing(false);
     processingRef.current = false;
-  }, [stream]);
+    hasProcessedFirstFrameRef.current = false;
+  }, []);
 
+  // Process frame - stable callback that doesn't depend on changing state
   const processFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || processingRef.current) return;
+    
+    // Check if video is ready
+    const video = videoRef.current;
+    if (video.readyState < 2 || video.videoWidth === 0) {
+      console.debug('Video not ready yet, skipping frame');
+      return;
+    }
     
     processingRef.current = true;
     setIsProcessing(true);
 
     try {
-      const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
@@ -124,10 +84,25 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       // Run recognition
       const recognitionResults = await MachineRecognitionService.recognizeFromFrame(imageData);
       setResults(recognitionResults);
+      
+      hasProcessedFirstFrameRef.current = true;
 
       // Auto-stop if high confidence match found
       if (autoStop && recognitionResults[0]?.confidence >= confidenceThreshold) {
-        stopCamera();
+        // Use stopCamera via ref to avoid stale closure
+        const currentStream = streamRef.current;
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+          setStream(null);
+        }
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        setIsScanning(false);
+        processingRef.current = false;
+        hasProcessedFirstFrameRef.current = false;
       }
     } catch (err) {
       console.error('Frame processing error:', err);
@@ -137,7 +112,108 @@ export const useMachineScan = (options: UseMachineScanOptions = {}) => {
       processingRef.current = false;
       setIsProcessing(false);
     }
-  }, [autoStop, confidenceThreshold, stopCamera]);
+  }, [autoStop, confidenceThreshold]);
+
+  const startCamera = useCallback(async () => {
+    try {
+      // Reset state
+      setError(null);
+      setResults([]);
+      processingRef.current = false;
+      hasProcessedFirstFrameRef.current = false;
+      
+      // Clear any existing interval
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported on this device');
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment', // Use back camera on mobile
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 }
+        }
+      });
+
+      // Store in ref immediately for use in processFrame
+      streamRef.current = mediaStream;
+      setStream(mediaStream);
+
+      if (videoRef.current) {
+        // Mobile Safari specific setup
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.playsInline = true;
+        videoRef.current.muted = true;
+        videoRef.current.autoplay = true;
+        
+        // Wait for video to be ready before starting processing
+        await new Promise<void>((resolve, reject) => {
+          const video = videoRef.current!;
+          
+          const onCanPlay = () => {
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('error', onError);
+            resolve();
+          };
+          
+          const onError = (e: Event) => {
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('error', onError);
+            reject(new Error('Video failed to load'));
+          };
+          
+          video.addEventListener('canplay', onCanPlay);
+          video.addEventListener('error', onError);
+          
+          // If already ready
+          if (video.readyState >= 3) {
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('error', onError);
+            resolve();
+          }
+          
+          // Fallback timeout
+          setTimeout(() => {
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('error', onError);
+            resolve();
+          }, 3000);
+        });
+        
+        await videoRef.current.play();
+      }
+
+      setIsScanning(true);
+
+      // Process first frame immediately after a short delay for video to stabilize
+      setTimeout(() => {
+        if (!hasProcessedFirstFrameRef.current && streamRef.current) {
+          processFrame();
+        }
+      }, 500);
+
+      // Start frame processing interval
+      intervalRef.current = setInterval(processFrame, 1500);
+    } catch (err: any) {
+      const errorMessage = err.name === 'NotAllowedError' 
+        ? 'Camera permission denied. Please allow camera access and try again.'
+        : err.name === 'NotFoundError'
+        ? 'No camera found on this device.'
+        : err.name === 'NotReadableError'
+        ? 'Camera is being used by another application.'
+        : 'Camera access failed. Please try again.';
+      
+      setError(errorMessage);
+      setErrorSource('camera');
+      console.error('Camera error:', err);
+    }
+  }, [processFrame]);
 
   const processUploadedImage = useCallback(async (file: File) => {
     console.debug('Starting image upload processing');
