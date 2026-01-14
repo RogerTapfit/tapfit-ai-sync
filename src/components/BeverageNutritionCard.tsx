@@ -77,9 +77,9 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
   const displayServingOz = Math.round((servingData?.servingOz || servingOz || beverageInfo.servingOz) * selectedServings * 10) / 10;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full overflow-hidden">
       {/* Header with Grade Circle */}
-      <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/30">
+      <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 w-full overflow-hidden">
         {/* Animated Score Circle */}
         <div className="relative flex-shrink-0">
           <svg width="100" height="100" className="transform -rotate-90">
@@ -171,7 +171,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
       )}
 
       {/* Nutrition Facts */}
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-3 w-full overflow-hidden">
         <div className="flex justify-between items-center mb-3 pb-2 border-b border-border">
           <h4 className="text-sm font-bold text-foreground uppercase tracking-wide">
             Nutrition Facts
@@ -264,9 +264,9 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
       </div>
 
       {/* Pros & Cons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2 w-full">
         {/* Pros */}
-        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+        <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 overflow-hidden">
           <h5 className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-1">
             <Check className="h-4 w-4" /> Pros
           </h5>
@@ -281,7 +281,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
         </div>
 
         {/* Cons */}
-        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+        <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 overflow-hidden">
           <h5 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-1">
             <X className="h-4 w-4" /> Cons
           </h5>

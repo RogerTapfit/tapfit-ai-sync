@@ -373,7 +373,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md bg-card border-border max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <Camera className="h-5 w-5 text-cyan-500" />
@@ -381,7 +381,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 w-full overflow-x-hidden">
           {/* Camera/Scanning Mode */}
           {mode === 'camera' && (
             <>
