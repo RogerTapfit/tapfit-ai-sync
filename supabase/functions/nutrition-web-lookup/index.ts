@@ -66,7 +66,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a precise nutrition data extractor. Search the web for the COMPLETE nutrition facts AND full ingredients list of the specified product. 
+            content: `You are a precise nutrition and chemical ingredient data extractor. Search the web for the COMPLETE nutrition facts, full ingredients list, AND chemical analysis of the specified product. 
 
 IMPORTANT: Find data from the manufacturer's website, official product pages, or verified nutrition databases.
 
@@ -99,7 +99,25 @@ Return ONLY valid JSON with this exact structure:
   ],
   "ingredients": "Carbonated Water, Citric Acid, Taurine, Sodium Citrate, Natural Flavors, Caffeine, Sucralose, Potassium Sorbate...",
   "allergens": ["Contains no major allergens"],
-  "source": "manufacturer website or database name"
+  "source": "manufacturer website or database name",
+  "chemical_analysis": {
+    "sweeteners": [
+      { "name": "Sucralose", "category": "artificial", "gi": 0, "health_concerns": ["May affect gut microbiome"] }
+    ],
+    "preservatives": [
+      { "name": "Potassium Sorbate", "e_code": "E202", "purpose": "Preservative", "safety_rating": "safe", "health_concerns": [] }
+    ],
+    "dyes": [
+      { "name": "Red 40", "e_code": "E129", "color": "#FF0000", "safety_rating": "caution", "health_concerns": ["Linked to hyperactivity in children"] }
+    ],
+    "additives": [
+      { "name": "Taurine", "category": "amino_acid", "purpose": "Energy enhancement", "concern_level": "low" },
+      { "name": "L-Carnitine", "category": "amino_acid", "purpose": "Fat metabolism", "concern_level": "low" },
+      { "name": "Ginseng Extract", "category": "herbal", "purpose": "Adaptogen", "concern_level": "low" },
+      { "name": "Guarana Seed Extract", "category": "herbal", "purpose": "Natural caffeine source", "concern_level": "low" }
+    ],
+    "nova_level": 4
+  }
 }
 
 CRITICAL RULES:
@@ -109,6 +127,11 @@ CRITICAL RULES:
 - For energy drinks, ALWAYS include caffeine amount
 - Use "mg" for milligrams, "mcg" for micrograms
 - Include cholesterol, saturated fat, trans fat if available
+- IDENTIFY ALL SWEETENERS: sucralose, stevia, aspartame, sugar, high fructose corn syrup, etc.
+- IDENTIFY ALL PRESERVATIVES: sodium benzoate, potassium sorbate, citric acid, etc.
+- IDENTIFY ALL DYES: Red 40, Yellow 5, Blue 1, Caramel Color, etc.
+- IDENTIFY ALL ADDITIVES: taurine, carnitine, ginseng, guarana, inositol, etc.
+- Set nova_level: 1=unprocessed, 2=processed ingredients, 3=processed, 4=ultra-processed
 - If a value is not found, omit it rather than guessing
 - Return ONLY the JSON, no other text`
           },
