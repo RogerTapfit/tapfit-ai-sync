@@ -33,6 +33,11 @@ interface ServingData {
     fat: number;
     sugar: number;
     alcoholContent?: number;
+    // Additional label fields
+    fiber_g?: number;
+    cholesterol_mg?: number;
+    saturated_fat_g?: number;
+    trans_fat_g?: number;
     // Micronutrients
     sodium_mg?: number;
     caffeine_mg?: number;
@@ -67,6 +72,7 @@ interface ScanResult {
   barcode?: string;
   servingData?: ServingData;
   productImage?: string;
+  productData?: any; // Full product data including ingredients
 }
 
 export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: BeverageScannerModalProps) => {
@@ -256,6 +262,11 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             fat: matchedBeverage.fat,
             sugar: matchedBeverage.sugar,
             alcoholContent: matchedBeverage.alcoholContent,
+            // Additional label fields from API
+            fiber_g: (nutrition as any)?.fiber_100g,
+            cholesterol_mg: (nutrition as any)?.cholesterol_mg,
+            saturated_fat_g: (nutrition as any)?.saturated_fat_serving,
+            trans_fat_g: (nutrition as any)?.trans_fat_serving,
             // Micronutrients from API data (not in matched beverage template)
             sodium_mg: nutrition?.sodium_mg,
             caffeine_mg: nutrition?.caffeine_mg,
@@ -295,6 +306,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             barcode,
             servingData,
             productImage: productImage || capturedImage || undefined,
+            productData: resolvedProduct, // Pass full product data including ingredients
           });
         } else {
           // Unknown beverage - use API data or defaults
@@ -323,6 +335,11 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
               nutrition?.sugars_serving ??
               (nutrition?.sugars_100g ? Math.round(nutrition.sugars_100g * scaleFactor) : 0),
             alcoholContent: nutrition?.alcohol_serving ?? nutrition?.alcohol_100g,
+            // Additional label fields
+            fiber_g: (nutrition as any)?.fiber_100g,
+            cholesterol_mg: (nutrition as any)?.cholesterol_mg,
+            saturated_fat_g: (nutrition as any)?.saturated_fat_serving,
+            trans_fat_g: (nutrition as any)?.trans_fat_serving,
             // Micronutrients - pass through from API data
             sodium_mg: nutrition?.sodium_mg,
             caffeine_mg: nutrition?.caffeine_mg,
@@ -376,6 +393,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             barcode,
             servingData,
             productImage: productImage || capturedImage || undefined,
+            productData: resolvedProduct, // Pass full product data including ingredients
           });
         }
       }
@@ -672,6 +690,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   servingData={scanResult.servingData}
                   barcode={scanResult.barcode}
                   productImage={scanResult.productImage}
+                  productData={scanResult.productData}
                   needsLabelScan={checkNeedsLabelScan(scanResult.servingData?.perServingNutrition, scanResult.productName || '')}
                   onScanNutritionLabel={handleScanNutritionLabel}
                 />
@@ -697,6 +716,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   servingOz={scanResult.servingOz}
                   barcode={scanResult.barcode}
                   productImage={scanResult.productImage}
+                  productData={scanResult.productData}
                   needsLabelScan={true}
                   onScanNutritionLabel={handleScanNutritionLabel}
                 />

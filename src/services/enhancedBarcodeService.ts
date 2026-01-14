@@ -22,6 +22,7 @@ interface ProductData {
     fat_serving?: number;
     sugars_serving?: number;
     alcohol_serving?: number;
+    fiber_serving?: number;
     // Micronutrients
     sodium_mg?: number;
     caffeine_mg?: number;
@@ -84,38 +85,58 @@ export class EnhancedBarcodeService {
     const nutrition = product.nutrition;
     if (!nutrition) return true;
 
-    const productName = product.name || '';
-    const isEnergyDrink = /energy|celsius|monster|redbull|rockstar|bang|reign|ghost|c4|3d|alani|prime/i.test(productName);
-    const isVitaminEnhanced = /vitamin|enhanced|fortified|boost|plus/i.test(productName);
-    const isSportsOrElectrolyte = /sport|electrolyte|gatorade|powerade|bodyarmor|liquid iv/i.test(productName);
+    // Build combined text from name, brand, and category for better detection
+    const combinedText = `${product.brand || ''} ${product.name || ''} ${product.category || ''}`.toLowerCase();
+    
+    const isEnergyDrink = /energy|celsius|monster|redbull|red bull|rockstar|bang|reign|ghost|c4|3d|alani|prime|zoa|nos|full throttle|amp|venom|xyience|raze|g fuel|gfuel|bucked up|ryse|3d energy|adrenaline|guru|hi-ball|hiball|uptime|v8 energy|zipfizz/i.test(combinedText);
+    const isVitaminEnhanced = /vitamin|enhanced|fortified|boost|plus|super|nutrient|functional/i.test(combinedText);
+    const isSportsOrElectrolyte = /sport|electrolyte|gatorade|powerade|bodyarmor|liquid iv|prime|drip drop|nuun|lmnt|pedialyte|propel|vitaminwater|bai/i.test(combinedText);
+    const isFunctionalBeverage = /sparkling|live fit|fitness|hydration|zero sugar energy|natural energy/i.test(combinedText);
 
-    // Always enhance if ingredients are missing (we want full label info)
+    // ALWAYS enhance if ingredients are missing (we need full label info)
     if (!product.ingredients) {
+      console.log('AI Enhancement needed: missing ingredients');
       return true;
     }
 
-    // Energy drinks should have caffeine and B vitamins
-    if (isEnergyDrink) {
-      if (!nutrition.caffeine_mg || !nutrition.vitamin_b12_mcg) {
+    // Suspicious sodium values (likely unit error from upstream)
+    if (nutrition.sodium_mg && nutrition.sodium_mg > 2000) {
+      console.log('AI Enhancement needed: suspicious sodium value', nutrition.sodium_mg);
+      return true;
+    }
+
+    // Energy drinks MUST have caffeine and B vitamins
+    if (isEnergyDrink || isFunctionalBeverage) {
+      if (!nutrition.caffeine_mg || nutrition.caffeine_mg === 0) {
+        console.log('AI Enhancement needed: energy drink missing caffeine');
+        return true;
+      }
+      if (!nutrition.vitamin_b12_mcg && !nutrition.vitamin_b6_mg && !nutrition.niacin_mg) {
+        console.log('AI Enhancement needed: energy drink missing B vitamins');
         return true;
       }
     }
 
     // Sports/electrolyte drinks should have minerals
     if (isSportsOrElectrolyte) {
-      if (!nutrition.potassium_mg && !nutrition.sodium_mg && !nutrition.magnesium_mg) {
+      if (!nutrition.potassium_mg && !nutrition.magnesium_mg) {
+        console.log('AI Enhancement needed: sports drink missing minerals');
         return true;
       }
     }
 
     // Check if vitamin data is missing for vitamin-enhanced products
-    if (isVitaminEnhanced || isEnergyDrink) {
+    if (isVitaminEnhanced || isEnergyDrink || isFunctionalBeverage) {
       const vitaminFields = [
         nutrition.vitamin_c_mg, nutrition.vitamin_b6_mg, nutrition.vitamin_b12_mcg,
-        nutrition.niacin_mg, nutrition.riboflavin_mg, nutrition.biotin_mcg
+        nutrition.niacin_mg, nutrition.riboflavin_mg, nutrition.biotin_mcg,
+        nutrition.pantothenic_acid_mg, nutrition.thiamin_mg
       ];
       const populatedCount = vitaminFields.filter(v => v && v > 0).length;
-      if (populatedCount < 2) return true;
+      if (populatedCount < 3) {
+        console.log('AI Enhancement needed: only', populatedCount, 'vitamins found, need at least 3');
+        return true;
+      }
     }
 
     return false;
@@ -175,6 +196,7 @@ export class EnhancedBarcodeService {
     if (aiNutrition.protein_g !== undefined) merged.nutrition.proteins_serving = aiNutrition.protein_g;
     if (aiNutrition.carbs_g !== undefined) merged.nutrition.carbohydrates_serving = aiNutrition.carbs_g;
     if (aiNutrition.fat_g !== undefined) merged.nutrition.fat_serving = aiNutrition.fat_g;
+    if (aiNutrition.fiber_g !== undefined) merged.nutrition.fiber_100g = aiNutrition.fiber_g; // Map fiber
     if (aiNutrition.sugars_g !== undefined) merged.nutrition.sugars_serving = aiNutrition.sugars_g;
     if (aiNutrition.sodium_mg !== undefined) merged.nutrition.sodium_mg = aiNutrition.sodium_mg;
     if (aiNutrition.caffeine_mg !== undefined) merged.nutrition.caffeine_mg = aiNutrition.caffeine_mg;

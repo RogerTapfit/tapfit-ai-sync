@@ -7,7 +7,7 @@ import {
   getScoreColor,
   BeverageGradeResult 
 } from '@/utils/beverageHealthGrading';
-import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles, Coffee, Zap, ChevronDown, ChevronUp, Camera, AlertTriangle } from 'lucide-react';
+import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles, Coffee, Zap, ChevronDown, ChevronUp, Camera, AlertTriangle, Leaf, FileText } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Slider } from './ui/slider';
 import { Button } from './ui/button';
@@ -25,6 +25,11 @@ interface ServingData {
     fat: number;
     sugar: number;
     alcoholContent?: number;
+    // Additional label fields
+    fiber_g?: number;
+    cholesterol_mg?: number;
+    saturated_fat_g?: number;
+    trans_fat_g?: number;
     // Micronutrients
     sodium_mg?: number;
     caffeine_mg?: number;
@@ -67,6 +72,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
   const [selectedServings, setSelectedServings] = useState(1);
   const [showDeepSeek, setShowDeepSeek] = useState(false);
   const [showVitamins, setShowVitamins] = useState(false);
+  const [showIngredients, setShowIngredients] = useState(false);
 
   const maxServings = servingData?.maxServings || 1;
   const hasMultipleServings = maxServings > 1;
@@ -103,6 +109,11 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
     fat: Math.round(baseNutrition.fat * selectedServings * 10) / 10,
     sugar: Math.round(baseNutrition.sugar * selectedServings),
     alcoholContent: baseNutrition.alcoholContent || 0,
+    // Additional label fields
+    fiber_g: baseNutrition.fiber_g ? Math.round(baseNutrition.fiber_g * selectedServings * 10) / 10 : undefined,
+    cholesterol_mg: baseNutrition.cholesterol_mg ? Math.round(baseNutrition.cholesterol_mg * selectedServings) : undefined,
+    saturated_fat_g: baseNutrition.saturated_fat_g ? Math.round(baseNutrition.saturated_fat_g * selectedServings * 10) / 10 : undefined,
+    trans_fat_g: baseNutrition.trans_fat_g ? Math.round(baseNutrition.trans_fat_g * selectedServings * 10) / 10 : undefined,
     // Micronutrients scaled by servings
     sodium_mg: baseNutrition.sodium_mg ? Math.round(baseNutrition.sodium_mg * selectedServings) : undefined,
     caffeine_mg: baseNutrition.caffeine_mg ? Math.round(baseNutrition.caffeine_mg * selectedServings) : undefined,
@@ -157,6 +168,12 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
   const hasVitaminsOrMinerals = vitaminsAndMinerals.length > 0;
   const hasCaffeine = displayNutrition.caffeine_mg !== undefined && displayNutrition.caffeine_mg > 0;
   const hasSodium = displayNutrition.sodium_mg !== undefined && displayNutrition.sodium_mg > 0;
+  const hasFiber = displayNutrition.fiber_g !== undefined && displayNutrition.fiber_g > 0;
+  const hasCholesterol = displayNutrition.cholesterol_mg !== undefined && displayNutrition.cholesterol_mg > 0;
+  const hasSaturatedFat = displayNutrition.saturated_fat_g !== undefined && displayNutrition.saturated_fat_g > 0;
+  const hasTransFat = displayNutrition.trans_fat_g !== undefined && displayNutrition.trans_fat_g > 0;
+  const hasIngredients = productData?.ingredients && productData.ingredients.length > 0;
+  const dataSource = productData?.data_source || 'Unknown';
 
   return (
     <div className="space-y-4 w-full overflow-hidden">
@@ -311,6 +328,16 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
             </span>
           </div>
 
+          {/* Fiber - indented under carbs */}
+          {hasFiber && (
+            <div className="flex justify-between items-center py-1.5 pl-6">
+              <span className="text-muted-foreground flex items-center gap-1">
+                └ <Leaf className="h-3 w-3 text-green-500" /> Fiber
+              </span>
+              <span className="font-medium text-foreground">{displayNutrition.fiber_g}g</span>
+            </div>
+          )}
+
           <div className="flex justify-between items-center py-1.5">
             <div className="flex items-center gap-2">
               <CircleDot className="h-4 w-4 text-yellow-500" />
@@ -318,6 +345,32 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
             </div>
             <span className="font-medium text-foreground">{displayNutrition.fat}g</span>
           </div>
+
+          {/* Saturated Fat - indented under fat */}
+          {hasSaturatedFat && (
+            <div className="flex justify-between items-center py-1.5 pl-6">
+              <span className="text-muted-foreground">└ Saturated Fat</span>
+              <span className="font-medium text-foreground">{displayNutrition.saturated_fat_g}g</span>
+            </div>
+          )}
+
+          {/* Trans Fat - indented under fat */}
+          {hasTransFat && (
+            <div className="flex justify-between items-center py-1.5 pl-6">
+              <span className="text-muted-foreground">└ Trans Fat</span>
+              <span className={`font-medium ${displayNutrition.trans_fat_g! > 0 ? 'text-red-400' : 'text-foreground'}`}>
+                {displayNutrition.trans_fat_g}g {displayNutrition.trans_fat_g! > 0 && '⚠️'}
+              </span>
+            </div>
+          )}
+
+          {/* Cholesterol - if present */}
+          {hasCholesterol && (
+            <div className="flex justify-between items-center py-1.5 border-t border-border">
+              <span className="text-foreground">Cholesterol</span>
+              <span className="font-medium text-foreground">{displayNutrition.cholesterol_mg}mg</span>
+            </div>
+          )}
 
           {/* Caffeine - if present */}
           {hasCaffeine && (
@@ -383,6 +436,54 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
               )}
             </div>
           )}
+
+          {/* Ingredients - collapsible */}
+          {hasIngredients && (
+            <div className="border-t border-border pt-2 mt-2">
+              <button
+                onClick={() => setShowIngredients(!showIngredients)}
+                className="w-full flex justify-between items-center py-1.5 text-left hover:bg-muted/50 rounded -mx-1 px-1 transition-colors"
+              >
+                <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Ingredients
+                </span>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  {showIngredients ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </div>
+              </button>
+              
+              {showIngredients && (
+                <div className="mt-2 p-2 bg-muted/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {productData.ingredients}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Data Source Badge */}
+          <div className="border-t border-border pt-2 mt-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Data Source</span>
+              <span className={`px-2 py-0.5 rounded-full ${
+                dataSource.includes('AI Web Search') ? 'bg-green-500/20 text-green-400' :
+                dataSource.includes('OpenFoodFacts') ? 'bg-blue-500/20 text-blue-400' :
+                dataSource.includes('Label Scan') ? 'bg-purple-500/20 text-purple-400' :
+                'bg-muted text-muted-foreground'
+              }`}>
+                {dataSource.includes('AI Web Search') ? '✓ AI Verified' :
+                 dataSource.includes('OpenFoodFacts') ? '✓ Database' :
+                 dataSource.includes('Label Scan') ? '✓ Label Scan' :
+                 dataSource}
+              </span>
+            </div>
+          </div>
 
           {/* Scan Nutrition Label prompt when data is incomplete */}
           {needsLabelScan && onScanNutritionLabel && (
