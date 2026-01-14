@@ -1,5 +1,11 @@
 import { BeverageType } from '@/lib/beverageHydration';
 
+export interface VitaminBenefit {
+  name: string;
+  benefit: string;
+  icon: string;
+}
+
 export interface BeverageGradeResult {
   grade: string;
   score: number;
@@ -7,7 +13,165 @@ export interface BeverageGradeResult {
   cons: string[];
   hydrationImpact: 'positive' | 'neutral' | 'negative';
   hydrationDescription: string;
+  vitaminBenefits: VitaminBenefit[];
+  standouts: string[];
+  pitfalls: string[];
+  insightSummary: string;
 }
+
+// Vitamin/nutrient database
+const VITAMIN_DATABASE: Record<string, VitaminBenefit> = {
+  'vitamin c': { name: 'Vitamin C', benefit: 'Boosts immune system and acts as a powerful antioxidant to fight cell damage', icon: '🍊' },
+  'vitamin b': { name: 'B Vitamins', benefit: 'Supports energy metabolism and nervous system function', icon: '⚡' },
+  'b12': { name: 'Vitamin B12', benefit: 'Essential for red blood cell formation and neurological function', icon: '🔴' },
+  'b6': { name: 'Vitamin B6', benefit: 'Helps with protein metabolism and cognitive development', icon: '🧠' },
+  'vitamin d': { name: 'Vitamin D', benefit: 'Supports bone health and immune function', icon: '☀️' },
+  'calcium': { name: 'Calcium', benefit: 'Essential for strong bones, teeth, and muscle function', icon: '🦴' },
+  'electrolyte': { name: 'Electrolytes', benefit: 'Maintains fluid balance, supports muscle and nerve function', icon: '💧' },
+  'potassium': { name: 'Potassium', benefit: 'Regulates heartbeat and supports muscle contractions', icon: '💪' },
+  'magnesium': { name: 'Magnesium', benefit: 'Supports muscle recovery, sleep quality, and energy production', icon: '✨' },
+  'zinc': { name: 'Zinc', benefit: 'Boosts immune function and supports wound healing', icon: '🛡️' },
+  'antioxidant': { name: 'Antioxidants', benefit: 'Fights free radicals and protects cells from oxidative stress', icon: '🍇' },
+  'probiotic': { name: 'Probiotics', benefit: 'Supports gut health, digestion, and immune function', icon: '🦠' },
+  'caffeine': { name: 'Caffeine', benefit: 'Enhances alertness, focus, and physical performance', icon: '☕' },
+  'taurine': { name: 'Taurine', benefit: 'Supports cardiovascular function and exercise performance', icon: '🏃' },
+  'protein': { name: 'Protein', benefit: 'Builds and repairs muscles, supports satiety', icon: '💪' },
+  'fiber': { name: 'Fiber', benefit: 'Aids digestion and helps maintain stable blood sugar', icon: '🌾' },
+  'iron': { name: 'Iron', benefit: 'Essential for oxygen transport and energy levels', icon: '🩸' },
+  'collagen': { name: 'Collagen', benefit: 'Supports skin elasticity, joint health, and connective tissue', icon: '✨' },
+};
+
+const detectVitamins = (productName: string, category: string): VitaminBenefit[] => {
+  const vitamins: VitaminBenefit[] = [];
+  const nameLower = productName.toLowerCase();
+  
+  // Check for direct vitamin mentions
+  for (const [keyword, vitamin] of Object.entries(VITAMIN_DATABASE)) {
+    if (nameLower.includes(keyword)) {
+      vitamins.push(vitamin);
+    }
+  }
+  
+  // Category-based defaults
+  if (vitamins.length === 0) {
+    if (category === 'sports_drink' || nameLower.includes('gatorade') || nameLower.includes('powerade')) {
+      vitamins.push(VITAMIN_DATABASE['electrolyte']);
+    }
+    if (category === 'energy_drink' || nameLower.includes('energy') || nameLower.includes('monster') || nameLower.includes('red bull')) {
+      vitamins.push(VITAMIN_DATABASE['vitamin b']);
+      vitamins.push(VITAMIN_DATABASE['caffeine']);
+    }
+    if (nameLower.includes('orange') || nameLower.includes('citrus') || nameLower.includes('lemon')) {
+      vitamins.push(VITAMIN_DATABASE['vitamin c']);
+    }
+    if (category === 'milk' || nameLower.includes('milk')) {
+      vitamins.push(VITAMIN_DATABASE['calcium']);
+      vitamins.push(VITAMIN_DATABASE['vitamin d']);
+    }
+    if (nameLower.includes('kombucha')) {
+      vitamins.push(VITAMIN_DATABASE['probiotic']);
+    }
+    if (nameLower.includes('protein') || nameLower.includes('muscle')) {
+      vitamins.push(VITAMIN_DATABASE['protein']);
+    }
+  }
+  
+  // Limit to 3 vitamins max for clean display
+  return vitamins.slice(0, 3);
+};
+
+const generateStandouts = (beverageInfo: BeverageType, productName: string, score: number): string[] => {
+  const standouts: string[] = [];
+  const nameLower = productName.toLowerCase();
+  const sugar = beverageInfo.sugar ?? 0;
+  const calories = beverageInfo.calories ?? 0;
+  const protein = beverageInfo.protein ?? 0;
+  
+  if (sugar === 0) standouts.push('Zero sugar - no blood sugar spikes');
+  else if (sugar <= 5) standouts.push('Low sugar content');
+  
+  if (calories === 0) standouts.push('Zero calorie hydration option');
+  else if (calories <= 20) standouts.push('Very low calorie choice');
+  
+  if (protein >= 15) standouts.push(`High protein (${protein}g) for muscle recovery`);
+  else if (protein >= 8) standouts.push(`Good protein source (${protein}g)`);
+  
+  if (beverageInfo.hydrationFactor >= 0.9) standouts.push('Excellent for hydration');
+  else if (beverageInfo.hydrationFactor >= 0.7) standouts.push('Good hydration value');
+  
+  if (nameLower.includes('natural') || nameLower.includes('organic')) {
+    standouts.push('Made with natural/organic ingredients');
+  }
+  
+  if (nameLower.includes('sparkling') || nameLower.includes('carbonated')) {
+    standouts.push('Refreshing carbonation without added sugars');
+  }
+  
+  if (nameLower.includes('electrolyte')) {
+    standouts.push('Replenishes minerals lost through sweat');
+  }
+  
+  if (score >= 85) standouts.push('Overall excellent health profile');
+  
+  return standouts.slice(0, 4);
+};
+
+const generatePitfalls = (beverageInfo: BeverageType, productName: string): string[] => {
+  const pitfalls: string[] = [];
+  const nameLower = productName.toLowerCase();
+  const sugar = beverageInfo.sugar ?? 0;
+  const calories = beverageInfo.calories ?? 0;
+  
+  if (sugar > 25) {
+    pitfalls.push(`High sugar (${sugar}g) - exceeds recommended daily intake`);
+  } else if (sugar > 15) {
+    pitfalls.push(`Moderate sugar (${sugar}g) - consume in moderation`);
+  }
+  
+  if (calories > 150) {
+    pitfalls.push(`High calorie content (${calories} cal) - consider portion size`);
+  }
+  
+  if (nameLower.includes('diet') || nameLower.includes('zero') || nameLower.includes('light')) {
+    pitfalls.push('Contains artificial sweeteners - may affect gut microbiome');
+  }
+  
+  if (nameLower.includes('energy') || nameLower.includes('monster') || nameLower.includes('red bull')) {
+    pitfalls.push('High caffeine - may cause jitters or affect sleep');
+  } else if (nameLower.includes('coffee') || nameLower.includes('cola')) {
+    pitfalls.push('Contains caffeine - limit intake later in the day');
+  }
+  
+  if (beverageInfo.category === 'alcohol' || beverageInfo.hydrationFactor < 0) {
+    pitfalls.push('Alcohol causes dehydration - drink water alongside');
+  }
+  
+  if (nameLower.includes('soda') || nameLower.includes('pop')) {
+    pitfalls.push('Carbonated sodas may affect dental health');
+  }
+  
+  return pitfalls.slice(0, 3);
+};
+
+const generateInsightSummary = (beverageInfo: BeverageType, productName: string, score: number): string => {
+  const nameLower = productName.toLowerCase();
+  
+  if (score >= 85) {
+    return `This is an excellent beverage choice with strong nutritional benefits and good hydration value.`;
+  } else if (score >= 70) {
+    return `A decent beverage option. Provides some benefits but watch the ${beverageInfo.sugar && beverageInfo.sugar > 10 ? 'sugar content' : 'portion size'}.`;
+  } else if (score >= 50) {
+    if (nameLower.includes('energy')) {
+      return `Energy drinks provide a quick boost but should be consumed occasionally due to caffeine and sugar content.`;
+    }
+    return `Moderate choice for occasional consumption. Consider healthier alternatives for regular hydration.`;
+  } else {
+    if (beverageInfo.category === 'alcohol') {
+      return `Alcoholic beverages should be enjoyed responsibly and in moderation. Remember to hydrate with water.`;
+    }
+    return `This beverage has limited nutritional value. Consider as an occasional treat rather than regular consumption.`;
+  }
+};
 
 export const calculateBeverageHealthGrade = (
   beverageInfo: BeverageType,
@@ -16,6 +180,7 @@ export const calculateBeverageHealthGrade = (
   let score = 100;
   const pros: string[] = [];
   const cons: string[] = [];
+  const displayName = productName || beverageInfo.name;
 
   // Sugar penalties (major factor)
   const sugar = beverageInfo.sugar ?? 0;
@@ -101,7 +266,7 @@ export const calculateBeverageHealthGrade = (
     cons.push('Contains alcohol');
     score -= 20;
     // Additional penalty based on assumed alcohol content
-    const nameLower = (productName || beverageInfo.name).toLowerCase();
+    const nameLower = displayName.toLowerCase();
     if (nameLower.includes('spirit') || nameLower.includes('vodka') || nameLower.includes('whiskey') || nameLower.includes('rum')) {
       score -= 15;
       cons.push('High alcohol content');
@@ -111,7 +276,7 @@ export const calculateBeverageHealthGrade = (
   }
 
   // Caffeine detection (based on category/name)
-  const nameLower = (productName || beverageInfo.name).toLowerCase();
+  const nameLower = displayName.toLowerCase();
   if (nameLower.includes('energy') || nameLower.includes('monster') || nameLower.includes('red bull')) {
     cons.push('High caffeine content');
     score -= 15;
@@ -170,13 +335,23 @@ export const calculateBeverageHealthGrade = (
     cons.push('Limited nutritional value');
   }
 
+  // Generate drink insights
+  const vitaminBenefits = detectVitamins(displayName, category);
+  const standouts = generateStandouts(beverageInfo, displayName, score);
+  const pitfalls = generatePitfalls(beverageInfo, displayName);
+  const insightSummary = generateInsightSummary(beverageInfo, displayName, score);
+
   return {
     grade,
     score,
     pros,
     cons,
     hydrationImpact,
-    hydrationDescription
+    hydrationDescription,
+    vitaminBenefits,
+    standouts,
+    pitfalls,
+    insightSummary
   };
 };
 
