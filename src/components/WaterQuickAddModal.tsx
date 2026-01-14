@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { BEVERAGE_HYDRATION, getBeveragesByCategory } from '@/lib/beverageHydration';
 import { useState } from 'react';
 import { BeverageScannerModal } from './BeverageScannerModal';
+import { audioManager } from '@/utils/audioUtils';
 
 interface WaterQuickAddModalProps {
   open: boolean;
@@ -38,7 +39,10 @@ export const WaterQuickAddModal = ({ open, onOpenChange }: WaterQuickAddModalPro
   const [showScanner, setShowScanner] = useState(false);
 
   const handleQuickAdd = async (oz: number, beverageType: string = 'water') => {
-    await addBeverage(oz, beverageType);
+    const success = await addBeverage(oz, beverageType);
+    if (success) {
+      audioManager.playWaterPour();
+    }
   };
 
   const highHydrationBeverages = getBeveragesByCategory('high');
