@@ -84,12 +84,26 @@ export class EnhancedBarcodeService {
     const nutrition = product.nutrition;
     if (!nutrition) return true;
 
-    const isEnergyDrink = /energy|celsius|monster|redbull|rockstar|bang|reign|ghost|c4|3d|alani/i.test(product.name || '');
-    const isVitaminEnhanced = /vitamin|enhanced|fortified|boost|plus/i.test(product.name || '');
+    const productName = product.name || '';
+    const isEnergyDrink = /energy|celsius|monster|redbull|rockstar|bang|reign|ghost|c4|3d|alani|prime/i.test(productName);
+    const isVitaminEnhanced = /vitamin|enhanced|fortified|boost|plus/i.test(productName);
+    const isSportsOrElectrolyte = /sport|electrolyte|gatorade|powerade|bodyarmor|liquid iv/i.test(productName);
+
+    // Always enhance if ingredients are missing (we want full label info)
+    if (!product.ingredients) {
+      return true;
+    }
 
     // Energy drinks should have caffeine and B vitamins
     if (isEnergyDrink) {
       if (!nutrition.caffeine_mg || !nutrition.vitamin_b12_mcg) {
+        return true;
+      }
+    }
+
+    // Sports/electrolyte drinks should have minerals
+    if (isSportsOrElectrolyte) {
+      if (!nutrition.potassium_mg && !nutrition.sodium_mg && !nutrition.magnesium_mg) {
         return true;
       }
     }
@@ -219,21 +233,26 @@ export class EnhancedBarcodeService {
   }
 
   static async scanBarcode(barcode: string): Promise<ProductData | null> {
+    let product: ProductData | null = null;
+    
     // First check our comprehensive popular beverages database
     const popularBeverage = getPopularBeverage(barcode);
     if (popularBeverage) {
-      return {
+      product = {
         id: barcode,
         name: popularBeverage.name,
         brand: popularBeverage.brand,
         category: popularBeverage.category,
         nutrition: {
           calories_100g: Math.round((popularBeverage.calories / (parseInt(popularBeverage.servingSize) / 100))),
+          calories_serving: popularBeverage.calories,
           proteins_100g: 0,
           carbohydrates_100g: Math.round((popularBeverage.carbs / (parseInt(popularBeverage.servingSize) / 100))),
+          carbohydrates_serving: popularBeverage.carbs,
           fat_100g: 0,
           fiber_100g: 0,
           sugars_100g: Math.round((popularBeverage.sugars / (parseInt(popularBeverage.servingSize) / 100))),
+          sugars_serving: popularBeverage.sugars,
           salt_100g: 0,
         },
         serving_size: popularBeverage.servingSize,
@@ -243,49 +262,78 @@ export class EnhancedBarcodeService {
     }
 
     // Fallback to legacy BeatBox check
-    const beatboxProduct = getBeatboxProduct(barcode);
-    if (beatboxProduct) {
-      return {
-        id: barcode,
-        name: beatboxProduct.name,
-        brand: beatboxProduct.brand,
-        category: 'Alcoholic Beverages',
-        nutrition: {
-          calories_100g: Math.round((beatboxProduct.calories / (parseInt(beatboxProduct.servingSize) / 100))),
-          proteins_100g: 0,
-          carbohydrates_100g: Math.round((beatboxProduct.carbs / (parseInt(beatboxProduct.servingSize) / 100))),
-          fat_100g: 0,
-          fiber_100g: 0,
-          sugars_100g: Math.round((beatboxProduct.sugars / (parseInt(beatboxProduct.servingSize) / 100))),
-          salt_100g: 0,
-        },
-        serving_size: beatboxProduct.servingSize,
-        data_source: 'BeatBox Database',
-        confidence: 1.0
-      };
+    if (!product) {
+      const beatboxProduct = getBeatboxProduct(barcode);
+      if (beatboxProduct) {
+        product = {
+          id: barcode,
+          name: beatboxProduct.name,
+          brand: beatboxProduct.brand,
+          category: 'Alcoholic Beverages',
+          nutrition: {
+            calories_100g: Math.round((beatboxProduct.calories / (parseInt(beatboxProduct.servingSize) / 100))),
+            calories_serving: beatboxProduct.calories,
+            proteins_100g: 0,
+            carbohydrates_100g: Math.round((beatboxProduct.carbs / (parseInt(beatboxProduct.servingSize) / 100))),
+            carbohydrates_serving: beatboxProduct.carbs,
+            fat_100g: 0,
+            fiber_100g: 0,
+            sugars_100g: Math.round((beatboxProduct.sugars / (parseInt(beatboxProduct.servingSize) / 100))),
+            sugars_serving: beatboxProduct.sugars,
+            salt_100g: 0,
+          },
+          serving_size: beatboxProduct.servingSize,
+          data_source: 'BeatBox Database',
+          confidence: 1.0
+        };
+      }
     }
 
     // Check popular alcoholic beverages
-    const popularDrink = getPopularAlcoholicBeverage(barcode);
-    if (popularDrink) {
-      return {
-        id: barcode,
-        name: popularDrink.name,
-        brand: popularDrink.brand,
-        category: 'Alcoholic Beverages',
-        nutrition: {
-          calories_100g: Math.round((popularDrink.calories / 3.55)), // Assuming 355ml serving
-          proteins_100g: 0,
-          carbohydrates_100g: 5, // Typical for hard seltzers
-          fat_100g: 0,
-          fiber_100g: 0,
-          sugars_100g: 2,
-          salt_100g: 0,
-        },
-        serving_size: '355ml',
-        data_source: 'Popular Beverages Database',
-        confidence: 0.95
-      };
+    if (!product) {
+      const popularDrink = getPopularAlcoholicBeverage(barcode);
+      if (popularDrink) {
+        product = {
+          id: barcode,
+          name: popularDrink.name,
+          brand: popularDrink.brand,
+          category: 'Alcoholic Beverages',
+          nutrition: {
+            calories_100g: Math.round((popularDrink.calories / 3.55)), // Assuming 355ml serving
+            calories_serving: popularDrink.calories,
+            proteins_100g: 0,
+            carbohydrates_100g: 5, // Typical for hard seltzers
+            fat_100g: 0,
+            fiber_100g: 0,
+            sugars_100g: 2,
+            salt_100g: 0,
+          },
+          serving_size: '355ml',
+          data_source: 'Popular Beverages Database',
+          confidence: 0.95
+        };
+      }
+    }
+
+    // If we found product in local DB, still try AI enhancement for full nutrition
+    if (product && this.needsAIEnhancement(product)) {
+      console.log('Local DB product needs AI enhancement for full nutrition...');
+      const aiNutrition = await this.fetchNutritionFromAI(
+        product.name,
+        product.brand || '',
+        barcode
+      );
+      
+      if (aiNutrition) {
+        product = this.mergeAINutrition(product, aiNutrition);
+        console.log('AI nutrition merged into local DB product:', product);
+      }
+      return product;
+    }
+    
+    // If found in local DB without needing enhancement, return it
+    if (product) {
+      return product;
     }
 
     const apis = [

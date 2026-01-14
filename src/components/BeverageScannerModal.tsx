@@ -248,6 +248,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
 
           const servingSizeLabel = `${knownServingOz}oz glass`;
 
+          // CRITICAL: Use matched beverage macros but MERGE micronutrients from API data
           const perServingNutrition = {
             calories: matchedBeverage.calories,
             protein: matchedBeverage.protein,
@@ -255,6 +256,27 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             fat: matchedBeverage.fat,
             sugar: matchedBeverage.sugar,
             alcoholContent: matchedBeverage.alcoholContent,
+            // Micronutrients from API data (not in matched beverage template)
+            sodium_mg: nutrition?.sodium_mg,
+            caffeine_mg: nutrition?.caffeine_mg,
+            calcium_mg: nutrition?.calcium_mg,
+            potassium_mg: nutrition?.potassium_mg,
+            iron_mg: nutrition?.iron_mg,
+            // Vitamins from API
+            vitamin_a_mcg: nutrition?.vitamin_a_mcg,
+            vitamin_c_mg: nutrition?.vitamin_c_mg,
+            vitamin_d_mcg: nutrition?.vitamin_d_mcg,
+            vitamin_b6_mg: nutrition?.vitamin_b6_mg,
+            vitamin_b12_mcg: nutrition?.vitamin_b12_mcg,
+            niacin_mg: nutrition?.niacin_mg,
+            riboflavin_mg: nutrition?.riboflavin_mg,
+            thiamin_mg: nutrition?.thiamin_mg,
+            biotin_mcg: nutrition?.biotin_mcg,
+            pantothenic_acid_mg: nutrition?.pantothenic_acid_mg,
+            // Minerals from API
+            magnesium_mg: nutrition?.magnesium_mg,
+            zinc_mg: nutrition?.zinc_mg,
+            chromium_mcg: nutrition?.chromium_mcg,
           };
 
           const servingData: ServingData = {
