@@ -15,8 +15,13 @@ interface NutritionData {
   fiber_g?: number;
   sodium_mg?: number;
   caffeine_mg?: number;
+  cholesterol_mg?: number;
+  saturated_fat_g?: number;
+  trans_fat_g?: number;
   vitamins?: Array<{ name: string; amount: number; unit: string; dv_percent?: number }>;
   minerals?: Array<{ name: string; amount: number; unit: string; dv_percent?: number }>;
+  ingredients?: string;
+  allergens?: string[];
   source?: string;
 }
 
@@ -45,8 +50,8 @@ serve(async (req) => {
 
     // Build search query
     const searchQuery = brand 
-      ? `${brand} ${productName} nutrition facts per serving including caffeine vitamins minerals percent daily value`
-      : `${productName} nutrition facts per serving including caffeine vitamins minerals percent daily value`;
+      ? `${brand} ${productName} complete nutrition facts ingredients list per serving calories protein carbs fat sugar fiber sodium caffeine vitamins minerals percent daily value`
+      : `${productName} complete nutrition facts ingredients list per serving calories protein carbs fat sugar fiber sodium caffeine vitamins minerals percent daily value`;
 
     console.log('Searching for nutrition data:', searchQuery);
 
@@ -61,7 +66,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a precise nutrition data extractor. Search the web for the EXACT nutrition facts of the specified product. 
+            content: `You are a precise nutrition data extractor. Search the web for the COMPLETE nutrition facts AND full ingredients list of the specified product. 
 
 IMPORTANT: Find data from the manufacturer's website, official product pages, or verified nutrition databases.
 
@@ -75,6 +80,9 @@ Return ONLY valid JSON with this exact structure:
   "sugars_g": 0,
   "fiber_g": 0,
   "sodium_mg": 5,
+  "cholesterol_mg": 0,
+  "saturated_fat_g": 0,
+  "trans_fat_g": 0,
   "caffeine_mg": 200,
   "vitamins": [
     { "name": "Vitamin C", "amount": 60, "unit": "mg", "dv_percent": 70 },
@@ -89,14 +97,18 @@ Return ONLY valid JSON with this exact structure:
     { "name": "Calcium", "amount": 50, "unit": "mg", "dv_percent": 4 },
     { "name": "Chromium", "amount": 50, "unit": "mcg", "dv_percent": 140 }
   ],
+  "ingredients": "Carbonated Water, Citric Acid, Taurine, Sodium Citrate, Natural Flavors, Caffeine, Sucralose, Potassium Sorbate...",
+  "allergens": ["Contains no major allergens"],
   "source": "manufacturer website or database name"
 }
 
 CRITICAL RULES:
 - Return EXACT numbers from official sources
-- Include ALL vitamins and minerals listed on the product
-- For energy drinks, ALWAYS include caffeine
+- Include ALL vitamins and minerals listed on the product with amounts and % Daily Value
+- Include COMPLETE ingredients list exactly as shown on the product
+- For energy drinks, ALWAYS include caffeine amount
 - Use "mg" for milligrams, "mcg" for micrograms
+- Include cholesterol, saturated fat, trans fat if available
 - If a value is not found, omit it rather than guessing
 - Return ONLY the JSON, no other text`
           },
@@ -105,7 +117,7 @@ CRITICAL RULES:
             content: searchQuery
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 4000,
         temperature: 0.1,
       }),
     });
