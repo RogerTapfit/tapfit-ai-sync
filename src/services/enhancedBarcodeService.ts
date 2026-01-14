@@ -28,6 +28,9 @@ interface ProductData {
     calcium_mg?: number;
     potassium_mg?: number;
     iron_mg?: number;
+    cholesterol_mg?: number;
+    saturated_fat_serving?: number;
+    trans_fat_serving?: number;
     // Vitamins
     vitamin_a_mcg?: number;
     vitamin_c_mg?: number;
@@ -161,6 +164,9 @@ export class EnhancedBarcodeService {
     if (aiNutrition.sugars_g !== undefined) merged.nutrition.sugars_serving = aiNutrition.sugars_g;
     if (aiNutrition.sodium_mg !== undefined) merged.nutrition.sodium_mg = aiNutrition.sodium_mg;
     if (aiNutrition.caffeine_mg !== undefined) merged.nutrition.caffeine_mg = aiNutrition.caffeine_mg;
+    if (aiNutrition.cholesterol_mg !== undefined) merged.nutrition.cholesterol_mg = aiNutrition.cholesterol_mg;
+    if (aiNutrition.saturated_fat_g !== undefined) merged.nutrition.saturated_fat_serving = aiNutrition.saturated_fat_g;
+    if (aiNutrition.trans_fat_g !== undefined) merged.nutrition.trans_fat_serving = aiNutrition.trans_fat_g;
 
     // Process vitamins array
     if (aiNutrition.vitamins && Array.isArray(aiNutrition.vitamins)) {
@@ -196,9 +202,13 @@ export class EnhancedBarcodeService {
       }
     }
 
-    // Update serving size if provided
+    // Update serving size and ingredients if provided
     if (aiNutrition.serving_size) {
       merged.serving_size = aiNutrition.serving_size;
+    }
+
+    if (aiNutrition.ingredients && !merged.ingredients) {
+      merged.ingredients = aiNutrition.ingredients;
     }
 
     // Mark data source
@@ -518,16 +528,20 @@ export class EnhancedBarcodeService {
               const per100gValue = nutriments.sodium_100g;
               
               if (servingValue !== undefined) {
-                // Convert grams to mg (multiply by 1000)
+                // OpenFoodFacts stores sodium in GRAMS, multiply by 1000 for mg
                 const mgValue = servingValue * 1000;
-                // Sanity check: if result > 2000mg for a single serving, it's suspicious
-                // Most beverages have <500mg sodium per serving
-                return mgValue > 2000 ? Math.round(mgValue / 1000) : Math.round(mgValue);
+                // Sanity check: if value is LESS than 1, it's likely already in mg or needs conversion
+                // Most beverages have 5-500mg sodium per serving, rarely over 1000mg
+                if (servingValue < 0.001) return Math.round(servingValue * 1000000); // was in kg
+                if (servingValue < 1) return Math.round(mgValue); // was in grams, now in mg
+                // If original value > 1, it's likely already in mg (API inconsistency)
+                return Math.round(servingValue);
               }
               if (per100gValue !== undefined) {
                 const scaleFactor = servingQuantityMl ? servingQuantityMl / 100 : 1;
                 const mgValue = per100gValue * 1000 * scaleFactor;
-                return mgValue > 2000 ? Math.round(mgValue / 1000) : Math.round(mgValue);
+                if (per100gValue < 1) return Math.round(mgValue);
+                return Math.round(per100gValue * scaleFactor);
               }
               return undefined;
             })(),
