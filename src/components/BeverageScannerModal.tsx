@@ -45,6 +45,7 @@ interface ScanResult {
   servingOz?: number;
   barcode?: string;
   servingData?: ServingData;
+  productImage?: string;
 }
 
 export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: BeverageScannerModalProps) => {
@@ -54,6 +55,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pricing, setPricing] = useState<PriceLookupResult | null>(null);
   const [isManualScanning, setIsManualScanning] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const handleScanNow = async () => {
     setIsManualScanning(true);
@@ -116,14 +118,32 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     if (!lastBarcode) return;
     
     const process = async () => {
+      // Capture image from video for Deep Seek
+      let imageData: string | null = null;
+      if (videoRef.current) {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = videoRef.current.videoWidth || 640;
+          canvas.height = videoRef.current.videoHeight || 480;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(videoRef.current, 0, 0);
+            imageData = canvas.toDataURL('image/jpeg', 0.8);
+            setCapturedImage(imageData);
+          }
+        } catch (e) {
+          console.warn('Could not capture video frame:', e);
+        }
+      }
+      
       const product = await fetchProductData(lastBarcode);
-      processProduct(lastBarcode, product?.name || '', product);
+      processProduct(lastBarcode, product?.name || '', product, imageData);
     };
     
     process();
   }, [lastBarcode]);
 
-  const processProduct = async (barcode: string, productName: string, product?: typeof productData | null) => {
+  const processProduct = async (barcode: string, productName: string, product?: typeof productData | null, productImage?: string | null) => {
     const resolvedProduct = product ?? productData;
 
     setIsAnalyzing(true);
@@ -158,6 +178,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           waterProduct,
           servingOz: waterProduct.serving_size_oz || 16.9,
           barcode,
+          productImage: productImage || capturedImage || undefined,
         });
       } else if (isWaterProduct) {
         // Generic water product not in database
@@ -166,6 +187,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
           productName,
           servingOz: 16.9,
           barcode,
+          productImage: productImage || capturedImage || undefined,
         });
       } else {
         // Check if it's a known beverage type
@@ -229,6 +251,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             servingOz: knownServingOz,
             barcode,
             servingData,
+            productImage: productImage || capturedImage || undefined,
           });
         } else {
           // Unknown beverage - use API data or defaults
@@ -288,6 +311,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
             servingOz: beverageInfo.servingOz,
             barcode,
             servingData,
+            productImage: productImage || capturedImage || undefined,
           });
         }
       }
@@ -540,6 +564,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   servingOz={scanResult.servingOz}
                   servingData={scanResult.servingData}
                   barcode={scanResult.barcode}
+                  productImage={scanResult.productImage}
                 />
               )}
 
@@ -562,6 +587,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   productName={scanResult.productName}
                   servingOz={scanResult.servingOz}
                   barcode={scanResult.barcode}
+                  productImage={scanResult.productImage}
                 />
               )}
 

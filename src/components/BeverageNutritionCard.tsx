@@ -34,9 +34,10 @@ interface BeverageNutritionCardProps {
   servingData?: ServingData;
   barcode?: string;
   productData?: any;
+  productImage?: string;
 }
 
-export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData, barcode, productData }: BeverageNutritionCardProps) => {
+export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData, barcode, productData, productImage }: BeverageNutritionCardProps) => {
   const [gradeResult, setGradeResult] = useState<BeverageGradeResult | null>(null);
   const [isAnimated, setIsAnimated] = useState(false);
   const [selectedServings, setSelectedServings] = useState(1);
@@ -318,6 +319,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
         barcode={barcode}
         productName={productName || beverageInfo.name}
         productData={productData}
+        productImage={productImage}
       />
     </div>
   );

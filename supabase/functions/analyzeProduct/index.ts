@@ -1038,7 +1038,313 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { imageBase64, barcode: inputBarcode } = body;
+    const { imageBase64, barcode: inputBarcode, deepSeek, productName: inputProductName } = body;
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
+    // ===== DEEP SEEK MODE: Comprehensive chemical/ingredient analysis =====
+    if (deepSeek) {
+      console.log('🔬 Deep Seek Analysis Mode');
+      
+      // If we have an image, perform AI-powered deep chemical analysis
+      if (imageBase64) {
+        console.log('📸 Deep Seek with image - performing AI chemical analysis');
+        
+        const deepSeekPrompt = `You are an expert food chemist and nutritionist. Analyze this product image in EXTREME DETAIL for ALL chemical ingredients, additives, sweeteners, dyes, preservatives, and nutritional components.
+
+CRITICAL: Read the ENTIRE ingredients list from the label. Extract EVERY ingredient.
+
+Return a comprehensive JSON analysis with:
+
+{
+  "product_name": "Full exact product name from label",
+  "ingredients_raw": "COMPLETE ingredients text exactly as written on label - READ EVERY SINGLE INGREDIENT",
+  
+  "sweetener_analysis": {
+    "primary_sweetener": "Main sweetener name (or 'None' if no sweeteners)",
+    "sweetener_category": "natural|natural_zero|refined|processed|artificial|sugar_alcohol|none",
+    "glycemic_index": number (0-100),
+    "all_sweeteners": [
+      { "name": "Sweetener name", "category": "category", "gi": number, "health_concerns": ["concern1", "concern2"] }
+    ],
+    "metabolic_impact": "Detailed explanation of how these sweeteners affect blood sugar and metabolism"
+  },
+  
+  "chemical_dyes": [
+    {
+      "name": "Common name (e.g., Red 40)",
+      "e_code": "E-code if applicable (e.g., E129)",
+      "chemical_formula": "Chemical formula if known",
+      "color": "Hex color code (e.g., #FF0000)",
+      "safety_rating": "safe|caution|avoid",
+      "health_concerns": ["Specific health concern 1", "Health concern 2"],
+      "regulatory_status": "Status in US/EU (e.g., 'Allowed in US, requires warning in EU')",
+      "natural_alternative": "Natural alternative (e.g., 'Beet juice')"
+    }
+  ],
+  
+  "vitamins_minerals": [
+    {
+      "name": "Vitamin/Mineral name",
+      "amount": "Amount with unit (e.g., '25mg')",
+      "daily_value_percent": number,
+      "bioavailability": "high|medium|low",
+      "purpose": "What this nutrient does",
+      "synthetic_or_natural": "synthetic|natural"
+    }
+  ],
+  
+  "preservatives": [
+    {
+      "name": "Preservative name",
+      "e_code": "E-code if applicable",
+      "purpose": "Why it's added",
+      "safety_rating": "safe|caution|avoid",
+      "health_concerns": ["Specific concerns"],
+      "alternatives": ["Natural alternative 1", "Alternative 2"]
+    }
+  ],
+  
+  "additives": [
+    {
+      "name": "Additive name",
+      "category": "Emulsifier|Stabilizer|Flavor Enhancer|Thickener|Acidulant|etc",
+      "purpose": "Why it's added",
+      "concern_level": "low|medium|high",
+      "notes": "Additional health notes"
+    }
+  ],
+  
+  "nova_classification": {
+    "level": 1-4,
+    "description": "Unprocessed|Processed Ingredients|Processed Food|Ultra-processed",
+    "explanation": "Why this classification was given",
+    "industrial_markers": ["List of ingredients that indicate industrial processing"]
+  },
+  
+  "ai_insights": [
+    "Key insight 1 about this product's health impact",
+    "Insight 2 about specific concerning ingredients",
+    "Insight 3 with healthier alternatives",
+    "Insight 4 about who should avoid this product"
+  ],
+  
+  "overall_safety_score": number 0-100
+}
+
+BE THOROUGH. Extract EVERY chemical, additive, dye, and preservative. If you cannot read the label clearly, say so in the ingredients_raw field but still attempt to identify what you can see.`;
+
+        try {
+          const deepSeekResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [
+                { role: "system", content: deepSeekPrompt },
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+                      }
+                    },
+                    { type: "text", text: "Perform a comprehensive deep chemical analysis of this product. Read and extract EVERY ingredient from the label. Return detailed JSON." }
+                  ]
+                }
+              ],
+              max_tokens: 16000,
+            }),
+          });
+
+          if (deepSeekResponse.ok) {
+            const deepSeekData = await deepSeekResponse.json();
+            let deepContent = deepSeekData.choices?.[0]?.message?.content;
+            
+            if (deepContent) {
+              // Clean and parse JSON
+              deepContent = deepContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+              
+              try {
+                let deepResult = JSON.parse(deepContent);
+                console.log('✅ Deep Seek AI analysis complete:', deepResult.product_name);
+                
+                return new Response(
+                  JSON.stringify({
+                    ...deepResult,
+                    deep_seek: true,
+                    data_source: 'ai_deep_analysis'
+                  }),
+                  { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+              } catch (parseErr) {
+                // Try to extract JSON
+                const jsonMatch = deepContent.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  let fixedContent = jsonMatch[0];
+                  const openBraces = (fixedContent.match(/\{/g) || []).length;
+                  const closeBraces = (fixedContent.match(/\}/g) || []).length;
+                  const openBrackets = (fixedContent.match(/\[/g) || []).length;
+                  const closeBrackets = (fixedContent.match(/\]/g) || []).length;
+                  
+                  for (let i = 0; i < openBrackets - closeBrackets; i++) fixedContent += ']';
+                  for (let i = 0; i < openBraces - closeBraces; i++) fixedContent += '}';
+                  
+                  const deepResult = JSON.parse(fixedContent);
+                  console.log('✅ Deep Seek AI analysis (fixed JSON):', deepResult.product_name);
+                  
+                  return new Response(
+                    JSON.stringify({
+                      ...deepResult,
+                      deep_seek: true,
+                      data_source: 'ai_deep_analysis'
+                    }),
+                    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                  );
+                }
+              }
+            }
+          }
+        } catch (deepErr) {
+          console.error('Deep Seek AI error:', deepErr);
+        }
+      }
+      
+      // Fallback: Deep seek without image - use barcode/product name to fetch from databases
+      console.log('🔍 Deep Seek without image - using database lookup for:', inputBarcode || inputProductName);
+      
+      let dbResult = null;
+      if (inputBarcode) {
+        dbResult = await lookupUPCMultiple(inputBarcode);
+      }
+      
+      if (dbResult && dbResult.ingredients) {
+        // Parse ingredients from database to extract additives/chemicals
+        const ingredientsText = (dbResult.ingredients || '').toLowerCase();
+        
+        // Detect common dyes
+        const dyePatterns = [
+          { pattern: /red\s*40|allura red|e129/i, name: 'Red 40', e_code: 'E129', color: '#FF0000', concerns: ['Hyperactivity in children', 'Allergic reactions'] },
+          { pattern: /yellow\s*5|tartrazine|e102/i, name: 'Yellow 5', e_code: 'E102', color: '#FFFF00', concerns: ['Hyperactivity', 'Aspirin sensitivity'] },
+          { pattern: /yellow\s*6|sunset yellow|e110/i, name: 'Yellow 6', e_code: 'E110', color: '#FFA500', concerns: ['Hyperactivity', 'Allergic reactions'] },
+          { pattern: /blue\s*1|brilliant blue|e133/i, name: 'Blue 1', e_code: 'E133', color: '#0000FF', concerns: ['Chromosomal damage in studies'] },
+          { pattern: /caramel color|e150/i, name: 'Caramel Color', e_code: 'E150', color: '#8B4513', concerns: ['May contain 4-MEI carcinogen'] },
+        ];
+        
+        const detectedDyes = dyePatterns.filter(d => d.pattern.test(ingredientsText)).map(d => ({
+          name: d.name,
+          e_code: d.e_code,
+          color: d.color,
+          safety_rating: 'caution' as const,
+          health_concerns: d.concerns,
+          regulatory_status: 'Allowed in US, requires warning in EU',
+          natural_alternative: 'Natural plant-based colors'
+        }));
+        
+        // Detect preservatives
+        const preservativePatterns = [
+          { pattern: /sodium benzoate|e211/i, name: 'Sodium Benzoate', e_code: 'E211', concerns: ['Forms benzene with Vitamin C'] },
+          { pattern: /potassium sorbate|e202/i, name: 'Potassium Sorbate', e_code: 'E202', concerns: ['Generally safe'] },
+          { pattern: /citric acid|e330/i, name: 'Citric Acid', e_code: 'E330', concerns: ['Generally safe, natural'] },
+        ];
+        
+        const detectedPreservatives = preservativePatterns.filter(p => p.pattern.test(ingredientsText)).map(p => ({
+          name: p.name,
+          e_code: p.e_code,
+          purpose: 'Preservation',
+          safety_rating: p.name.includes('Citric') ? 'safe' as const : 'caution' as const,
+          health_concerns: p.concerns,
+          alternatives: ['Natural fermentation', 'Vitamin E']
+        }));
+        
+        // Detect sweeteners
+        const sweetenerPatterns = [
+          { pattern: /high fructose corn syrup|hfcs/i, name: 'High Fructose Corn Syrup', category: 'processed', gi: 87 },
+          { pattern: /aspartame|e951/i, name: 'Aspartame', category: 'artificial', gi: 0 },
+          { pattern: /sucralose|splenda|e955/i, name: 'Sucralose', category: 'artificial', gi: 0 },
+          { pattern: /stevia|reb\s*a/i, name: 'Stevia', category: 'natural_zero', gi: 0 },
+          { pattern: /cane sugar|sugar/i, name: 'Sugar', category: 'refined', gi: 65 },
+        ];
+        
+        const detectedSweeteners = sweetenerPatterns.filter(s => s.pattern.test(ingredientsText)).map(s => ({
+          name: s.name,
+          category: s.category,
+          gi: s.gi,
+          health_concerns: s.category === 'artificial' ? ['Artificial sweetener', 'May affect gut bacteria'] : 
+                           s.category === 'processed' ? ['High glycemic', 'Metabolic concerns'] : []
+        }));
+        
+        const primarySweetener = detectedSweeteners[0] || { name: 'Unknown', category: 'unknown', gi: 0 };
+        
+        return new Response(
+          JSON.stringify({
+            product_name: dbResult.product_name || inputProductName || 'Unknown Product',
+            ingredients_raw: dbResult.ingredients || 'Ingredients not available in database',
+            sweetener_analysis: {
+              primary_sweetener: primarySweetener.name,
+              sweetener_category: primarySweetener.category,
+              glycemic_index: primarySweetener.gi,
+              all_sweeteners: detectedSweeteners,
+              metabolic_impact: detectedSweeteners.length > 0 ? 
+                `Contains ${detectedSweeteners.length} sweetener(s). Primary sweetener is ${primarySweetener.name}.` :
+                'No sweeteners detected in database ingredients'
+            },
+            chemical_dyes: detectedDyes,
+            vitamins_minerals: [],
+            preservatives: detectedPreservatives,
+            additives: [],
+            nova_classification: {
+              level: dbResult.nova_group || 4,
+              description: dbResult.nova_group === 1 ? 'Unprocessed' : 
+                          dbResult.nova_group === 2 ? 'Processed Ingredients' :
+                          dbResult.nova_group === 3 ? 'Processed Food' : 'Ultra-processed',
+              explanation: 'Classification based on database records'
+            },
+            ai_insights: [
+              `Product contains ${detectedDyes.length} artificial dye(s)`,
+              `Contains ${detectedPreservatives.length} preservative(s)`,
+              detectedSweeteners.some(s => s.category === 'artificial') ? 'Contains artificial sweeteners' : null,
+              'For complete analysis, scan the ingredients label directly'
+            ].filter(Boolean),
+            overall_safety_score: Math.max(20, 80 - (detectedDyes.length * 15) - (detectedPreservatives.filter(p => p.safety_rating !== 'safe').length * 10)),
+            deep_seek: true,
+            data_source: 'database_deep_analysis'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // No data available - return prompt to scan label
+      return new Response(
+        JSON.stringify({
+          product_name: inputProductName || 'Unknown Product',
+          ingredients_raw: 'Please scan the ingredients label for detailed analysis',
+          sweetener_analysis: {
+            primary_sweetener: 'Unknown',
+            sweetener_category: 'unknown',
+            glycemic_index: 0,
+            all_sweeteners: [],
+            metabolic_impact: 'Scan the product label to analyze sweeteners'
+          },
+          chemical_dyes: [],
+          vitamins_minerals: [],
+          preservatives: [],
+          additives: [],
+          nova_classification: { level: 4, description: 'Unknown', explanation: 'Scan label for classification' },
+          ai_insights: ['Scan the ingredients label for complete chemical analysis'],
+          overall_safety_score: 50,
+          deep_seek: true,
+          needs_image: true,
+          data_source: 'no_data'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // BARCODE-ONLY MODE: When a barcode is provided without an image
     if (inputBarcode && !imageBase64) {
