@@ -7,9 +7,11 @@ import {
   getScoreColor,
   BeverageGradeResult 
 } from '@/utils/beverageHealthGrading';
-import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine } from 'lucide-react';
+import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Slider } from './ui/slider';
+import { Button } from './ui/button';
+import { BeverageDeepSeekModal } from './BeverageDeepSeekModal';
 
 interface ServingData {
   servingSizeLabel: string;
@@ -30,12 +32,15 @@ interface BeverageNutritionCardProps {
   productName?: string;
   servingOz?: number;
   servingData?: ServingData;
+  barcode?: string;
+  productData?: any;
 }
 
-export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData }: BeverageNutritionCardProps) => {
+export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData, barcode, productData }: BeverageNutritionCardProps) => {
   const [gradeResult, setGradeResult] = useState<BeverageGradeResult | null>(null);
   const [isAnimated, setIsAnimated] = useState(false);
   const [selectedServings, setSelectedServings] = useState(1);
+  const [showDeepSeek, setShowDeepSeek] = useState(false);
 
   const maxServings = servingData?.maxServings || 1;
   const hasMultipleServings = maxServings > 1;
@@ -124,8 +129,8 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
             <div className={`p-2 rounded-full ${beverageInfo.color} bg-opacity-20`}>
               <beverageInfo.icon className={`h-5 w-5 ${beverageInfo.color}`} />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-lg font-semibold text-foreground truncate">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-foreground leading-tight">
                 {productName || beverageInfo.name}
               </h3>
               <p className="text-sm text-muted-foreground capitalize">
@@ -295,6 +300,25 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
           </ul>
         </div>
       </div>
+
+      {/* Deep Seek Button */}
+      <Button
+        onClick={() => setShowDeepSeek(true)}
+        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg"
+      >
+        <Beaker className="h-4 w-4 mr-2" />
+        Deep Seek
+        <Sparkles className="h-4 w-4 ml-2" />
+      </Button>
+
+      {/* Deep Seek Modal */}
+      <BeverageDeepSeekModal
+        open={showDeepSeek}
+        onOpenChange={setShowDeepSeek}
+        barcode={barcode}
+        productName={productName || beverageInfo.name}
+        productData={productData}
+      />
     </div>
   );
 };

@@ -539,6 +539,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   productName={scanResult.productName}
                   servingOz={scanResult.servingOz}
                   servingData={scanResult.servingData}
+                  barcode={scanResult.barcode}
                 />
               )}
 
@@ -560,6 +561,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
                   }}
                   productName={scanResult.productName}
                   servingOz={scanResult.servingOz}
+                  barcode={scanResult.barcode}
                 />
               )}
 
