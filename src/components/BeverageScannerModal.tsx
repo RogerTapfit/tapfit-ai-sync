@@ -109,7 +109,17 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
     currentZoom,
     maxZoom,
     setZoom,
+    resetScanner,
   } = useBarcodeScanner();
+
+  // Clear previous scan result when switching to camera mode
+  useEffect(() => {
+    if (mode === 'camera') {
+      setScanResult(null);
+      setCapturedImage(null);
+      setPricing(null);
+    }
+  }, [mode]);
 
   // Start camera when modal opens in camera mode
   useEffect(() => {
@@ -126,6 +136,11 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       // and clear lastBarcode before the processing effect runs.
       if (open && mode === 'camera' && videoRef.current) {
         console.log('📷 BeverageScannerModal: Initializing camera...');
+        // Reset scanner first to ensure clean state
+        resetScanner();
+        // Small delay to ensure reset completes
+        await new Promise((r) => setTimeout(r, 50));
+        if (!mounted) return;
         startScanning(videoRef.current);
       }
     };
@@ -138,7 +153,7 @@ export const BeverageScannerModal = ({ open, onOpenChange, onAddBeverage }: Beve
       mounted = false;
       stopScanning(videoRef.current || undefined);
     };
-  }, [open, mode]);
+  }, [open, mode, resetScanner]);
 
   // Process barcode when detected
   useEffect(() => {

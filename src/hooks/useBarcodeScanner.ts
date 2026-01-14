@@ -578,10 +578,33 @@ export const useBarcodeScanner = () => {
     console.log('📷 Starting barcode scanner...');
     debugLog('startScanning called');
     
-    // Reset flags
+    // FIRST: Stop any existing scanning completely to ensure clean state
+    isStoppingRef.current = true;
+    stopNativeDetector();
+    try {
+      codeReaderRef.current?.reset();
+    } catch {}
+    
+    // Stop any active stream first
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach(track => track.stop());
+      activeStreamRef.current = null;
+    }
+    
+    // Clear native fallback timer
+    if (nativeFallbackTimerRef.current) {
+      window.clearTimeout(nativeFallbackTimerRef.current);
+      nativeFallbackTimerRef.current = null;
+    }
+    
+    // Small delay to ensure cleanup completes
+    await new Promise(r => setTimeout(r, 50));
+    
+    // NOW reset ALL flags for new scan session
     isStoppingRef.current = false;
     barcodeDetectedRef.current = false;
     zxingActiveRef.current = false;
+    isAttachingRef.current = false; // CRITICAL: Reset this flag too
     errorCountRef.current = { notFound: 0, checksum: 0, format: 0 };
 
     // Reset state
@@ -818,13 +841,30 @@ export const useBarcodeScanner = () => {
   };
 
   const resetScanner = useCallback(() => {
+    console.log('📷 Resetting scanner state...');
+    
+    // Reset ALL refs to ensure clean state for next scan
+    barcodeDetectedRef.current = false;
+    zxingActiveRef.current = false;
+    isAttachingRef.current = false;
+    isStoppingRef.current = false;
+    errorCountRef.current = { notFound: 0, checksum: 0, format: 0 };
+    
+    // Clear native fallback timer
+    if (nativeFallbackTimerRef.current) {
+      window.clearTimeout(nativeFallbackTimerRef.current);
+      nativeFallbackTimerRef.current = null;
+    }
+    
+    // Reset state
     setProductData(null);
     setIsScanning(false);
     setLoading(false);
     setLastBarcode(null);
     setScannerStatus('idle');
-    barcodeDetectedRef.current = false;
-    zxingActiveRef.current = false;
+    setError(null);
+    
+    // Stop decoders
     try {
       codeReaderRef.current?.reset();
     } catch {}
