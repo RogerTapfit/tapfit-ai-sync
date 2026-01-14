@@ -7,7 +7,7 @@ import {
   getScoreColor,
   BeverageGradeResult 
 } from '@/utils/beverageHealthGrading';
-import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles, Coffee, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, X, Droplet, Flame, Wheat, Drumstick, CircleDot, Wine, Beaker, Sparkles, Coffee, Zap, ChevronDown, ChevronUp, Camera, AlertTriangle } from 'lucide-react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { Slider } from './ui/slider';
 import { Button } from './ui/button';
@@ -57,9 +57,11 @@ interface BeverageNutritionCardProps {
   barcode?: string;
   productData?: any;
   productImage?: string;
+  onScanNutritionLabel?: () => void;
+  needsLabelScan?: boolean;
 }
 
-export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData, barcode, productData, productImage }: BeverageNutritionCardProps) => {
+export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData, barcode, productData, productImage, onScanNutritionLabel, needsLabelScan }: BeverageNutritionCardProps) => {
   const [gradeResult, setGradeResult] = useState<BeverageGradeResult | null>(null);
   const [isAnimated, setIsAnimated] = useState(false);
   const [selectedServings, setSelectedServings] = useState(1);
@@ -379,6 +381,28 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Scan Nutrition Label prompt when data is incomplete */}
+          {needsLabelScan && onScanNutritionLabel && (
+            <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <div className="flex items-center gap-2 text-sm">
+                <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                <span className="text-amber-400">Missing vitamin/caffeine data?</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Scan the nutrition label for complete, accurate values
+              </p>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="mt-2 w-full border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                onClick={onScanNutritionLabel}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Scan Nutrition Label
+              </Button>
             </div>
           )}
         </div>
