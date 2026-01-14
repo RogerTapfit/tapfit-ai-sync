@@ -66,6 +66,74 @@ interface BeverageNutritionCardProps {
   needsLabelScan?: boolean;
 }
 
+// Health benefits data for each vitamin and mineral
+const NUTRIENT_BENEFITS: Record<string, { summary: string; benefits: string[] }> = {
+  'Calcium': {
+    summary: 'Essential for strong bones and teeth',
+    benefits: ['Builds and maintains strong bones', 'Supports muscle function', 'Helps nerve transmission', 'Required for heart health']
+  },
+  'Vitamin C': {
+    summary: 'Powerful antioxidant for immune support',
+    benefits: ['Boosts immune system function', 'Promotes skin health & collagen', 'Helps absorb iron', 'Protects cells from damage']
+  },
+  'Vitamin A': {
+    summary: 'Vital for vision and immune health',
+    benefits: ['Supports healthy vision', 'Boosts immune function', 'Promotes skin health', 'Essential for cell growth']
+  },
+  'Vitamin D': {
+    summary: 'The sunshine vitamin for bones and mood',
+    benefits: ['Strengthens bones & teeth', 'Supports immune system', 'May improve mood', 'Helps calcium absorption']
+  },
+  'Thiamin (B1)': {
+    summary: 'Essential for energy metabolism',
+    benefits: ['Converts food to energy', 'Supports nerve function', 'Helps muscle contraction', 'Aids brain function']
+  },
+  'Riboflavin (B2)': {
+    summary: 'Key for cellular energy production',
+    benefits: ['Produces cellular energy', 'Maintains skin & eye health', 'Supports metabolism', 'Acts as antioxidant']
+  },
+  'Niacin (B3)': {
+    summary: 'Supports digestive and nervous systems',
+    benefits: ['Aids digestion', 'Supports skin health', 'Helps nervous system', 'May lower cholesterol']
+  },
+  'Vitamin B6': {
+    summary: 'Important for brain and mood regulation',
+    benefits: ['Regulates mood & sleep', 'Supports brain development', 'Aids protein metabolism', 'Helps immune function']
+  },
+  'Vitamin B12': {
+    summary: 'Critical for nerve health and energy',
+    benefits: ['Produces red blood cells', 'Supports brain & nerve health', 'Boosts energy levels', 'Aids DNA synthesis']
+  },
+  'Biotin': {
+    summary: 'Beauty vitamin for hair, skin & nails',
+    benefits: ['Strengthens hair & nails', 'Promotes healthy skin', 'Supports metabolism', 'Aids nerve function']
+  },
+  'Pantothenic Acid': {
+    summary: 'Essential for hormone production',
+    benefits: ['Produces stress hormones', 'Supports red blood cells', 'Metabolizes fats', 'Aids cholesterol synthesis']
+  },
+  'Potassium': {
+    summary: 'Crucial for heart and muscle function',
+    benefits: ['Regulates blood pressure', 'Maintains fluid balance', 'Supports muscle function', 'Aids nerve signals']
+  },
+  'Iron': {
+    summary: 'Vital for oxygen transport in blood',
+    benefits: ['Carries oxygen in blood', 'Prevents anemia', 'Supports immune system', 'Boosts energy levels']
+  },
+  'Magnesium': {
+    summary: 'The relaxation mineral for muscles',
+    benefits: ['Relaxes muscles', 'Improves sleep quality', 'Supports nerve function', 'Aids energy production']
+  },
+  'Zinc': {
+    summary: 'Immune booster and wound healer',
+    benefits: ['Boosts immune system', 'Speeds wound healing', 'Supports taste & smell', 'Aids protein synthesis']
+  },
+  'Chromium': {
+    summary: 'Helps regulate blood sugar levels',
+    benefits: ['Improves insulin sensitivity', 'Helps regulate blood sugar', 'Supports metabolism', 'May reduce cravings']
+  },
+};
+
 export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, servingData, barcode, productData, productImage, onScanNutritionLabel, needsLabelScan }: BeverageNutritionCardProps) => {
   const [gradeResult, setGradeResult] = useState<BeverageGradeResult | null>(null);
   const [isAnimated, setIsAnimated] = useState(false);
@@ -73,6 +141,7 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
   const [showDeepSeek, setShowDeepSeek] = useState(false);
   const [showVitamins, setShowVitamins] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
+  const [expandedNutrient, setExpandedNutrient] = useState<string | null>(null);
 
   const maxServings = servingData?.maxServings || 1;
   const hasMultipleServings = maxServings > 1;
@@ -413,23 +482,52 @@ export const BeverageNutritionCard = ({ beverageInfo, productName, servingOz, se
               </button>
               
               {showVitamins && (
-                <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-primary/30">
+                <div className="mt-2 space-y-1 pl-2 border-l-2 border-primary/30">
                   {vitaminsAndMinerals.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm py-0.5">
-                      <span className="text-muted-foreground">{item.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-foreground">{item.value}{item.unit}</span>
-                        {item.dvPercent !== null && (
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${
-                            item.dvPercent >= 100 ? 'bg-green-500/20 text-green-400' :
-                            item.dvPercent >= 50 ? 'bg-cyan-500/20 text-cyan-400' :
-                            item.dvPercent >= 20 ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {item.dvPercent}%
-                          </span>
+                    <div key={idx} className="overflow-hidden">
+                      <button
+                        onClick={() => setExpandedNutrient(
+                          expandedNutrient === item.name ? null : item.name
                         )}
-                      </div>
+                        className="w-full flex justify-between items-center text-sm py-1.5 hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                      >
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          {item.name}
+                          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${
+                            expandedNutrient === item.name ? 'rotate-180' : ''
+                          }`} />
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground">{item.value}{item.unit}</span>
+                          {item.dvPercent !== null && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${
+                              item.dvPercent >= 100 ? 'bg-green-500/20 text-green-400' :
+                              item.dvPercent >= 50 ? 'bg-cyan-500/20 text-cyan-400' :
+                              item.dvPercent >= 20 ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {item.dvPercent}%
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      
+                      {/* Dropdown with health benefits */}
+                      {expandedNutrient === item.name && NUTRIENT_BENEFITS[item.name] && (
+                        <div className="mt-1 mb-2 p-2 bg-primary/5 rounded-lg border-l-2 border-primary/30 animate-in slide-in-from-top-1 duration-200">
+                          <p className="text-xs font-medium text-primary mb-1.5">
+                            {NUTRIENT_BENEFITS[item.name].summary}
+                          </p>
+                          <ul className="space-y-0.5">
+                            {NUTRIENT_BENEFITS[item.name].benefits.map((benefit, i) => (
+                              <li key={i} className="text-xs text-muted-foreground flex gap-1.5">
+                                <span className="text-green-400 flex-shrink-0">✓</span>
+                                {benefit}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
