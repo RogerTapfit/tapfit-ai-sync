@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, Users, Check, Dumbbell, Edit2, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Check, Dumbbell, Edit2, AlertTriangle, Camera, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -14,6 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { WeightStackPhotoCapture } from './WeightStackPhotoCapture';
+import { useWeightStack } from '@/hooks/useWeightStack';
 
 interface MachineMaxToggleProps {
   machineName: string;
@@ -50,9 +52,13 @@ export const MachineMaxToggle: React.FC<MachineMaxToggleProps> = ({
   const [confirmType, setConfirmType] = useState<'max' | 'min' | null>(null);
   const [customWeight, setCustomWeight] = useState(currentWeight || 200);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showWeightStackCapture, setShowWeightStackCapture] = useState(false);
+
+  const { weightStack, stackData } = useWeightStack(machineName);
 
   const hasMaxWeight = specs?.max_weight && specs.max_weight > 0;
   const isNearMax = hasMaxWeight && currentWeight >= (specs.max_weight! * 0.9);
+  const hasWeightStack = weightStack && weightStack.length > 0;
 
   const handleOpenSetMax = () => {
     setConfirmType('max');
@@ -325,6 +331,42 @@ export const MachineMaxToggle: React.FC<MachineMaxToggleProps> = ({
           </div>
         )}
 
+        {/* Photo Weight Stack Section */}
+        <div className="p-3 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 rounded-lg border border-yellow-500/30">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Camera className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm font-medium">Photo Weight Stack</span>
+              </div>
+              {hasWeightStack ? (
+                <p className="text-xs text-muted-foreground">
+                  {weightStack.length} weights: {weightStack[0]} - {weightStack[weightStack.length - 1]} lbs
+                  {stackData?.verification_count && stackData.verification_count > 1 && (
+                    <span className="ml-1 text-green-600">
+                      • Verified by {stackData.verification_count}
+                    </span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Help us know the exact weights available
+                </p>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowWeightStackCapture(true)}
+              className="bg-yellow-500/20 border-yellow-500/50 hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-300"
+            >
+              <Camera className="h-3.5 w-3.5 mr-1.5" />
+              {hasWeightStack ? 'Update' : 'Earn 25'}
+              {!hasWeightStack && <Coins className="h-3 w-3 ml-1" />}
+            </Button>
+          </div>
+        </div>
+
         {/* Personal Status Toggles */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-border/50">
           <div className="flex items-center justify-between flex-1 p-2 bg-background rounded-md">
@@ -457,6 +499,16 @@ export const MachineMaxToggle: React.FC<MachineMaxToggleProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Weight Stack Photo Capture Modal */}
+      <WeightStackPhotoCapture
+        machineName={machineName}
+        open={showWeightStackCapture}
+        onOpenChange={setShowWeightStackCapture}
+        onComplete={(weights, coins) => {
+          toast.success(`Weight stack saved! +${coins} Tap Coins`);
+        }}
+      />
     </>
   );
 };

@@ -11,11 +11,13 @@ export interface ExerciseWeightCalculation {
   exercise_name: string;
   machine_name: string;
   recommended_weight: number;
+  original_recommended_weight?: number; // Before snapping to available weights
   sets: number;
   reps: number;
   rest_seconds: number;
   confidence?: 'high' | 'medium' | 'learning';
   atMachineMax?: boolean; // Flag when weight is capped at machine max
+  snappedToStack?: boolean; // Flag when weight was adjusted to match available stack
 }
 
 export interface WeightRecommendationInput {

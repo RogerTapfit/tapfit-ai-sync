@@ -2004,6 +2004,56 @@ export type Database = {
           },
         ]
       }
+      machine_weight_stacks: {
+        Row: {
+          contributed_by: string | null
+          created_at: string | null
+          gym_id: string | null
+          id: string
+          machine_name: string
+          photo_storage_path: string | null
+          photo_url: string
+          updated_at: string | null
+          verification_count: number | null
+          verified_by: Json | null
+          weight_stack: Json
+        }
+        Insert: {
+          contributed_by?: string | null
+          created_at?: string | null
+          gym_id?: string | null
+          id?: string
+          machine_name: string
+          photo_storage_path?: string | null
+          photo_url: string
+          updated_at?: string | null
+          verification_count?: number | null
+          verified_by?: Json | null
+          weight_stack?: Json
+        }
+        Update: {
+          contributed_by?: string | null
+          created_at?: string | null
+          gym_id?: string | null
+          id?: string
+          machine_name?: string
+          photo_storage_path?: string | null
+          photo_url?: string
+          updated_at?: string | null
+          verification_count?: number | null
+          verified_by?: Json | null
+          weight_stack?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_weight_stacks_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machines: {
         Row: {
           brand: string | null
