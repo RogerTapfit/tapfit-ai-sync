@@ -1,12 +1,12 @@
-import { ThirdwebSDK } from '@thirdweb-dev/sdk';
-import { Polygon } from '@thirdweb-dev/chains';
+// NFT Service - Simulation Layer
+// This service provides simulated NFT functionality for demo/development purposes.
+// When real blockchain integration is needed, connect to a wallet provider and smart contract.
 
-// NFT Service configuration
+// NFT Service configuration (placeholder for future blockchain integration)
 const NFT_CONFIG = {
-  chainId: Polygon.chainId,
+  chainId: 137, // Polygon mainnet
   contractAddress: '0x1234567890123456789012345678901234567890', // Demo contract address
   network: 'polygon',
-  apiKey: 'demo-api-key', // This would be from environment variables
 };
 
 // NFT metadata interface
@@ -43,20 +43,23 @@ export interface NFTMintResult {
   metadata?: AvatarNFTMetadata;
 }
 
+// Serial number counter for simulation
+let simulatedSerialCounter = 1000;
+
 export class NFTService {
-  private sdk: ThirdwebSDK;
-  private contract: any | null = null;
+  private initialized = false;
   
   constructor() {
-    this.sdk = new ThirdwebSDK(Polygon, {
-      clientId: NFT_CONFIG.apiKey
-    });
+    // No external SDK initialization needed for simulation
+    console.log('NFT Service initialized in simulation mode');
   }
   
-  // Initialize NFT contract
+  // Initialize NFT contract (simulated)
   async initializeContract(): Promise<boolean> {
     try {
-      this.contract = await this.sdk.getContract(NFT_CONFIG.contractAddress);
+      // Simulate contract initialization delay
+      await new Promise(resolve => setTimeout(resolve, 100));
+      this.initialized = true;
       return true;
     } catch (error) {
       console.error('Error initializing NFT contract:', error);
@@ -125,13 +128,13 @@ export class NFTService {
     return metadata;
   }
   
-  // Mint avatar NFT
+  // Mint avatar NFT (simulated)
   async mintAvatarNFT(
     walletAddress: string,
     metadata: AvatarNFTMetadata
   ): Promise<NFTMintResult> {
     try {
-      if (!this.contract) {
+      if (!this.initialized) {
         const initialized = await this.initializeContract();
         if (!initialized) {
           return {
@@ -141,7 +144,7 @@ export class NFTService {
         }
       }
       
-      // Upload metadata to IPFS
+      // Simulate IPFS upload
       const metadataUri = await this.uploadMetadataToIPFS(metadata);
       if (!metadataUri) {
         return {
@@ -150,14 +153,19 @@ export class NFTService {
         };
       }
       
-      // Mint NFT to user's wallet
-      const transaction = await this.contract!.mintTo(walletAddress, metadataUri);
-      const receipt = await transaction.receipt;
+      // Simulate blockchain transaction delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Generate simulated transaction data
+      const tokenId = Math.floor(Math.random() * 1000000).toString();
+      const transactionHash = `0x${Array.from({ length: 64 }, () => 
+        Math.floor(Math.random() * 16).toString(16)
+      ).join('')}`;
       
       return {
         success: true,
-        tokenId: receipt.events?.[0]?.args?.tokenId?.toString(),
-        transactionHash: receipt.transactionHash,
+        tokenId,
+        transactionHash,
         contractAddress: NFT_CONFIG.contractAddress,
         metadata
       };
@@ -171,11 +179,13 @@ export class NFTService {
     }
   }
   
-  // Upload metadata to IPFS
+  // Upload metadata to IPFS (simulated)
   private async uploadMetadataToIPFS(metadata: AvatarNFTMetadata): Promise<string | null> {
     try {
-      // This would use a proper IPFS service like Pinata or Web3.Storage
-      // For demo purposes, we'll simulate the upload
+      // Simulate IPFS upload delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Generate simulated IPFS hash
       const ipfsHash = `QmDemo${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
       return `ipfs://${ipfsHash}`;
     } catch (error) {
@@ -216,16 +226,12 @@ export class NFTService {
     return 'common';
   }
   
-  // Get next serial number for NFT
+  // Get next serial number for NFT (simulated)
   private async getNextSerialNumber(): Promise<number> {
     try {
-      if (!this.contract) {
-        await this.initializeContract();
-      }
-      
-      // Get total supply and add 1
-      const totalSupply = await this.contract!.totalSupply();
-      return totalSupply.toNumber() + 1;
+      // Increment and return simulated serial number
+      simulatedSerialCounter += 1;
+      return simulatedSerialCounter;
     } catch (error) {
       console.error('Error getting serial number:', error);
       // Fallback to timestamp-based serial
@@ -233,25 +239,13 @@ export class NFTService {
     }
   }
   
-  // Get user's NFTs
+  // Get user's NFTs (simulated - returns empty for demo)
   async getUserNFTs(walletAddress: string): Promise<any[]> {
     try {
-      if (!this.contract) {
-        await this.initializeContract();
-      }
-      
-      const nfts = await this.contract!.getOwnedTokenIds(walletAddress);
-      const nftData = [];
-      
-      for (const tokenId of nfts) {
-        const metadata = await this.contract!.tokenURI(tokenId);
-        nftData.push({
-          tokenId: tokenId.toString(),
-          metadata
-        });
-      }
-      
-      return nftData;
+      // In simulation mode, return empty array
+      // Real implementation would query blockchain
+      console.log(`Fetching NFTs for wallet: ${walletAddress} (simulated)`);
+      return [];
     } catch (error) {
       console.error('Error getting user NFTs:', error);
       return [];
