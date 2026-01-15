@@ -7,6 +7,7 @@ import {
   ExerciseWeightCalculation
 } from '@/services/weightCalculationService';
 import { usePowerLevel } from './usePowerLevel';
+import { snapToAvailableWeight } from './useWeightStack';
 
 interface UseWeightRecommendationProps {
   exerciseName: string;
@@ -28,6 +29,7 @@ export const useWeightRecommendation = ({
   const [recommendation, setRecommendation] = useState<ExerciseWeightCalculation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [weightStack, setWeightStack] = useState<number[] | null>(null);
   const { powerLevel } = usePowerLevel();
 
   useEffect(() => {
@@ -45,15 +47,31 @@ export const useWeightRecommendation = ({
         throw new Error('User not authenticated');
       }
 
-      // Fetch user profile data
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('weight_kg, age, gender, experience_level, primary_goal, current_max_weights')
-        .eq('id', user.id)
-        .single();
+      // Fetch user profile data and weight stack in parallel
+      const [profileResult, weightStackResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('weight_kg, age, gender, experience_level, primary_goal, current_max_weights')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('machine_weight_stacks')
+          .select('weight_stack')
+          .eq('machine_name', machineName)
+          .maybeSingle()
+      ]);
 
-      if (profileError) throw profileError;
-      if (!profile) throw new Error('Profile not found');
+      if (profileResult.error) throw profileResult.error;
+      if (!profileResult.data) throw new Error('Profile not found');
+
+      const profile = profileResult.data;
+      
+      // Store weight stack if available
+      if (weightStackResult.data?.weight_stack) {
+        const stack = weightStackResult.data.weight_stack as number[];
+        setWeightStack(stack);
+        console.log(`[Weight Rec] Found weight stack: ${stack.join(', ')}`);
+      }
 
       // Convert to UserWeightProfile format (kg to lbs)
       const userProfile: UserWeightProfile = {
@@ -67,6 +85,7 @@ export const useWeightRecommendation = ({
 
       // Calculate weight recommendation
       let recommendedWeight = calculateOptimalWeight(userProfile, exerciseName, machineName);
+      const originalRecommendedWeight = recommendedWeight;
       
       // Prioritize historical weight if available
       if (historicalWeight) {
@@ -100,6 +119,18 @@ export const useWeightRecommendation = ({
         }
       }
 
+      // Snap recommended weight to available weight stack (if we have one)
+      let snappedToStack = false;
+      const currentWeightStack = weightStackResult.data?.weight_stack as number[] | null;
+      if (currentWeightStack && currentWeightStack.length > 0 && !historicalWeight) {
+        const snappedWeight = snapToAvailableWeight(recommendedWeight, currentWeightStack);
+        if (snappedWeight !== recommendedWeight) {
+          console.log(`[Weight Rec] Snapped ${recommendedWeight} lbs → ${snappedWeight} lbs (available in stack)`);
+          recommendedWeight = snappedWeight;
+          snappedToStack = true;
+        }
+      }
+
       // Determine confidence level
       let confidence: 'high' | 'medium' | 'learning' = 'learning';
       if (userProfile.current_max_weights && Object.keys(userProfile.current_max_weights).length > 2) {
@@ -117,15 +148,20 @@ export const useWeightRecommendation = ({
         exercise_name: exerciseName,
         machine_name: machineName,
         recommended_weight: recommendedWeight,
+        original_recommended_weight: snappedToStack ? originalRecommendedWeight : undefined,
         sets,
         reps,
         rest_seconds,
         confidence: historicalWeight ? 'high' : confidence, // Boost confidence if using history
-        atMachineMax // NEW: Flag to indicate we're at machine max
+        atMachineMax, // Flag to indicate we're at machine max
+        snappedToStack // Flag to indicate weight was adjusted to match stack
       };
 
       console.log(`[Weight Rec] Recommendation: ${exerciseRecommendation.recommended_weight} lbs (${exerciseRecommendation.confidence} confidence)`);
       console.log(`[Weight Rec] Sets: ${exerciseRecommendation.sets}, Reps: ${exerciseRecommendation.reps}`);
+      if (snappedToStack) {
+        console.log(`[Weight Rec] Weight snapped to available stack value`);
+      }
 
       setRecommendation(exerciseRecommendation);
       setError(null);
@@ -170,6 +206,7 @@ export const useWeightRecommendation = ({
     recommendation,
     loading,
     error,
+    weightStack,
     getConfidenceColor,
     getConfidenceDescription,
     refetch: fetchUserProfileAndCalculate
