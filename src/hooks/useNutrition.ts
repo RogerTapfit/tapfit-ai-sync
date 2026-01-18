@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
+import { XP_ACTIONS } from '@/config/gamerRanks';
 
 export interface NutritionGoal {
   id: string;
@@ -537,6 +538,33 @@ export const useNutrition = () => {
       console.log('Food entry saved successfully with photo data:', data);
 
       setFoodEntries(prev => [transformDatabaseToFoodEntry(data), ...prev]);
+      
+      // Award XP for logging meal
+      const hasPhoto = Boolean(entry.photo_url || (entry.photo_urls && entry.photo_urls.length > 0));
+      const xpAmount = hasPhoto ? XP_ACTIONS.MEAL_WITH_PHOTO : XP_ACTIONS.MEAL_LOGGED;
+      
+      try {
+        const { data: xpResult } = await supabase.rpc('award_xp', {
+          p_user_id: user.id,
+          p_xp_amount: xpAmount,
+          p_source: 'meal'
+        });
+
+        if (xpResult) {
+          window.dispatchEvent(new CustomEvent('xpAwarded', {
+            detail: {
+              amount: xpAmount,
+              source: 'meal',
+              result: xpResult
+            }
+          }));
+        }
+      } catch (xpError) {
+        console.error('Error awarding XP for meal:', xpError);
+      }
+
+      // Trigger achievement check
+      window.dispatchEvent(new CustomEvent('achievement:check'));
       
       // Refresh daily summary
       await loadTodaysSummary();

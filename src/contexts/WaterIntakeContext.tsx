@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { calculateEffectiveHydration, calculateBeverageNutrition, BEVERAGE_HYDRATION } from '@/lib/beverageHydration';
 import { useTapCoins } from '@/hooks/useTapCoins';
 import { getLocalDateString } from '@/utils/dateUtils';
+import { XP_ACTIONS } from '@/config/gamerRanks';
 
 export interface WaterEntry {
   id: string;
@@ -230,11 +231,35 @@ export const WaterIntakeProvider = ({ children }: { children: ReactNode }) => {
           '💧 Daily hydration goal reached!'
         );
         
+        // Award XP for hitting water goal
+        try {
+          const { data: xpResult } = await supabase.rpc('award_xp', {
+            p_user_id: user.id,
+            p_xp_amount: XP_ACTIONS.WATER_GOAL_HIT,
+            p_source: 'hydration'
+          });
+
+          if (xpResult) {
+            window.dispatchEvent(new CustomEvent('xpAwarded', {
+              detail: {
+                amount: XP_ACTIONS.WATER_GOAL_HIT,
+                source: 'hydration',
+                result: xpResult
+              }
+            }));
+          }
+        } catch (xpError) {
+          console.error('Error awarding XP for hydration:', xpError);
+        }
+        
         if (coinsAwarded) {
-          toast.success('💧 Hydration goal reached! +3 Tap Coins', {
+          toast.success(`💧 Hydration goal reached! +3 Tap Coins, +${XP_ACTIONS.WATER_GOAL_HIT} XP`, {
             duration: 5000,
           });
         }
+        
+        // Trigger achievement check
+        window.dispatchEvent(new CustomEvent('achievement:check'));
         
         await checkHydrationStreak();
       }

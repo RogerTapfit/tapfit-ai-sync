@@ -458,6 +458,9 @@ export const useWorkoutLogger = () => {
         console.error('Error awarding XP:', xpError);
       }
 
+      // Trigger achievement check
+      window.dispatchEvent(new CustomEvent('achievement:check'));
+
       await fetchTodaysProgress();
       setCurrentWorkoutLog(null);
       clearWorkoutLogId();
