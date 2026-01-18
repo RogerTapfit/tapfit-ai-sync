@@ -251,6 +251,25 @@ export const useSobrietyTracking = () => {
           : `Day ${currentDay} complete! +${coins} Tap Coins 🌱`
       );
 
+      // Award XP for sobriety check-in
+      try {
+        const { data: xpResult } = await supabase.rpc('award_xp', {
+          p_user_id: session.user.id,
+          p_xp_amount: 25,
+          p_source: 'sobriety'
+        });
+        if (xpResult) {
+          window.dispatchEvent(new CustomEvent('xpAwarded', {
+            detail: { amount: 25, source: 'sobriety', result: xpResult }
+          }));
+        }
+      } catch (xpError) {
+        console.error('Error awarding XP for sobriety:', xpError);
+      }
+
+      // Trigger achievement check
+      window.dispatchEvent(new CustomEvent('achievement:check'));
+
       // Refresh data
       await fetchActiveJourney();
 

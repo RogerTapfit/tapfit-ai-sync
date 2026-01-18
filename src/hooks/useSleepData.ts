@@ -186,6 +186,26 @@ export const useSleepData = () => {
 
       toast.success('🌙 Sleep logged!');
       window.dispatchEvent(new CustomEvent('sleepLogged'));
+      
+      // Award XP for logging sleep
+      try {
+        const { data: xpResult } = await supabase.rpc('award_xp', {
+          p_user_id: user.id,
+          p_xp_amount: 20,
+          p_source: 'sleep'
+        });
+        if (xpResult) {
+          window.dispatchEvent(new CustomEvent('xpAwarded', {
+            detail: { amount: 20, source: 'sleep', result: xpResult }
+          }));
+        }
+      } catch (xpError) {
+        console.error('Error awarding XP for sleep:', xpError);
+      }
+      
+      // Trigger achievement check
+      window.dispatchEvent(new CustomEvent('achievement:check'));
+      
       fetchSleepData();
       return true;
     } catch (error) {

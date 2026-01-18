@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthGuard';
 import { toast } from 'sonner';
 import { FASTING_MILESTONES, getProtocolById } from '@/data/fastingProtocols';
+import { getFastingXP } from '@/config/gamerRanks';
 
 export interface FastingSession {
   id: string;
@@ -187,6 +188,26 @@ export const useFastingTracking = () => {
       } else {
         toast.success(`🎉 Fast completed! ${Math.floor(actualHours)}h - +${coins} coins`);
       }
+
+      // Award XP for completing fast (scaled by duration)
+      try {
+        const xpAmount = getFastingXP(actualHours, activeFast.target_hours);
+        const { data: xpResult } = await supabase.rpc('award_xp', {
+          p_user_id: user.id,
+          p_xp_amount: xpAmount,
+          p_source: 'fasting'
+        });
+        if (xpResult) {
+          window.dispatchEvent(new CustomEvent('xpAwarded', {
+            detail: { amount: xpAmount, source: 'fasting', result: xpResult }
+          }));
+        }
+      } catch (xpError) {
+        console.error('Error awarding XP for fasting:', xpError);
+      }
+
+      // Trigger achievement check
+      window.dispatchEvent(new CustomEvent('achievement:check'));
 
       setActiveFast(null);
       await fetchFastingData();

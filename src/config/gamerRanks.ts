@@ -55,18 +55,64 @@ export const getXpForLevel = (level: number): number => {
 };
 
 export const XP_ACTIONS = {
-  WORKOUT_COMPLETE: 100,
+  // 🥉 Micro (1-10 XP) - Simple quick actions
+  BEVERAGE_LOGGED: 5,
+  SOCIAL_REACTION: 3,
+  FOLLOW_USER: 5,
+  PROFILE_UPDATE: 10,
+  
+  // 🥈 Light (15-35 XP) - Basic tracking
+  MOOD_LOGGED: 15,
+  SLEEP_LOGGED: 20,
   MEAL_LOGGED: 25,
+  HABIT_COMPLETE: 10,
   MEAL_WITH_PHOTO: 35,
-  WATER_GOAL_HIT: 30,
+  SOBRIETY_CHECKIN: 25,
+  
+  // 🥇 Medium (40-75 XP) - Daily goals
   CALORIE_GOAL_HIT: 40,
   PROTEIN_GOAL_HIT: 40,
+  WATER_GOAL_HIT: 30,
+  ALL_HABITS_COMPLETE: 50,
   BODY_SCAN: 75,
+  CARDIO_SESSION: 75,
+  
+  // 💎 Major (100-200 XP) - Significant achievements
+  WORKOUT_COMPLETE: 100,
   PERSONAL_RECORD: 100,
+  FAST_COMPLETE: 100,
+  CHALLENGE_COMPLETE: 150,
+  FIRST_WORKOUT_OF_DAY: 50,
+  
+  // 👑 Epic (200-1000+ XP) - Milestone streaks
   STREAK_3_DAY: 50,
   STREAK_7_DAY: 200,
   STREAK_14_DAY: 500,
   STREAK_30_DAY: 1000,
-  FIRST_WORKOUT_OF_DAY: 50,
-  CHALLENGE_COMPLETE: 150,
+  FIRST_PRESTIGE: 1000,
 } as const;
+
+// Dynamic XP calculation for cardio based on duration
+export const getCardioXP = (durationMinutes: number): number => {
+  if (durationMinutes < 10) return 30;      // Quick session
+  if (durationMinutes < 20) return 50;      // Short session
+  if (durationMinutes < 30) return 80;      // Standard session
+  if (durationMinutes < 45) return 100;     // Good session
+  if (durationMinutes < 60) return 125;     // Long session
+  return 150;                                // Epic session (60+ min)
+};
+
+// Dynamic XP for fasting based on hours completed
+export const getFastingXP = (hoursCompleted: number, targetHours: number): number => {
+  const baseXP = Math.min(Math.floor(hoursCompleted * 5), 100); // 5 XP per hour, max 100
+  const completionBonus = hoursCompleted >= targetHours ? 50 : 0; // Bonus for hitting target
+  return baseXP + completionBonus;
+};
+
+// Dynamic XP for workouts based on intensity
+export const getWorkoutXP = (exerciseCount: number, totalSets: number): number => {
+  const base = 100;
+  const exerciseBonus = Math.min(exerciseCount * 5, 50); // Up to 50 bonus for variety
+  const volumeBonus = Math.min(Math.floor(totalSets / 3) * 5, 50); // Up to 50 bonus for volume
+  return base + exerciseBonus + volumeBonus; // Max 200 XP for big workouts
+};

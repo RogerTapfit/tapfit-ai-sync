@@ -223,6 +223,22 @@ export function useBiometricMood() {
 
     toast.success('Mood logged successfully');
     
+    // Award XP for logging mood
+    try {
+      const { data: xpResult } = await supabase.rpc('award_xp', {
+        p_user_id: user.id,
+        p_xp_amount: 15,
+        p_source: 'mood'
+      });
+      if (xpResult) {
+        window.dispatchEvent(new CustomEvent('xpAwarded', {
+          detail: { amount: 15, source: 'mood', result: xpResult }
+        }));
+      }
+    } catch (xpError) {
+      console.error('Error awarding XP for mood:', xpError);
+    }
+    
     // Dispatch mood:updated event for cross-component sync
     window.dispatchEvent(new CustomEvent('mood:updated', {
       detail: {
@@ -232,6 +248,9 @@ export function useBiometricMood() {
         motivationLevel: entry.motivationLevel
       }
     }));
+    
+    // Trigger achievement check
+    window.dispatchEvent(new CustomEvent('achievement:check'));
     
     await fetchTodaysMood();
     await fetchWeeklyMoods();
