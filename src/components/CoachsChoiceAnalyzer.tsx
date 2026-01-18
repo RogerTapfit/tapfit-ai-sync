@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { FoodChatInterface } from './FoodChatInterface';
+import smartPickGuide from '@/assets/smart-pick-guide.png';
 
 interface ProductSummary {
   name: string;
@@ -185,9 +186,16 @@ export const CoachsChoiceAnalyzer = () => {
       {!shelfPhoto ? (
         <Card className="p-8">
           <div className="text-center space-y-4">
-            <Camera className="h-16 w-16 mx-auto text-muted-foreground" />
+            {/* Hero Image */}
+            <div className="rounded-xl overflow-hidden mb-4">
+              <img 
+                src={smartPickGuide} 
+                alt="Scan a store shelf to get AI recommendations" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
             <div>
-              <h3 className="text-xl font-semibold mb-2">Take a Photo of the Shelf</h3>
+              <h3 className="text-xl font-semibold mb-2">Scan the Shelf</h3>
               <p className="text-muted-foreground">
                 Capture multiple products clearly in one photo
               </p>
@@ -197,7 +205,7 @@ export const CoachsChoiceAnalyzer = () => {
                 <Button size="lg" className="w-full" asChild>
                   <span>
                     <Camera className="h-5 w-5 mr-2" />
-                    Take Photo
+                    Scan Shelf
                   </span>
                 </Button>
                 <input
