@@ -175,52 +175,52 @@ const FoodScanner = () => {
             transition={{ delay: 0.6 }}
           >
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="flex w-full overflow-x-auto gap-1 mb-6 sm:mb-8 h-auto p-1.5 bg-gradient-to-r from-muted/50 to-muted rounded-xl scrollbar-hide">
+              <TabsList className="grid grid-cols-4 sm:flex sm:flex-wrap w-full gap-1.5 mb-6 sm:mb-8 h-auto p-2 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
                 <TabsTrigger 
                   value="analyzer" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
                   <Camera className="h-5 w-5" />
                   <span>Food</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="product" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
                   <Barcode className="h-5 w-5" />
                   <span>Scan</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="coach" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
                   <Brain className="h-5 w-5" />
                   <span>Pick</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="menu" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
                   <FileText className="h-5 w-5" />
                   <span>Menu</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="builder" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
                   <ChefHat className="h-5 w-5" />
                   <span>Recipe</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="restaurants" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
                   <MapPin className="h-5 w-5" />
                   <span>Spots</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="planner" 
-                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white transition-all duration-300 rounded-lg"
+                  className="flex flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] sm:text-xs font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white transition-all duration-300 rounded-lg"
                 >
                   <Calendar className="h-5 w-5" />
                   <span>Plan</span>
