@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { AnimatedNumber } from './AnimatedNumber';
 import { calculateRecipeNutrition, RecipeNutrition } from '@/services/nutritionCalculatorService';
+import recipeBuilderGuide from '@/assets/recipe-builder-guide.png';
 
 interface RecipeRecommendation {
   name: string;
@@ -591,6 +592,14 @@ export const FoodRecipeBuilder: React.FC<FoodRecipeBuilderProps> = ({ onStateCha
         <CardContent className="space-y-6">
           {mode === 'photo' ? (
             <div className="space-y-4">
+              {/* Hero Image */}
+              <div className="rounded-xl overflow-hidden">
+                <img 
+                  src={recipeBuilderGuide} 
+                  alt="Snap a photo of your fridge to discover recipes" 
+                  className="w-full h-auto object-cover"
+                />
+              </div>
               <h3 className="font-semibold flex items-center gap-2">
                 <Camera className="h-5 w-5 text-primary" />
                 Capture Your Ingredients
