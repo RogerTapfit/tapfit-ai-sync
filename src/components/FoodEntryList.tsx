@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import {
   Trash2, 
   Image as ImageIcon,
   ChevronLeft,
+  Camera,
   Award,
   Loader2,
   Filter,
@@ -32,6 +34,7 @@ interface FoodEntryListProps {
 }
 
 const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) => {
+  const navigate = useNavigate();
   const { deleteFoodEntry, loading, getAllFoodEntries, getAllAlcoholEntries } = useNutrition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [allFoodEntries, setAllFoodEntries] = useState<FoodEntry[]>([]);
@@ -309,12 +312,22 @@ const FoodEntryList = ({ isOpen, onClose, onDataChange }: FoodEntryListProps) =>
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Utensils className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mb-4">
                       {viewMode === 'today' 
                         ? "No entries for today yet. Start by adding your first meal!" 
                         : "No food or alcohol entries yet. Start by adding your first meal!"
                       }
                     </p>
+                    <Button 
+                      onClick={() => {
+                        onClose();
+                        navigate('/food-scanner?tab=analyzer');
+                      }}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Log Food
+                    </Button>
                   </CardContent>
                 </Card>
               ) : viewMode === 'today' ? (
