@@ -359,4 +359,14 @@ All colors MUST be HSL for proper theming.
     animation: sober-glow 14s linear infinite;
     will-change: filter;
   }
+
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
