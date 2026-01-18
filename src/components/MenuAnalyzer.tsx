@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock, Star, ImageIcon } from "lucide-react";
-import menuScannerGuide from "@/assets/menu-guide-option1.png";
+import menuScannerGuide from "@/assets/menu-scanner-guide.png";
 import { YelpReviewsModal } from "@/components/YelpReviewsModal";
 import { DishDetailModal } from "@/components/DishDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
