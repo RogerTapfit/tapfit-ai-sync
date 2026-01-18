@@ -12,6 +12,9 @@ export interface UserHabit {
   goalPerDay: number;
   isActive: boolean;
   sortOrder: number;
+  reminderEnabled: boolean;
+  reminderTimes: string[];
+  reminderDays: number[];
 }
 
 export interface HabitCompletion {
@@ -163,7 +166,10 @@ export const useHabitTracking = () => {
         category: h.category,
         goalPerDay: h.goal_per_day,
         isActive: h.is_active,
-        sortOrder: h.sort_order
+        sortOrder: h.sort_order,
+        reminderEnabled: h.reminder_enabled ?? false,
+        reminderTimes: (h.reminder_times as string[]) ?? [],
+        reminderDays: (h.reminder_days as number[]) ?? [0, 1, 2, 3, 4, 5, 6],
       })));
     } catch (error) {
       console.error('Error fetching habits:', error);
@@ -380,7 +386,10 @@ export const useHabitTracking = () => {
         category: data.category,
         goalPerDay: data.goal_per_day,
         isActive: data.is_active,
-        sortOrder: data.sort_order
+        sortOrder: data.sort_order,
+        reminderEnabled: data.reminder_enabled ?? false,
+        reminderTimes: (data.reminder_times as string[]) ?? [],
+        reminderDays: (data.reminder_days as number[]) ?? [0, 1, 2, 3, 4, 5, 6],
       }]);
 
       toast.success(`Added "${name}" to your habits!`);

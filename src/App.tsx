@@ -65,6 +65,7 @@ import { AuthGuard } from "./components/AuthGuard";
 import { ScrollToTop } from "./components/ScrollToTop";
 import SafeAreaLayout from "./components/SafeAreaLayout";
 import { AlarmSchedulerProvider } from "./components/AlarmSchedulerProvider";
+import { HabitReminderSchedulerProvider } from "./components/HabitReminderSchedulerProvider";
 
 const queryClient = new QueryClient();
 
@@ -132,6 +133,7 @@ const App = () => {
             <ScrollToTop />
             <NFCHandler />
             <AlarmSchedulerProvider />
+            <HabitReminderSchedulerProvider />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={
