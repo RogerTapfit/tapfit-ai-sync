@@ -82,6 +82,36 @@ export const useGamerRank = () => {
     fetchStats();
   }, [fetchStats]);
 
+  // Listen for xpAwarded events from other parts of the app
+  useEffect(() => {
+    const handleXPAwarded = (event: CustomEvent<{ amount: number; source: string; result: XPAwardResult }>) => {
+      const { amount, source, result } = event.detail;
+      
+      // Update local state with the result
+      setStats(prev => prev ? {
+        ...prev,
+        total_xp: result.total_xp,
+        current_level: result.current_level,
+        prestige_level: result.prestige_level,
+        current_level_xp: result.current_level_xp,
+        xp_to_next_level: result.xp_to_next_level,
+        rank_title: result.rank_title,
+        rank_icon: result.rank_icon,
+      } : null);
+
+      // Set last XP gain for toast
+      setLastXPGain({ amount, source });
+
+      // Set level up data if leveled up
+      if (result.level_up || result.prestige_up) {
+        setLevelUpData(result);
+      }
+    };
+
+    window.addEventListener('xpAwarded', handleXPAwarded as EventListener);
+    return () => window.removeEventListener('xpAwarded', handleXPAwarded as EventListener);
+  }, []);
+
   const awardXP = useCallback(async (amount: number, source: string): Promise<XPAwardResult | null> => {
     if (!user?.id || amount <= 0) return null;
 
