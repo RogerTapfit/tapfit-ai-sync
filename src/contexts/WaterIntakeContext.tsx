@@ -190,6 +190,29 @@ export const WaterIntakeProvider = ({ children }: { children: ReactNode }) => {
         );
       }
 
+      // Award XP for logging any beverage (5 XP per log)
+      if (!isDehydrating) {
+        try {
+          const { data: xpResult } = await supabase.rpc('award_xp', {
+            p_user_id: user.id,
+            p_xp_amount: XP_ACTIONS.BEVERAGE_LOGGED,
+            p_source: 'hydration'
+          });
+
+          if (xpResult) {
+            window.dispatchEvent(new CustomEvent('xpAwarded', {
+              detail: {
+                amount: XP_ACTIONS.BEVERAGE_LOGGED,
+                source: 'hydration',
+                result: xpResult
+              }
+            }));
+          }
+        } catch (xpError) {
+          console.error('Error awarding XP for beverage:', xpError);
+        }
+      }
+
       const nutrition = calculateBeverageNutrition(amountOz, beverageType);
       
       if (nutrition.calories > 0) {
