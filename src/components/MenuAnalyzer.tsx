@@ -538,8 +538,8 @@ ${analysisResult.recommendations.healthiest.map(item => `- ${item.name} (${item.
                 size="lg"
                 className="h-24 flex flex-col gap-2 bg-gradient-to-r from-primary to-primary/80"
               >
-                <Camera className="h-8 w-8" />
-                Take Photo
+              <Camera className="h-8 w-8" />
+                Scan Menu
               </Button>
               <Button 
                 onClick={handleFileSelect} 
