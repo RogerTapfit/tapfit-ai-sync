@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { processImageFile } from '../utils/heicConverter';
 import { getCurrentLocalDate } from '@/utils/dateUtils';
 import { useChatbotContext } from '@/contexts/ChatbotContext';
+import foodAnalyzerGuide from '@/assets/food-analyzer-guide.png';
 
 // Enhanced food photo analyzer without barcode functionality
 
@@ -730,6 +731,14 @@ Health Grade: ${healthGrade}`;
         <CardContent className="space-y-6">
           {/* Photo Capture */}
           <div className="space-y-6">
+            {/* Hero Image */}
+            <div className="rounded-xl overflow-hidden">
+              <img 
+                src={foodAnalyzerGuide} 
+                alt="How to scan your food for nutritional analysis" 
+                className="w-full h-auto object-cover"
+              />
+            </div>
             <div className="text-center">
               <h3 className="text-xl font-semibold flex items-center justify-center gap-2 mb-2">
                 <Camera className="h-6 w-6 text-primary" />
