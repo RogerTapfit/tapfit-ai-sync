@@ -66,5 +66,23 @@ export const habitNotificationService = {
     if ('vibrate' in navigator) {
       navigator.vibrate([100, 50, 100]);
     }
+  },
+
+  sendTestNotification(habitName: string): void {
+    if (!this.hasPermission()) return;
+
+    new Notification('✅ Reminder Enabled!', {
+      body: `You'll be reminded to: ${habitName}`,
+      icon: '/favicon.ico',
+      tag: 'habit-reminder-test',
+      requireInteraction: false,
+    });
+  },
+
+  getPermissionStatus(): 'granted' | 'denied' | 'default' | 'unsupported' {
+    if (!('Notification' in window)) {
+      return 'unsupported';
+    }
+    return Notification.permission;
   }
 };

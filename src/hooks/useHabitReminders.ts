@@ -79,7 +79,10 @@ export const useHabitReminders = () => {
 
   // Check for reminders that should trigger now
   const checkReminders = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('⏸️ Habit reminder check skipped: no user');
+      return;
+    }
 
     const now = new Date();
     const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -90,6 +93,13 @@ export const useHabitReminders = () => {
     if (lastCheckRef.current === checkKey) return;
     lastCheckRef.current = checkKey;
 
+    console.log(`🔍 Checking habit reminders at ${currentTime} (day ${currentDay})`);
+
+    // Check notification permission
+    if (!habitNotificationService.hasPermission()) {
+      console.log('⚠️ Notification permission not granted');
+    }
+
     try {
       // Fetch habits with reminders enabled
       const { data: habits, error } = await supabase
@@ -99,7 +109,17 @@ export const useHabitReminders = () => {
         .eq('is_active', true)
         .eq('reminder_enabled', true);
 
-      if (error || !habits) return;
+      if (error) {
+        console.error('❌ Error fetching habits:', error);
+        return;
+      }
+
+      if (!habits || habits.length === 0) {
+        console.log('📭 No habits with reminders enabled');
+        return;
+      }
+
+      console.log(`📋 Found ${habits.length} habit(s) with reminders enabled`);
 
       for (const habit of habits as HabitWithReminders[]) {
         // Parse reminder settings
@@ -111,20 +131,33 @@ export const useHabitReminders = () => {
           : [0, 1, 2, 3, 4, 5, 6];
 
         // Check if today is a reminder day
-        if (!reminderDays.includes(currentDay)) continue;
+        if (!reminderDays.includes(currentDay)) {
+          console.log(`  ⏭️ ${habit.name}: Not scheduled for today (day ${currentDay})`);
+          continue;
+        }
+
+        console.log(`  📌 ${habit.name}: Scheduled times: ${reminderTimes.join(', ')}`);
 
         // Check if current time matches any reminder time
         for (const reminderTime of reminderTimes) {
           if (reminderTime === currentTime) {
+            console.log(`  ⏰ ${habit.name}: Time matches ${currentTime}!`);
+            
             // Check if already triggered
-            if (wasReminderTriggered(habit.id, currentTime)) continue;
+            if (wasReminderTriggered(habit.id, currentTime)) {
+              console.log(`  ✓ ${habit.name}: Already triggered this minute`);
+              continue;
+            }
 
             // Check if habit is already completed
             const completed = await isHabitCompletedToday(habit.id);
-            if (completed) continue;
+            if (completed) {
+              console.log(`  ✓ ${habit.name}: Already completed today`);
+              continue;
+            }
 
             // Trigger the reminder
-            console.log(`🔔 Habit reminder: ${habit.name} at ${currentTime}`);
+            console.log(`🔔 TRIGGERING REMINDER: ${habit.name} at ${currentTime}`);
             
             // Show notification
             habitNotificationService.showHabitReminder(habit.name, habit.icon);

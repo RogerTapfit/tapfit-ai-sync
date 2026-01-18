@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Bell, Plus, X, Clock } from 'lucide-react';
+import { Bell, Plus, X, Clock, AlertTriangle, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { habitNotificationService } from '@/services/habitNotificationService';
 import { toast } from 'sonner';
@@ -46,6 +46,7 @@ export const HabitReminderSettings = ({
   const [times, setTimes] = useState<string[]>(initialTimes.length > 0 ? initialTimes : ['08:00']);
   const [days, setDays] = useState<number[]>(initialDays.length > 0 ? initialDays : [0, 1, 2, 3, 4, 5, 6]);
   const [saving, setSaving] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'default' | 'unsupported'>('default');
 
   // Reset state when habit changes
   useEffect(() => {
@@ -53,6 +54,15 @@ export const HabitReminderSettings = ({
     setTimes(initialTimes.length > 0 ? initialTimes : ['08:00']);
     setDays(initialDays.length > 0 ? initialDays : [0, 1, 2, 3, 4, 5, 6]);
   }, [habitId, initialEnabled, initialTimes, initialDays]);
+
+  // Check notification permission status when sheet opens
+  useEffect(() => {
+    if (open) {
+      const status = habitNotificationService.getPermissionStatus();
+      setPermissionStatus(status);
+      console.log('📋 Notification permission status:', status);
+    }
+  }, [open]);
 
   const handleToggleDay = (day: number) => {
     setDays(prev => 
@@ -86,12 +96,36 @@ export const HabitReminderSettings = ({
     if (value) {
       // Request notification permission when enabling
       const granted = await habitNotificationService.requestPermission();
+      setPermissionStatus(habitNotificationService.getPermissionStatus());
+      
       if (!granted) {
-        toast.error('Please enable notifications in your browser settings');
+        toast.error('Notifications blocked. Please enable in browser settings.', {
+          duration: 5000,
+          action: {
+            label: 'How?',
+            onClick: () => {
+              toast.info('Click the lock icon in your browser address bar → Site Settings → Notifications → Allow');
+            }
+          }
+        });
         return;
       }
+      
+      // Send a test notification to confirm it works
+      habitNotificationService.sendTestNotification(habitName);
+      toast.success('Test notification sent! Check if you received it.');
     }
     setEnabled(value);
+  };
+
+  const handleRequestPermission = async () => {
+    const granted = await habitNotificationService.requestPermission();
+    setPermissionStatus(habitNotificationService.getPermissionStatus());
+    if (granted) {
+      toast.success('Notifications enabled!');
+    } else {
+      toast.error('Notifications still blocked. Check browser settings.');
+    }
   };
 
   const handleSave = async () => {
@@ -130,6 +164,39 @@ export const HabitReminderSettings = ({
         </SheetHeader>
 
         <div className="space-y-6 pb-6">
+          {/* Permission warning */}
+          {permissionStatus === 'denied' && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">Notifications Blocked</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click the lock icon in your browser address bar → Site Settings → Notifications → Allow
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRequestPermission}
+                  className="mt-2"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {permissionStatus === 'unsupported' && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-600">Notifications Not Supported</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your browser doesn't support notifications. Try using Chrome or the native app.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Habit preview */}
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
             <span className="text-2xl">{habitIcon}</span>
@@ -143,6 +210,7 @@ export const HabitReminderSettings = ({
               id="reminder-enabled"
               checked={enabled}
               onCheckedChange={handleEnableChange}
+              disabled={permissionStatus === 'unsupported'}
             />
           </div>
 
@@ -229,6 +297,14 @@ export const HabitReminderSettings = ({
               </div>
             </>
           )}
+
+          {/* Info tip */}
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              💡 Keep TapFit open in your browser tab for reminders to work. For background notifications, use the native app.
+            </p>
+          </div>
 
           {/* Save button */}
           <Button
