@@ -201,17 +201,19 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                           className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer",
+                            "flex items-center gap-3 p-3 rounded-lg border transition-all",
                             isCompleted
                               ? "bg-green-500/10 border-green-500/30"
                               : "bg-card hover:bg-muted/50 border-border"
                           )}
-                          onClick={() => !isToggling && handleToggle(habit.id)}
                         >
-                          <div className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all",
-                            isCompleted ? "bg-green-500/20" : "bg-muted"
-                          )}>
+                          <div 
+                            className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all cursor-pointer",
+                              isCompleted ? "bg-green-500/20" : "bg-muted"
+                            )}
+                            onClick={() => !isToggling && handleToggle(habit.id)}
+                          >
                             {isToggling ? (
                               <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                             ) : isCompleted ? (
@@ -221,7 +223,10 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                             )}
                           </div>
 
-                          <div className="flex-1">
+                          <div 
+                            className="flex-1 cursor-pointer"
+                            onClick={() => !isToggling && handleToggle(habit.id)}
+                          >
                             <p className={cn(
                               "font-medium transition-all",
                               isCompleted && "line-through text-muted-foreground"
@@ -239,6 +244,28 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                               <span className="text-sm font-medium">{streak}</span>
                             </div>
                           )}
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 shrink-0",
+                              habit.reminderEnabled 
+                                ? "text-primary" 
+                                : "text-muted-foreground"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReminderSettingsHabit(habit);
+                            }}
+                            title="Set reminder"
+                          >
+                            {habit.reminderEnabled ? (
+                              <Bell className="h-4 w-4" />
+                            ) : (
+                              <BellOff className="h-4 w-4" />
+                            )}
+                          </Button>
                         </motion.div>
                       );
                     })}
