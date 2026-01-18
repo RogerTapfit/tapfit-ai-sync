@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Plus, Flame, Trash2, Sparkles } from "lucide-react";
+import { Check, Plus, Flame, Trash2, Sparkles, Bell, BellOff } from "lucide-react";
 import { useHabitTracking, HABIT_TEMPLATES, CATEGORY_EMOJIS, detectCategoryAndIcon, UserHabit } from "@/hooks/useHabitTracking";
 import { useAuth } from "@/components/AuthGuard";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { HabitReminderSettings } from "./HabitReminderSettings";
 
 interface HabitTrackerModalProps {
   open: boolean;
@@ -32,7 +33,8 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
     addHabit,
     deleteHabit,
     getTodaysProgress,
-    getHabitStreak
+    getHabitStreak,
+    refreshData
   } = useHabitTracking();
 
   const [customName, setCustomName] = useState("");
@@ -41,6 +43,7 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
   const [togglingHabit, setTogglingHabit] = useState<string | null>(null);
   const [hasManuallySelectedIcon, setHasManuallySelectedIcon] = useState(false);
   const [hasManuallySelectedCategory, setHasManuallySelectedCategory] = useState(false);
+  const [reminderSettingsHabit, setReminderSettingsHabit] = useState<UserHabit | null>(null);
 
   const { completed, total } = getTodaysProgress();
   const allCompleted = total > 0 && completed === total;
@@ -120,6 +123,12 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
   const handleIconSelect = (icon: string) => {
     setCustomIcon(icon);
     setHasManuallySelectedIcon(true);
+  };
+
+  const handleReminderSave = () => {
+    // Refresh habits data to get updated reminder settings
+    refreshData();
+    setReminderSettingsHabit(null);
   };
 
   if (isGuest) {
@@ -275,10 +284,28 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                             {categoryHabits.map((habit) => (
                               <div
                                 key={habit.id}
-                                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                                className="flex items-center gap-2 p-2 rounded-lg bg-muted/50"
                               >
                                 <span className="text-xl">{habit.icon}</span>
-                                <span className="flex-1 text-sm">{habit.name}</span>
+                                <span className="flex-1 text-sm truncate">{habit.name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn(
+                                    "h-8 w-8",
+                                    habit.reminderEnabled 
+                                      ? "text-primary" 
+                                      : "text-muted-foreground"
+                                  )}
+                                  onClick={() => setReminderSettingsHabit(habit)}
+                                  title="Set reminder"
+                                >
+                                  {habit.reminderEnabled ? (
+                                    <Bell className="h-4 w-4" />
+                                  ) : (
+                                    <BellOff className="h-4 w-4" />
+                                  )}
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -409,6 +436,21 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
             </ScrollArea>
           </TabsContent>
         </Tabs>
+
+        {/* Reminder Settings Sheet */}
+        {reminderSettingsHabit && (
+          <HabitReminderSettings
+            open={!!reminderSettingsHabit}
+            onOpenChange={(open) => !open && setReminderSettingsHabit(null)}
+            habitId={reminderSettingsHabit.id}
+            habitName={reminderSettingsHabit.name}
+            habitIcon={reminderSettingsHabit.icon}
+            initialEnabled={reminderSettingsHabit.reminderEnabled}
+            initialTimes={reminderSettingsHabit.reminderTimes}
+            initialDays={reminderSettingsHabit.reminderDays}
+            onSave={handleReminderSave}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
