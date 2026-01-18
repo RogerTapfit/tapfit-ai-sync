@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock, Star, ImageIcon } from "lucide-react";
+import menuScannerGuide from "@/assets/menu-scanner-guide.png";
 import { YelpReviewsModal } from "@/components/YelpReviewsModal";
 import { DishDetailModal } from "@/components/DishDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -499,6 +500,23 @@ ${analysisResult.recommendations.healthiest.map(item => `- ${item.name} (${item.
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Instructional Hero Image */}
+        {menuImages.length === 0 && (
+          <div className="relative rounded-xl overflow-hidden mb-4">
+            <img 
+              src={menuScannerGuide} 
+              alt="How to scan a menu"
+              className="w-full h-44 object-cover opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+            <div className="absolute bottom-3 left-4 right-4 text-center">
+              <p className="text-sm font-medium text-foreground drop-shadow-lg">
+                📷 Point your camera at any menu to get instant nutrition info
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Upload Section */}
