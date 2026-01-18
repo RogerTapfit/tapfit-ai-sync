@@ -333,6 +333,22 @@ export const useHabitTracking = () => {
           _description: `Completed habit: ${habits.find(h => h.id === habitId)?.name || 'Habit'}`
         });
 
+        // Award XP for habit completion
+        try {
+          const { data: xpResult } = await supabase.rpc('award_xp', {
+            p_user_id: user.id,
+            p_xp_amount: 10,
+            p_source: 'habit'
+          });
+          if (xpResult) {
+            window.dispatchEvent(new CustomEvent('xpAwarded', {
+              detail: { amount: 10, source: 'habit', result: xpResult }
+            }));
+          }
+        } catch (xpError) {
+          console.error('Error awarding XP for habit:', xpError);
+        }
+
         // Check if all habits completed for bonus
         const allCompleted = habits.every(h => 
           h.id === habitId || todaysCompletions.some(c => c.habitId === h.id)
@@ -346,8 +362,28 @@ export const useHabitTracking = () => {
             _transaction_type: 'habit_bonus',
             _description: 'All daily habits completed bonus!'
           });
+          
+          // Award bonus XP for completing all habits
+          try {
+            const { data: bonusXpResult } = await supabase.rpc('award_xp', {
+              p_user_id: user.id,
+              p_xp_amount: 50,
+              p_source: 'all_habits'
+            });
+            if (bonusXpResult) {
+              window.dispatchEvent(new CustomEvent('xpAwarded', {
+                detail: { amount: 50, source: 'all_habits', result: bonusXpResult }
+              }));
+            }
+          } catch (xpError) {
+            console.error('Error awarding bonus XP for all habits:', xpError);
+          }
+          
           toast.success('🎉 All habits done! +10 bonus coins!');
         }
+
+        // Trigger achievement check
+        window.dispatchEvent(new CustomEvent('achievement:check'));
 
         // Refresh streaks
         fetchStreaks();

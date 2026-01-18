@@ -13,6 +13,7 @@ import {
 import { CardioPrescriptionService } from '@/services/cardioPrescriptionService';
 import { CardioEngineService } from '@/services/cardioEngineService';
 import { toast } from '@/hooks/use-toast';
+import { XP_ACTIONS } from '@/config/gamerRanks';
 
 export function useCardioWorkout() {
   const [currentSession, setCurrentSession] = useState<CardioSession | null>(null);
@@ -316,6 +317,25 @@ export function useCardioWorkout() {
         title: "Workout Complete!",
         description: `Great job! You burned ~${caloriesBurned} calories in ${Math.round(elapsedTime / 60)} minutes.`,
       });
+
+      // Award XP for cardio session
+      try {
+        const { data: xpResult } = await supabase.rpc('award_xp', {
+          p_user_id: currentSession.user_id,
+          p_xp_amount: XP_ACTIONS.CARDIO_SESSION,
+          p_source: 'cardio'
+        });
+        if (xpResult) {
+          window.dispatchEvent(new CustomEvent('xpAwarded', {
+            detail: { amount: XP_ACTIONS.CARDIO_SESSION, source: 'cardio', result: xpResult }
+          }));
+        }
+      } catch (xpError) {
+        console.error('Error awarding XP for cardio:', xpError);
+      }
+
+      // Trigger achievement check
+      window.dispatchEvent(new CustomEvent('achievement:check'));
 
       // Reset state
       setCurrentSession(null);
