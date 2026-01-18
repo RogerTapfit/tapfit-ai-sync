@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useGamerRank } from '@/hooks/useGamerRank';
 import { useGamerAchievements } from '@/hooks/useGamerAchievements';
+import { useAchievementChecker } from '@/hooks/useAchievementChecker';
+import { useRetroactiveXP } from '@/hooks/useRetroactiveXP';
 import { getRankForLevel, getPrestigeInfo } from '@/config/gamerRanks';
-import { Trophy, ChevronRight, Zap, Star } from 'lucide-react';
+import { Trophy, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LevelUpAnimation } from './LevelUpAnimation';
 import { XPGainToast } from './XPGainToast';
@@ -15,6 +16,25 @@ export const GamerScoreWidget = () => {
   const navigate = useNavigate();
   const { stats, loading, getProgressPercentage, lastXPGain, clearLastXPGain, levelUpData, clearLevelUpData } = useGamerRank();
   const { getUnlockedCount, getTotalAchievements, getRecentUnlocks } = useGamerAchievements();
+  const { checkAchievements, triggerCheck } = useAchievementChecker();
+  
+  // Run retroactive XP calculation on mount
+  useRetroactiveXP();
+
+  // Check achievements on mount
+  useEffect(() => {
+    checkAchievements();
+  }, [checkAchievements]);
+
+  // Listen for achievement check triggers
+  useEffect(() => {
+    const handleAchievementCheck = () => {
+      triggerCheck();
+    };
+
+    window.addEventListener('achievement:check', handleAchievementCheck);
+    return () => window.removeEventListener('achievement:check', handleAchievementCheck);
+  }, [triggerCheck]);
 
   if (loading) {
     return (
