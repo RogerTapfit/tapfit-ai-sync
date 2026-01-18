@@ -1,9 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, Loader2, Send, Sparkles, Heart, Trash2, BookOpen, Plus, X, ChevronLeft, ChevronRight, Scale, Info, ChevronDown, Share2, Utensils, Clock, Star, ImageIcon } from "lucide-react";
-import menuGuideOption1 from "@/assets/menu-guide-option1.png";
-import menuGuideOption2 from "@/assets/menu-guide-option2.png";
-import menuGuideOption3 from "@/assets/menu-guide-option3.png";
-import menuGuideOption4 from "@/assets/menu-guide-option4.png";
+import menuScannerGuide from "@/assets/menu-guide-option1.png";
 import { YelpReviewsModal } from "@/components/YelpReviewsModal";
 import { DishDetailModal } from "@/components/DishDetailModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -505,39 +502,20 @@ ${analysisResult.recommendations.healthiest.map(item => `- ${item.name} (${item.
           </Card>
         )}
 
-        {/* Image Style Options Preview */}
+        {/* Instructional Hero Image */}
         {menuImages.length === 0 && (
-          <div className="mb-4 space-y-3">
-            <p className="text-sm font-medium text-muted-foreground text-center">
-              🎨 Pick your favorite style for the menu scanner guide:
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { src: menuGuideOption1, label: "1. Realistic Photo", desc: "Professional, trustworthy" },
-                { src: menuGuideOption2, label: "2. Flat Illustration", desc: "Clean, modern" },
-                { src: menuGuideOption3, label: "3. 3D Isometric", desc: "Premium, trendy" },
-                { src: menuGuideOption4, label: "4. Neon Cyberpunk", desc: "Futuristic, tech" },
-              ].map((option, idx) => (
-                <div 
-                  key={idx}
-                  className="relative rounded-xl overflow-hidden border-2 border-border hover:border-primary transition-colors cursor-pointer group"
-                >
-                  <img 
-                    src={option.src} 
-                    alt={option.label}
-                    className="w-full h-28 object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-                  <div className="absolute bottom-1 left-2 right-2">
-                    <p className="text-xs font-semibold text-foreground drop-shadow-lg">{option.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{option.desc}</p>
-                  </div>
-                </div>
-              ))}
+          <div className="relative rounded-xl overflow-hidden mb-4">
+            <img 
+              src={menuScannerGuide} 
+              alt="How to scan a menu"
+              className="w-full h-44 object-cover opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+            <div className="absolute bottom-3 left-4 right-4 text-center">
+              <p className="text-sm font-medium text-foreground drop-shadow-lg">
+                📷 Point your camera at any menu to get instant nutrition info
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Tell me which number you prefer!
-            </p>
           </div>
         )}
 
