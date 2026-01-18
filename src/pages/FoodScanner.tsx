@@ -1,4 +1,4 @@
-import { Sparkles, Zap, Stars, Scan, Target, MenuSquare, Utensils, UtensilsCrossed, Calendar } from "lucide-react";
+import { Camera, Zap, ChefHat, Barcode, Brain, FileText, MapPin, UtensilsCrossed, Calendar, Stars } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -175,55 +175,55 @@ const FoodScanner = () => {
             transition={{ delay: 0.6 }}
           >
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-7 mb-6 sm:mb-8 h-12 sm:h-14 p-1 bg-gradient-to-r from-muted/50 to-muted rounded-xl">
+              <TabsList className="flex w-full overflow-x-auto gap-1 mb-6 sm:mb-8 h-auto p-1.5 bg-gradient-to-r from-muted/50 to-muted rounded-xl scrollbar-hide">
                 <TabsTrigger 
                   value="analyzer" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
-                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Analyzer</span>
+                  <Camera className="h-5 w-5" />
+                  <span>Food</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="product" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
-                  <Scan className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Scanner</span>
+                  <Barcode className="h-5 w-5" />
+                  <span>Scan</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="coach" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
-                  <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Pick</span>
+                  <Brain className="h-5 w-5" />
+                  <span>Pick</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="menu" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
-                  <MenuSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Menu</span>
+                  <FileText className="h-5 w-5" />
+                  <span>Menu</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="builder" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
-                  <Stars className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Builder</span>
+                  <ChefHat className="h-5 w-5" />
+                  <span>Recipe</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="restaurants" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground transition-all duration-300 rounded-lg"
                 >
-                  <Utensils className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Spots</span>
+                  <MapPin className="h-5 w-5" />
+                  <span>Spots</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="planner" 
-                  className="flex items-center gap-1 sm:gap-2 text-xs sm:text-base py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white transition-all duration-300"
+                  className="flex flex-col items-center gap-0.5 min-w-[52px] px-2 sm:px-4 py-2 text-[10px] sm:text-xs data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white transition-all duration-300 rounded-lg"
                 >
-                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden xl:inline">Planner</span>
+                  <Calendar className="h-5 w-5" />
+                  <span>Plan</span>
                 </TabsTrigger>
               </TabsList>
 
