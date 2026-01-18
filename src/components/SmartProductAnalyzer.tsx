@@ -23,6 +23,7 @@ import { useChatbotContext } from '@/contexts/ChatbotContext';
 import { PriceLookupService, PriceLookupResult } from '@/services/priceLookupService';
 import { ProductPriceCard } from './ProductPriceCard';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import barcodeScannerGuide from '@/assets/barcode-scanner-guide.png';
 
 interface SupplementAnalysis {
   dosage_form?: string;
@@ -1196,6 +1197,14 @@ ${analysisResult.chemical_analysis.food_dyes.map(d => `- ${d.name}: ${d.health_c
                 {/* Barcode Mode */}
                 {scanMode === 'barcode' && (
                   <div className="space-y-4">
+                    {/* Hero Image */}
+                    <div className="rounded-xl overflow-hidden">
+                      <img 
+                        src={barcodeScannerGuide} 
+                        alt="How to scan a product barcode" 
+                        className="w-full h-auto object-cover"
+                      />
+                    </div>
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         type="button"
