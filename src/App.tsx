@@ -9,6 +9,7 @@ import { nfcService } from "./services/nfcService";
 import { App as CapacitorApp } from '@capacitor/app';
 import { ChatbotProvider } from "./contexts/ChatbotContext";
 import { WaterIntakeProvider } from "./contexts/WaterIntakeContext";
+import { GymThemeProvider } from "./contexts/GymThemeContext";
 import GlobalChatbot from "./components/GlobalChatbot";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -123,13 +124,14 @@ const App = () => {
   console.log('📱 User Agent:', navigator.userAgent);
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-      <HashRouter>
-        <ChatbotProvider>
-          <SafeAreaLayout>
+    <GymThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+        <HashRouter>
+          <ChatbotProvider>
+            <SafeAreaLayout>
             <ScrollToTop />
             <NFCHandler />
             <AlarmSchedulerProvider />
@@ -294,13 +296,14 @@ const App = () => {
                 </AuthGuard>
               } />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-            <GlobalChatbot />
-          </SafeAreaLayout>
-        </ChatbotProvider>
-      </HashRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+              </Routes>
+              <GlobalChatbot />
+            </SafeAreaLayout>
+          </ChatbotProvider>
+        </HashRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </GymThemeProvider>
   );
 };
 
