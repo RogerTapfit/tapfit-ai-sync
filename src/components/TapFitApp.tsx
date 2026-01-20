@@ -271,8 +271,8 @@ const TapFitApp = () => {
             }}
           />
         </div>
-        {/* Spacer for the fixed logo header on mobile */}
-        <div className="md:hidden" style={{ height: `${Math.max(60, 20 * (currentTheme.logoScale || 1) + 16)}px` }} />
+        {/* Spacer for the fixed logo header on mobile - reduced spacing */}
+        <div className="md:hidden pt-16" />
         <div className="absolute right-4 z-50 safe-top-offset">
           <NotificationBell />
         </div>
