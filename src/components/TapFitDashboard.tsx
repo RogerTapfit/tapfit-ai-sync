@@ -42,6 +42,8 @@ import { useRecentWorkouts } from "@/hooks/useRecentWorkouts";
 import { Camera, Calendar } from "lucide-react";
 import { ComprehensiveCalendar } from "./ComprehensiveCalendar";
 import { usePageContext } from "@/hooks/usePageContext";
+import { useGymTheme } from "@/contexts/GymThemeContext";
+import { GymThemeSwitcher } from "./GymThemeSwitcher";
 
 interface TapFitDashboardProps {
   onPageChange?: (page: string) => void;
@@ -53,6 +55,9 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
   const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showAvatarBuilder, setShowAvatarBuilder] = useState(false);
   const [userProfile, setUserProfile] = useState<{ full_name?: string; username?: string; id?: string } | null>(null);
+  
+  // Gym theme context
+  const { currentTheme, isDemo } = useGymTheme();
   
   // Use the new AI insights hook
   const { insights: aiInsights, loading: insightsLoading, lastUpdated, refetch: refetchInsights } = useAIInsights(userProfile?.id);
@@ -241,16 +246,39 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           loading="eager"
         />
 
-        {/* TapFit wordmark logo top-left */}
-        <div className="absolute left-3 top-3 sm:left-4 z-20">
-          <span className="px-2 py-1 rounded-md bg-background/50 backdrop-blur-sm text-foreground font-extrabold tracking-tight text-sm">TapFit</span>
+        {/* Gym logo / TapFit wordmark top-left */}
+        <div className="absolute left-3 top-3 sm:left-4 z-20 flex items-center gap-2">
+          {isDemo ? (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background/60 backdrop-blur-sm">
+              <img 
+                src={currentTheme.logoUrl} 
+                alt={currentTheme.displayName}
+                className="h-6 max-w-20 object-contain"
+              />
+              <span className="text-[10px] text-muted-foreground">
+                powered by <span className="font-bold text-foreground">TapFit</span>
+              </span>
+            </div>
+          ) : (
+            <span className="px-2 py-1 rounded-md bg-background/50 backdrop-blur-sm text-foreground font-extrabold tracking-tight text-sm">
+              TapFit
+            </span>
+          )}
         </div>
 
-        {/* Status indicators */}
-        <div className="absolute right-3 top-3 md:hidden">
+        {/* Theme Switcher & Status indicators */}
+        <div className="absolute right-3 top-3 flex items-center gap-2 z-20">
+          <GymThemeSwitcher 
+            trigger={
+              <button className="p-1.5 rounded-md bg-background/50 backdrop-blur-sm hover:bg-background/70 transition-colors">
+                <Palette className="h-4 w-4 text-foreground/80" />
+              </button>
+            }
+          />
           <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
         </div>
         <div className="hidden md:flex absolute right-6 top-6 items-center gap-2">
+          <GymThemeSwitcher />
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
           <span className="text-sm text-foreground/80">{isConnected ? 'Connected' : 'Connecting...'}</span>
         </div>
