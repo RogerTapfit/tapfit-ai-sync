@@ -260,14 +260,11 @@ const TapFitApp = () => {
       />
       <div className="flex-1 md:ml-0 pt-20 md:pt-0 relative">
         {/* Mobile Header with Gym Logo */}
-        <div className="md:hidden fixed inset-x-0 top-0 z-40 safe-top flex items-center justify-center h-16 pt-3 bg-background/90 backdrop-blur-sm">
+        <div className="md:hidden fixed inset-x-0 top-0 z-40 safe-top flex items-center justify-center h-14 bg-background/95 backdrop-blur-sm overflow-hidden">
           <img 
             src={currentTheme.logoUrl} 
             alt={`${currentTheme.displayName} Logo`}
-            className="h-12 max-w-[200px] object-contain drop-shadow-lg"
-            style={{
-              transform: `scale(${currentTheme.logoScale || 1})`
-            }}
+            className="h-10 max-w-[180px] object-contain drop-shadow-lg"
           />
         </div>
         <div className="absolute right-4 z-50 safe-top-offset">
