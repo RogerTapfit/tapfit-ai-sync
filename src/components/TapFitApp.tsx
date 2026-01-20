@@ -7,6 +7,7 @@ import { useAuth } from "./AuthGuard";
 import LoadingSpinner from "./LoadingSpinner";
 import { VersionDisplay } from "./VersionDisplay";
 import { NotificationBell } from "./social/NotificationBell";
+import { useGymTheme } from "@/contexts/GymThemeContext";
 
 // Lazy load with retry helper to mitigate Safari's "Importing a module script failed" on chunk fetch
 const lazyWithRetry = (factory: () => Promise<any>) => {
@@ -79,6 +80,7 @@ class ChunkErrorBoundary extends React.Component<{ children: React.ReactNode }, 
 const TapFitApp = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const { user, isGuest, signOut } = useAuth();
+  const { currentTheme } = useGymTheme();
 
   const renderSocialPage = () => (
     <div className="min-h-screen bg-background p-4 md:pl-8 space-y-6">
@@ -257,6 +259,14 @@ const TapFitApp = () => {
         onSignOut={signOut}
       />
       <div className="flex-1 md:ml-0 pt-20 md:pt-0 relative">
+        {/* Mobile Header with Gym Logo */}
+        <div className="md:hidden absolute inset-x-0 top-0 z-40 safe-top-offset flex items-center justify-center pointer-events-none">
+          <img 
+            src={currentTheme.logoUrl} 
+            alt={`${currentTheme.displayName} Logo`}
+            className="h-10 max-w-[140px] object-contain drop-shadow-lg"
+          />
+        </div>
         <div className="absolute right-4 z-50 safe-top-offset">
           <NotificationBell />
         </div>
