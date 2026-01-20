@@ -160,7 +160,7 @@ export const gymThemes: Record<string, GymTheme> = {
     displayName: 'LA Fitness',
     logoUrl: laFitnessLogo,
     heroBackground: laFitnessBg,
-    logoScale: 4, // LA Fitness logo needs to be displayed larger
+    logoScale: 12, // LA Fitness logo needs to be displayed 3x larger than before (was 4)
     colors: {
       primary: '25 100% 50%', // Orange
       primaryForeground: '0 0% 98%',
