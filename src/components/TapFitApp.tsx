@@ -258,9 +258,9 @@ const TapFitApp = () => {
         isGuest={isGuest}
         onSignOut={signOut}
       />
-      <div className="flex-1 md:ml-0 pt-20 md:pt-0 relative">
-        {/* Mobile Header with Gym Logo */}
-        <div className="md:hidden absolute inset-x-0 top-0 z-40 safe-top-offset flex items-center justify-center pointer-events-none">
+      <div className="flex-1 md:ml-0 relative">
+        {/* Mobile Header with Gym Logo - fixed at top */}
+        <div className="md:hidden fixed inset-x-0 top-0 z-40 safe-top flex items-center justify-center bg-background/80 backdrop-blur-sm py-2">
           <img 
             src={currentTheme.logoUrl} 
             alt={`${currentTheme.displayName} Logo`}
@@ -271,6 +271,8 @@ const TapFitApp = () => {
             }}
           />
         </div>
+        {/* Spacer for the fixed logo header on mobile */}
+        <div className="md:hidden" style={{ height: `${Math.max(60, 20 * (currentTheme.logoScale || 1) + 16)}px` }} />
         <div className="absolute right-4 z-50 safe-top-offset">
           <NotificationBell />
         </div>
