@@ -202,8 +202,8 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
       {/* Hero Section */}
       <div className="relative overflow-hidden rounded-2xl h-[250px] sm:h-[270px] md:h-[280px] lg:h-[320px]">
         <img 
-          src={heroImage} 
-          alt="TapFit Futuristic Gym" 
+          src={currentTheme.heroBackground} 
+          alt={`${currentTheme.displayName} Gym`}
           className="w-full h-full object-cover object-center"
         />
         {/* Stronger left-to-right overlay for contrast on small screens; lighter on md+ */}
