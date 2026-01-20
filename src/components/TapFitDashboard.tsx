@@ -246,15 +246,10 @@ const TapFitDashboard = ({ onPageChange }: TapFitDashboardProps) => {
           loading="eager"
         />
 
-        {/* Gym logo / TapFit wordmark top-left */}
+        {/* TapFit branding top-left */}
         <div className="absolute left-3 top-3 sm:left-4 z-20 flex items-center gap-2">
           {isDemo ? (
             <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-background/60 backdrop-blur-sm">
-              <img 
-                src={currentTheme.logoUrl} 
-                alt={currentTheme.displayName}
-                className="h-6 max-w-20 object-contain"
-              />
               <span className="text-[10px] text-muted-foreground">
                 powered by <span className="font-bold text-foreground">TapFit</span>
               </span>
