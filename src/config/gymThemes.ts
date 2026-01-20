@@ -6,6 +6,8 @@ import twentyFourHourLogo from '@/assets/gyms/24-hour-fitness.png';
 import planetFitnessLogo from '@/assets/gyms/planet-fitness.png';
 import laFitnessLogo from '@/assets/gyms/la-fitness.png';
 import bayClubLogo from '@/assets/gyms/bay-club.png';
+import goldsGymLogo from '@/assets/gyms/golds-gym.png';
+import equinoxLogo from '@/assets/gyms/equinox.png';
 
 export interface GymTheme {
   id: string;
@@ -202,7 +204,7 @@ export const gymThemes: Record<string, GymTheme> = {
   equinox: {
     id: 'equinox',
     displayName: 'Equinox',
-    logoUrl: tapfitLogo, // Placeholder - no logo uploaded
+    logoUrl: equinoxLogo,
     colors: {
       primary: '0 0% 15%', // Near black
       primaryForeground: '45 80% 55%', // Gold text
@@ -232,7 +234,7 @@ export const gymThemes: Record<string, GymTheme> = {
   golds: {
     id: 'golds',
     displayName: "Gold's Gym",
-    logoUrl: tapfitLogo, // Placeholder - no logo uploaded
+    logoUrl: goldsGymLogo,
     colors: {
       primary: '45 90% 50%', // Gold
       primaryForeground: '0 0% 10%',
