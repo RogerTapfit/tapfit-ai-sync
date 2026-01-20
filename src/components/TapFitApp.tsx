@@ -264,7 +264,11 @@ const TapFitApp = () => {
           <img 
             src={currentTheme.logoUrl} 
             alt={`${currentTheme.displayName} Logo`}
-            className="h-20 max-w-[280px] object-contain drop-shadow-lg"
+            className="object-contain drop-shadow-lg"
+            style={{
+              height: `${20 * (currentTheme.logoScale || 1)}px`,
+              maxWidth: `${280 * (currentTheme.logoScale || 1)}px`
+            }}
           />
         </div>
         <div className="absolute right-4 z-50 safe-top-offset">

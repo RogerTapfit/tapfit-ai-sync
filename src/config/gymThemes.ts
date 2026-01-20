@@ -23,6 +23,7 @@ export interface GymTheme {
   displayName: string;
   logoUrl: string;
   heroBackground: string;
+  logoScale?: number; // Optional multiplier for logo display size (default 1)
   colors: {
     // Primary brand color (main buttons, accents)
     primary: string; // HSL values e.g. "0 84% 60%"
@@ -159,6 +160,7 @@ export const gymThemes: Record<string, GymTheme> = {
     displayName: 'LA Fitness',
     logoUrl: laFitnessLogo,
     heroBackground: laFitnessBg,
+    logoScale: 4, // LA Fitness logo needs to be displayed larger
     colors: {
       primary: '25 100% 50%', // Orange
       primaryForeground: '0 0% 98%',
