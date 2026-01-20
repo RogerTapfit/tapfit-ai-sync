@@ -9,10 +9,20 @@ import bayClubLogo from '@/assets/gyms/bay-club.png';
 import goldsGymLogo from '@/assets/gyms/golds-gym.png';
 import equinoxLogo from '@/assets/gyms/equinox.png';
 
+// Background images for each gym theme
+import tapfitBg from '@/assets/tapfit-hero-new.jpg';
+import twentyFourHourBg from '@/assets/gyms/backgrounds/24-hour-fitness-bg.jpg';
+import planetFitnessBg from '@/assets/gyms/backgrounds/planet-fitness-bg.jpg';
+import laFitnessBg from '@/assets/gyms/backgrounds/la-fitness-bg.jpg';
+import bayClubBg from '@/assets/gyms/backgrounds/bay-club-bg.jpg';
+import equinoxBg from '@/assets/gyms/backgrounds/equinox-bg.jpg';
+import goldsGymBg from '@/assets/gyms/backgrounds/golds-gym-bg.jpg';
+
 export interface GymTheme {
   id: string;
   displayName: string;
   logoUrl: string;
+  heroBackground: string;
   colors: {
     // Primary brand color (main buttons, accents)
     primary: string; // HSL values e.g. "0 84% 60%"
@@ -55,6 +65,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: 'tapfit',
     displayName: 'TapFit',
     logoUrl: tapfitLogo,
+    heroBackground: tapfitBg,
     colors: {
       primary: '0 84% 60%',
       primaryForeground: '0 0% 98%',
@@ -85,6 +96,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: '24hour',
     displayName: '24 Hour Fitness',
     logoUrl: twentyFourHourLogo,
+    heroBackground: twentyFourHourBg,
     colors: {
       primary: '216 100% 45%', // Blue
       primaryForeground: '0 0% 98%',
@@ -115,6 +127,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: 'planet',
     displayName: 'Planet Fitness',
     logoUrl: planetFitnessLogo,
+    heroBackground: planetFitnessBg,
     colors: {
       primary: '280 100% 40%', // Purple
       primaryForeground: '0 0% 98%',
@@ -145,6 +158,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: 'lafitness',
     displayName: 'LA Fitness',
     logoUrl: laFitnessLogo,
+    heroBackground: laFitnessBg,
     colors: {
       primary: '25 100% 50%', // Orange
       primaryForeground: '0 0% 98%',
@@ -175,6 +189,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: 'bayclub',
     displayName: 'Bay Club',
     logoUrl: bayClubLogo,
+    heroBackground: bayClubBg,
     colors: {
       primary: '220 60% 30%', // Navy blue
       primaryForeground: '0 0% 98%',
@@ -205,6 +220,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: 'equinox',
     displayName: 'Equinox',
     logoUrl: equinoxLogo,
+    heroBackground: equinoxBg,
     colors: {
       primary: '0 0% 15%', // Near black
       primaryForeground: '45 80% 55%', // Gold text
@@ -235,6 +251,7 @@ export const gymThemes: Record<string, GymTheme> = {
     id: 'golds',
     displayName: "Gold's Gym",
     logoUrl: goldsGymLogo,
+    heroBackground: goldsGymBg,
     colors: {
       primary: '45 90% 50%', // Gold
       primaryForeground: '0 0% 10%',
