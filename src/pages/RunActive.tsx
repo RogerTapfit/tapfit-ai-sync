@@ -119,7 +119,9 @@ const RunActive = () => {
   const handleCelebrationComplete = () => {
     setShowCelebration(false);
     if (completedSessionId) {
-      navigate(`/run/summary/${completedSessionId}`);
+      // Replace history entry so the user doesn't get sent back to this screen
+      // (which would auto-start tracking again).
+      navigate(`/run/summary/${completedSessionId}`, { replace: true });
     }
   };
 

@@ -157,7 +157,7 @@ const RunSummary = () => {
       {/* Header */}
       <div className="bg-card border-b p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate(-1)}>
+          <Button variant="ghost" onClick={() => navigate('/run/history', { replace: true })}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -293,16 +293,23 @@ const RunSummary = () => {
         )}
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Button
             variant="outline"
-            className="flex-1"
+            className="sm:col-span-1"
+            onClick={() => navigate('/', { replace: true })}
+          >
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="outline"
+            className="sm:col-span-1"
             onClick={() => navigate('/run/history')}
           >
             View All Runs
           </Button>
           <Button
-            className="flex-1"
+            className="sm:col-span-1"
             onClick={() => navigate('/run/setup')}
           >
             Start New Run

@@ -30,7 +30,7 @@ const RunHistory = () => {
     return (
       <div className="min-h-screen bg-background p-4 pt-safe">
         <div className="max-w-2xl mx-auto">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
+          <Button variant="ghost" onClick={() => navigate('/')} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -45,7 +45,7 @@ const RunHistory = () => {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate(-1)}>
+          <Button variant="ghost" onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
