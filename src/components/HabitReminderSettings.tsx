@@ -16,6 +16,7 @@ interface HabitReminderSettingsProps {
   habitId: string;
   habitName: string;
   habitIcon: string;
+  habitCategory: string;
   initialEnabled: boolean;
   initialTimes: string[];
   initialDays: number[];
@@ -37,6 +38,7 @@ export const HabitReminderSettings = ({
   habitId,
   habitName,
   habitIcon,
+  habitCategory,
   initialEnabled,
   initialTimes,
   initialDays,
@@ -155,10 +157,16 @@ export const HabitReminderSettings = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-auto max-h-[85vh] rounded-t-2xl">
+      <SheetContent
+        side="bottom"
+        className={cn(
+          "h-auto max-h-[85vh] rounded-t-2xl",
+          `habit-scope habit-cat-${habitCategory || 'wellness'}`
+        )}
+      >
         <SheetHeader className="mb-4">
           <SheetTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
+            <Bell className="h-5 w-5 habit-accent-text" />
             Reminder Settings
           </SheetTitle>
         </SheetHeader>
@@ -198,7 +206,7 @@ export const HabitReminderSettings = ({
           )}
 
           {/* Habit preview */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+          <div className="flex items-center gap-3 p-3 habit-surface">
             <span className="text-2xl">{habitIcon}</span>
             <span className="font-medium">{habitName}</span>
           </div>
@@ -242,10 +250,8 @@ export const HabitReminderSettings = ({
                       key={index}
                       onClick={() => handleToggleDay(index)}
                       className={cn(
-                        "w-10 h-10 rounded-full font-medium text-sm transition-all",
-                        days.includes(index)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        "w-10 h-10 habit-day",
+                        days.includes(index) && "habit-day--selected"
                       )}
                       title={DAY_FULL_LABELS[index]}
                     >
@@ -308,7 +314,7 @@ export const HabitReminderSettings = ({
 
           {/* Save button */}
           <Button
-            className="w-full"
+            className="w-full habit-cta"
             onClick={handleSave}
             disabled={saving}
           >

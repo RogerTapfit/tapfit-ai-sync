@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Habits Neon Glow Theme Layer (Finch-inspired energy)
+   - Scoped via .habit-scope + .habit-cat-* classes
+   - Uses ONLY HSL CSS variables
+*/
+
+@layer base {
+  :root {
+    /* Category accents */
+    --habit-wellness: 190 100% 62%;
+    --habit-hygiene: 312 100% 68%;
+    --habit-content: 52 100% 64%;
+    --habit-fitness: 142 88% 52%;
+
+    /* A shared neon gradient for general Habit entry points */
+    --habit-neon-a: 190 100% 62%;
+    --habit-neon-b: 312 100% 68%;
+
+    /* Overridable “current” habit styling vars */
+    --habit-accent: var(--habit-wellness);
+    --habit-accent-2: var(--habit-neon-b);
+
+    --habit-grad: linear-gradient(
+      135deg,
+      hsl(var(--habit-accent) / 0.28),
+      hsl(var(--habit-accent-2) / 0.16)
+    );
+    --habit-grad-strong: linear-gradient(
+      135deg,
+      hsl(var(--habit-accent) / 0.55),
+      hsl(var(--habit-accent-2) / 0.35)
+    );
+
+    --habit-glow: 0 0 0 1px hsl(var(--habit-accent) / 0.22),
+      0 12px 34px -18px hsl(var(--habit-accent) / 0.65);
+    --habit-glow-strong: 0 0 0 1px hsl(var(--habit-accent) / 0.35),
+      0 18px 55px -22px hsl(var(--habit-accent) / 0.9);
+  }
+}
+
+@layer components {
+  /* Scope sets “current” accent variables */
+  .habit-scope.habit-cat-wellness {
+    --habit-accent: var(--habit-wellness);
+    --habit-accent-2: var(--habit-neon-b);
+  }
+  .habit-scope.habit-cat-hygiene {
+    --habit-accent: var(--habit-hygiene);
+    --habit-accent-2: var(--habit-neon-a);
+  }
+  .habit-scope.habit-cat-content {
+    --habit-accent: var(--habit-content);
+    --habit-accent-2: var(--habit-neon-b);
+  }
+  .habit-scope.habit-cat-fitness {
+    --habit-accent: var(--habit-fitness);
+    --habit-accent-2: var(--habit-neon-a);
+  }
+
+  /* Surface / card */
+  .habit-surface {
+    @apply relative overflow-hidden border rounded-xl;
+    background: linear-gradient(
+        180deg,
+        hsl(var(--card) / 0.9),
+        hsl(var(--card) / 0.78)
+      ),
+      var(--habit-grad);
+    border-color: hsl(var(--border) / 0.9);
+    box-shadow: 0 10px 30px -20px hsl(0 0% 0% / 0.55);
+    transition: var(--transition-smooth);
+  }
+  .habit-surface::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: var(--habit-grad);
+    opacity: 0;
+    transition: opacity 180ms ease;
+    pointer-events: none;
+  }
+  .habit-surface:hover::before {
+    opacity: 1;
+  }
+
+  .habit-surface--completed {
+    border-color: hsl(var(--habit-accent) / 0.45);
+    box-shadow: var(--habit-glow);
+  }
+  .habit-surface--completed::before {
+    opacity: 1;
+    background: var(--habit-grad-strong);
+  }
+
+  /* Icon chip */
+  .habit-icon {
+    @apply grid place-items-center rounded-full;
+    background: hsl(var(--habit-accent) / 0.12);
+    border: 1px solid hsl(var(--habit-accent) / 0.25);
+    transition: var(--transition-smooth);
+  }
+  .habit-icon--completed {
+    background: hsl(var(--habit-accent) / 0.18);
+    box-shadow: 0 0 0 1px hsl(var(--habit-accent) / 0.22),
+      0 0 26px hsl(var(--habit-accent) / 0.35);
+  }
+
+  /* Category pill */
+  .habit-badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium;
+    background: hsl(var(--habit-accent) / 0.14);
+    border: 1px solid hsl(var(--habit-accent) / 0.24);
+    color: hsl(var(--foreground) / 0.9);
+  }
+
+  .habit-accent-text {
+    color: hsl(var(--habit-accent));
+  }
+
+  /* Progress pill */
+  .habit-progress-pill {
+    @apply relative overflow-hidden rounded-full px-3 py-1 text-xs font-medium;
+    border: 1px solid hsl(var(--border) / 0.9);
+    background: linear-gradient(180deg, hsl(var(--muted) / 0.9), hsl(var(--muted) / 0.65));
+    color: hsl(var(--muted-foreground));
+  }
+  .habit-progress-pill--complete {
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--habit-neon-a) / 0.35);
+    box-shadow: 0 0 0 1px hsl(var(--habit-neon-a) / 0.2),
+      0 0 26px hsl(var(--habit-neon-b) / 0.25);
+    background: linear-gradient(
+        180deg,
+        hsl(var(--card) / 0.65),
+        hsl(var(--card) / 0.35)
+      ),
+      linear-gradient(
+        90deg,
+        hsl(var(--habit-neon-a) / 0.28),
+        hsl(var(--habit-neon-b) / 0.22)
+      );
+  }
+
+  /* Tabs (pills) */
+  .habit-tabs {
+    @apply rounded-full p-1 border;
+    background: linear-gradient(180deg, hsl(var(--muted) / 0.9), hsl(var(--muted) / 0.6));
+    border-color: hsl(var(--border) / 0.9);
+  }
+  .habit-tabs-trigger {
+    @apply rounded-full;
+  }
+  .habit-tabs-trigger[data-state='active'] {
+    background: linear-gradient(
+        180deg,
+        hsl(var(--card) / 0.8),
+        hsl(var(--card) / 0.55)
+      ),
+      linear-gradient(
+        90deg,
+        hsl(var(--habit-neon-a) / 0.22),
+        hsl(var(--habit-neon-b) / 0.22)
+      );
+    box-shadow: 0 0 0 1px hsl(var(--habit-neon-a) / 0.18),
+      0 0 24px hsl(var(--habit-neon-b) / 0.18);
+  }
+
+  /* “Neon tile” for dashboard entry point */
+  .habit-neon-tile {
+    @apply relative overflow-hidden border rounded-lg;
+    background: linear-gradient(
+        180deg,
+        hsl(var(--muted) / 0.65),
+        hsl(var(--card) / 0.6)
+      ),
+      linear-gradient(
+        135deg,
+        hsl(var(--habit-neon-a) / 0.22),
+        hsl(var(--habit-neon-b) / 0.18)
+      );
+    border-color: hsl(var(--habit-neon-a) / 0.2);
+    transition: var(--transition-smooth);
+  }
+  .habit-neon-tile:hover {
+    border-color: hsl(var(--habit-neon-b) / 0.35);
+    box-shadow: 0 0 0 1px hsl(var(--habit-neon-b) / 0.18),
+      0 18px 55px -30px hsl(var(--habit-neon-a) / 0.55);
+  }
+
+  /* Day chips */
+  .habit-day {
+    @apply grid place-items-center rounded-full font-medium text-sm transition-all;
+    background: hsl(var(--muted) / 0.9);
+    color: hsl(var(--muted-foreground));
+  }
+  .habit-day:hover {
+    background: hsl(var(--muted) / 0.75);
+  }
+  .habit-day--selected {
+    background: hsl(var(--habit-accent) / 0.18);
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--habit-accent) / 0.35);
+    box-shadow: 0 0 0 1px hsl(var(--habit-accent) / 0.18),
+      0 0 18px hsl(var(--habit-accent) / 0.25);
+  }
+
+  /* Primary CTA inside habit scope */
+  .habit-cta {
+    background: linear-gradient(
+        180deg,
+        hsl(var(--card) / 0.6),
+        hsl(var(--card) / 0.25)
+      ),
+      var(--habit-grad-strong);
+    border: 1px solid hsl(var(--habit-accent) / 0.35);
+    box-shadow: var(--habit-glow);
+  }
+  .habit-cta:hover {
+    box-shadow: var(--habit-glow-strong);
+  }
+}
