@@ -409,8 +409,8 @@ export const TodaysPerformance = ({ onStartWorkout, onStartRun, onStartRide, onS
             }
           }}
         >
-          <div className="size-10 rounded-lg bg-primary/5 border border-primary/10 mx-auto flex items-center justify-center hover:bg-teal-500/10 hover:border-teal-500/30 transition-all duration-200">
-            <ListChecks className="size-6 block text-teal-500" />
+          <div className="habit-scope habit-cat-wellness size-10 rounded-lg mx-auto flex items-center justify-center habit-neon-tile">
+            <ListChecks className="size-6 block habit-accent-text" />
           </div>
           <p className="text-2xl font-bold text-white">
             {isGuest ? 'Login' : (habitProgress.total > 0 ? `${habitProgress.completed}/${habitProgress.total}` : '0')}

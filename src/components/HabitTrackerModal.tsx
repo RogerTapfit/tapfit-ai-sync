@@ -90,6 +90,21 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
 
   const categories = ['wellness', 'hygiene', 'content', 'fitness'];
 
+  const getCategoryScopeClass = (category: string) => {
+    switch (category) {
+      case 'wellness':
+        return 'habit-scope habit-cat-wellness';
+      case 'hygiene':
+        return 'habit-scope habit-cat-hygiene';
+      case 'content':
+        return 'habit-scope habit-cat-content';
+      case 'fitness':
+        return 'habit-scope habit-cat-fitness';
+      default:
+        return 'habit-scope habit-cat-wellness';
+    }
+  };
+
   const handleToggle = async (habitId: string) => {
     setTogglingHabit(habitId);
     await toggleHabitCompletion(habitId);
@@ -154,10 +169,8 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
             <span>Daily Habits</span>
             {total > 0 && (
               <span className={cn(
-                "text-sm font-normal px-3 py-1 rounded-full",
-                allCompleted 
-                  ? "bg-green-500/20 text-green-400" 
-                  : "bg-muted text-muted-foreground"
+                  "habit-progress-pill",
+                  allCompleted && "habit-progress-pill--complete"
               )}>
                 {completed}/{total} Done
               </span>
@@ -166,9 +179,9 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
         </DialogHeader>
 
         <Tabs defaultValue="today" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="manage">Add Habits</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 habit-tabs">
+            <TabsTrigger value="today" className="habit-tabs-trigger">Today</TabsTrigger>
+            <TabsTrigger value="manage" className="habit-tabs-trigger">Add Habits</TabsTrigger>
           </TabsList>
 
           <TabsContent value="today" className="flex-1 overflow-hidden">
@@ -192,6 +205,7 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                       const isCompleted = isHabitCompletedToday(habit.id);
                       const streak = getHabitStreak(habit.id);
                       const isToggling = togglingHabit === habit.id;
+                      const scopeClass = getCategoryScopeClass(habit.category);
 
                       return (
                         <motion.div
@@ -201,23 +215,22 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                           className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border transition-all",
-                            isCompleted
-                              ? "bg-green-500/10 border-green-500/30"
-                              : "bg-card hover:bg-muted/50 border-border"
+                            scopeClass,
+                            "flex items-center gap-3 p-3 habit-surface",
+                            isCompleted && "habit-surface--completed"
                           )}
                         >
                           <div 
                             className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all cursor-pointer",
-                              isCompleted ? "bg-green-500/20" : "bg-muted"
+                              "w-10 h-10 text-xl cursor-pointer habit-icon",
+                              isCompleted && "habit-icon--completed"
                             )}
                             onClick={() => !isToggling && handleToggle(habit.id)}
                           >
                             {isToggling ? (
                               <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                             ) : isCompleted ? (
-                              <Check className="h-5 w-5 text-green-500" />
+                              <Check className="h-5 w-5 habit-accent-text" />
                             ) : (
                               habit.icon
                             )}
@@ -233,13 +246,15 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                             )}>
                               {habit.name}
                             </p>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {habit.category}
-                            </p>
+                            <div className="mt-1">
+                              <span className="habit-badge">
+                                {CATEGORY_LABELS[habit.category] || habit.category}
+                              </span>
+                            </div>
                           </div>
 
                           {streak > 0 && (
-                            <div className="flex items-center gap-1 text-orange-500">
+                            <div className="flex items-center gap-1 habit-accent-text">
                               <Flame className="h-4 w-4" />
                               <span className="text-sm font-medium">{streak}</span>
                             </div>
@@ -251,7 +266,7 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                             className={cn(
                               "h-8 w-8 shrink-0",
                               habit.reminderEnabled 
-                                ? "text-primary" 
+                                ? "habit-accent-text" 
                                 : "text-muted-foreground"
                             )}
                             onClick={(e) => {
@@ -275,9 +290,9 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="text-center py-4 mt-4 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 rounded-lg border border-green-500/20"
+                      className="text-center py-4 mt-4 habit-neon-tile"
                     >
-                      <p className="text-lg font-semibold text-green-400">
+                      <p className="text-lg font-semibold">
                         🎉 All habits complete!
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -301,17 +316,21 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                     {categories.map(category => {
                       const categoryHabits = habitsByCategory[category];
                       if (!categoryHabits || categoryHabits.length === 0) return null;
+                      const scopeClass = getCategoryScopeClass(category);
                       
                       return (
                         <div key={category}>
-                          <p className="text-xs text-muted-foreground uppercase mb-2">
-                            {CATEGORY_LABELS[category] || category}
-                          </p>
+                          <div className={cn(scopeClass, "mb-2")}> 
+                            <span className="habit-badge">{CATEGORY_LABELS[category] || category}</span>
+                          </div>
                           <div className="space-y-2">
                             {categoryHabits.map((habit) => (
                               <div
                                 key={habit.id}
-                                className="flex items-center gap-2 p-2 rounded-lg bg-muted/50"
+                                className={cn(
+                                  getCategoryScopeClass(habit.category),
+                                  "flex items-center gap-2 p-2 habit-surface"
+                                )}
                               >
                                 <span className="text-xl">{habit.icon}</span>
                                 <span className="flex-1 text-sm truncate">{habit.name}</span>
@@ -321,7 +340,7 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                                   className={cn(
                                     "h-8 w-8",
                                     habit.reminderEnabled 
-                                      ? "text-primary" 
+                                      ? "habit-accent-text" 
                                       : "text-muted-foreground"
                                   )}
                                   onClick={() => setReminderSettingsHabit(habit)}
@@ -367,13 +386,11 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
                   
                   {/* Auto-detected preview */}
                   {customName.trim() && (
-                    <div className="flex items-center gap-2 p-2 rounded-md bg-primary/10 border border-primary/20">
+                    <div className={cn(getCategoryScopeClass(selectedCategory), "flex items-center gap-2 p-2 rounded-md habit-surface")}>
                       <span className="text-xl">{customIcon}</span>
                       <span className="font-medium text-sm">{customName}</span>
                       <span className="text-xs text-muted-foreground">→</span>
-                      <span className="text-xs capitalize px-2 py-0.5 rounded-full bg-muted">
-                        {selectedCategory}
-                      </span>
+                      <span className="habit-badge">{CATEGORY_LABELS[selectedCategory] || selectedCategory}</span>
                     </div>
                   )}
                   
@@ -472,6 +489,7 @@ export const HabitTrackerModal = ({ open, onOpenChange }: HabitTrackerModalProps
             habitId={reminderSettingsHabit.id}
             habitName={reminderSettingsHabit.name}
             habitIcon={reminderSettingsHabit.icon}
+            habitCategory={reminderSettingsHabit.category}
             initialEnabled={reminderSettingsHabit.reminderEnabled}
             initialTimes={reminderSettingsHabit.reminderTimes}
             initialDays={reminderSettingsHabit.reminderDays}

@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './styles/habits.css'
 import { setupUniversalLinkPairing } from './lib/blePair';
 import { App as CapApp } from '@capacitor/app';
 import { nfcPuckIntegration } from './services/nfcPuckIntegration';
