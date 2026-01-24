@@ -17,6 +17,13 @@ export default function SwimSetup() {
   const { initialize, start } = useSwimTracker();
   const [isStarting, setIsStarting] = useState(false);
 
+  type PoolLengthKey = '25m' | '50m' | '25y';
+  const poolKeyToMeters: Record<PoolLengthKey, number> = {
+    '25m': 25,
+    '50m': 50,
+    '25y': 22.86,
+  };
+
   const [settings, setSettings] = useState<SwimSettings>({
     unit: 'm',
     audio_cues: true,
@@ -24,6 +31,13 @@ export default function SwimSetup() {
     stroke_type: 'freestyle',
     pool_length_m: 25,
     training_mode: 'pace_based',
+  });
+
+  const [poolLengthKey, setPoolLengthKey] = useState<PoolLengthKey>(() => {
+    const v = 25;
+    if (Math.abs(v - 50) < 0.01) return '50m';
+    if (Math.abs(v - 22.86) < 0.01) return '25y';
+    return '25m';
   });
 
   const handleStart = async () => {
@@ -95,16 +109,19 @@ export default function SwimSetup() {
           <div className="space-y-2">
             <Label>Pool Length</Label>
             <Select
-              value={settings.pool_length_m.toString()}
-              onValueChange={(value) => setSettings({ ...settings, pool_length_m: parseInt(value) })}
+              value={poolLengthKey}
+              onValueChange={(value: PoolLengthKey) => {
+                setPoolLengthKey(value);
+                setSettings({ ...settings, pool_length_m: poolKeyToMeters[value] });
+              }}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select pool length" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="25">25 meters (Short Course)</SelectItem>
-                <SelectItem value="50">50 meters (Olympic)</SelectItem>
-                <SelectItem value="22.86">25 yards (Short Course Yards)</SelectItem>
+                <SelectItem value="25m">25 meters (Short Course)</SelectItem>
+                <SelectItem value="50m">50 meters (Olympic)</SelectItem>
+                <SelectItem value="25y">25 yards (Short Course Yards)</SelectItem>
               </SelectContent>
             </Select>
           </div>
