@@ -68,7 +68,7 @@ const Auth = () => {
           title: 'Guest mode enabled',
           description: 'Session expires in 30 minutes. Create an account anytime.',
         });
-        window.location.href = '/';
+        navigate('/');
         return;
       }
       throw error;
@@ -81,7 +81,7 @@ const Auth = () => {
           title: 'Guest mode (local only)',
           description: 'Session expires in 30 minutes. You can explore, but data will not be saved.',
         });
-        window.location.href = '/';
+        navigate('/');
       } catch (sessionError) {
         toast({
           title: 'Guest mode failed',
@@ -98,9 +98,8 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Sanitize inputs
-      const sanitizedEmail = sanitizeInput(email);
-      const sanitizedPassword = sanitizeInput(password);
+      // Sanitize email only — never sanitize passwords (special chars are valid)
+      const sanitizedEmail = sanitizeInput(email).toLowerCase();
 
       // Validate email format
       if (!isValidEmail(sanitizedEmail)) {
@@ -109,37 +108,39 @@ const Auth = () => {
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
-        password: sanitizedPassword,
+        password: password,
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Log successful auth event
-        await supabase.rpc('log_security_event', {
+        // Log successful auth event (fire-and-forget, don't block login)
+        // Fire-and-forget logging
+        void supabase.rpc('log_security_event', {
           _user_id: data.user.id,
           _event_type: 'successful_login',
-          _event_details: { method: 'email_password' }
+          _event_details: { method: 'email_password' } as any
         });
 
         toast({
           title: "Welcome back!",
           description: "You've successfully logged in.",
         });
-        window.location.href = '/';
+        navigate('/');
       }
     } catch (error: any) {
-      // Log failed attempt
+      // Log failed attempt (fire-and-forget)
       logFailedAuthAttempt(email);
       
-      await supabase.rpc('log_security_event', {
+      // Fire-and-forget logging
+      void supabase.rpc('log_security_event', {
         _user_id: null,
         _event_type: 'failed_login',
         _event_details: { 
           method: 'email_password',
           error: error.message,
           email_domain: email.split('@')[1] || 'unknown'
-        }
+        } as any
       });
 
       toast({
@@ -155,9 +156,8 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Sanitize inputs
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedPassword = sanitizeInput(password);
+    // Sanitize email and name — never sanitize passwords
+    const sanitizedEmail = sanitizeInput(email).toLowerCase();
     const sanitizedName = sanitizeInput(fullName);
     
     // Validate inputs
@@ -170,7 +170,7 @@ const Auth = () => {
       return;
     }
 
-    if (sanitizedPassword.length < 8) {
+    if (password.length < 8) {
       toast({
         title: "Password too short",
         description: "Password must be at least 8 characters long.",
@@ -195,7 +195,7 @@ const Auth = () => {
       
       const { data, error } = await supabase.auth.signUp({
         email: sanitizedEmail,
-        password: sanitizedPassword,
+        password: password,
         options: {
           emailRedirectTo: redirectUrl,
           data: {
@@ -208,29 +208,29 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Log successful registration event
-        await supabase.rpc('log_security_event', {
+        // Fire-and-forget logging
+        void supabase.rpc('log_security_event', {
           _user_id: data.user.id,
           _event_type: 'user_registration',
-          _event_details: { method: 'email_password' }
+          _event_details: { method: 'email_password' } as any
         });
 
         toast({
           title: "Account created!",
           description: "Welcome to TapFit! You can now start tracking your workouts.",
         });
-        window.location.href = '/';
+        navigate('/');
       }
     } catch (error: any) {
-      // Log failed registration attempt
-      await supabase.rpc('log_security_event', {
+      // Fire-and-forget logging
+      void supabase.rpc('log_security_event', {
         _user_id: null,
         _event_type: 'failed_registration',
         _event_details: { 
           method: 'email_password',
           error: error.message,
           email_domain: sanitizedEmail.split('@')[1] || 'unknown'
-        }
+        } as any
       });
 
       toast({
